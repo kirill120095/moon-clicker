@@ -124,7 +124,6 @@
             width: 100%;
             transition: all 0.5s ease;
         }
-        /* Красный режим для кровавой луны */
         .container.blood-mode {
             box-shadow: 0 0 60px rgba(255, 0, 0, 0.2), 0 20px 60px rgba(0, 0, 0, 0.8);
             border-color: rgba(255, 0, 0, 0.2);
@@ -134,18 +133,16 @@
             text-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
         }
 
-        /* ---------- ЗАГОЛОВОК ---------- */
         .subtitle {
             font-size: 2.8rem;
             color: #f0e6d0;
             font-weight: 300;
             letter-spacing: 8px;
             text-shadow: 0 0 30px rgba(255, 215, 150, 0.15);
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             transition: all 0.5s ease;
         }
 
-        /* ---------- ШЕСТЕРЁНКА ---------- */
         .settings-icon {
             position: absolute;
             top: 20px;
@@ -188,7 +185,7 @@
             color: rgba(255, 255, 255, 0.5);
             cursor: pointer;
             transition: 0.3s;
-            font-size: 1.0rem;
+            font-size: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .auth-form .tabs button.active {
@@ -230,7 +227,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.05);
             color: #f0e6d0;
-            font-size: 1.0rem;
+            font-size: 1rem;
             outline: none;
             transition: border 0.3s;
             width: 100%;
@@ -251,7 +248,7 @@
             padding: 12px 30px;
             border-radius: 30px;
             border: none;
-            font-size: 1.0rem;
+            font-size: 1rem;
             cursor: pointer;
             transition: 0.3s;
             background: rgba(255, 215, 150, 0.15);
@@ -284,7 +281,7 @@
             display: inline-block;
             cursor: pointer;
             position: relative;
-            margin: 20px 0;
+            margin: 15px 0 10px;
             width: 340px;
             height: 340px;
             transition: transform 0.2s ease;
@@ -320,7 +317,6 @@
             will-change: transform;
         }
 
-        /* Красный режим для луны */
         .container.blood-mode .moon-inner {
             box-shadow:
                 0 0 60px rgba(255, 0, 0, 0.6),
@@ -334,21 +330,17 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Пульсация для обычной луны */
         .moon-inner {
             animation: pulseGlow 4s ease-in-out infinite alternate;
         }
-
         @keyframes pulseGlow {
             0% { box-shadow: 0 0 40px rgba(255,215,150,0.3), 0 0 80px rgba(255,215,150,0.1), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,255,255,0.3); }
             100% { box-shadow: 0 0 100px rgba(255,215,150,0.6), 0 0 200px rgba(255,215,150,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,255,255,0.4); }
         }
 
-        /* Красная пульсация */
         .container.blood-mode .moon-inner {
             animation: pulseGlowRed 4s ease-in-out infinite alternate;
         }
-
         @keyframes pulseGlowRed {
             0% { box-shadow: 0 0 40px rgba(255,0,0,0.4), 0 0 80px rgba(255,0,0,0.2), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,0,0,0.2); }
             100% { box-shadow: 0 0 100px rgba(255,0,0,0.8), 0 0 200px rgba(255,0,0,0.4), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,0,0,0.3); }
@@ -374,14 +366,13 @@
             0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
         }
-        /* Красный эффект клика */
         .container.blood-mode .click-effect {
             background: radial-gradient(circle, rgba(255, 0, 0, 0.8), transparent 70%);
         }
 
         /* ---------- СЧЁТЧИК И СТАТУС ---------- */
         .counter {
-            margin: 12px 0 5px;
+            margin: 8px 0 5px;
             color: #f0e6d0;
             font-size: 4rem;
             font-weight: 700;
@@ -406,10 +397,10 @@
         .stats {
             display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: 20px;
             margin: 5px 0 10px;
             color: rgba(255, 255, 255, 0.5);
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
         .stats span {
             background: rgba(0, 0, 0, 0.3);
@@ -421,23 +412,81 @@
         .stats .level {
             color: #f0e6d0;
         }
-        .stats .hp {
+        .stats .hp-text {
             color: #ff6b6b;
         }
         .container.blood-mode .stats .level {
             color: #ff6b6b;
         }
 
+        /* ---------- ПРОГРЕСС-БАРЫ ---------- */
+        .bars {
+            margin: 10px auto 15px;
+            max-width: 90%;
+        }
+        .bar-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .bar-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8rem;
+            min-width: 30px;
+            text-align: right;
+        }
+        .bar-track {
+            flex: 1;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+        .bar-fill {
+            height: 100%;
+            width: 100%;
+            border-radius: 10px;
+            transition: width 0.2s ease;
+            background: linear-gradient(90deg, #ff6b6b, #ffb07c);
+        }
+        .bar-fill.hp-fill {
+            background: linear-gradient(90deg, #ff6b6b, #ffb07c);
+        }
+        .bar-fill.timer-fill {
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+        }
+        .bar-fill.boss-fill {
+            background: linear-gradient(90deg, #ff4444, #cc0000);
+        }
+        .bar-percent {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8rem;
+            min-width: 40px;
+            text-align: left;
+        }
+        .timer-bar-container {
+            display: none;
+        }
+        .timer-bar-container.active {
+            display: flex;
+        }
+        .boss-label {
+            color: #ff4444;
+            font-weight: bold;
+        }
+
         /* ---------- КНОПКА ВЫХОДА ---------- */
         .logout-btn {
-            margin-top: 18px;
+            margin-top: 15px;
             padding: 10px 30px;
             background: rgba(255, 255, 255, 0.04);
             color: rgba(255, 255, 255, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 30px;
             cursor: pointer;
-            font-size: 1.0rem;
+            font-size: 1rem;
             transition: all 0.3s;
             backdrop-filter: blur(5px);
         }
@@ -539,7 +588,7 @@
             border: none;
             background: rgba(255, 80, 80, 0.15);
             color: #ff6b6b;
-            font-size: 1.0rem;
+            font-size: 1rem;
             cursor: pointer;
             transition: 0.3s;
             border: 1px solid rgba(255, 80, 80, 0.2);
@@ -557,7 +606,7 @@
             border: none;
             background: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.4);
-            font-size: 1.0rem;
+            font-size: 1rem;
             cursor: pointer;
             transition: 0.3s;
             border: 1px solid rgba(255,255,255,0.05);
@@ -650,6 +699,7 @@
             .planet-1 { width: 40px; height: 40px; }
             .planet-2 { width: 30px; height: 30px; }
             .stats { font-size: 0.85rem; gap: 15px; }
+            .bars { max-width: 100%; }
         }
         @media (max-width: 450px) {
             .moon-wrapper { width: 200px; height: 200px; }
@@ -658,6 +708,7 @@
             .container { padding: 20px; }
             .modal { padding: 20px 25px; }
             .stats { font-size: 0.75rem; gap: 10px; flex-wrap: wrap; }
+            .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
         }
     </style>
 </head>
@@ -719,7 +770,24 @@
                 <div class="counter" id="counter">0</div>
                 <div class="stats">
                     <span class="level" id="levelDisplay">Уровень 1</span>
-                    <span class="hp" id="hpDisplay">❤️ 100%</span>
+                    <span class="hp-text" id="hpDisplay">❤️ 100%</span>
+                </div>
+            </div>
+            <!-- Прогресс-бары -->
+            <div class="bars">
+                <div class="bar-container">
+                    <span class="bar-label">❤️</span>
+                    <div class="bar-track">
+                        <div class="bar-fill hp-fill" id="hpBar" style="width:100%"></div>
+                    </div>
+                    <span class="bar-percent" id="hpPercent">100%</span>
+                </div>
+                <div class="bar-container timer-bar-container" id="timerBarContainer">
+                    <span class="bar-label">⏱️</span>
+                    <div class="bar-track">
+                        <div class="bar-fill timer-fill" id="timerBar" style="width:100%"></div>
+                    </div>
+                    <span class="bar-percent" id="timerPercent">30с</span>
                 </div>
             </div>
             <button class="logout-btn" id="logoutBtn">🚀 Выйти</button>
@@ -730,7 +798,6 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <h2>⚙️ Настройки</h2>
-            
             <div class="section-title">⏱️ Общее время</div>
             <div style="color: rgba(255, 215, 150, 0.7); font-size: 1rem; margin-bottom: 15px;" id="totalTimeDisplay">0 ч</div>
 
@@ -780,6 +847,17 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ============================================================
+        //  КОНСТАНТЫ И НАСТРОЙКИ
+        // ============================================================
+        // РЕЖИМ ТЕСТА: уменьшаем все HP в 10 раз (для быстрой проверки)
+        const TEST_MODE = true;
+        const HP_SCALE = TEST_MODE ? 0.1 : 1;
+
+        const BOSS_LEVEL = 10;
+        const BOSS_TIMER = 30; // секунд
+        const BASE_HP = 100 * HP_SCALE; // 100 или 10
+
+        // ============================================================
         //  ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
         // ============================================================
         let currentUser = null;
@@ -787,11 +865,17 @@
         let clickCount = 0;
         let totalSecondsPlayed = 0;
         let currentLevel = 1;
-        let moonHP = 100;
-        const MAX_HP = 100;
+        let moonHP = BASE_HP;
+        let maxHP = BASE_HP;
         let sessionStartTimestamp = null;
         let timeUpdateInterval = null;
         let autoSaveInterval = null;
+
+        // Для босса
+        let bossTimer = BOSS_TIMER;
+        let bossTimerInterval = null;
+        let isBossActive = false;
+        let bossTimerRunning = false;
 
         // DOM-элементы
         const authBlock = document.getElementById('authBlock');
@@ -816,6 +900,11 @@
         const clickEffect = document.getElementById('clickEffect');
         const levelDisplay = document.getElementById('levelDisplay');
         const hpDisplay = document.getElementById('hpDisplay');
+        const hpBar = document.getElementById('hpBar');
+        const hpPercent = document.getElementById('hpPercent');
+        const timerBarContainer = document.getElementById('timerBarContainer');
+        const timerBar = document.getElementById('timerBar');
+        const timerPercent = document.getElementById('timerPercent');
         const logoutBtn = document.getElementById('logoutBtn');
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsModal = document.getElementById('settingsModal');
@@ -829,7 +918,7 @@
         let currentMode = 'login';
 
         // ============================================================
-        //  ФОРМАТИРОВАНИЕ ВРЕМЕНИ
+        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
         // ============================================================
         function formatTime(seconds) {
             if (seconds < 60) return `${seconds} сек`;
@@ -839,6 +928,27 @@
             if (hours < 24) return `${hours} ч`;
             const days = Math.floor(hours / 24);
             return `${days} дн`;
+        }
+
+        // Вычисление максимального HP для уровня
+        function getMaxHPForLevel(level) {
+            if (level === BOSS_LEVEL) {
+                // Босс: 1000% от базового, но с учётом масштаба
+                return 1000 * HP_SCALE; // 1000 или 100
+            }
+            // Обычные уровни: BASE_HP + (level-1)*10% от BASE_HP
+            return BASE_HP * (1 + (level - 1) * 0.1);
+        }
+
+        function updateBossUI(show) {
+            if (show) {
+                timerBarContainer.classList.add('active');
+                // Меняем цвет бара HP на боссовский (красный)
+                hpBar.className = 'bar-fill boss-fill';
+            } else {
+                timerBarContainer.classList.remove('active');
+                hpBar.className = 'bar-fill hp-fill';
+            }
         }
 
         // ============================================================
@@ -894,7 +1004,7 @@
         createStars();
 
         // ============================================================
-        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+        //  СБОР ДАННЫХ ОБ УСТРОЙСТВЕ (без гео)
         // ============================================================
         function getDeviceType() {
             const ua = navigator.userAgent;
@@ -997,7 +1107,7 @@
                     total_seconds_played: 0,
                     current_session_start: new Date().toISOString(),
                     level: 1,
-                    moon_hp: 100,
+                    moon_hp: Math.round(BASE_HP),
                     ...staticData,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
@@ -1034,7 +1144,7 @@
                 last_click_at: clickTimestamp,
                 total_seconds_played: totalSecondsPlayed,
                 level: newLevel,
-                moon_hp: newMoonHP,
+                moon_hp: Math.round(newMoonHP),
                 updated_at: new Date().toISOString()
             };
             const { error } = await supabaseClient
@@ -1068,7 +1178,7 @@
                     total_clicks: 0,
                     total_seconds_played: 0,
                     level: 1,
-                    moon_hp: 100,
+                    moon_hp: Math.round(BASE_HP),
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', currentUser.id);
@@ -1079,17 +1189,24 @@
                 return;
             }
 
-            // Обнулить локальные переменные
+            // Сброс локальных переменных
             clickCount = 0;
             totalSecondsPlayed = 0;
             currentLevel = 1;
-            moonHP = 100;
+            moonHP = BASE_HP;
+            maxHP = getMaxHPForLevel(1);
             counterEl.textContent = '0';
             totalTimeDisplay.textContent = '0 ч';
-            playerData.total_clicks = 0;
-            playerData.total_seconds_played = 0;
-            playerData.level = 1;
-            playerData.moon_hp = 100;
+            if (playerData) {
+                playerData.total_clicks = 0;
+                playerData.total_seconds_played = 0;
+                playerData.level = 1;
+                playerData.moon_hp = Math.round(BASE_HP);
+            }
+            // Сброс босса
+            clearBossTimer();
+            isBossActive = false;
+            bossTimerRunning = false;
             updateUI();
 
             alert('✅ Прогресс успешно сброшен!');
@@ -1202,7 +1319,8 @@
                     clickCount = playerData.total_clicks || 0;
                     totalSecondsPlayed = playerData.total_seconds_played || 0;
                     currentLevel = playerData.level || 1;
-                    moonHP = playerData.moon_hp || 100;
+                    moonHP = playerData.moon_hp || BASE_HP;
+                    maxHP = getMaxHPForLevel(currentLevel);
                     authMessage.textContent = '✅ Вход успешен!';
                     authMessage.className = 'error';
                     setTimeout(initGame, 1500);
@@ -1211,7 +1329,8 @@
                     clickCount = 0;
                     totalSecondsPlayed = 0;
                     currentLevel = 1;
-                    moonHP = 100;
+                    moonHP = BASE_HP;
+                    maxHP = getMaxHPForLevel(1);
                     authMessage.textContent = '✅ Вход успешен!';
                     authMessage.className = 'error';
                     setTimeout(initGame, 1500);
@@ -1228,11 +1347,96 @@
         });
 
         // ============================================================
+        //  БОСС И ТАЙМЕР
+        // ============================================================
+        function startBossTimer() {
+            if (bossTimerInterval) {
+                clearInterval(bossTimerInterval);
+                bossTimerInterval = null;
+            }
+            bossTimer = BOSS_TIMER;
+            bossTimerRunning = true;
+            updateBossUI(true);
+            updateTimerBar();
+
+            bossTimerInterval = setInterval(() => {
+                bossTimer--;
+                updateTimerBar();
+                if (bossTimer <= 0) {
+                    // Время вышло – восстанавливаем HP босса
+                    clearBossTimer();
+                    moonHP = maxHP;
+                    updateUI();
+                    // Можно показать уведомление
+                    alert('⏰ Время вышло! Босс восстановил здоровье.');
+                }
+            }, 1000);
+        }
+
+        function clearBossTimer() {
+            if (bossTimerInterval) {
+                clearInterval(bossTimerInterval);
+                bossTimerInterval = null;
+            }
+            bossTimerRunning = false;
+            updateBossUI(false);
+            timerBar.style.width = '100%';
+            timerPercent.textContent = '0с';
+        }
+
+        function updateTimerBar() {
+            const percent = Math.max(0, (bossTimer / BOSS_TIMER) * 100);
+            timerBar.style.width = percent + '%';
+            timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
+        }
+
+        // ============================================================
+        //  ОСНОВНАЯ ЛОГИКА ИГРЫ
+        // ============================================================
+        function updateUI() {
+            counterEl.textContent = clickCount;
+            levelDisplay.textContent = `Уровень ${currentLevel}`;
+
+            // Обновляем HP и бары
+            const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
+            hpDisplay.textContent = `❤️ ${Math.round(hpPercentValue)}%`;
+            hpBar.style.width = Math.min(100, hpPercentValue) + '%';
+            hpPercent.textContent = Math.round(hpPercentValue) + '%';
+
+            // Масштаб луны (относительно HP)
+            const scale = Math.max(0.05, moonHP / maxHP);
+            moonInner.style.transform = `scale(${scale})`;
+
+            // Если босс, показываем таймер
+            if (currentLevel === BOSS_LEVEL) {
+                if (!bossTimerRunning && moonHP > 0) {
+                    startBossTimer();
+                }
+            } else {
+                if (bossTimerRunning) {
+                    clearBossTimer();
+                }
+                updateBossUI(false);
+            }
+            updateTimeDisplay();
+        }
+
+        function updateTimeDisplay() {
+            totalTimeDisplay.textContent = formatTime(totalSecondsPlayed);
+        }
+
+        // ============================================================
         //  ИНИЦИАЛИЗАЦИЯ ИГРЫ
         // ============================================================
         function initGame() {
             authBlock.classList.add('hidden');
             gameArea.classList.add('active');
+
+            // Загружаем уровень
+            maxHP = getMaxHPForLevel(currentLevel);
+            if (moonHP > maxHP) moonHP = maxHP;
+            if (moonHP < 0) moonHP = 0;
+
             counterEl.textContent = clickCount;
             updateUI();
 
@@ -1253,45 +1457,55 @@
             setMoonMode(savedMode);
         }
 
-        function updateUI() {
-            counterEl.textContent = clickCount;
-            levelDisplay.textContent = `Уровень ${currentLevel}`;
-            const hpPercent = Math.round((moonHP / MAX_HP) * 100);
-            hpDisplay.textContent = `❤️ ${hpPercent}%`;
-            // Масштаб луны
-            const scale = Math.max(0, moonHP / MAX_HP);
-            moonInner.style.transform = `scale(${scale})`;
-            updateTimeDisplay();
-        }
-
-        function updateTimeDisplay() {
-            totalTimeDisplay.textContent = formatTime(totalSecondsPlayed);
-        }
-
         // ============================================================
-        //  ЛУНА КЛИКЕР (с уменьшением и уровнями)
+        //  КЛИК ПО ЛУНЕ
         // ============================================================
         moonWrapper.addEventListener('click', async (e) => {
             if (!currentUser) return;
 
+            // Если луна уже разрушена (HP <= 0) – ничего не делаем
+            if (moonHP <= 0) return;
+
             clickCount++;
-            // Уменьшаем здоровье луны
             moonHP = Math.max(0, moonHP - 1);
-            // Если луна разрушена
-            if (moonHP === 0) {
-                // Переход на новый уровень
+
+            // Проверяем, победили ли босса
+            if (moonHP === 0 && currentLevel === BOSS_LEVEL) {
+                // Победа над боссом
+                clearBossTimer();
+                alert(`🎉 Босс побеждён! Переход на уровень ${currentLevel + 1}`);
                 currentLevel++;
-                moonHP = MAX_HP; // восстанавливаем
+                maxHP = getMaxHPForLevel(currentLevel);
+                moonHP = maxHP;
                 // Анимация появления новой луны
                 moonInner.classList.remove('level-up');
-                void moonInner.offsetWidth; // триггер перезапуска анимации
+                void moonInner.offsetWidth;
                 moonInner.classList.add('level-up');
-                // Можно показать сообщение о новом уровне
-                // alert(`🎉 Уровень ${currentLevel}!`);
-                // Для красоты покажем в консоли или всплывашку
-                // Пока просто обновим UI
+                // Обновляем UI
+                updateUI();
+                // Сохраняем прогресс
+                const now = new Date().toISOString();
+                await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
+                return;
             }
 
+            // Если луна разрушена (обычный уровень) – переходим на следующий уровень
+            if (moonHP === 0) {
+                currentLevel++;
+                maxHP = getMaxHPForLevel(currentLevel);
+                moonHP = maxHP;
+                // Анимация
+                moonInner.classList.remove('level-up');
+                void moonInner.offsetWidth;
+                moonInner.classList.add('level-up');
+                // Если новый уровень – босс, таймер запустится автоматически в updateUI
+                updateUI();
+                const now = new Date().toISOString();
+                await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
+                return;
+            }
+
+            // Обычный клик
             counterEl.textContent = clickCount;
             updateUI();
 
@@ -1315,6 +1529,7 @@
         logoutBtn.addEventListener('click', async () => {
             if (timeUpdateInterval) clearInterval(timeUpdateInterval);
             if (autoSaveInterval) clearInterval(autoSaveInterval);
+            clearBossTimer();
 
             await supabaseClient.auth.signOut();
             currentUser = null;
@@ -1322,7 +1537,10 @@
             clickCount = 0;
             totalSecondsPlayed = 0;
             currentLevel = 1;
-            moonHP = 100;
+            moonHP = BASE_HP;
+            maxHP = getMaxHPForLevel(1);
+            isBossActive = false;
+            bossTimerRunning = false;
             authBlock.classList.remove('hidden');
             gameArea.classList.remove('active');
             setMode('login');
@@ -1391,7 +1609,8 @@
                     clickCount = playerData.total_clicks || 0;
                     totalSecondsPlayed = playerData.total_seconds_played || 0;
                     currentLevel = playerData.level || 1;
-                    moonHP = playerData.moon_hp || 100;
+                    moonHP = playerData.moon_hp || BASE_HP;
+                    maxHP = getMaxHPForLevel(currentLevel);
                 }
                 initGame();
             }
