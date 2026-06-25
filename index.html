@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🌙 Лунный кликер с аккаунтами</title>
+    <title>🌙 Лунный кликер</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2">
     </script>
     <style>
-        /* (стили такие же, как в предыдущей версии, сократим для краткости) */
+        /* (стили такие же, как в предыдущей версии, но для краткости оставлю минимум) */
         * {
             margin: 0;
             padding: 0;
@@ -53,15 +53,15 @@
             flex-direction: column;
             gap: 10px;
             margin-bottom: 20px;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.3);
             padding: 20px;
             border-radius: 20px;
         }
         .auth-form input {
             padding: 12px 16px;
             border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
             color: #f0e6d0;
             font-size: 1rem;
             outline: none;
@@ -166,8 +166,14 @@
             animation: flash 0.3s ease-out forwards;
         }
         @keyframes flash {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4); }
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.4);
+            }
         }
         .counter {
             margin: 15px 0 5px;
@@ -212,9 +218,18 @@
             border-color: rgba(255, 255, 255, 0.2);
         }
         @media (max-width: 600px) {
-            .moon { width: 150px; height: 150px; }
-            .counter { font-size: 2.2rem; padding: 6px 20px; min-width: 80px; }
-            .container { padding: 20px; }
+            .moon {
+                width: 150px;
+                height: 150px;
+            }
+            .counter {
+                font-size: 2.2rem;
+                padding: 6px 20px;
+                min-width: 80px;
+            }
+            .container {
+                padding: 20px;
+            }
         }
     </style>
 </head>
@@ -223,8 +238,9 @@
         <h1>🌙 Лунный кликер</h1>
         <p class="subtitle">Кликни по луне</p>
 
+        <!-- Блок авторизации -->
         <div id="authBlock" class="auth-form">
-            <input type="email" id="emailInput" placeholder="Email" />
+            <input type="text" id="loginInput" placeholder="Email или никнейм" />
             <input type="password" id="passwordInput" placeholder="Пароль" />
             <input type="text" id="nicknameInput" placeholder="Никнейм (при регистрации)" />
             <div class="buttons">
@@ -234,6 +250,7 @@
             <div id="authMessage" class="error"></div>
         </div>
 
+        <!-- Игровая зона -->
         <div id="gameArea" class="game-area">
             <div class="moon-wrapper" id="moonWrapper">
                 <div class="moon" id="moon"></div>
@@ -274,7 +291,7 @@
         // DOM-элементы
         const authBlock = document.getElementById('authBlock');
         const gameArea = document.getElementById('gameArea');
-        const emailInput = document.getElementById('emailInput');
+        const loginInput = document.getElementById('loginInput');
         const passwordInput = document.getElementById('passwordInput');
         const nicknameInput = document.getElementById('nicknameInput');
         const loginBtn = document.getElementById('loginBtn');
@@ -287,7 +304,7 @@
         const logoutBtn = document.getElementById('logoutBtn');
 
         // ============================================================
-        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (сбор статистики)
+        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
         // ============================================================
         function getDeviceType() {
             const ua = navigator.userAgent;
@@ -374,7 +391,7 @@
         // ============================================================
         //  РАБОТА С БАЗОЙ ДАННЫХ
         // ============================================================
-        async function createOrUpdatePlayer(userId, geoData) {
+        async function createOrUpdatePlayer(userId, email, geoData) {
             const staticData = collectStaticDeviceData();
             const { data: existing, error: selectError } = await supabaseClient
                 .from('players')
@@ -390,9 +407,11 @@
             const username = currentUser?.user_metadata?.username || null;
 
             if (existing) {
+                // Обновляем существующего
                 const { data, error } = await supabaseClient
                     .from('players')
                     .update({
+                        email: email || existing.email,
                         username: username || existing.username,
                         ip: geoData.ip || existing.ip,
                         country: geoData.country || existing.country,
@@ -409,8 +428,10 @@
                 if (error) console.error('Ошибка обновления игрока:', error);
                 return data || existing;
             } else {
+                // Создаём нового
                 const newPlayer = {
                     id: userId,
+                    email: email,
                     username: username,
                     total_clicks: 0,
                     first_click_at: new Date().toISOString(),
@@ -514,10 +535,32 @@
         }
 
         // ============================================================
-        //  АВТОРИЗАЦИЯ И ВЫХОД (исправленный выход)
+        //  АВТОРИЗАЦИЯ И ВЫХОД (перезагрузка страницы после выхода)
         // ============================================================
-        async function signIn(email, password) {
+
+        // Вход с поддержкой никнейма или email
+        async function signIn(login, password) {
             authMessage.textContent = '';
+            let email = login;
+
+            // Если в логине нет @, считаем, что это никнейм — ищем email в таблице players
+            if (!login.includes('@')) {
+                const { data, error } = await supabaseClient
+                    .from('players')
+                    .select('email')
+                    .eq('username', login)
+                    .maybeSingle();
+                if (error || !data) {
+                    authMessage.textContent = '❌ Пользователь с таким никнеймом не найден.';
+                    return false;
+                }
+                email = data.email;
+                if (!email) {
+                    authMessage.textContent = '❌ У этого пользователя нет email.';
+                    return false;
+                }
+            }
+
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) {
                 authMessage.textContent = '❌ ' + error.message;
@@ -539,33 +582,24 @@
                 authMessage.textContent = '❌ ' + error.message;
                 return false;
             }
-            authMessage.textContent = '✅ Регистрация успешна! Теперь войдите.';
-            authMessage.className = 'success';
+
+            // Проверяем, нужно ли подтверждение email
+            const user = data.user;
+            if (user && !user.confirmed_at) {
+                authMessage.textContent = '📧 На вашу почту отправлено письмо с подтверждением. Пожалуйста, подтвердите email, затем войдите.';
+                authMessage.className = 'success';
+            } else {
+                authMessage.textContent = '✅ Регистрация успешна! Теперь войдите.';
+                authMessage.className = 'success';
+            }
             return true;
         }
 
-        // ----- Очистка локального состояния (без вызова auth.signOut) -----
-        function clearLocalState() {
-            currentUser = null;
-            playerData = null;
-            clickCount = 0;
-            lastClickTime = null;
-            totalSecondsPlayed = 0;
-            authBlock.style.display = 'block';
-            gameArea.classList.remove('active');
-            counterEl.textContent = '0';
-            playerInfo.textContent = '';
-            authMessage.textContent = '';
-            authMessage.className = 'error';
-        }
-
-        // ----- Выход (вызывается по кнопке) -----
+        // Выход с перезагрузкой страницы
         async function signOut() {
-            // Вызываем выход из Supabase, после чего сработает событие SIGNED_OUT,
-            // которое вызовет clearLocalState()
             await supabaseClient.auth.signOut();
-            // Дополнительная очистка на случай, если событие не сработает:
-            clearLocalState();
+            // Перезагружаем страницу, чтобы сбросить всё состояние
+            window.location.reload();
         }
 
         // ============================================================
@@ -577,7 +611,9 @@
             gameArea.classList.add('active');
 
             const geoData = await fetchGeoData();
-            const updatedPlayer = await createOrUpdatePlayer(user.id, geoData);
+            // Получаем email пользователя
+            const email = user.email;
+            const updatedPlayer = await createOrUpdatePlayer(user.id, email, geoData);
             if (updatedPlayer) {
                 playerData = updatedPlayer;
                 clickCount = playerData.total_clicks || 0;
@@ -602,10 +638,10 @@
         //  ОБРАБОТЧИКИ СОБЫТИЙ
         // ============================================================
         loginBtn.addEventListener('click', async () => {
-            const email = emailInput.value.trim();
+            const login = loginInput.value.trim();
             const pass = passwordInput.value.trim();
-            if (!email || !pass) { authMessage.textContent = 'Заполните email и пароль'; return; }
-            const ok = await signIn(email, pass);
+            if (!login || !pass) { authMessage.textContent = 'Заполните логин и пароль'; return; }
+            const ok = await signIn(login, pass);
             if (ok) {
                 const { data: { user } } = await supabaseClient.auth.getUser();
                 if (user) await onUserLoggedIn(user);
@@ -613,10 +649,11 @@
         });
 
         registerBtn.addEventListener('click', async () => {
-            const email = emailInput.value.trim();
+            const email = loginInput.value.trim(); // используем то же поле для email при регистрации
             const pass = passwordInput.value.trim();
             const nickname = nicknameInput.value.trim() || 'Игрок';
             if (!email || !pass) { authMessage.textContent = 'Заполните email и пароль'; return; }
+            if (!email.includes('@')) { authMessage.textContent = 'Email должен содержать @'; return; }
             if (pass.length < 6) { authMessage.textContent = 'Пароль должен быть не менее 6 символов'; return; }
             await signUp(email, pass, nickname);
         });
@@ -636,7 +673,7 @@
         moonWrapper.setAttribute('role', 'button');
 
         // ============================================================
-        //  ПРОВЕРКА АУТЕНТИФИКАЦИИ И ПОДПИСКА НА СОБЫТИЯ
+        //  ПРОВЕРКА АУТЕНТИФИКАЦИИ ПРИ ЗАГРУЗКЕ
         // ============================================================
         async function init() {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -646,17 +683,6 @@
                 authBlock.style.display = 'block';
                 gameArea.classList.remove('active');
             }
-
-            // Подписка на изменения состояния
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                if (event === 'SIGNED_IN' && session?.user) {
-                    await onUserLoggedIn(session.user);
-                } else if (event === 'SIGNED_OUT') {
-                    // При выходе просто очищаем локальное состояние,
-                    // но не вызываем signOut(), чтобы избежать цикла.
-                    clearLocalState();
-                }
-            });
         }
         init();
     </script>
