@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌙 Лунный кликер</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0b0e1a 0%, #1a1f35 50%, #0b0e1a 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 40px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.2s;
+        }
+
+        .container:hover {
+            transform: scale(1.01);
+        }
+
+        h1 {
+            color: #f0e6d0;
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 215, 150, 0.2);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .moon-wrapper {
+            display: inline-block;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            position: relative;
+        }
+
+        .moon-wrapper:active {
+            transform: scale(0.92);
+        }
+
+        .moon-wrapper:hover {
+            transform: scale(1.05);
+        }
+
+        .moon {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #f5f0e8, #c8bda8 60%, #8a7e6b);
+            box-shadow: 
+                0 0 40px rgba(255, 215, 150, 0.3),
+                0 0 80px rgba(255, 215, 150, 0.15),
+                inset -20px -20px 60px rgba(0, 0, 0, 0.3),
+                inset 20px 20px 60px rgba(255, 255, 255, 0.3);
+            position: relative;
+            transition: box-shadow 0.3s;
+        }
+
+        /* Кратеры на луне */
+        .moon::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, rgba(160, 140, 120, 0.4), rgba(100, 85, 75, 0.6));
+            top: 25%;
+            left: 20%;
+            box-shadow: 
+                60px 50px 0 -5px rgba(120, 100, 85, 0.4),
+                -30px 70px 0 -8px rgba(140, 120, 105, 0.3),
+                80px -30px 0 -10px rgba(130, 110, 95, 0.35);
+        }
+
+        .moon::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 50%, rgba(180, 160, 140, 0.3), rgba(100, 85, 75, 0.5));
+            top: 60%;
+            left: 70%;
+            box-shadow: 
+                -40px -20px 0 -5px rgba(140, 120, 105, 0.3);
+        }
+
+        /* Сияние при клике */
+        .click-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 215, 150, 0.4), transparent 70%);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
+        }
+
+        .click-effect.active {
+            animation: flash 0.3s ease-out forwards;
+        }
+
+        @keyframes flash {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.4);
+            }
+        }
+
+        .counter {
+            margin-top: 30px;
+            color: #f0e6d0;
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 30px rgba(255, 215, 150, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 40px;
+            border-radius: 60px;
+            display: inline-block;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            min-width: 150px;
+        }
+
+        .counter-label {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 15px;
+        }
+
+        .reset-btn {
+            margin-top: 20px;
+            padding: 10px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .reset-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Звёзды */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% {
+                opacity: 0.2;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Адаптив */
+        @media (max-width: 600px) {
+            .moon {
+                width: 180px;
+                height: 180px;
+            }
+            .counter {
+                font-size: 2.5rem;
+                padding: 8px 25px;
+                min-width: 100px;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+            .container {
+                padding: 25px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .moon {
+                width: 140px;
+                height: 140px;
+            }
+            .counter {
+                font-size: 2rem;
+                padding: 6px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Звёздный фон -->
+    <div class="stars" id="stars"></div>
+
+    <div class="container">
+        <h1>🌙 Лунный кликер</h1>
+        <p class="subtitle">Кликни по луне</p>
+
+        <div class="moon-wrapper" id="moonWrapper">
+            <div class="moon" id="moon"></div>
+            <div class="click-effect" id="clickEffect"></div>
+        </div>
+
+        <div>
+            <div class="counter" id="counter">0</div>
+            <div class="counter-label">кликов</div>
+        </div>
+
+        <button class="reset-btn" id="resetBtn">⟳ Сбросить</button>
+    </div>
+
+    <script>
+        // --- Состояние ---
+        let clicks = 0;
+        const counterElement = document.getElementById('counter');
+        const moonWrapper = document.getElementById('moonWrapper');
+        const clickEffect = document.getElementById('clickEffect');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // --- Генерация звёзд ---
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        createStars();
+
+        // --- Обновление счётчика ---
+        function updateCounter() {
+            counterElement.textContent = clicks;
+            // Анимация счётчика
+            counterElement.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                counterElement.style.transform = 'scale(1)';
+            }, 100);
+        }
+
+        // --- Эффект клика ---
+        function triggerClickEffect() {
+            clickEffect.classList.remove('active');
+            // Небольшая задержка для перезапуска анимации
+            void clickEffect.offsetWidth;
+            clickEffect.classList.add('active');
+        }
+
+        // --- Обработчик клика по луне ---
+        function handleClick(e) {
+            clicks++;
+            updateCounter();
+            triggerClickEffect();
+
+            // Лёгкая вибрация луны
+            moonWrapper.style.transform = 'scale(0.92)';
+            setTimeout(() => {
+                moonWrapper.style.transform = 'scale(1)';
+            }, 100);
+
+            // Маленькие звёздочки при клике (дополнительный эффект)
+            for (let i = 0; i < 5; i++) {
+                createSparkle(e);
+            }
+        }
+
+        // --- Создание искорок при клике ---
+        function createSparkle(e) {
+            const sparkle = document.createElement('div');
+            const rect = moonWrapper.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            sparkle.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${y}px;
+                width: 6px;
+                height: 6px;
+                background: radial-gradient(circle, #fff, #ffd700);
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 10;
+                animation: sparkleFly 0.6s ease-out forwards;
+            `;
+            moonWrapper.appendChild(sparkle);
+
+            setTimeout(() => {
+                sparkle.remove();
+            }, 700);
+        }
+
+        // Добавляем анимацию искорок в CSS
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            @keyframes sparkleFly {
+                0% {
+                    opacity: 1;
+                    transform: translate(0, 0) scale(1);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translate(${Math.random() * 60 - 30}px, ${Math.random() * -60 - 20}px) scale(0);
+                }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+        // --- Клик по луне ---
+        moonWrapper.addEventListener('click', handleClick);
+
+        // --- Клик по луне с клавиатуры (Enter / Space) ---
+        moonWrapper.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleClick(e);
+            }
+        });
+        moonWrapper.setAttribute('tabindex', '0');
+        moonWrapper.setAttribute('role', 'button');
+        moonWrapper.setAttribute('aria-label', 'Кликни по луне');
+
+        // --- Сброс ---
+        resetBtn.addEventListener('click', () => {
+            clicks = 0;
+            updateCounter();
+            // Анимация сброса
+            counterElement.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                counterElement.style.transform = 'scale(1)';
+            }, 150);
+        });
+
+        // --- Горячая клавиша R для сброса ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') {
+                if (!e.ctrlKey && !e.metaKey) {
+                    resetBtn.click();
+                }
+            }
+        });
+
+        // --- Инициализация ---
+        updateCounter();
+    </script>
+</body>
+</html>
