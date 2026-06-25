@@ -300,6 +300,14 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
+            position: relative;
+            animation: moonOrbit 30s linear infinite;
+        }
+
+        .moon-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
             background-size: cover;
             background-position: center;
             box-shadow:
@@ -307,30 +315,40 @@
                 0 0 120px rgba(255, 215, 150, 0.2),
                 inset -35px -35px 90px rgba(0, 0, 0, 0.4),
                 inset 35px 35px 90px rgba(255, 255, 255, 0.3);
-            position: relative;
-            animation: moonOrbit 30s linear infinite, pulseGlow 4s ease-in-out infinite alternate;
-            transition: box-shadow 0.5s ease;
+            transition: box-shadow 0.5s ease, transform 0.15s ease;
+            transform: scale(1);
+            will-change: transform;
         }
+
         /* Красный режим для луны */
-        .container.blood-mode .moon {
+        .container.blood-mode .moon-inner {
             box-shadow:
                 0 0 60px rgba(255, 0, 0, 0.6),
                 0 0 120px rgba(255, 0, 0, 0.3),
                 inset -35px -35px 90px rgba(0, 0, 0, 0.4),
                 inset 35px 35px 90px rgba(255, 0, 0, 0.2);
         }
+
         @keyframes moonOrbit {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+
+        /* Пульсация для обычной луны */
+        .moon-inner {
+            animation: pulseGlow 4s ease-in-out infinite alternate;
+        }
+
         @keyframes pulseGlow {
             0% { box-shadow: 0 0 40px rgba(255,215,150,0.3), 0 0 80px rgba(255,215,150,0.1), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,255,255,0.3); }
             100% { box-shadow: 0 0 100px rgba(255,215,150,0.6), 0 0 200px rgba(255,215,150,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,255,255,0.4); }
         }
+
         /* Красная пульсация */
-        .container.blood-mode .moon {
-            animation: moonOrbit 30s linear infinite, pulseGlowRed 4s ease-in-out infinite alternate;
+        .container.blood-mode .moon-inner {
+            animation: pulseGlowRed 4s ease-in-out infinite alternate;
         }
+
         @keyframes pulseGlowRed {
             0% { box-shadow: 0 0 40px rgba(255,0,0,0.4), 0 0 80px rgba(255,0,0,0.2), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,0,0,0.2); }
             100% { box-shadow: 0 0 100px rgba(255,0,0,0.8), 0 0 200px rgba(255,0,0,0.4), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,0,0,0.3); }
@@ -361,7 +379,7 @@
             background: radial-gradient(circle, rgba(255, 0, 0, 0.8), transparent 70%);
         }
 
-        /* ---------- СЧЁТЧИК ---------- */
+        /* ---------- СЧЁТЧИК И СТАТУС ---------- */
         .counter {
             margin: 12px 0 5px;
             color: #f0e6d0;
@@ -383,6 +401,31 @@
             text-shadow: 0 0 40px rgba(255, 0, 0, 0.3);
             border-color: rgba(255, 0, 0, 0.2);
             background: rgba(0, 0, 0, 0.5);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 5px 0 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1rem;
+        }
+        .stats span {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stats .level {
+            color: #f0e6d0;
+        }
+        .stats .hp {
+            color: #ff6b6b;
+        }
+        .container.blood-mode .stats .level {
+            color: #ff6b6b;
         }
 
         /* ---------- КНОПКА ВЫХОДА ---------- */
@@ -588,6 +631,15 @@
             transform: scale(1.05);
         }
 
+        /* ---------- АНИМАЦИЯ ПЕРЕХОДА УРОВНЯ ---------- */
+        @keyframes levelUp {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            100% { transform: scale(1) rotate(360deg); opacity: 1; }
+        }
+        .moon-inner.level-up {
+            animation: levelUp 0.8s ease-out forwards;
+        }
+
         /* ---------- АДАПТИВ ---------- */
         @media (max-width: 700px) {
             .container { padding: 30px; max-width: 100%; }
@@ -597,6 +649,7 @@
             .settings-icon { font-size: 1.6rem; top: 15px; right: 18px; }
             .planet-1 { width: 40px; height: 40px; }
             .planet-2 { width: 30px; height: 30px; }
+            .stats { font-size: 0.85rem; gap: 15px; }
         }
         @media (max-width: 450px) {
             .moon-wrapper { width: 200px; height: 200px; }
@@ -604,6 +657,7 @@
             .subtitle { font-size: 1.6rem; }
             .container { padding: 20px; }
             .modal { padding: 20px 25px; }
+            .stats { font-size: 0.75rem; gap: 10px; flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -656,11 +710,17 @@
         <!-- ИГРОВАЯ ЗОНА -->
         <div id="gameArea" class="game-area">
             <div class="moon-wrapper" id="moonWrapper">
-                <div class="moon" id="moon"></div>
+                <div class="moon" id="moon">
+                    <div class="moon-inner" id="moonInner"></div>
+                </div>
                 <div class="click-effect" id="clickEffect"></div>
             </div>
             <div>
                 <div class="counter" id="counter">0</div>
+                <div class="stats">
+                    <span class="level" id="levelDisplay">Уровень 1</span>
+                    <span class="hp" id="hpDisplay">❤️ 100%</span>
+                </div>
             </div>
             <button class="logout-btn" id="logoutBtn">🚀 Выйти</button>
         </div>
@@ -726,6 +786,9 @@
         let playerData = null;
         let clickCount = 0;
         let totalSecondsPlayed = 0;
+        let currentLevel = 1;
+        let moonHP = 100;
+        const MAX_HP = 100;
         let sessionStartTimestamp = null;
         let timeUpdateInterval = null;
         let autoSaveInterval = null;
@@ -749,8 +812,10 @@
         const accountNickname = document.getElementById('accountNickname');
         const accountEmail = document.getElementById('accountEmail');
         const moonWrapper = document.getElementById('moonWrapper');
-        const moonElement = document.getElementById('moon');
+        const moonInner = document.getElementById('moonInner');
         const clickEffect = document.getElementById('clickEffect');
+        const levelDisplay = document.getElementById('levelDisplay');
+        const hpDisplay = document.getElementById('hpDisplay');
         const logoutBtn = document.getElementById('logoutBtn');
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsModal = document.getElementById('settingsModal');
@@ -768,13 +833,10 @@
         // ============================================================
         function formatTime(seconds) {
             if (seconds < 60) return `${seconds} сек`;
-            
             const minutes = Math.floor(seconds / 60);
             if (minutes < 60) return `${minutes} мин`;
-            
             const hours = Math.floor(minutes / 60);
             if (hours < 24) return `${hours} ч`;
-            
             const days = Math.floor(hours / 24);
             return `${days} дн`;
         }
@@ -934,6 +996,8 @@
                     session_count: 1,
                     total_seconds_played: 0,
                     current_session_start: new Date().toISOString(),
+                    level: 1,
+                    moon_hp: 100,
                     ...staticData,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
@@ -964,20 +1028,20 @@
             return data;
         }
 
-        async function updateClicksAndTime(playerId, newTotal, clickTimestamp, x, y) {
+        async function updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
             const updateData = {
                 total_clicks: newTotal,
                 last_click_at: clickTimestamp,
                 total_seconds_played: totalSecondsPlayed,
+                level: newLevel,
+                moon_hp: newMoonHP,
                 updated_at: new Date().toISOString()
             };
-            const { error: updateError } = await supabaseClient
+            const { error } = await supabaseClient
                 .from('players')
                 .update(updateData)
                 .eq('id', playerId);
-            if (updateError) console.error('Ошибка обновления players:', updateError);
-
-            // Не отправляем клики в таблицу clicks - используем только players
+            if (error) console.error('Ошибка обновления прогресса:', error);
         }
 
         async function saveTimeOnly() {
@@ -1003,6 +1067,8 @@
                 .update({
                     total_clicks: 0,
                     total_seconds_played: 0,
+                    level: 1,
+                    moon_hp: 100,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', currentUser.id);
@@ -1016,10 +1082,15 @@
             // Обнулить локальные переменные
             clickCount = 0;
             totalSecondsPlayed = 0;
+            currentLevel = 1;
+            moonHP = 100;
             counterEl.textContent = '0';
             totalTimeDisplay.textContent = '0 ч';
             playerData.total_clicks = 0;
             playerData.total_seconds_played = 0;
+            playerData.level = 1;
+            playerData.moon_hp = 100;
+            updateUI();
 
             alert('✅ Прогресс успешно сброшен!');
             settingsModal.classList.remove('active');
@@ -1130,6 +1201,8 @@
                 if (playerData) {
                     clickCount = playerData.total_clicks || 0;
                     totalSecondsPlayed = playerData.total_seconds_played || 0;
+                    currentLevel = playerData.level || 1;
+                    moonHP = playerData.moon_hp || 100;
                     authMessage.textContent = '✅ Вход успешен!';
                     authMessage.className = 'error';
                     setTimeout(initGame, 1500);
@@ -1137,6 +1210,8 @@
                     playerData = await createOrUpdatePlayer(currentUser.id, currentUser.email);
                     clickCount = 0;
                     totalSecondsPlayed = 0;
+                    currentLevel = 1;
+                    moonHP = 100;
                     authMessage.textContent = '✅ Вход успешен!';
                     authMessage.className = 'error';
                     setTimeout(initGame, 1500);
@@ -1159,7 +1234,7 @@
             authBlock.classList.add('hidden');
             gameArea.classList.add('active');
             counterEl.textContent = clickCount;
-            updateTimeDisplay();
+            updateUI();
 
             sessionStartTimestamp = Date.now();
             if (timeUpdateInterval) clearInterval(timeUpdateInterval);
@@ -1178,28 +1253,60 @@
             setMoonMode(savedMode);
         }
 
+        function updateUI() {
+            counterEl.textContent = clickCount;
+            levelDisplay.textContent = `Уровень ${currentLevel}`;
+            const hpPercent = Math.round((moonHP / MAX_HP) * 100);
+            hpDisplay.textContent = `❤️ ${hpPercent}%`;
+            // Масштаб луны
+            const scale = Math.max(0, moonHP / MAX_HP);
+            moonInner.style.transform = `scale(${scale})`;
+            updateTimeDisplay();
+        }
+
         function updateTimeDisplay() {
             totalTimeDisplay.textContent = formatTime(totalSecondsPlayed);
         }
 
         // ============================================================
-        //  ЛУНА КЛИКЕР
+        //  ЛУНА КЛИКЕР (с уменьшением и уровнями)
         // ============================================================
         moonWrapper.addEventListener('click', async (e) => {
-            clickCount++;
-            counterEl.textContent = clickCount;
+            if (!currentUser) return;
 
-            const clickEffect = document.getElementById('clickEffect');
-            clickEffect.classList.remove('active');
-            void clickEffect.offsetWidth;
-            clickEffect.classList.add('active');
+            clickCount++;
+            // Уменьшаем здоровье луны
+            moonHP = Math.max(0, moonHP - 1);
+            // Если луна разрушена
+            if (moonHP === 0) {
+                // Переход на новый уровень
+                currentLevel++;
+                moonHP = MAX_HP; // восстанавливаем
+                // Анимация появления новой луны
+                moonInner.classList.remove('level-up');
+                void moonInner.offsetWidth; // триггер перезапуска анимации
+                moonInner.classList.add('level-up');
+                // Можно показать сообщение о новом уровне
+                // alert(`🎉 Уровень ${currentLevel}!`);
+                // Для красоты покажем в консоли или всплывашку
+                // Пока просто обновим UI
+            }
+
+            counterEl.textContent = clickCount;
+            updateUI();
+
+            // Эффект клика
+            const clickEffectEl = document.getElementById('clickEffect');
+            clickEffectEl.classList.remove('active');
+            void clickEffectEl.offsetWidth;
+            clickEffectEl.classList.add('active');
 
             const rect = moonWrapper.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
             const now = new Date().toISOString();
-            await updateClicksAndTime(currentUser.id, clickCount, now, x, y);
+            await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
         });
 
         // ============================================================
@@ -1214,6 +1321,8 @@
             playerData = null;
             clickCount = 0;
             totalSecondsPlayed = 0;
+            currentLevel = 1;
+            moonHP = 100;
             authBlock.classList.remove('hidden');
             gameArea.classList.remove('active');
             setMode('login');
@@ -1248,10 +1357,10 @@
             const container = document.getElementById('app');
             if (mode === 'blood') {
                 container.classList.add('blood-mode');
-                moonElement.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #ff4444, #cc0000)';
+                moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #ff4444, #cc0000)';
             } else {
                 container.classList.remove('blood-mode');
-                moonElement.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
+                moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
             }
             localStorage.setItem('moonMode', mode);
 
@@ -1281,6 +1390,8 @@
                 if (playerData) {
                     clickCount = playerData.total_clicks || 0;
                     totalSecondsPlayed = playerData.total_seconds_played || 0;
+                    currentLevel = playerData.level || 1;
+                    moonHP = playerData.moon_hp || 100;
                 }
                 initGame();
             }
