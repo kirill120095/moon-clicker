@@ -266,7 +266,7 @@
             display: block;
         }
 
-        /* ---------- ЛУНА ---------- */
+        /* ---------- ЛУНА (без кратеров) ---------- */
         .moon-wrapper {
             display: inline-block;
             cursor: pointer;
@@ -287,7 +287,10 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
+            /* Фон по умолчанию – радиальный градиент */
             background: radial-gradient(circle at 35% 30%, #f5f0e8, #c8bda8 60%, #8a7e6b);
+            background-size: cover;
+            background-position: center;
             box-shadow:
                 0 0 50px rgba(255, 215, 150, 0.4),
                 0 0 100px rgba(255, 215, 150, 0.2),
@@ -306,47 +309,7 @@
             100% { box-shadow: 0 0 80px rgba(255,215,150,0.6), 0 0 160px rgba(255,215,150,0.3), inset -30px -30px 80px rgba(0,0,0,0.5), inset 30px 30px 80px rgba(255,255,255,0.4); }
         }
 
-        /* Кратеры через ::before и ::after с box-shadow */
-        .moon::before {
-            content: '';
-            position: absolute;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 40% 40%, rgba(160, 140, 120, 0.5), rgba(100, 85, 75, 0.7));
-            top: 20%;
-            left: 18%;
-            box-shadow:
-                80px 60px 0 -10px rgba(120, 100, 85, 0.4),
-                -40px 90px 0 -15px rgba(140, 120, 105, 0.3),
-                100px -40px 0 -20px rgba(130, 110, 95, 0.35),
-                -80px -30px 0 -8px rgba(110, 90, 80, 0.3),
-                40px -80px 0 -12px rgba(120, 100, 90, 0.25),
-                -100px 20px 0 -6px rgba(140, 120, 105, 0.3),
-                120px 10px 0 -25px rgba(130, 110, 95, 0.2),
-                -60px -70px 0 -18px rgba(110, 90, 80, 0.3),
-                20px 120px 0 -10px rgba(140, 120, 105, 0.25),
-                -20px -100px 0 -14px rgba(120, 100, 90, 0.3),
-                140px -60px 0 -30px rgba(130, 110, 95, 0.15),
-                -140px 40px 0 -22px rgba(110, 90, 80, 0.2);
-        }
-        .moon::after {
-            content: '';
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 50% 50%, rgba(180, 160, 140, 0.3), rgba(100, 85, 75, 0.6));
-            top: 60%;
-            left: 70%;
-            box-shadow:
-                -80px -40px 0 -8px rgba(140, 120, 105, 0.3),
-                -120px 50px 0 -12px rgba(130, 110, 95, 0.2),
-                50px -100px 0 -6px rgba(120, 100, 90, 0.25),
-                100px 80px 0 -20px rgba(140, 120, 105, 0.15),
-                -50px 120px 0 -10px rgba(110, 90, 80, 0.2);
-        }
-
+        /* Эффект клика (вспышка) */
         .click-effect {
             position: absolute;
             top: 50%;
@@ -464,36 +427,68 @@
             margin-bottom: 20px;
             text-align: center;
         }
-        .modal button {
+        .modal .section-title {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            text-align: left;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        .modal .bg-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .modal .bg-options button {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #f0e6d0;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .modal .bg-options button:hover {
+            background: rgba(255,215,150,0.15);
+            border-color: rgba(255,215,150,0.3);
+        }
+        .modal .bg-options button.active {
+            background: rgba(255,215,150,0.25);
+            border-color: rgba(255,215,150,0.5);
+        }
+        .modal .btn-danger {
             display: block;
             width: 100%;
             padding: 12px;
-            margin: 8px 0;
+            margin: 15px 0 8px;
             border-radius: 30px;
             border: none;
-            background: rgba(255, 215, 150, 0.1);
-            color: #f0e6d0;
+            background: rgba(255, 80, 80, 0.15);
+            color: #ff6b6b;
             font-size: 1rem;
             cursor: pointer;
             transition: 0.3s;
-            border: 1px solid rgba(255, 215, 150, 0.1);
+            border: 1px solid rgba(255, 80, 80, 0.2);
         }
-        .modal button:hover {
-            background: rgba(255, 215, 150, 0.2);
+        .modal .btn-danger:hover {
+            background: rgba(255, 80, 80, 0.25);
             transform: scale(1.02);
         }
-        .modal .danger {
-            background: rgba(255, 80, 80, 0.15);
-            border-color: rgba(255, 80, 80, 0.2);
-            color: #ff6b6b;
-        }
-        .modal .danger:hover {
-            background: rgba(255, 80, 80, 0.25);
-        }
         .modal .close-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 30px;
+            border: none;
             background: rgba(255,255,255,0.05);
-            border-color: rgba(255,255,255,0.05);
             color: rgba(255,255,255,0.4);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            border: 1px solid rgba(255,255,255,0.05);
         }
         .modal .close-btn:hover {
             background: rgba(255,255,255,0.1);
@@ -589,8 +584,19 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <h2>⚙️ Настройки</h2>
-            <div class="confirm-text">Сбросить весь прогресс (клики и время)?</div>
-            <button class="danger" id="resetProgressBtn">🗑️ Сбросить прогресс</button>
+
+            <div class="section-title">🎨 Фон луны</div>
+            <div class="bg-options" id="bgOptions">
+                <button data-bg="default" class="active">🌑 По умолчанию</button>
+                <!-- Список фонов из папки images – добавьте свои файлы сюда -->
+                <button data-bg="moon1.jpg">🌕 Фон 1</button>
+                <button data-bg="moon2.png">🌕 Фон 2</button>
+                <button data-bg="moon3.jpg">🌕 Фон 3</button>
+            </div>
+
+            <div class="section-title" style="margin-top:20px;">🗑️ Прогресс</div>
+            <button class="btn-danger" id="resetProgressBtn">Сбросить прогресс</button>
+
             <button class="close-btn" id="closeSettingsBtn">Закрыть</button>
         </div>
     </div>
@@ -617,7 +623,7 @@
         let clickCount = 0;
         let lastClickTime = null;
         let totalSecondsPlayed = 0;
-        let sessionStartTimestamp = null; // время начала сессии
+        let sessionStartTimestamp = null;
         let timeUpdateInterval = null;
 
         // DOM-элементы
@@ -638,12 +644,14 @@
         const nicknameDisplay = document.getElementById('nicknameDisplay');
         const timeDisplay = document.getElementById('timeDisplay');
         const moonWrapper = document.getElementById('moonWrapper');
+        const moonElement = document.getElementById('moon');
         const clickEffect = document.getElementById('clickEffect');
         const logoutBtn = document.getElementById('logoutBtn');
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsModal = document.getElementById('settingsModal');
         const closeSettingsBtn = document.getElementById('closeSettingsBtn');
         const resetProgressBtn = document.getElementById('resetProgressBtn');
+        const bgOptions = document.getElementById('bgOptions');
 
         let currentMode = 'login';
 
@@ -903,29 +911,24 @@
             const now = Date.now();
             const nowISO = new Date(now).toISOString();
 
-            // Сначала сохраняем текущее общее время (с учётом сессии)
             const currentTotal = getCurrentTotalSeconds();
             let secondsAdded = 0;
             if (lastClickTime) {
                 secondsAdded = (now - lastClickTime) / 1000;
             }
-            // Обновляем общее время
             totalSecondsPlayed = currentTotal + secondsAdded;
-            // Сбрасываем сессию, чтобы не учитывать время дважды
             sessionStartTimestamp = now;
 
             lastClickTime = now;
             clickCount++;
             updateUI();
 
-            // Эффект клика
             clickEffect.classList.remove('active');
             void clickEffect.offsetWidth;
             clickEffect.classList.add('active');
             moonWrapper.style.transform = 'scale(0.92)';
             setTimeout(() => { moonWrapper.style.transform = 'scale(1)'; }, 150);
 
-            // Сохраняем в БД
             await updateClicksAndTime(currentUser.id, clickCount, secondsAdded, nowISO, x, y);
         }
 
@@ -1021,7 +1024,6 @@
                 clickCount = playerData.total_clicks || 0;
                 totalSecondsPlayed = playerData.total_seconds_played || 0;
                 lastClickTime = playerData.last_click_at ? new Date(playerData.last_click_at).getTime() : null;
-                // Запоминаем время начала сессии
                 sessionStartTimestamp = Date.now();
                 updateUI();
 
@@ -1047,6 +1049,34 @@
         }
 
         // ============================================================
+        //  УПРАВЛЕНИЕ ФОНОМ ЛУНЫ (localStorage)
+        // ============================================================
+        function setMoonBackground(bgName) {
+            if (bgName === 'default') {
+                moonElement.style.background = 'radial-gradient(circle at 35% 30%, #f5f0e8, #c8bda8 60%, #8a7e6b)';
+                moonElement.style.backgroundSize = 'cover';
+                moonElement.style.backgroundPosition = 'center';
+            } else {
+                moonElement.style.background = `url('images/${bgName}') center/cover no-repeat`;
+            }
+            localStorage.setItem('moonBackground', bgName);
+            // Обновляем активную кнопку
+            document.querySelectorAll('#bgOptions button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.bg === bgName);
+            });
+        }
+
+        // Загружаем сохранённый фон
+        function loadMoonBackground() {
+            const saved = localStorage.getItem('moonBackground');
+            if (saved) {
+                setMoonBackground(saved);
+            } else {
+                setMoonBackground('default');
+            }
+        }
+
+        // ============================================================
         //  СБРОС ПРОГРЕССА
         // ============================================================
         async function resetProgress() {
@@ -1055,14 +1085,12 @@
             if (!confirmed) return;
 
             try {
-                // Удаляем все клики пользователя
                 const { error: deleteError } = await supabaseClient
                     .from('clicks')
                     .delete()
                     .eq('player_id', currentUser.id);
                 if (deleteError) throw deleteError;
 
-                // Обнуляем total_clicks и total_seconds_played в players
                 const { error: updateError } = await supabaseClient
                     .from('players')
                     .update({
@@ -1074,7 +1102,6 @@
                     .eq('id', currentUser.id);
                 if (updateError) throw updateError;
 
-                // Обновляем локальные данные
                 playerData.total_clicks = 0;
                 playerData.total_seconds_played = 0;
                 playerData.last_click_at = null;
@@ -1154,6 +1181,14 @@
             }
         });
 
+        // Выбор фона
+        bgOptions.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            const bg = btn.dataset.bg;
+            setMoonBackground(bg);
+        });
+
         resetProgressBtn.addEventListener('click', resetProgress);
 
         // ============================================================
@@ -1168,6 +1203,8 @@
                 gameArea.classList.remove('active');
                 setMode('login');
             }
+            // Загружаем сохранённый фон
+            loadMoonBackground();
         }
         init();
     </script>
