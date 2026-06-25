@@ -392,34 +392,68 @@
             background: rgba(0, 0, 0, 0.5);
         }
 
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin: 5px 0 10px;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.95rem;
+        /* ---------- УРОВЕНЬ (над HP баром) ---------- */
+        .level-title {
+            font-size: 1.3rem;
+            color: #f0e6d0;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+            text-shadow: 0 0 20px rgba(255, 215, 150, 0.1);
         }
-        .stats span {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 4px 16px;
-            border-radius: 20px;
+        .container.blood-mode .level-title {
+            color: #ff6b6b;
+        }
+
+        /* ---------- УПРАВЛЕНИЕ НА ГЛАВНОМ ЭКРАНЕ ---------- */
+        .game-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 12px 0 8px;
+        }
+        .btn-rollback {
+            padding: 6px 18px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 215, 150, 0.2);
+            background: rgba(255, 215, 150, 0.1);
+            color: #f0e6d0;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.3s;
             backdrop-filter: blur(5px);
+        }
+        .btn-rollback:hover {
+            background: rgba(255, 215, 150, 0.2);
+            transform: scale(1.05);
+        }
+        .btn-rollback:active {
+            transform: scale(0.95);
+        }
+        .lock-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            padding: 4px 12px;
+            border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.05);
         }
-        .stats .level {
-            color: #f0e6d0;
-        }
-        .stats .hp-text {
-            color: #ff6b6b;
-        }
-        .container.blood-mode .stats .level {
-            color: #ff6b6b;
+        .lock-label input[type="checkbox"] {
+            accent-color: #f0e6d0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
         }
 
         /* ---------- ПРОГРЕСС-БАРЫ ---------- */
         .bars {
-            margin: 10px auto 15px;
+            margin: 6px auto 10px;
             max-width: 90%;
         }
         .bar-container {
@@ -648,7 +682,7 @@
             cursor: pointer;
         }
 
-        /* ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ (без системных alert/confirm) ---------- */
+        /* ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ ---------- */
         .confirm-overlay {
             display: none;
             position: fixed;
@@ -773,8 +807,7 @@
             .settings-icon { font-size: 1.6rem; top: 15px; right: 18px; }
             .planet-1 { width: 40px; height: 40px; }
             .planet-2 { width: 30px; height: 30px; }
-            .stats { font-size: 0.85rem; gap: 15px; }
-            .bars { max-width: 100%; }
+            .game-controls { gap: 10px; }
             .bar-percent { min-width: 50px; }
         }
         @media (max-width: 450px) {
@@ -783,7 +816,6 @@
             .subtitle { font-size: 1.6rem; }
             .container { padding: 20px; }
             .modal { padding: 20px 25px; }
-            .stats { font-size: 0.75rem; gap: 10px; flex-wrap: wrap; }
             .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
         }
     </style>
@@ -844,10 +876,8 @@
             </div>
             <div>
                 <div class="counter" id="counter">0</div>
-                <div class="stats">
-                    <span class="level" id="levelDisplay">Уровень 1</span>
-                    <span class="hp-text" id="hpDisplay">❤️ 100/100</span>
-                </div>
+                <!-- Уровень над HP баром -->
+                <div class="level-title" id="levelTitle">Уровень 1</div>
             </div>
             <!-- Прогресс-бары -->
             <div class="bars">
@@ -866,6 +896,13 @@
                     <span class="bar-percent" id="timerPercent">30с</span>
                 </div>
             </div>
+            <!-- Управление на главном экране -->
+            <div class="game-controls">
+                <button class="btn-rollback" id="rollbackBtnMain">⬅️ Откатить уровень</button>
+                <label class="lock-label">
+                    <input type="checkbox" id="lockLevelMain" /> Зафиксировать уровень
+                </label>
+            </div>
             <button class="logout-btn" id="logoutBtn">🚀 Выйти</button>
         </div>
     </div>
@@ -883,16 +920,6 @@
                 <button data-bg="blood">🔴 Кровавая</button>
             </div>
 
-            <div class="section-title">🔄 Уровень</div>
-            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px;">
-                <button class="btn-secondary" id="rollbackLevelBtn">⬅️ Откатить уровень</button>
-            </div>
-            <div class="checkbox-row">
-                <label>
-                    <input type="checkbox" id="lockLevelCheckbox" /> Зафиксировать уровень
-                </label>
-            </div>
-
             <div class="account-info">
                 <p>👤 <strong id="accountNickname">Гость</strong></p>
                 <p>📧 <strong id="accountEmail">-</strong></p>
@@ -907,7 +934,7 @@
         </div>
     </div>
 
-    <!-- ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ (вместо alert/confirm) ---------- -->
+    <!-- ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ ---------- -->
     <div class="confirm-overlay" id="confirmOverlay">
         <div class="confirm-box">
             <p id="confirmMessage">Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.</p>
@@ -923,21 +950,17 @@
 
     <script>
         // ============================================================
-        //  НАСТРОЙКА SUPABASE (без alert)
+        //  НАСТРОЙКА SUPABASE
         // ============================================================
         const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 
-        // Если библиотека не загрузилась – показываем сообщение в authMessage (без alert)
         if (typeof window.supabase === 'undefined') {
             const msg = '⚠️ Не удалось загрузить библиотеку Supabase. Проверьте интернет.';
             const authMsgEl = document.getElementById('authMessage');
             if (authMsgEl) {
                 authMsgEl.textContent = msg;
                 authMsgEl.className = 'error';
-            } else {
-                // fallback
-                document.body.innerHTML += `<div style="color:red;text-align:center;padding:20px;">${msg}</div>`;
             }
             throw new Error('Supabase library not loaded');
         }
@@ -968,13 +991,11 @@
         let timeUpdateInterval = null;
         let autoSaveInterval = null;
 
-        // Для босса
         let bossTimer = BOSS_TIMER;
         let bossTimerInterval = null;
         let isBossActive = false;
         let bossTimerRunning = false;
 
-        // Фиксация уровня
         let levelLocked = false;
 
         // DOM-элементы
@@ -998,8 +1019,7 @@
         const moonWrapper = document.getElementById('moonWrapper');
         const moonInner = document.getElementById('moonInner');
         const clickEffect = document.getElementById('clickEffect');
-        const levelDisplay = document.getElementById('levelDisplay');
-        const hpDisplay = document.getElementById('hpDisplay');
+        const levelTitle = document.getElementById('levelTitle');
         const hpBar = document.getElementById('hpBar');
         const hpPercent = document.getElementById('hpPercent');
         const timerBarContainer = document.getElementById('timerBarContainer');
@@ -1014,16 +1034,16 @@
         const confirmOverlay = document.getElementById('confirmOverlay');
         const confirmYes = document.getElementById('confirmYes');
         const confirmNo = document.getElementById('confirmNo');
-        const rollbackLevelBtn = document.getElementById('rollbackLevelBtn');
-        const lockLevelCheckbox = document.getElementById('lockLevelCheckbox');
+        const rollbackBtnMain = document.getElementById('rollbackBtnMain');
+        const lockLevelMain = document.getElementById('lockLevelMain');
         const toastContainer = document.getElementById('toastContainer');
 
         let currentMode = 'login';
 
         // ============================================================
-        //  TOAST (уведомления) – вместо alert
+        //  TOAST – duration уменьшен до 2000 мс (в 2 раза быстрее)
         // ============================================================
-        function showToast(message, type = 'info', duration = 4000) {
+        function showToast(message, type = 'info', duration = 2000) {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
@@ -1284,9 +1304,6 @@
             if (error) console.error('Ошибка сохранения времени:', error);
         }
 
-        // ============================================================
-        //  СБРОС ПРОГРЕССА (без alert)
-        // ============================================================
         async function resetProgress() {
             if (!currentUser || !playerData) {
                 showToast('⚠️ Данные игрока не загружены', 'warning');
@@ -1310,7 +1327,6 @@
                 return;
             }
 
-            // Сброс локальных переменных
             clickCount = 0;
             totalSecondsPlayed = 0;
             currentLevel = 1;
@@ -1328,7 +1344,8 @@
             isBossActive = false;
             bossTimerRunning = false;
             levelLocked = false;
-            lockLevelCheckbox.checked = false;
+            lockLevelMain.checked = false;
+            // также синхронизируем чекбокс в настройках, но он один, мы его не дублируем – используется общий localStorage
             updateUI();
 
             showToast('✅ Прогресс успешно сброшен!', 'success');
@@ -1513,15 +1530,14 @@
         }
 
         // ============================================================
-        //  ОСНОВНАЯ ЛОГИКА ИГРЫ
+        //  ОСНОВНАЯ ЛОГИКА ИГРЫ (обновлён UI)
         // ============================================================
         function updateUI() {
             counterEl.textContent = clickCount;
-            levelDisplay.textContent = `Уровень ${currentLevel}`;
+            levelTitle.textContent = `Уровень ${currentLevel}`;
 
             const currentHP = Math.round(moonHP);
             const maxHPDisplay = Math.round(maxHP);
-            hpDisplay.textContent = `❤️ ${currentHP}/${maxHPDisplay}`;
             hpPercent.textContent = `${currentHP}/${maxHPDisplay}`;
 
             const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
@@ -1548,17 +1564,15 @@
         }
 
         // ============================================================
-        //  ОТКАТ УРОВНЯ (без alert)
+        //  ОТКАТ УРОВНЯ (используется и на главном, и в настройках)
         // ============================================================
         async function rollbackLevel() {
             if (currentLevel <= 1) {
                 showToast('⚠️ Вы уже на первом уровне', 'warning');
                 return;
             }
-            // Используем кастомное окно подтверждения (без системного confirm)
             confirmOverlay.classList.add('active');
             confirmMessage.textContent = `Вы уверены, что хотите откатиться на уровень ${currentLevel - 1}?`;
-            // Временно переопределяем обработчики
             const yesHandler = async () => {
                 confirmOverlay.classList.remove('active');
                 const newLevel = currentLevel - 1;
@@ -1572,7 +1586,6 @@
                 const now = new Date().toISOString();
                 await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
                 showToast(`↩️ Откат на уровень ${currentLevel} выполнен`, 'info');
-                // Восстанавливаем обработчики
                 confirmYes.onclick = defaultYesHandler;
                 confirmNo.onclick = defaultNoHandler;
             };
@@ -1619,7 +1632,7 @@
 
             const savedLock = localStorage.getItem('levelLocked') === 'true';
             levelLocked = savedLock;
-            lockLevelCheckbox.checked = savedLock;
+            lockLevelMain.checked = savedLock;
         }
 
         // ============================================================
@@ -1727,10 +1740,12 @@
             const defaultResetNo = confirmNo.onclick;
         });
 
-        rollbackLevelBtn.addEventListener('click', rollbackLevel);
+        // Кнопка отката на главном экране
+        rollbackBtnMain.addEventListener('click', rollbackLevel);
 
-        lockLevelCheckbox.addEventListener('change', () => {
-            levelLocked = lockLevelCheckbox.checked;
+        // Чекбокс фиксации на главном экране
+        lockLevelMain.addEventListener('change', () => {
+            levelLocked = lockLevelMain.checked;
             localStorage.setItem('levelLocked', levelLocked);
             if (levelLocked) {
                 showToast('🔒 Уровень зафиксирован. При достижении 0 HP он будет восстанавливаться.', 'info');
