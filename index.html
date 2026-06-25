@@ -62,8 +62,7 @@
         .planet {
             position: absolute;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #ffb07c, #d98c5f);
-            box-shadow: 0 0 40px rgba(255, 180, 100, 0.3);
+            box-shadow: 0 0 40px rgba(255, 180, 100, 0.2);
             animation: orbit linear infinite;
             pointer-events: none;
         }
@@ -258,18 +257,20 @@
             display: block;
         }
 
-        /* ---------- ЛУНА ---------- */
+        /* ---------- ЛУНА (с вращением и множеством кратеров) ---------- */
         .moon-wrapper {
             display: inline-block;
             cursor: pointer;
-            transition: transform 0.2s ease;
             position: relative;
             margin: 15px 0;
             width: 260px;
             height: 260px;
+            animation: moonOrbit 30s linear infinite;
+            transition: transform 0.2s ease;
         }
         .moon-wrapper:hover {
             transform: scale(1.08);
+            animation-play-state: paused;
         }
         .moon-wrapper:active {
             transform: scale(0.92);
@@ -286,17 +287,20 @@
                 inset -30px -30px 80px rgba(0, 0, 0, 0.4),
                 inset 30px 30px 80px rgba(255, 255, 255, 0.3);
             position: relative;
-            transition: box-shadow 0.3s;
-        }
-        .moon-wrapper:hover .moon {
-            box-shadow:
-                0 0 70px rgba(255, 215, 150, 0.6),
-                0 0 140px rgba(255, 215, 150, 0.3),
-                inset -30px -30px 80px rgba(0, 0, 0, 0.4),
-                inset 30px 30px 80px rgba(255, 255, 255, 0.3);
+            animation: pulseGlow 4s ease-in-out infinite alternate;
         }
 
-        /* Кратеры */
+        @keyframes moonOrbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 40px rgba(255,215,150,0.3), 0 0 80px rgba(255,215,150,0.1), inset -30px -30px 80px rgba(0,0,0,0.4), inset 30px 30px 80px rgba(255,255,255,0.3); }
+            100% { box-shadow: 0 0 80px rgba(255,215,150,0.6), 0 0 160px rgba(255,215,150,0.3), inset -30px -30px 80px rgba(0,0,0,0.5), inset 30px 30px 80px rgba(255,255,255,0.4); }
+        }
+
+        /* Множество кратеров через ::before и ::after + box-shadow */
         .moon::before {
             content: '';
             position: absolute;
@@ -309,7 +313,16 @@
             box-shadow:
                 80px 60px 0 -10px rgba(120, 100, 85, 0.4),
                 -40px 90px 0 -15px rgba(140, 120, 105, 0.3),
-                100px -40px 0 -20px rgba(130, 110, 95, 0.35);
+                100px -40px 0 -20px rgba(130, 110, 95, 0.35),
+                -80px -30px 0 -8px rgba(110, 90, 80, 0.3),
+                40px -80px 0 -12px rgba(120, 100, 90, 0.25),
+                -100px 20px 0 -6px rgba(140, 120, 105, 0.3),
+                120px 10px 0 -25px rgba(130, 110, 95, 0.2),
+                -60px -70px 0 -18px rgba(110, 90, 80, 0.3),
+                20px 120px 0 -10px rgba(140, 120, 105, 0.25),
+                -20px -100px 0 -14px rgba(120, 100, 90, 0.3),
+                140px -60px 0 -30px rgba(130, 110, 95, 0.15),
+                -140px 40px 0 -22px rgba(110, 90, 80, 0.2);
         }
         .moon::after {
             content: '';
@@ -320,9 +333,15 @@
             background: radial-gradient(circle at 50% 50%, rgba(180, 160, 140, 0.3), rgba(100, 85, 75, 0.6));
             top: 60%;
             left: 70%;
-            box-shadow: -60px -30px 0 -8px rgba(140, 120, 105, 0.3);
+            box-shadow:
+                -80px -40px 0 -8px rgba(140, 120, 105, 0.3),
+                -120px 50px 0 -12px rgba(130, 110, 95, 0.2),
+                50px -100px 0 -6px rgba(120, 100, 90, 0.25),
+                100px 80px 0 -20px rgba(140, 120, 105, 0.15),
+                -50px 120px 0 -10px rgba(110, 90, 80, 0.2);
         }
 
+        /* Эффект клика (вспышка) */
         .click-effect {
             position: absolute;
             top: 50%;
@@ -340,14 +359,8 @@
             animation: flash 0.4s ease-out forwards;
         }
         @keyframes flash {
-            0% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(0.8);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(1.6);
-            }
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
         }
 
         /* ---------- СЧЁТЧИК ---------- */
@@ -482,9 +495,9 @@
                 <div class="counter" id="counter">0</div>
                 <div class="counter-label">кликов</div>
             </div>
-            <div class="player-info" id="playerInfo">
+            <div class="player-info">
                 <span class="nickname" id="nicknameDisplay">Загружаем...</span>
-                <span class="time" id="timeDisplay">⏱ 0 мин</span>
+                <span class="time" id="timeDisplay">⏱ 0 сек</span>
             </div>
             <button class="logout-btn" id="logoutBtn">🚀 Выйти</button>
         </div>
@@ -512,6 +525,7 @@
         let clickCount = 0;
         let lastClickTime = null;
         let totalSecondsPlayed = 0;
+        let timeUpdateInterval = null;
 
         // DOM-элементы
         const authBlock = document.getElementById('authBlock');
@@ -679,7 +693,6 @@
                     .update({
                         email: email || existing.email,
                         username: username || existing.username,
-                        // гео-поля не обновляем
                         session_count: (existing.session_count || 0) + 1,
                         current_session_start: new Date().toISOString(),
                         updated_at: new Date().toISOString()
@@ -755,6 +768,21 @@
         }
 
         // ============================================================
+        //  ФУНКЦИИ ОБНОВЛЕНИЯ ВРЕМЕНИ (каждую секунду)
+        // ============================================================
+        function updateTimeDisplay() {
+            if (!playerData) return;
+            const totalSec = Math.floor(playerData.total_seconds_played || 0);
+            const mins = Math.floor(totalSec / 60);
+            const secs = totalSec % 60;
+            let timeStr = '';
+            if (mins > 0) timeStr += mins + ' мин ';
+            if (secs > 0 || mins === 0) timeStr += secs + ' сек';
+            if (timeStr === '') timeStr = '0 сек';
+            timeDisplay.textContent = '⏱ ' + timeStr;
+        }
+
+        // ============================================================
         //  ОСНОВНАЯ ЛОГИКА ИГРЫ
         // ============================================================
         function updateUI() {
@@ -765,16 +793,7 @@
             if (playerData && currentUser) {
                 const displayName = playerData.username || currentUser.email || 'anon';
                 nicknameDisplay.textContent = displayName;
-
-                // Время в минутах и секундах
-                const totalSec = Math.floor(playerData.total_seconds_played || 0);
-                const mins = Math.floor(totalSec / 60);
-                const secs = totalSec % 60;
-                let timeStr = '';
-                if (mins > 0) timeStr += mins + ' мин ';
-                if (secs > 0 || mins === 0) timeStr += secs + ' сек';
-                if (timeStr === '') timeStr = '0 сек';
-                timeDisplay.textContent = '⏱ ' + timeStr;
+                updateTimeDisplay();
             }
         }
 
@@ -872,6 +891,10 @@
         }
 
         async function signOut() {
+            if (timeUpdateInterval) {
+                clearInterval(timeUpdateInterval);
+                timeUpdateInterval = null;
+            }
             await supabaseClient.auth.signOut();
             window.location.reload();
         }
@@ -892,6 +915,11 @@
                 totalSecondsPlayed = playerData.total_seconds_played || 0;
                 lastClickTime = playerData.last_click_at ? new Date(playerData.last_click_at) : null;
                 updateUI();
+
+                // Запускаем таймер обновления времени
+                if (timeUpdateInterval) clearInterval(timeUpdateInterval);
+                timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
+                updateTimeDisplay();
             } else {
                 const loaded = await loadPlayerData(user.id);
                 if (loaded) {
@@ -900,6 +928,9 @@
                     totalSecondsPlayed = loaded.total_seconds_played || 0;
                     lastClickTime = loaded.last_click_at ? new Date(loaded.last_click_at) : null;
                     updateUI();
+                    if (timeUpdateInterval) clearInterval(timeUpdateInterval);
+                    timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
+                    updateTimeDisplay();
                 } else {
                     authMessage.textContent = '⚠️ Ошибка загрузки профиля.';
                 }
