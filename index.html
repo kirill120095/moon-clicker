@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2">
     </script>
     <style>
-        /* ---------- ГЛОБАЛЬНЫЙ ФОН (галактика) ---------- */
+        /* ---------- ГЛОБАЛЬНЫЙ ФОН ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -26,7 +26,7 @@
             position: relative;
         }
 
-        /* ---------- АНИМИРОВАННЫЙ ФОН ---------- */
+        /* ---------- ГАЛАКТИКА ---------- */
         .galaxy {
             position: fixed;
             top: 0;
@@ -37,8 +37,6 @@
             background: radial-gradient(ellipse at 20% 50%, #0d1b2a, #1b1f3a 60%, #0b0e1a);
             overflow: hidden;
         }
-
-        /* Звёзды */
         .stars {
             position: absolute;
             top: 0;
@@ -57,8 +55,6 @@
             0% { opacity: 0.2; transform: scale(0.8); }
             100% { opacity: 1; transform: scale(1.2); }
         }
-
-        /* Планеты */
         .planet {
             position: absolute;
             border-radius: 50%;
@@ -77,20 +73,16 @@
             left: 20%;
         }
         .planet-1 {
-            width: 60px;
-            height: 60px;
-            top: 15%;
-            left: 85%;
+            width: 60px; height: 60px;
+            top: 15%; left: 85%;
             background: radial-gradient(circle at 30% 30%, #ffb07c, #d98c5f);
             animation-duration: 25s;
             animation-name: orbit1;
             box-shadow: 0 0 60px rgba(255, 150, 80, 0.2);
         }
         .planet-2 {
-            width: 40px;
-            height: 40px;
-            top: 75%;
-            left: 10%;
+            width: 40px; height: 40px;
+            top: 75%; left: 10%;
             background: radial-gradient(circle at 30% 30%, #8fc7ff, #4a7db5);
             animation-duration: 35s;
             animation-name: orbit2;
@@ -104,8 +96,6 @@
             0% { transform: rotate(0deg) translateX(-180px) rotate(0deg); }
             100% { transform: rotate(360deg) translateX(-180px) rotate(-360deg); }
         }
-
-        /* Адаптация для мобильных */
         @media (max-width: 600px) {
             .planet-1 { width: 40px; height: 40px; }
             .planet-2 { width: 30px; height: 30px; }
@@ -119,7 +109,7 @@
             }
         }
 
-        /* ---------- КОНТЕЙНЕР ИГРЫ ---------- */
+        /* ---------- КОНТЕЙНЕР ---------- */
         .container {
             position: relative;
             z-index: 1;
@@ -142,6 +132,25 @@
             letter-spacing: 6px;
             text-shadow: 0 0 30px rgba(255, 215, 150, 0.15);
             margin-bottom: 20px;
+        }
+
+        /* ---------- ШЕСТЕРЁНКА ---------- */
+        .settings-icon {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.6rem;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.3);
+            transition: 0.3s;
+            z-index: 10;
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+        .settings-icon:hover {
+            color: rgba(255, 255, 255, 0.7);
+            transform: rotate(60deg);
         }
 
         /* ---------- ФОРМА АВТОРИЗАЦИИ ---------- */
@@ -257,7 +266,7 @@
             display: block;
         }
 
-        /* ---------- ЛУНА (с вращением и множеством кратеров) ---------- */
+        /* ---------- ЛУНА ---------- */
         .moon-wrapper {
             display: inline-block;
             cursor: pointer;
@@ -265,12 +274,10 @@
             margin: 15px 0;
             width: 260px;
             height: 260px;
-            animation: moonOrbit 30s linear infinite;
             transition: transform 0.2s ease;
         }
         .moon-wrapper:hover {
             transform: scale(1.08);
-            animation-play-state: paused;
         }
         .moon-wrapper:active {
             transform: scale(0.92);
@@ -287,20 +294,19 @@
                 inset -30px -30px 80px rgba(0, 0, 0, 0.4),
                 inset 30px 30px 80px rgba(255, 255, 255, 0.3);
             position: relative;
-            animation: pulseGlow 4s ease-in-out infinite alternate;
+            animation: moonOrbit 30s linear infinite, pulseGlow 4s ease-in-out infinite alternate;
         }
 
         @keyframes moonOrbit {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-
         @keyframes pulseGlow {
             0% { box-shadow: 0 0 40px rgba(255,215,150,0.3), 0 0 80px rgba(255,215,150,0.1), inset -30px -30px 80px rgba(0,0,0,0.4), inset 30px 30px 80px rgba(255,255,255,0.3); }
             100% { box-shadow: 0 0 80px rgba(255,215,150,0.6), 0 0 160px rgba(255,215,150,0.3), inset -30px -30px 80px rgba(0,0,0,0.5), inset 30px 30px 80px rgba(255,255,255,0.4); }
         }
 
-        /* Множество кратеров через ::before и ::after + box-shadow */
+        /* Кратеры через ::before и ::after с box-shadow */
         .moon::before {
             content: '';
             position: absolute;
@@ -341,7 +347,6 @@
                 -50px 120px 0 -10px rgba(110, 90, 80, 0.2);
         }
 
-        /* Эффект клика (вспышка) */
         .click-effect {
             position: absolute;
             top: 50%;
@@ -387,7 +392,7 @@
             margin-top: 2px;
         }
 
-        /* ---------- ИНФОРМАЦИЯ ОБ ИГРОКЕ (никнейм + время) ---------- */
+        /* ---------- ИНФО (никнейм + время) ---------- */
         .player-info {
             color: rgba(255, 255, 255, 0.35);
             font-size: 0.7rem;
@@ -428,12 +433,86 @@
             transform: scale(0.95);
         }
 
+        /* ---------- МОДАЛЬНОЕ ОКНО НАСТРОЕК ---------- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: #1a1f35;
+            border-radius: 30px;
+            padding: 30px 40px;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+        }
+        .modal h2 {
+            color: #f0e6d0;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .modal button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 30px;
+            border: none;
+            background: rgba(255, 215, 150, 0.1);
+            color: #f0e6d0;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            border: 1px solid rgba(255, 215, 150, 0.1);
+        }
+        .modal button:hover {
+            background: rgba(255, 215, 150, 0.2);
+            transform: scale(1.02);
+        }
+        .modal .danger {
+            background: rgba(255, 80, 80, 0.15);
+            border-color: rgba(255, 80, 80, 0.2);
+            color: #ff6b6b;
+        }
+        .modal .danger:hover {
+            background: rgba(255, 80, 80, 0.25);
+        }
+        .modal .close-btn {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.4);
+        }
+        .modal .close-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+        }
+        .modal .confirm-text {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            text-align: center;
+            margin: 10px 0;
+        }
+
         /* ---------- АДАПТИВ ---------- */
         @media (max-width: 600px) {
             .moon-wrapper { width: 200px; height: 200px; }
             .counter { font-size: 2.5rem; padding: 6px 20px; min-width: 100px; }
             .subtitle { font-size: 1.6rem; letter-spacing: 4px; }
             .container { padding: 20px; }
+            .settings-icon { font-size: 1.3rem; top: 10px; right: 15px; }
             .planet-1 { width: 30px; height: 30px; }
             .planet-2 { width: 20px; height: 20px; }
         }
@@ -446,18 +525,21 @@
 </head>
 <body>
 
-    <!-- ---------- ГАЛАКТИКА (фон) ---------- -->
+    <!-- ---------- ГАЛАКТИКА ---------- -->
     <div class="galaxy">
         <div class="stars" id="stars"></div>
         <div class="planet planet-1"></div>
         <div class="planet planet-2"></div>
     </div>
 
-    <!-- ---------- КОНТЕЙНЕР ИГРЫ ---------- -->
+    <!-- ---------- КОНТЕЙНЕР ---------- -->
     <div class="container" id="app">
+        <!-- Шестерёнка (настройки) -->
+        <button class="settings-icon" id="settingsBtn" title="Настройки">⚙️</button>
+
         <div class="subtitle">Кликни по луне</div>
 
-        <!-- БЛОК АВТОРИЗАЦИИ -->
+        <!-- АВТОРИЗАЦИЯ -->
         <div id="authBlock" class="auth-form">
             <div class="tabs">
                 <button id="tabLogin" class="active">Вход</button>
@@ -503,6 +585,16 @@
         </div>
     </div>
 
+    <!-- ---------- МОДАЛЬНОЕ ОКНО НАСТРОЕК ---------- -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <h2>⚙️ Настройки</h2>
+            <div class="confirm-text">Сбросить весь прогресс (клики и время)?</div>
+            <button class="danger" id="resetProgressBtn">🗑️ Сбросить прогресс</button>
+            <button class="close-btn" id="closeSettingsBtn">Закрыть</button>
+        </div>
+    </div>
+
     <script>
         // ============================================================
         //  НАСТРОЙКА SUPABASE
@@ -525,6 +617,7 @@
         let clickCount = 0;
         let lastClickTime = null;
         let totalSecondsPlayed = 0;
+        let sessionStartTimestamp = null; // время начала сессии
         let timeUpdateInterval = null;
 
         // DOM-элементы
@@ -547,6 +640,10 @@
         const moonWrapper = document.getElementById('moonWrapper');
         const clickEffect = document.getElementById('clickEffect');
         const logoutBtn = document.getElementById('logoutBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+        const resetProgressBtn = document.getElementById('resetProgressBtn');
 
         let currentMode = 'login';
 
@@ -583,7 +680,7 @@
         tabRegister.addEventListener('click', () => setMode('register'));
 
         // ============================================================
-        //  ЗВЁЗДЫ (генерация)
+        //  ЗВЁЗДЫ
         // ============================================================
         function createStars() {
             const container = document.getElementById('stars');
@@ -603,7 +700,7 @@
         createStars();
 
         // ============================================================
-        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (сбор статистики, БЕЗ ГЕО)
+        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (без гео)
         // ============================================================
         function getDeviceType() {
             const ua = navigator.userAgent;
@@ -614,30 +711,23 @@
 
         function getBrowserInfo() {
             const ua = navigator.userAgent;
-            let browser = 'Unknown',
-                version = 'Unknown';
-            if (ua.indexOf('Chrome') > -1) { browser = 'Chrome';
-                version = ua.match(/Chrome\/(\d+)/)?.[1] || ''; } else if (ua.indexOf('Firefox') > -1) { browser = 'Firefox';
-                version = ua.match(/Firefox\/(\d+)/)?.[1] || ''; } else if (ua.indexOf('Safari') > -1) { browser = 'Safari';
-                version = ua.match(/Version\/(\d+)/)?.[1] || ''; } else if (ua.indexOf('Edge') > -1) { browser = 'Edge';
-                version = ua.match(/Edge\/(\d+)/)?.[1] || ''; } else if (ua.indexOf('Opera') > -1 || ua.indexOf('OPR') > -1) { browser =
-                    'Opera';
-                version = ua.match(/(Opera|OPR)\/(\d+)/)?.[2] || ''; }
+            let browser = 'Unknown', version = 'Unknown';
+            if (ua.indexOf('Chrome') > -1) { browser = 'Chrome'; version = ua.match(/Chrome\/(\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Firefox') > -1) { browser = 'Firefox'; version = ua.match(/Firefox\/(\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Safari') > -1) { browser = 'Safari'; version = ua.match(/Version\/(\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Edge') > -1) { browser = 'Edge'; version = ua.match(/Edge\/(\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Opera') > -1 || ua.indexOf('OPR') > -1) { browser = 'Opera'; version = ua.match(/(Opera|OPR)\/(\d+)/)?.[2] || ''; }
             return { browser, version };
         }
 
         function getOSInfo() {
             const ua = navigator.userAgent;
-            let os = 'Unknown',
-                version = '';
-            if (ua.indexOf('Windows') > -1) { os = 'Windows';
-                version = ua.match(/Windows NT (\d+\.\d+)/)?.[1] || ''; } else if (ua.indexOf('Mac OS') > -1) { os = 'macOS';
-                version = ua.match(/Mac OS X (\d+[._\d]+)/)?.[1]?.replace(/_/g, '.') || ''; } else if (ua.indexOf('Android') > -1) { os =
-                    'Android';
-                version = ua.match(/Android (\d+\.\d+)/)?.[1] || ''; } else if (ua.indexOf('iOS') > -1 || ua.indexOf('iPhone') > -1 || ua
-                    .indexOf('iPad') > -1) { os = 'iOS';
-                version = ua.match(/OS (\d+[._\d]+)/)?.[1]?.replace(/_/g, '.') || ''; } else if (ua.indexOf('Linux') > -1) { os =
-                    'Linux'; }
+            let os = 'Unknown', version = '';
+            if (ua.indexOf('Windows') > -1) { os = 'Windows'; version = ua.match(/Windows NT (\d+\.\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Mac OS') > -1) { os = 'macOS'; version = ua.match(/Mac OS X (\d+[._\d]+)/)?.[1]?.replace(/_/g, '.') || ''; }
+            else if (ua.indexOf('Android') > -1) { os = 'Android'; version = ua.match(/Android (\d+\.\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('iOS') > -1 || ua.indexOf('iPhone') > -1 || ua.indexOf('iPad') > -1) { os = 'iOS'; version = ua.match(/OS (\d+[._\d]+)/)?.[1]?.replace(/_/g, '.') || ''; }
+            else if (ua.indexOf('Linux') > -1) { os = 'Linux'; }
             return { os, version };
         }
 
@@ -646,7 +736,6 @@
         }
 
         function getLanguage() { return navigator.language || navigator.userLanguage || 'en'; }
-
         function getTimezone() { return Intl.DateTimeFormat().resolvedOptions().timeZone; }
 
         function collectStaticDeviceData() {
@@ -670,7 +759,7 @@
         }
 
         // ============================================================
-        //  РАБОТА С БАЗОЙ ДАННЫХ (без гео)
+        //  РАБОТА С БАЗОЙ ДАННЫХ
         // ============================================================
         async function createOrUpdatePlayer(userId, email) {
             const staticData = collectStaticDeviceData();
@@ -768,11 +857,20 @@
         }
 
         // ============================================================
-        //  ФУНКЦИИ ОБНОВЛЕНИЯ ВРЕМЕНИ (каждую секунду)
+        //  ФУНКЦИИ ОБНОВЛЕНИЯ ВРЕМЕНИ
         // ============================================================
+        function getCurrentTotalSeconds() {
+            if (!playerData) return 0;
+            const base = playerData.total_seconds_played || 0;
+            if (sessionStartTimestamp) {
+                return base + (Date.now() - sessionStartTimestamp) / 1000;
+            }
+            return base;
+        }
+
         function updateTimeDisplay() {
             if (!playerData) return;
-            const totalSec = Math.floor(playerData.total_seconds_played || 0);
+            const totalSec = Math.floor(getCurrentTotalSeconds());
             const mins = Math.floor(totalSec / 60);
             const secs = totalSec % 60;
             let timeStr = '';
@@ -802,23 +900,32 @@
             const rect = moonWrapper.getBoundingClientRect();
             const x = Math.round(e.clientX - rect.left);
             const y = Math.round(e.clientY - rect.top);
-            const now = new Date();
-            const nowISO = now.toISOString();
+            const now = Date.now();
+            const nowISO = new Date(now).toISOString();
+
+            // Сначала сохраняем текущее общее время (с учётом сессии)
+            const currentTotal = getCurrentTotalSeconds();
             let secondsAdded = 0;
             if (lastClickTime) {
                 secondsAdded = (now - lastClickTime) / 1000;
-                totalSecondsPlayed += secondsAdded;
             }
+            // Обновляем общее время
+            totalSecondsPlayed = currentTotal + secondsAdded;
+            // Сбрасываем сессию, чтобы не учитывать время дважды
+            sessionStartTimestamp = now;
+
             lastClickTime = now;
             clickCount++;
             updateUI();
 
+            // Эффект клика
             clickEffect.classList.remove('active');
             void clickEffect.offsetWidth;
             clickEffect.classList.add('active');
             moonWrapper.style.transform = 'scale(0.92)';
             setTimeout(() => { moonWrapper.style.transform = 'scale(1)'; }, 150);
 
+            // Сохраняем в БД
             await updateClicksAndTime(currentUser.id, clickCount, secondsAdded, nowISO, x, y);
         }
 
@@ -913,10 +1020,11 @@
                 playerData = updatedPlayer;
                 clickCount = playerData.total_clicks || 0;
                 totalSecondsPlayed = playerData.total_seconds_played || 0;
-                lastClickTime = playerData.last_click_at ? new Date(playerData.last_click_at) : null;
+                lastClickTime = playerData.last_click_at ? new Date(playerData.last_click_at).getTime() : null;
+                // Запоминаем время начала сессии
+                sessionStartTimestamp = Date.now();
                 updateUI();
 
-                // Запускаем таймер обновления времени
                 if (timeUpdateInterval) clearInterval(timeUpdateInterval);
                 timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
                 updateTimeDisplay();
@@ -926,7 +1034,8 @@
                     playerData = loaded;
                     clickCount = loaded.total_clicks || 0;
                     totalSecondsPlayed = loaded.total_seconds_played || 0;
-                    lastClickTime = loaded.last_click_at ? new Date(loaded.last_click_at) : null;
+                    lastClickTime = loaded.last_click_at ? new Date(loaded.last_click_at).getTime() : null;
+                    sessionStartTimestamp = Date.now();
                     updateUI();
                     if (timeUpdateInterval) clearInterval(timeUpdateInterval);
                     timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
@@ -934,6 +1043,51 @@
                 } else {
                     authMessage.textContent = '⚠️ Ошибка загрузки профиля.';
                 }
+            }
+        }
+
+        // ============================================================
+        //  СБРОС ПРОГРЕССА
+        // ============================================================
+        async function resetProgress() {
+            if (!currentUser) return;
+            const confirmed = confirm('Вы уверены, что хотите сбросить весь прогресс (клики и время)? Это действие необратимо.');
+            if (!confirmed) return;
+
+            try {
+                // Удаляем все клики пользователя
+                const { error: deleteError } = await supabaseClient
+                    .from('clicks')
+                    .delete()
+                    .eq('player_id', currentUser.id);
+                if (deleteError) throw deleteError;
+
+                // Обнуляем total_clicks и total_seconds_played в players
+                const { error: updateError } = await supabaseClient
+                    .from('players')
+                    .update({
+                        total_clicks: 0,
+                        total_seconds_played: 0,
+                        last_click_at: null,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentUser.id);
+                if (updateError) throw updateError;
+
+                // Обновляем локальные данные
+                playerData.total_clicks = 0;
+                playerData.total_seconds_played = 0;
+                playerData.last_click_at = null;
+                clickCount = 0;
+                totalSecondsPlayed = 0;
+                lastClickTime = null;
+                sessionStartTimestamp = Date.now();
+                updateUI();
+
+                alert('✅ Прогресс сброшен!');
+            } catch (error) {
+                console.error('Ошибка сброса:', error);
+                alert('❌ Не удалось сбросить прогресс: ' + error.message);
             }
         }
 
@@ -984,6 +1138,23 @@
         });
         moonWrapper.setAttribute('tabindex', '0');
         moonWrapper.setAttribute('role', 'button');
+
+        // ---------- НАСТРОЙКИ ----------
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.classList.add('active');
+        });
+
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('active');
+        });
+
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                settingsModal.classList.remove('active');
+            }
+        });
+
+        resetProgressBtn.addEventListener('click', resetProgress);
 
         // ============================================================
         //  ПРОВЕРКА АУТЕНТИФИКАЦИИ ПРИ ЗАГРУЗКЕ
