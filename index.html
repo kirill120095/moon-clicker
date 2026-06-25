@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2">
     </script>
     <style>
-        /* ---------- ГЛОБАЛЬНЫЙ ФОН ---------- */
+        /* ---------- ОСНОВНЫЕ СТИЛИ (без изменений, только дополнения) ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -25,8 +25,6 @@
             overflow: hidden;
             position: relative;
         }
-
-        /* ---------- ГАЛАКТИКА ---------- */
         .galaxy {
             position: fixed;
             top: 0;
@@ -370,7 +368,7 @@
             background: radial-gradient(circle, rgba(255, 0, 0, 0.8), transparent 70%);
         }
 
-        /* ---------- СЧЁТЧИК И СТАТУС ---------- */
+        /* ---------- СЧЁТЧИК ---------- */
         .counter {
             margin: 8px 0 5px;
             color: #f0e6d0;
@@ -463,7 +461,7 @@
         .bar-percent {
             color: rgba(255, 255, 255, 0.5);
             font-size: 0.8rem;
-            min-width: 40px;
+            min-width: 70px;
             text-align: left;
         }
         .timer-bar-container {
@@ -597,6 +595,23 @@
             background: rgba(255, 80, 80, 0.25);
             transform: scale(1.02);
         }
+        .modal .btn-secondary {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: none;
+            background: rgba(255, 215, 150, 0.1);
+            color: #f0e6d0;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            border: 1px solid rgba(255, 215, 150, 0.2);
+            margin: 4px;
+        }
+        .modal .btn-secondary:hover {
+            background: rgba(255, 215, 150, 0.2);
+            transform: scale(1.03);
+        }
         .modal .close-btn {
             display: block;
             width: 100%;
@@ -614,6 +629,27 @@
         .modal .close-btn:hover {
             background: rgba(255,255,255,0.1);
             color: rgba(255,255,255,0.7);
+        }
+        .modal .checkbox-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .modal .checkbox-row label {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .modal .checkbox-row input[type="checkbox"] {
+            accent-color: #f0e6d0;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
 
         /* ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ ---------- */
@@ -680,6 +716,49 @@
             transform: scale(1.05);
         }
 
+        /* ---------- TOAST (уведомления) ---------- */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            pointer-events: none;
+        }
+        .toast {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            color: #f0e6d0;
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 1rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.info {
+            border-color: rgba(255, 215, 150, 0.3);
+        }
+        .toast.warning {
+            border-color: rgba(255, 80, 80, 0.4);
+            color: #ff6b6b;
+        }
+        .toast.success {
+            border-color: rgba(80, 255, 150, 0.3);
+            color: #69db7c;
+        }
+
         /* ---------- АНИМАЦИЯ ПЕРЕХОДА УРОВНЯ ---------- */
         @keyframes levelUp {
             0% { transform: scale(0) rotate(0deg); opacity: 0; }
@@ -700,6 +779,7 @@
             .planet-2 { width: 30px; height: 30px; }
             .stats { font-size: 0.85rem; gap: 15px; }
             .bars { max-width: 100%; }
+            .bar-percent { min-width: 50px; }
         }
         @media (max-width: 450px) {
             .moon-wrapper { width: 200px; height: 200px; }
@@ -770,7 +850,7 @@
                 <div class="counter" id="counter">0</div>
                 <div class="stats">
                     <span class="level" id="levelDisplay">Уровень 1</span>
-                    <span class="hp-text" id="hpDisplay">❤️ 100%</span>
+                    <span class="hp-text" id="hpDisplay">❤️ 100/100</span>
                 </div>
             </div>
             <!-- Прогресс-бары -->
@@ -780,7 +860,7 @@
                     <div class="bar-track">
                         <div class="bar-fill hp-fill" id="hpBar" style="width:100%"></div>
                     </div>
-                    <span class="bar-percent" id="hpPercent">100%</span>
+                    <span class="bar-percent" id="hpPercent">100/100</span>
                 </div>
                 <div class="bar-container timer-bar-container" id="timerBarContainer">
                     <span class="bar-label">⏱️</span>
@@ -805,6 +885,16 @@
             <div class="bg-options" id="bgOptions">
                 <button data-bg="normal">⚪ Обычная</button>
                 <button data-bg="blood">🔴 Кровавая</button>
+            </div>
+
+            <div class="section-title">🔄 Уровень</div>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px;">
+                <button class="btn-secondary" id="rollbackLevelBtn">⬅️ Откатить уровень</button>
+            </div>
+            <div class="checkbox-row">
+                <label>
+                    <input type="checkbox" id="lockLevelCheckbox" /> Зафиксировать уровень
+                </label>
             </div>
 
             <div class="account-info">
@@ -832,6 +922,9 @@
         </div>
     </div>
 
+    <!-- ---------- TOAST-КОНТЕЙНЕР ---------- -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <script>
         // ============================================================
         //  НАСТРОЙКА SUPABASE
@@ -840,7 +933,7 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 
         if (typeof window.supabase === 'undefined') {
-            alert('⚠️ Не удалось загрузить библиотеку Supabase. Проверьте интернет.');
+            document.getElementById('authMessage').textContent = '⚠️ Не удалось загрузить библиотеку Supabase. Проверьте интернет.';
             throw new Error('Supabase library not loaded');
         }
 
@@ -849,7 +942,6 @@
         // ============================================================
         //  КОНСТАНТЫ И НАСТРОЙКИ
         // ============================================================
-        // РЕЖИМ ТЕСТА: уменьшаем все HP в 10 раз (для быстрой проверки)
         const TEST_MODE = true;
         const HP_SCALE = TEST_MODE ? 0.1 : 1;
 
@@ -876,6 +968,9 @@
         let bossTimerInterval = null;
         let isBossActive = false;
         let bossTimerRunning = false;
+
+        // Фиксация уровня
+        let levelLocked = false;
 
         // DOM-элементы
         const authBlock = document.getElementById('authBlock');
@@ -914,8 +1009,32 @@
         const confirmOverlay = document.getElementById('confirmOverlay');
         const confirmYes = document.getElementById('confirmYes');
         const confirmNo = document.getElementById('confirmNo');
+        const rollbackLevelBtn = document.getElementById('rollbackLevelBtn');
+        const lockLevelCheckbox = document.getElementById('lockLevelCheckbox');
+        const toastContainer = document.getElementById('toastContainer');
 
         let currentMode = 'login';
+
+        // ============================================================
+        //  TOAST (уведомления)
+        // ============================================================
+        function showToast(message, type = 'info', duration = 4000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            // Показываем
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+            // Убираем через duration
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) toast.remove();
+                }, 300);
+            }, duration);
+        }
 
         // ============================================================
         //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -933,17 +1052,14 @@
         // Вычисление максимального HP для уровня
         function getMaxHPForLevel(level) {
             if (level === BOSS_LEVEL) {
-                // Босс: 1000% от базового, но с учётом масштаба
                 return 1000 * HP_SCALE; // 1000 или 100
             }
-            // Обычные уровни: BASE_HP + (level-1)*10% от BASE_HP
             return BASE_HP * (1 + (level - 1) * 0.1);
         }
 
         function updateBossUI(show) {
             if (show) {
                 timerBarContainer.classList.add('active');
-                // Меняем цвет бара HP на боссовский (красный)
                 hpBar.className = 'bar-fill boss-fill';
             } else {
                 timerBarContainer.classList.remove('active');
@@ -1168,7 +1284,7 @@
 
         async function resetProgress() {
             if (!currentUser || !playerData) {
-                alert('⚠️ Ошибка: данные игрока не загружены');
+                showToast('⚠️ Данные игрока не загружены', 'warning');
                 return;
             }
 
@@ -1185,7 +1301,7 @@
 
             if (error) {
                 console.error('Ошибка сброса прогресса:', error);
-                alert('⚠️ Ошибка при сбросе прогресса');
+                showToast('⚠️ Ошибка при сбросе прогресса', 'warning');
                 return;
             }
 
@@ -1203,13 +1319,14 @@
                 playerData.level = 1;
                 playerData.moon_hp = Math.round(BASE_HP);
             }
-            // Сброс босса
             clearBossTimer();
             isBossActive = false;
             bossTimerRunning = false;
+            levelLocked = false;
+            lockLevelCheckbox.checked = false;
             updateUI();
 
-            alert('✅ Прогресс успешно сброшен!');
+            showToast('✅ Прогресс успешно сброшен!', 'success');
             settingsModal.classList.remove('active');
         }
 
@@ -1367,8 +1484,11 @@
                     clearBossTimer();
                     moonHP = maxHP;
                     updateUI();
-                    // Можно показать уведомление
-                    alert('⏰ Время вышло! Босс восстановил здоровье.');
+                    // Уведомление вместо alert
+                    showToast('⏰ Время вышло! Босс восстановил здоровье.', 'warning');
+                    // Сохраняем состояние
+                    const now = new Date().toISOString();
+                    updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
                 }
             }, 1000);
         }
@@ -1397,19 +1517,23 @@
             counterEl.textContent = clickCount;
             levelDisplay.textContent = `Уровень ${currentLevel}`;
 
-            // Обновляем HP и бары
-            const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
-            hpDisplay.textContent = `❤️ ${Math.round(hpPercentValue)}%`;
-            hpBar.style.width = Math.min(100, hpPercentValue) + '%';
-            hpPercent.textContent = Math.round(hpPercentValue) + '%';
+            // Отображаем HP в абсолютных значениях
+            const currentHP = Math.round(moonHP);
+            const maxHPDisplay = Math.round(maxHP);
+            hpDisplay.textContent = `❤️ ${currentHP}/${maxHPDisplay}`;
+            hpPercent.textContent = `${currentHP}/${maxHPDisplay}`;
 
-            // Масштаб луны (относительно HP)
+            // Прогресс-бар
+            const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
+            hpBar.style.width = Math.min(100, hpPercentValue) + '%';
+
+            // Масштаб луны
             const scale = Math.max(0.05, moonHP / maxHP);
             moonInner.style.transform = `scale(${scale})`;
 
-            // Если босс, показываем таймер
-            if (currentLevel === BOSS_LEVEL) {
-                if (!bossTimerRunning && moonHP > 0) {
+            // Управление боссом
+            if (currentLevel === BOSS_LEVEL && moonHP > 0) {
+                if (!bossTimerRunning) {
                     startBossTimer();
                 }
             } else {
@@ -1426,13 +1550,55 @@
         }
 
         // ============================================================
+        //  ОТКАТ УРОВНЯ
+        // ============================================================
+        async function rollbackLevel() {
+            if (currentLevel <= 1) {
+                showToast('⚠️ Вы уже на первом уровне', 'warning');
+                return;
+            }
+            // Подтверждение через кастомное окно
+            confirmOverlay.classList.add('active');
+            confirmMessage.textContent = `Вы уверены, что хотите откатиться на уровень ${currentLevel - 1}?`;
+            // Временно переопределяем обработчики для подтверждения
+            const yesHandler = async () => {
+                confirmOverlay.classList.remove('active');
+                // Откат
+                const newLevel = currentLevel - 1;
+                currentLevel = newLevel;
+                maxHP = getMaxHPForLevel(currentLevel);
+                moonHP = maxHP;
+                // Сброс босса
+                clearBossTimer();
+                isBossActive = false;
+                bossTimerRunning = false;
+                updateUI();
+                const now = new Date().toISOString();
+                await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
+                showToast(`↩️ Откат на уровень ${currentLevel} выполнен`, 'info');
+                // Восстанавливаем стандартные обработчики
+                confirmYes.onclick = defaultYesHandler;
+                confirmNo.onclick = defaultNoHandler;
+            };
+            const noHandler = () => {
+                confirmOverlay.classList.remove('active');
+                confirmYes.onclick = defaultYesHandler;
+                confirmNo.onclick = defaultNoHandler;
+            };
+            // Сохраняем стандартные обработчики (для сброса прогресса)
+            const defaultYesHandler = confirmYes.onclick;
+            const defaultNoHandler = confirmNo.onclick;
+            confirmYes.onclick = yesHandler;
+            confirmNo.onclick = noHandler;
+        }
+
+        // ============================================================
         //  ИНИЦИАЛИЗАЦИЯ ИГРЫ
         // ============================================================
         function initGame() {
             authBlock.classList.add('hidden');
             gameArea.classList.add('active');
 
-            // Загружаем уровень
             maxHP = getMaxHPForLevel(currentLevel);
             if (moonHP > maxHP) moonHP = maxHP;
             if (moonHP < 0) moonHP = 0;
@@ -1455,6 +1621,11 @@
 
             const savedMode = localStorage.getItem('moonMode') || 'normal';
             setMoonMode(savedMode);
+
+            // Загружаем состояние фиксации уровня
+            const savedLock = localStorage.getItem('levelLocked') === 'true';
+            levelLocked = savedLock;
+            lockLevelCheckbox.checked = savedLock;
         }
 
         // ============================================================
@@ -1462,35 +1633,31 @@
         // ============================================================
         moonWrapper.addEventListener('click', async (e) => {
             if (!currentUser) return;
-
-            // Если луна уже разрушена (HP <= 0) – ничего не делаем
             if (moonHP <= 0) return;
 
             clickCount++;
             moonHP = Math.max(0, moonHP - 1);
 
-            // Проверяем, победили ли босса
-            if (moonHP === 0 && currentLevel === BOSS_LEVEL) {
-                // Победа над боссом
-                clearBossTimer();
-                alert(`🎉 Босс побеждён! Переход на уровень ${currentLevel + 1}`);
-                currentLevel++;
-                maxHP = getMaxHPForLevel(currentLevel);
-                moonHP = maxHP;
-                // Анимация появления новой луны
-                moonInner.classList.remove('level-up');
-                void moonInner.offsetWidth;
-                moonInner.classList.add('level-up');
-                // Обновляем UI
-                updateUI();
-                // Сохраняем прогресс
-                const now = new Date().toISOString();
-                await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
-                return;
-            }
-
-            // Если луна разрушена (обычный уровень) – переходим на следующий уровень
+            // Если луна разрушена
             if (moonHP === 0) {
+                if (levelLocked) {
+                    // Фиксация включена – восстанавливаем HP
+                    moonHP = maxHP;
+                    showToast(`🔒 Уровень ${currentLevel} зафиксирован. HP восстановлено.`, 'info');
+                    updateUI();
+                    const now = new Date().toISOString();
+                    await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
+                    return;
+                }
+
+                // Переход на следующий уровень
+                if (currentLevel === BOSS_LEVEL) {
+                    // Победа над боссом
+                    clearBossTimer();
+                    showToast(`🎉 Босс побеждён! Переход на уровень ${currentLevel + 1}`, 'success');
+                } else {
+                    showToast(`⬆️ Переход на уровень ${currentLevel + 1}`, 'success');
+                }
                 currentLevel++;
                 maxHP = getMaxHPForLevel(currentLevel);
                 moonHP = maxHP;
@@ -1498,7 +1665,6 @@
                 moonInner.classList.remove('level-up');
                 void moonInner.offsetWidth;
                 moonInner.classList.add('level-up');
-                // Если новый уровень – босс, таймер запустится автоматически в updateUI
                 updateUI();
                 const now = new Date().toISOString();
                 await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
@@ -1544,6 +1710,7 @@
             authBlock.classList.remove('hidden');
             gameArea.classList.remove('active');
             setMode('login');
+            showToast('👋 Вы вышли из аккаунта', 'info');
         });
 
         settingsBtn.addEventListener('click', () => {
@@ -1557,15 +1724,37 @@
 
         resetProgressBtn.addEventListener('click', () => {
             confirmOverlay.classList.add('active');
+            confirmMessage.textContent = 'Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.';
+            // Восстанавливаем стандартные обработчики для сброса
+            confirmYes.onclick = async () => {
+                confirmOverlay.classList.remove('active');
+                await resetProgress();
+                // Восстанавливаем обработчики
+                confirmYes.onclick = defaultResetYes;
+                confirmNo.onclick = defaultResetNo;
+            };
+            confirmNo.onclick = () => {
+                confirmOverlay.classList.remove('active');
+                confirmYes.onclick = defaultResetYes;
+                confirmNo.onclick = defaultResetNo;
+            };
+            // Сохраняем стандартные обработчики
+            const defaultResetYes = confirmYes.onclick;
+            const defaultResetNo = confirmNo.onclick;
         });
 
-        confirmYes.addEventListener('click', async () => {
-            confirmOverlay.classList.remove('active');
-            await resetProgress();
-        });
+        // Обработчик отката уровня
+        rollbackLevelBtn.addEventListener('click', rollbackLevel);
 
-        confirmNo.addEventListener('click', () => {
-            confirmOverlay.classList.remove('active');
+        // Обработчик фиксации уровня
+        lockLevelCheckbox.addEventListener('change', () => {
+            levelLocked = lockLevelCheckbox.checked;
+            localStorage.setItem('levelLocked', levelLocked);
+            if (levelLocked) {
+                showToast('🔒 Уровень зафиксирован. При достижении 0 HP он будет восстанавливаться.', 'info');
+            } else {
+                showToast('🔓 Фиксация уровня отключена.', 'info');
+            }
         });
 
         // ============================================================
