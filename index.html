@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2">
     </script>
     <style>
-        /* (стили те же, что и раньше, но добавлены стили для переключателей) */
+        /* ---------- ГЛОБАЛЬНЫЙ ФОН (галактика) ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -19,43 +19,141 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #0b0e1a 0%, #1a1f35 50%, #0b0e1a 100%);
+            background: #0b0e1a;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 20px;
+            overflow: hidden;
+            position: relative;
         }
+
+        /* ---------- АНИМИРОВАННЫЙ ФОН ---------- */
+        .galaxy {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: radial-gradient(ellipse at 20% 50%, #0d1b2a, #1b1f3a 60%, #0b0e1a);
+            overflow: hidden;
+        }
+
+        /* Звёзды */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Планеты */
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffb07c, #d98c5f);
+            box-shadow: 0 0 40px rgba(255, 180, 100, 0.3);
+            animation: orbit linear infinite;
+            pointer-events: none;
+        }
+        .planet::after {
+            content: '';
+            position: absolute;
+            width: 20%;
+            height: 20%;
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3), transparent);
+            border-radius: 50%;
+            top: 15%;
+            left: 20%;
+        }
+        .planet-1 {
+            width: 60px;
+            height: 60px;
+            top: 15%;
+            left: 85%;
+            background: radial-gradient(circle at 30% 30%, #ffb07c, #d98c5f);
+            animation-duration: 25s;
+            animation-name: orbit1;
+            box-shadow: 0 0 60px rgba(255, 150, 80, 0.2);
+        }
+        .planet-2 {
+            width: 40px;
+            height: 40px;
+            top: 75%;
+            left: 10%;
+            background: radial-gradient(circle at 30% 30%, #8fc7ff, #4a7db5);
+            animation-duration: 35s;
+            animation-name: orbit2;
+            box-shadow: 0 0 50px rgba(100, 180, 255, 0.2);
+        }
+        @keyframes orbit1 {
+            0% { transform: rotate(0deg) translateX(200px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(200px) rotate(-360deg); }
+        }
+        @keyframes orbit2 {
+            0% { transform: rotate(0deg) translateX(-180px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(-180px) rotate(-360deg); }
+        }
+
+        /* Адаптация для мобильных */
+        @media (max-width: 600px) {
+            .planet-1 { width: 40px; height: 40px; }
+            .planet-2 { width: 30px; height: 30px; }
+            @keyframes orbit1 {
+                0% { transform: rotate(0deg) translateX(100px) rotate(0deg); }
+                100% { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+            }
+            @keyframes orbit2 {
+                0% { transform: rotate(0deg) translateX(-90px) rotate(0deg); }
+                100% { transform: rotate(360deg) translateX(-90px) rotate(-360deg); }
+            }
+        }
+
+        /* ---------- КОНТЕЙНЕР ИГРЫ ---------- */
         .container {
+            position: relative;
+            z-index: 1;
             text-align: center;
             padding: 30px 40px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 40px;
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 60px;
+            backdrop-filter: blur(8px);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            max-width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            max-width: 520px;
             width: 100%;
         }
-        h1 {
-            color: #f0e6d0;
-            font-size: 2rem;
-            font-weight: 300;
-            letter-spacing: 4px;
-            margin-bottom: 5px;
-            text-shadow: 0 0 20px rgba(255, 215, 150, 0.2);
-        }
+
+        /* ---------- ЗАГОЛОВОК ---------- */
         .subtitle {
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 0.9rem;
-            letter-spacing: 2px;
+            font-size: 2.2rem;
+            color: #f0e6d0;
+            font-weight: 300;
+            letter-spacing: 6px;
+            text-shadow: 0 0 30px rgba(255, 215, 150, 0.15);
             margin-bottom: 20px;
         }
+
+        /* ---------- ФОРМА АВТОРИЗАЦИИ ---------- */
         .auth-form {
             display: flex;
             flex-direction: column;
             gap: 10px;
             margin-bottom: 20px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
             padding: 20px;
-            border-radius: 20px;
+            border-radius: 30px;
         }
         .auth-form .tabs {
             display: flex;
@@ -139,11 +237,6 @@
             background: rgba(255, 215, 150, 0.25);
             transform: scale(1.03);
         }
-        .auth-form button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
         .auth-form .error {
             color: #ff6b6b;
             font-size: 0.85rem;
@@ -153,55 +246,83 @@
             color: #69db7c;
             font-size: 0.85rem;
         }
+        .hidden {
+            display: none !important;
+        }
+
+        /* ---------- ИГРОВАЯ ЗОНА ---------- */
         .game-area {
             display: none;
         }
         .game-area.active {
             display: block;
         }
+
+        /* ---------- ЛУНА ---------- */
         .moon-wrapper {
             display: inline-block;
             cursor: pointer;
-            transition: transform 0.15s ease;
+            transition: transform 0.2s ease;
             position: relative;
-            margin: 10px 0;
+            margin: 15px 0;
+            width: 260px;
+            height: 260px;
+        }
+        .moon-wrapper:hover {
+            transform: scale(1.08);
         }
         .moon-wrapper:active {
             transform: scale(0.92);
         }
-        .moon-wrapper:hover {
-            transform: scale(1.05);
-        }
+
         .moon {
-            width: 200px;
-            height: 200px;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             background: radial-gradient(circle at 35% 30%, #f5f0e8, #c8bda8 60%, #8a7e6b);
-            box-shadow: 0 0 40px rgba(255, 215, 150, 0.3), 0 0 80px rgba(255, 215, 150, 0.15), inset -20px -20px 60px rgba(0, 0, 0, 0.3), inset 20px 20px 60px rgba(255, 255, 255, 0.3);
+            box-shadow:
+                0 0 50px rgba(255, 215, 150, 0.4),
+                0 0 100px rgba(255, 215, 150, 0.2),
+                inset -30px -30px 80px rgba(0, 0, 0, 0.4),
+                inset 30px 30px 80px rgba(255, 255, 255, 0.3);
             position: relative;
+            transition: box-shadow 0.3s;
         }
+        .moon-wrapper:hover .moon {
+            box-shadow:
+                0 0 70px rgba(255, 215, 150, 0.6),
+                0 0 140px rgba(255, 215, 150, 0.3),
+                inset -30px -30px 80px rgba(0, 0, 0, 0.4),
+                inset 30px 30px 80px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Кратеры */
         .moon::before {
             content: '';
             position: absolute;
-            width: 40px;
-            height: 40px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            background: radial-gradient(circle at 40% 40%, rgba(160, 140, 120, 0.4), rgba(100, 85, 75, 0.6));
-            top: 25%;
-            left: 20%;
-            box-shadow: 60px 50px 0 -5px rgba(120, 100, 85, 0.4), -30px 70px 0 -8px rgba(140, 120, 105, 0.3), 80px -30px 0 -10px rgba(130, 110, 95, 0.35);
+            background: radial-gradient(circle at 40% 40%, rgba(160, 140, 120, 0.5), rgba(100, 85, 75, 0.7));
+            top: 20%;
+            left: 18%;
+            box-shadow:
+                80px 60px 0 -10px rgba(120, 100, 85, 0.4),
+                -40px 90px 0 -15px rgba(140, 120, 105, 0.3),
+                100px -40px 0 -20px rgba(130, 110, 95, 0.35);
         }
         .moon::after {
             content: '';
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
-            background: radial-gradient(circle at 50% 50%, rgba(180, 160, 140, 0.3), rgba(100, 85, 75, 0.5));
+            background: radial-gradient(circle at 50% 50%, rgba(180, 160, 140, 0.3), rgba(100, 85, 75, 0.6));
             top: 60%;
             left: 70%;
-            box-shadow: -40px -20px 0 -5px rgba(140, 120, 105, 0.3);
+            box-shadow: -60px -30px 0 -8px rgba(140, 120, 105, 0.3);
         }
+
         .click-effect {
             position: absolute;
             top: 50%;
@@ -210,111 +331,135 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255, 215, 150, 0.4), transparent 70%);
+            background: radial-gradient(circle, rgba(255, 215, 150, 0.5), transparent 70%);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.1s;
         }
         .click-effect.active {
-            animation: flash 0.3s ease-out forwards;
+            animation: flash 0.4s ease-out forwards;
         }
         @keyframes flash {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4); }
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.6);
+            }
         }
+
+        /* ---------- СЧЁТЧИК ---------- */
         .counter {
-            margin: 15px 0 5px;
+            margin: 10px 0 5px;
             color: #f0e6d0;
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 700;
             letter-spacing: 2px;
-            text-shadow: 0 0 30px rgba(255, 215, 150, 0.2);
+            text-shadow: 0 0 40px rgba(255, 215, 150, 0.2);
             background: rgba(0, 0, 0, 0.3);
             padding: 8px 30px;
             border-radius: 60px;
             display: inline-block;
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255, 255, 255, 0.06);
-            min-width: 120px;
+            min-width: 140px;
         }
         .counter-label {
             color: rgba(255, 255, 255, 0.3);
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 3px;
+            margin-top: 2px;
         }
+
+        /* ---------- ИНФОРМАЦИЯ ОБ ИГРОКЕ (никнейм + время) ---------- */
         .player-info {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.8rem;
-            margin-top: 10px;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 0.7rem;
+            margin-top: 8px;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
+        .player-info .nickname {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .player-info .time {
+            color: rgba(255, 215, 150, 0.5);
+        }
+
+        /* ---------- КНОПКА ВЫХОДА ---------- */
         .logout-btn {
             margin-top: 15px;
             padding: 8px 25px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04);
             color: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 30px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             transition: all 0.3s;
+            backdrop-filter: blur(5px);
         }
         .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             color: rgba(255, 255, 255, 0.7);
             border-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
         }
+        .logout-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ---------- АДАПТИВ ---------- */
         @media (max-width: 600px) {
-            .moon {
-                width: 150px;
-                height: 150px;
-            }
-            .counter {
-                font-size: 2.2rem;
-                padding: 6px 20px;
-                min-width: 80px;
-            }
-            .container {
-                padding: 20px;
-            }
-            .auth-form .login-type {
-                flex-direction: column;
-                gap: 5px;
-            }
+            .moon-wrapper { width: 200px; height: 200px; }
+            .counter { font-size: 2.5rem; padding: 6px 20px; min-width: 100px; }
+            .subtitle { font-size: 1.6rem; letter-spacing: 4px; }
+            .container { padding: 20px; }
+            .planet-1 { width: 30px; height: 30px; }
+            .planet-2 { width: 20px; height: 20px; }
         }
-        .hidden {
-            display: none !important;
+        @media (max-width: 400px) {
+            .moon-wrapper { width: 160px; height: 160px; }
+            .counter { font-size: 2rem; padding: 4px 15px; min-width: 70px; }
+            .subtitle { font-size: 1.3rem; }
         }
     </style>
 </head>
 <body>
-    <div class="container" id="app">
-        <h1>🌙 Лунный кликер</h1>
-        <p class="subtitle">Кликни по луне</p>
 
-        <!-- Блок авторизации -->
+    <!-- ---------- ГАЛАКТИКА (фон) ---------- -->
+    <div class="galaxy">
+        <div class="stars" id="stars"></div>
+        <div class="planet planet-1"></div>
+        <div class="planet planet-2"></div>
+    </div>
+
+    <!-- ---------- КОНТЕЙНЕР ИГРЫ ---------- -->
+    <div class="container" id="app">
+        <div class="subtitle">Кликни по луне</div>
+
+        <!-- БЛОК АВТОРИЗАЦИИ -->
         <div id="authBlock" class="auth-form">
-            <!-- Переключатель Вход / Регистрация -->
             <div class="tabs">
                 <button id="tabLogin" class="active">Вход</button>
                 <button id="tabRegister">Регистрация</button>
             </div>
 
-            <!-- Поля для входа -->
             <div id="loginFields">
                 <div class="login-type">
-                    <label>
-                        <input type="radio" name="loginType" value="email" checked /> По email
-                    </label>
-                    <label>
-                        <input type="radio" name="loginType" value="nickname" /> По никнейму
-                    </label>
+                    <label><input type="radio" name="loginType" value="email" checked /> По email</label>
+                    <label><input type="radio" name="loginType" value="nickname" /> По никнейму</label>
                 </div>
                 <input type="text" id="loginInput" placeholder="Введите email или никнейм" />
                 <input type="password" id="passwordInput" placeholder="Пароль" />
             </div>
 
-            <!-- Поля для регистрации -->
             <div id="registerFields" class="hidden">
                 <input type="email" id="regEmailInput" placeholder="Email (обязательно)" />
                 <input type="text" id="regNicknameInput" placeholder="Никнейм (обязательно)" />
@@ -327,7 +472,7 @@
             <div id="authMessage" class="error"></div>
         </div>
 
-        <!-- Игровая зона -->
+        <!-- ИГРОВАЯ ЗОНА -->
         <div id="gameArea" class="game-area">
             <div class="moon-wrapper" id="moonWrapper">
                 <div class="moon" id="moon"></div>
@@ -337,8 +482,11 @@
                 <div class="counter" id="counter">0</div>
                 <div class="counter-label">кликов</div>
             </div>
-            <div class="player-info" id="playerInfo">Загружаем...</div>
-            <button class="logout-btn" id="logoutBtn">🚪 Выйти</button>
+            <div class="player-info" id="playerInfo">
+                <span class="nickname" id="nicknameDisplay">Загружаем...</span>
+                <span class="time" id="timeDisplay">⏱ 0 мин</span>
+            </div>
+            <button class="logout-btn" id="logoutBtn">🚀 Выйти</button>
         </div>
     </div>
 
@@ -380,12 +528,12 @@
         const actionBtn = document.getElementById('actionBtn');
         const authMessage = document.getElementById('authMessage');
         const counterEl = document.getElementById('counter');
-        const playerInfo = document.getElementById('playerInfo');
+        const nicknameDisplay = document.getElementById('nicknameDisplay');
+        const timeDisplay = document.getElementById('timeDisplay');
         const moonWrapper = document.getElementById('moonWrapper');
         const clickEffect = document.getElementById('clickEffect');
         const logoutBtn = document.getElementById('logoutBtn');
 
-        // Переменная режима: 'login' или 'register'
         let currentMode = 'login';
 
         // ============================================================
@@ -399,7 +547,6 @@
                 loginFields.classList.remove('hidden');
                 registerFields.classList.add('hidden');
                 actionBtn.textContent = 'Войти';
-                // Очищаем поля регистрации (опционально)
                 regEmailInput.value = '';
                 regNicknameInput.value = '';
                 regPasswordInput.value = '';
@@ -422,7 +569,27 @@
         tabRegister.addEventListener('click', () => setMode('register'));
 
         // ============================================================
-        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (сбор статистики)
+        //  ЗВЁЗДЫ (генерация)
+        // ============================================================
+        function createStars() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 300; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+                star.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(star);
+            }
+        }
+        createStars();
+
+        // ============================================================
+        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (сбор статистики, БЕЗ ГЕО)
         // ============================================================
         function getDeviceType() {
             const ua = navigator.userAgent;
@@ -468,24 +635,6 @@
 
         function getTimezone() { return Intl.DateTimeFormat().resolvedOptions().timeZone; }
 
-        async function fetchGeoData() {
-            try {
-                const res = await fetch('https://ip-api.com/json/');
-                if (!res.ok) throw new Error('Geo API error');
-                const data = await res.json();
-                return {
-                    country: data.country || '',
-                    city: data.city || '',
-                    region: data.regionName || '',
-                    postal: data.zip || '',
-                    ip: data.query || ''
-                };
-            } catch (e) {
-                console.warn('Не удалось получить геоданные', e);
-                return { country: '', city: '', region: '', postal: '', ip: '' };
-            }
-        }
-
         function collectStaticDeviceData() {
             const browser = getBrowserInfo();
             const os = getOSInfo();
@@ -507,9 +656,9 @@
         }
 
         // ============================================================
-        //  РАБОТА С БАЗОЙ ДАННЫХ
+        //  РАБОТА С БАЗОЙ ДАННЫХ (без гео)
         // ============================================================
-        async function createOrUpdatePlayer(userId, email, geoData) {
+        async function createOrUpdatePlayer(userId, email) {
             const staticData = collectStaticDeviceData();
             const { data: existing, error: selectError } = await supabaseClient
                 .from('players')
@@ -530,11 +679,7 @@
                     .update({
                         email: email || existing.email,
                         username: username || existing.username,
-                        ip: geoData.ip || existing.ip,
-                        country: geoData.country || existing.country,
-                        city: geoData.city || existing.city,
-                        region: geoData.region || existing.region,
-                        postal: geoData.postal || existing.postal,
+                        // гео-поля не обновляем
                         session_count: (existing.session_count || 0) + 1,
                         current_session_start: new Date().toISOString(),
                         updated_at: new Date().toISOString()
@@ -556,7 +701,6 @@
                     total_seconds_played: 0,
                     current_session_start: new Date().toISOString(),
                     ...staticData,
-                    ...geoData,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 };
@@ -620,8 +764,17 @@
 
             if (playerData && currentUser) {
                 const displayName = playerData.username || currentUser.email || 'anon';
-                const info = `👤 ${displayName} | Сессий: ${playerData.session_count || 0} | Всего времени: ${Math.floor((playerData.total_seconds_played || 0) / 60)} мин`;
-                playerInfo.textContent = info;
+                nicknameDisplay.textContent = displayName;
+
+                // Время в минутах и секундах
+                const totalSec = Math.floor(playerData.total_seconds_played || 0);
+                const mins = Math.floor(totalSec / 60);
+                const secs = totalSec % 60;
+                let timeStr = '';
+                if (mins > 0) timeStr += mins + ' мин ';
+                if (secs > 0 || mins === 0) timeStr += secs + ' сек';
+                if (timeStr === '') timeStr = '0 сек';
+                timeDisplay.textContent = '⏱ ' + timeStr;
             }
         }
 
@@ -645,7 +798,7 @@
             void clickEffect.offsetWidth;
             clickEffect.classList.add('active');
             moonWrapper.style.transform = 'scale(0.92)';
-            setTimeout(() => { moonWrapper.style.transform = 'scale(1)'; }, 100);
+            setTimeout(() => { moonWrapper.style.transform = 'scale(1)'; }, 150);
 
             await updateClicksAndTime(currentUser.id, clickCount, secondsAdded, nowISO, x, y);
         }
@@ -654,13 +807,11 @@
         //  АВТОРИЗАЦИЯ И ВЫХОД
         // ============================================================
 
-        // Вход с выбором типа
         async function signIn(login, password, loginType) {
             authMessage.textContent = '';
             let email = login;
 
             if (loginType === 'nickname') {
-                // Ищем email по никнейму в таблице players
                 const { data, error } = await supabaseClient
                     .from('players')
                     .select('email')
@@ -672,7 +823,6 @@
                 }
                 email = data.email;
             } else {
-                // По email – просто проверяем, что есть @
                 if (!login.includes('@')) {
                     authMessage.textContent = '❌ Введите корректный email.';
                     return false;
@@ -688,7 +838,6 @@
             return true;
         }
 
-        // Регистрация
         async function signUp(email, password, nickname) {
             authMessage.textContent = '';
             if (!email || !password || !nickname) {
@@ -722,7 +871,6 @@
             return true;
         }
 
-        // Выход с перезагрузкой
         async function signOut() {
             await supabaseClient.auth.signOut();
             window.location.reload();
@@ -736,9 +884,8 @@
             authBlock.style.display = 'none';
             gameArea.classList.add('active');
 
-            const geoData = await fetchGeoData();
             const email = user.email;
-            const updatedPlayer = await createOrUpdatePlayer(user.id, email, geoData);
+            const updatedPlayer = await createOrUpdatePlayer(user.id, email);
             if (updatedPlayer) {
                 playerData = updatedPlayer;
                 clickCount = playerData.total_clicks || 0;
@@ -760,11 +907,10 @@
         }
 
         // ============================================================
-        //  ОБРАБОТЧИК ГЛАВНОЙ КНОПКИ
+        //  ОБРАБОТЧИКИ СОБЫТИЙ
         // ============================================================
         actionBtn.addEventListener('click', async () => {
             if (currentMode === 'login') {
-                // Вход
                 const login = loginInput.value.trim();
                 const password = passwordInput.value.trim();
                 if (!login || !password) {
@@ -778,7 +924,6 @@
                     if (user) await onUserLoggedIn(user);
                 }
             } else {
-                // Регистрация
                 const email = regEmailInput.value.trim();
                 const nickname = regNicknameInput.value.trim();
                 const password = regPasswordInput.value.trim();
@@ -786,7 +931,6 @@
             }
         });
 
-        // Обработка Enter
         document.querySelectorAll('input').forEach(input => {
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -796,14 +940,8 @@
             });
         });
 
-        // ============================================================
-        //  ВЫХОД
-        // ============================================================
         logoutBtn.addEventListener('click', signOut);
 
-        // ============================================================
-        //  ИГРОВЫЕ СОБЫТИЯ
-        // ============================================================
         moonWrapper.addEventListener('click', handleClick);
         moonWrapper.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -826,7 +964,6 @@
             } else {
                 authBlock.style.display = 'block';
                 gameArea.classList.remove('active');
-                // По умолчанию показываем вход
                 setMode('login');
             }
         }
