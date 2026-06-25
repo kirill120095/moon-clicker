@@ -221,12 +221,10 @@
         }
         .auth-form .row {
             display: flex;
+            flex-direction: column;
             gap: 12px;
-            flex-wrap: wrap;
         }
         .auth-form .row input {
-            flex: 1;
-            min-width: 150px;
             padding: 14px 18px;
             border-radius: 30px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -235,6 +233,7 @@
             font-size: 1.0rem;
             outline: none;
             transition: border 0.3s;
+            width: 100%;
         }
         .auth-form .row input:focus {
             border-color: rgba(255, 215, 150, 0.5);
@@ -619,7 +618,6 @@
             .settings-icon { font-size: 1.6rem; top: 15px; right: 18px; }
             .planet-1 { width: 40px; height: 40px; }
             .planet-2 { width: 30px; height: 30px; }
-            .auth-form .row input { min-width: 120px; }
         }
         @media (max-width: 450px) {
             .moon-wrapper { width: 200px; height: 200px; }
@@ -627,8 +625,6 @@
             .subtitle { font-size: 1.6rem; }
             .container { padding: 20px; }
             .auth-form { padding: 15px; }
-            .auth-form .row { flex-direction: column; gap: 8px; }
-            .auth-form .row input { min-width: 100%; }
         }
     </style>
 </head>
@@ -668,8 +664,8 @@
                 <div class="row">
                     <input type="email" id="regEmailInput" placeholder="Email (обязательно)" />
                     <input type="text" id="regNicknameInput" placeholder="Логин (обязательно)" />
+                    <input type="password" id="regPasswordInput" placeholder="Пароль (не менее 6 символов)" />
                 </div>
-                <input type="password" id="regPasswordInput" placeholder="Пароль (не менее 6 символов)" style="width:100%;" />
             </div>
 
             <div class="buttons">
@@ -742,7 +738,6 @@
         let currentUser = null;
         let playerData = null;
         let clickCount = 0;
-        let lastClickTime = null;
         let totalSecondsPlayed = 0;
         let sessionStartTimestamp = null;
         let timeUpdateInterval = null;
@@ -780,7 +775,7 @@
         const confirmMessage = document.getElementById('confirmMessage');
 
         let currentMode = 'login';
-        let pendingReset = false; // флаг для подтверждения сброса
+        let pendingReset = false;
 
         // ============================================================
         //  УПРАВЛЕНИЕ ВКЛАДКАМИ
@@ -967,7 +962,7 @@
             return data;
         }
 
-        async function updateClicksAndTime(playerId, newTotal, secondsAdded, clickTimestamp, x, y) {
+        async function updateClicksAndTime(playerId, newTotal, clickTimestamp, x, y) {
             const updateData = {
                 total_clicks: newTotal,
                 last_click_at: clickTimestamp,
@@ -991,112 +986,95 @@
             if (insertError) console.error('Ошибка вставки клика:', insertError);
         }
 
-        // Отдельная функция для сохранения времени (без кликов)
         async function saveTimeOnly() {
             if (!currentUser || !playerData) return;
-            const currentTotal = getCurrentTotalSeconds();
-            // Обновляем только total_seconds_played
             const { error } = await supabaseClient
                 .from('players')
                 .update({
-                    total_seconds_played: currentTotal,
+                    total_seconds_played: totalSecondsPlayed,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', currentUser.id);
-            if (error) console.error('Ошибка автосохранения времени:', error);
-            else {
-                // Обновляем локальный playerData.total_seconds_played
-                playerData.total_seconds_played = currentTotal;
-                // Сбрасываем сессию, чтобы не дублировать время
-                sessionStartTimestamp = Date.now();
+            if (error) console.error('Ошибка сохранения времени:', error);
+        }
+
+        async function resetPlayerProgress(playerId) {
+            const { error } = await supabaseClient
+                .from('players')
+                .update({
+                    total_clicks: 0,
+                    total_seconds_played: 0,
+                    first_click_at: new Date().toISOString(),
+                    last_click_at: null,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', playerId);
+            
+            if (!error) {
+                await supabaseClient
+                    .from('clicks')
+                    .delete()
+                    .eq('player_id', playerId);
             }
+            return !error;
         }
 
         // ============================================================
-        //  ФУНКЦИИ ОБНОВЛЕНИЯ ВРЕМЕНИ
+        //  УПРАВЛЕНИЕ ВРЕМЕНЕМ И ОТОБРАЖЕНИЕМ
         // ============================================================
-        function getCurrentTotalSeconds() {
-            if (!playerData) return 0;
-            const base = playerData.total_seconds_played || 0;
-            if (sessionStartTimestamp) {
-                return base + (Date.now() - sessionStartTimestamp) / 1000;
-            }
-            return base;
-        }
-
         function updateTimeDisplay() {
-            if (!playerData) return;
-            const totalSec = Math.floor(getCurrentTotalSeconds());
-            const mins = Math.floor(totalSec / 60);
-            const secs = totalSec % 60;
-            let timeStr = '';
-            if (mins > 0) timeStr += mins + ' мин ';
-            if (secs > 0 || mins === 0) timeStr += secs + ' сек';
-            if (timeStr === '') timeStr = '0 сек';
-            timeDisplay.textContent = '⏱ ' + timeStr;
-        }
-
-        // ============================================================
-        //  ОСНОВНАЯ ЛОГИКА ИГРЫ
-        // ============================================================
-        function updateUI() {
-            counterEl.textContent = clickCount;
-            counterEl.style.transform = 'scale(1.1)';
-            setTimeout(() => { counterEl.style.transform = 'scale(1)'; }, 100);
-
-            if (playerData && currentUser) {
-                const displayName = playerData.username || currentUser.email || 'anon';
-                nicknameDisplay.textContent = displayName;
-                updateTimeDisplay();
-            }
-        }
-
-        async function handleClick(e) {
-            if (!currentUser) return;
-            const rect = moonWrapper.getBoundingClientRect();
-            const x = Math.round(e.clientX - rect.left);
-            const y = Math.round(e.clientY - rect.top);
             const now = Date.now();
-            const nowISO = new Date(now).toISOString();
+            const elapsedMs = now - sessionStartTimestamp;
+            const elapsedSeconds = Math.floor(elapsedMs / 1000);
+            totalSecondsPlayed = (playerData?.total_seconds_played || 0) + elapsedSeconds;
+            timeDisplay.textContent = `⏱ ${totalSecondsPlayed} сек`;
+        }
 
-            // Вычисляем текущее общее время с учётом сессии
-            const currentTotal = getCurrentTotalSeconds();
-            let secondsAdded = 0;
-            if (lastClickTime) {
-                secondsAdded = (now - lastClickTime) / 1000;
+        function startTimeTracking() {
+            sessionStartTimestamp = Date.now();
+            if (timeUpdateInterval) clearInterval(timeUpdateInterval);
+            timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
+        }
+
+        function stopTimeTracking() {
+            if (timeUpdateInterval) {
+                clearInterval(timeUpdateInterval);
+                timeUpdateInterval = null;
             }
-            // Обновляем общее время
-            totalSecondsPlayed = currentTotal + secondsAdded;
-            // Обновляем playerData сразу локально, чтобы таймер не сбрасывался
-            playerData.total_seconds_played = totalSecondsPlayed;
-            // Сбрасываем сессию на текущий момент
-            sessionStartTimestamp = now;
+        }
 
-            lastClickTime = now;
+        // ============================================================
+        //  КЛИК ПО ЛУНЕ
+        // ============================================================
+        async function handleMoonClick(e) {
+            if (!currentUser) return;
+
             clickCount++;
-            updateUI();
+            const rect = moonWrapper.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
 
-            // Эффект клика
+            counterEl.textContent = clickCount;
             clickEffect.classList.remove('active');
             void clickEffect.offsetWidth;
             clickEffect.classList.add('active');
-            moonWrapper.style.transform = 'scale(0.92)';
-            setTimeout(() => { moonWrapper.style.transform = 'scale(1)'; }, 150);
 
-            // Сохраняем в БД (включая время)
-            await updateClicksAndTime(currentUser.id, clickCount, secondsAdded, nowISO, x, y);
+            const clickTimestamp = new Date().toISOString();
+            await updateClicksAndTime(currentUser.id, clickCount, clickTimestamp, x, y);
         }
 
+        moonWrapper.addEventListener('click', handleMoonClick);
+
         // ============================================================
-        //  АВТОСОХРАНЕНИЕ ВРЕМЕНИ (каждые 30 секунд)
+        //  АВТОСОХРАНЕНИЕ ПРОГРЕССА
         // ============================================================
         function startAutoSave() {
             if (autoSaveInterval) clearInterval(autoSaveInterval);
-            autoSaveInterval = setInterval(() => {
+            autoSaveInterval = setInterval(async () => {
                 if (currentUser && playerData) {
-                    saveTimeOnly();
+                    await saveTimeOnly();
                 }
-            }, 30000); // каждые 30 секунд
+            }, 5000);
         }
 
         function stopAutoSave() {
@@ -1107,283 +1085,149 @@
         }
 
         // ============================================================
-        //  АВТОРИЗАЦИЯ И ВЫХОД
+        //  АВТОРИЗАЦИЯ
         // ============================================================
-
-        async function signIn(login, password, loginType) {
+        async function handleAuth() {
             authMessage.textContent = '';
-            let email = login;
+            authMessage.className = 'error';
 
-            if (loginType === 'nickname') {
-                const { data, error } = await supabaseClient
-                    .from('players')
-                    .select('email')
-                    .eq('username', login)
-                    .maybeSingle();
-                if (error || !data || !data.email) {
-                    authMessage.textContent = '❌ Пользователь с таким логином не найден.';
-                    return false;
-                }
-                email = data.email;
-            } else {
-                if (!login.includes('@')) {
-                    authMessage.textContent = '❌ Введите корректный email.';
-                    return false;
-                }
-                email = login;
-            }
-
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                authMessage.textContent = '❌ ' + error.message;
-                return false;
-            }
-            return true;
-        }
-
-        async function signUp(email, password, nickname) {
-            authMessage.textContent = '';
-            if (!email || !password || !nickname) {
-                authMessage.textContent = '❌ Все поля обязательны для заполнения.';
-                return false;
-            }
-            if (password.length < 6) {
-                authMessage.textContent = '❌ Пароль должен быть не менее 6 символов.';
-                return false;
-            }
-            const { data, error } = await supabaseClient.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: { username: nickname }
-                }
-            });
-            if (error) {
-                authMessage.textContent = '❌ ' + error.message;
-                return false;
-            }
-
-            const user = data.user;
-            if (user && !user.confirmed_at) {
-                authMessage.textContent = '📧 На вашу почту отправлено письмо с подтверждением. Пожалуйста, подтвердите email, затем войдите.';
-                authMessage.className = 'success';
-            } else {
-                authMessage.textContent = '✅ Регистрация успешна! Теперь войдите.';
-                authMessage.className = 'success';
-            }
-            return true;
-        }
-
-        async function signOut() {
-            stopAutoSave();
-            if (timeUpdateInterval) {
-                clearInterval(timeUpdateInterval);
-                timeUpdateInterval = null;
-            }
-            // Сохраняем время перед выходом
-            if (currentUser && playerData) {
-                await saveTimeOnly();
-            }
-            await supabaseClient.auth.signOut();
-            window.location.reload();
-        }
-
-        // ============================================================
-        //  ИНИЦИАЛИЗАЦИЯ ПОСЛЕ ВХОДА
-        // ============================================================
-        async function onUserLoggedIn(user) {
-            currentUser = user;
-            authBlock.style.display = 'none';
-            gameArea.classList.add('active');
-
-            const email = user.email;
-            const updatedPlayer = await createOrUpdatePlayer(user.id, email);
-            if (updatedPlayer) {
-                playerData = updatedPlayer;
-                clickCount = playerData.total_clicks || 0;
-                totalSecondsPlayed = playerData.total_seconds_played || 0;
-                lastClickTime = playerData.last_click_at ? new Date(playerData.last_click_at).getTime() : null;
-                sessionStartTimestamp = Date.now();
-                updateUI();
-
-                if (timeUpdateInterval) clearInterval(timeUpdateInterval);
-                timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
-                updateTimeDisplay();
-
-                // Запускаем автосохранение времени
-                startAutoSave();
-            } else {
-                const loaded = await loadPlayerData(user.id);
-                if (loaded) {
-                    playerData = loaded;
-                    clickCount = loaded.total_clicks || 0;
-                    totalSecondsPlayed = loaded.total_seconds_played || 0;
-                    lastClickTime = loaded.last_click_at ? new Date(loaded.last_click_at).getTime() : null;
-                    sessionStartTimestamp = Date.now();
-                    updateUI();
-                    if (timeUpdateInterval) clearInterval(timeUpdateInterval);
-                    timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
-                    updateTimeDisplay();
-                    startAutoSave();
-                } else {
-                    authMessage.textContent = '⚠️ Ошибка загрузки профиля.';
-                }
-            }
-        }
-
-        // ============================================================
-        //  УПРАВЛЕНИЕ ФОНОМ ЛУНЫ И РЕЖИМАМИ
-        // ============================================================
-        function setMoonBackground(bgName) {
-            const container = document.getElementById('app');
-            // Убираем предыдущий режим
-            container.classList.remove('blood-mode');
-
-            if (bgName === 'blood-moon.jpg') {
-                container.classList.add('blood-mode');
-                moonElement.style.background = `url('images/${bgName}') center/cover no-repeat`;
-            } else if (bgName === 'main-moon.jpg') {
-                moonElement.style.background = `url('images/${bgName}') center/cover no-repeat`;
-            } else {
-                // fallback
-                moonElement.style.background = 'radial-gradient(circle at 35% 30%, #f5f0e8, #c8bda8 60%, #8a7e6b)';
-                moonElement.style.backgroundSize = 'cover';
-                moonElement.style.backgroundPosition = 'center';
-            }
-            localStorage.setItem('moonBackground', bgName);
-            // Обновляем активную кнопку
-            document.querySelectorAll('#bgOptions button').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.bg === bgName);
-            });
-        }
-
-        function loadMoonBackground() {
-            const saved = localStorage.getItem('moonBackground');
-            if (saved && (saved === 'main-moon.jpg' || saved === 'blood-moon.jpg')) {
-                setMoonBackground(saved);
-            } else {
-                // по умолчанию ставим main-moon.jpg
-                setMoonBackground('main-moon.jpg');
-            }
-        }
-
-        // ============================================================
-        //  СБРОС ПРОГРЕССА (с кастомным подтверждением)
-        // ============================================================
-        function showConfirm(message, onYes, onNo) {
-            confirmMessage.textContent = message;
-            confirmOverlay.classList.add('active');
-            // Убираем старые обработчики
-            const yesHandler = () => {
-                confirmOverlay.classList.remove('active');
-                if (onYes) onYes();
-            };
-            const noHandler = () => {
-                confirmOverlay.classList.remove('active');
-                if (onNo) onNo();
-            };
-            confirmYes.onclick = yesHandler;
-            confirmNo.onclick = noHandler;
-            // Закрытие по клику на оверлей
-            confirmOverlay.onclick = (e) => {
-                if (e.target === confirmOverlay) {
-                    confirmOverlay.classList.remove('active');
-                    if (onNo) onNo();
-                }
-            };
-        }
-
-        async function resetProgress() {
-            if (!currentUser) return;
-            showConfirm('Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.', async () => {
-                // Пользователь подтвердил
-                try {
-                    const { error: deleteError } = await supabaseClient
-                        .from('clicks')
-                        .delete()
-                        .eq('player_id', currentUser.id);
-                    if (deleteError) throw deleteError;
-
-                    const { error: updateError } = await supabaseClient
-                        .from('players')
-                        .update({
-                            total_clicks: 0,
-                            total_seconds_played: 0,
-                            last_click_at: null,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('id', currentUser.id);
-                    if (updateError) throw updateError;
-
-                    // Обновляем локальные данные
-                    playerData.total_clicks = 0;
-                    playerData.total_seconds_played = 0;
-                    playerData.last_click_at = null;
-                    clickCount = 0;
-                    totalSecondsPlayed = 0;
-                    lastClickTime = null;
-                    sessionStartTimestamp = Date.now();
-                    updateUI();
-
-                    alert('✅ Прогресс сброшен!');
-                } catch (error) {
-                    console.error('Ошибка сброса:', error);
-                    alert('❌ Не удалось сбросить прогресс: ' + error.message);
-                }
-            }, () => {
-                // Отмена
-            });
-        }
-
-        // ============================================================
-        //  ОБРАБОТЧИКИ СОБЫТИЙ
-        // ============================================================
-        actionBtn.addEventListener('click', async () => {
             if (currentMode === 'login') {
-                const login = loginInput.value.trim();
+                const loginType = document.querySelector('input[name="loginType"]:checked').value;
+                const identifier = loginInput.value.trim();
                 const password = passwordInput.value.trim();
-                if (!login || !password) {
-                    authMessage.textContent = '❌ Заполните все поля.';
+
+                if (!identifier || !password) {
+                    authMessage.textContent = '❌ Заполните все поля';
                     return;
                 }
-                const loginType = document.querySelector('input[name="loginType"]:checked').value;
-                const ok = await signIn(login, password, loginType);
-                if (ok) {
-                    const { data: { user } } = await supabaseClient.auth.getUser();
-                    if (user) await onUserLoggedIn(user);
+
+                authMessage.textContent = 'Входим...';
+                authMessage.className = '';
+
+                try {
+                    let response;
+                    if (loginType === 'email') {
+                        response = await supabaseClient.auth.signInWithPassword({
+                            email: identifier,
+                            password: password
+                        });
+                    } else {
+                        const { data: players } = await supabaseClient
+                            .from('players')
+                            .select('id')
+                            .eq('username', identifier)
+                            .single();
+
+                        if (!players) throw new Error('Пользователь не найден');
+                        
+                        const { data: authData } = await supabaseClient.auth.admin.getUserById(players.id);
+                        if (!authData?.user) throw new Error('Ошибка авторизации');
+
+                        response = await supabaseClient.auth.signInWithPassword({
+                            email: authData.user.email,
+                            password: password
+                        });
+                    }
+
+                    if (response.error) throw response.error;
+
+                    currentUser = response.data.user;
+                    playerData = await createOrUpdatePlayer(currentUser.id, currentUser.email);
+
+                    if (!playerData) throw new Error('Ошибка загрузки данных игрока');
+
+                    clickCount = playerData.total_clicks || 0;
+                    counterEl.textContent = clickCount;
+                    nicknameDisplay.textContent = playerData.username || currentUser.email;
+
+                    startTimeTracking();
+                    startAutoSave();
+
+                    authBlock.classList.add('hidden');
+                    gameArea.classList.add('active');
+                } catch (error) {
+                    authMessage.textContent = '❌ ' + (error.message || 'Ошибка входа');
+                    authMessage.className = 'error';
                 }
             } else {
                 const email = regEmailInput.value.trim();
                 const nickname = regNicknameInput.value.trim();
                 const password = regPasswordInput.value.trim();
-                await signUp(email, password, nickname);
-            }
-        });
 
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    actionBtn.click();
+                if (!email || !nickname || !password) {
+                    authMessage.textContent = '❌ Заполните все поля';
+                    return;
                 }
-            });
-        });
+                if (password.length < 6) {
+                    authMessage.textContent = '❌ Пароль должен быть минимум 6 символов';
+                    return;
+                }
 
-        logoutBtn.addEventListener('click', signOut);
+                authMessage.textContent = 'Регистрируем...';
+                authMessage.className = '';
 
-        moonWrapper.addEventListener('click', handleClick);
-        moonWrapper.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                const rect = moonWrapper.getBoundingClientRect();
-                const fakeEvent = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
-                handleClick(fakeEvent);
+                try {
+                    const { data, error } = await supabaseClient.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: {
+                            data: { username: nickname }
+                        }
+                    });
+
+                    if (error) throw error;
+
+                    currentUser = data.user;
+                    playerData = await createOrUpdatePlayer(currentUser.id, currentUser.email);
+
+                    if (!playerData) throw new Error('Ошибка создания профиля');
+
+                    clickCount = 0;
+                    counterEl.textContent = clickCount;
+                    nicknameDisplay.textContent = nickname;
+
+                    startTimeTracking();
+                    startAutoSave();
+
+                    authBlock.classList.add('hidden');
+                    gameArea.classList.add('active');
+                } catch (error) {
+                    authMessage.textContent = '❌ ' + (error.message || 'Ошибка регистрации');
+                    authMessage.className = 'error';
+                }
             }
-        });
-        moonWrapper.setAttribute('tabindex', '0');
-        moonWrapper.setAttribute('role', 'button');
+        }
 
-        // ---------- НАСТРОЙКИ ----------
+        actionBtn.addEventListener('click', handleAuth);
+
+        // ============================================================
+        //  ВЫХОД
+        // ============================================================
+        async function handleLogout() {
+            stopTimeTracking();
+            stopAutoSave();
+
+            if (currentUser && playerData) {
+                await saveTimeOnly();
+            }
+
+            await supabaseClient.auth.signOut();
+
+            currentUser = null;
+            playerData = null;
+            clickCount = 0;
+            totalSecondsPlayed = 0;
+
+            authBlock.classList.remove('hidden');
+            gameArea.classList.remove('active');
+            setMode('login');
+        }
+
+        logoutBtn.addEventListener('click', handleLogout);
+
+        // ============================================================
+        //  НАСТРОЙКИ
+        // ============================================================
         settingsBtn.addEventListener('click', () => {
             settingsModal.classList.add('active');
         });
@@ -1392,37 +1236,78 @@
             settingsModal.classList.remove('active');
         });
 
-        settingsModal.addEventListener('click', (e) => {
-            if (e.target === settingsModal) {
-                settingsModal.classList.remove('active');
+        bgOptions.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                document.querySelectorAll('.bg-options button').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+
+                const bg = e.target.dataset.bg;
+                if (bg === 'blood-moon.jpg') {
+                    document.getElementById('app').classList.add('blood-mode');
+                    localStorage.setItem('moonMode', 'blood');
+                } else {
+                    document.getElementById('app').classList.remove('blood-mode');
+                    localStorage.setItem('moonMode', 'normal');
+                }
             }
         });
 
-        // Выбор фона
-        bgOptions.addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            const bg = btn.dataset.bg;
-            setMoonBackground(bg);
+        resetProgressBtn.addEventListener('click', () => {
+            confirmOverlay.classList.add('active');
         });
 
-        resetProgressBtn.addEventListener('click', resetProgress);
+        confirmYes.addEventListener('click', async () => {
+            if (currentUser && playerData) {
+                const success = await resetPlayerProgress(currentUser.id);
+                if (success) {
+                    clickCount = 0;
+                    totalSecondsPlayed = playerData.total_seconds_played || 0;
+                    counterEl.textContent = '0';
+                    updateTimeDisplay();
+                    authMessage.textContent = '✅ Прогресс сброшен';
+                    authMessage.className = 'success';
+                    confirmOverlay.classList.remove('active');
+                }
+            }
+        });
+
+        confirmNo.addEventListener('click', () => {
+            confirmOverlay.classList.remove('active');
+        });
 
         // ============================================================
-        //  ПРОВЕРКА АУТЕНТИФИКАЦИИ ПРИ ЗАГРУЗКЕ
+        //  ИНИЦИАЛИЗАЦИЯ
         // ============================================================
         async function init() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session?.user) {
-                await onUserLoggedIn(session.user);
-            } else {
-                authBlock.style.display = 'block';
-                gameArea.classList.remove('active');
-                setMode('login');
+                currentUser = session.user;
+                playerData = await loadPlayerData(currentUser.id);
+
+                if (playerData) {
+                    clickCount = playerData.total_clicks || 0;
+                    counterEl.textContent = clickCount;
+                    nicknameDisplay.textContent = playerData.username || currentUser.email;
+                    totalSecondsPlayed = playerData.total_seconds_played || 0;
+                    updateTimeDisplay();
+
+                    startTimeTracking();
+                    startAutoSave();
+
+                    authBlock.classList.add('hidden');
+                    gameArea.classList.add('active');
+                }
             }
-            // Загружаем сохранённый фон
-            loadMoonBackground();
+
+            const savedMode = localStorage.getItem('moonMode');
+            if (savedMode === 'blood') {
+                document.getElementById('app').classList.add('blood-mode');
+                document.querySelector('[data-bg="blood-moon.jpg"]').classList.add('active');
+            } else {
+                document.querySelector('[data-bg="main-moon.jpg"]').classList.add('active');
+            }
         }
+
         init();
     </script>
 </body>
