@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2">
     </script>
     <style>
-        /* ---------- ОСНОВНЫЕ СТИЛИ (без изменений, только дополнения) ---------- */
+        /* ---------- ОСНОВНЫЕ СТИЛИ ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -470,10 +470,6 @@
         .timer-bar-container.active {
             display: flex;
         }
-        .boss-label {
-            color: #ff4444;
-            font-weight: bold;
-        }
 
         /* ---------- КНОПКА ВЫХОДА ---------- */
         .logout-btn {
@@ -652,7 +648,7 @@
             cursor: pointer;
         }
 
-        /* ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ ---------- */
+        /* ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ (без системных alert/confirm) ---------- */
         .confirm-overlay {
             display: none;
             position: fixed;
@@ -911,7 +907,7 @@
         </div>
     </div>
 
-    <!-- ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ ---------- -->
+    <!-- ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ (вместо alert/confirm) ---------- -->
     <div class="confirm-overlay" id="confirmOverlay">
         <div class="confirm-box">
             <p id="confirmMessage">Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.</p>
@@ -927,13 +923,22 @@
 
     <script>
         // ============================================================
-        //  НАСТРОЙКА SUPABASE
+        //  НАСТРОЙКА SUPABASE (без alert)
         // ============================================================
         const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 
+        // Если библиотека не загрузилась – показываем сообщение в authMessage (без alert)
         if (typeof window.supabase === 'undefined') {
-            document.getElementById('authMessage').textContent = '⚠️ Не удалось загрузить библиотеку Supabase. Проверьте интернет.';
+            const msg = '⚠️ Не удалось загрузить библиотеку Supabase. Проверьте интернет.';
+            const authMsgEl = document.getElementById('authMessage');
+            if (authMsgEl) {
+                authMsgEl.textContent = msg;
+                authMsgEl.className = 'error';
+            } else {
+                // fallback
+                document.body.innerHTML += `<div style="color:red;text-align:center;padding:20px;">${msg}</div>`;
+            }
             throw new Error('Supabase library not loaded');
         }
 
@@ -942,7 +947,7 @@
         // ============================================================
         //  КОНСТАНТЫ И НАСТРОЙКИ
         // ============================================================
-        const TEST_MODE = true;
+        const TEST_MODE = true; // true – HP уменьшены в 10 раз для теста
         const HP_SCALE = TEST_MODE ? 0.1 : 1;
 
         const BOSS_LEVEL = 10;
@@ -1016,18 +1021,16 @@
         let currentMode = 'login';
 
         // ============================================================
-        //  TOAST (уведомления)
+        //  TOAST (уведомления) – вместо alert
         // ============================================================
         function showToast(message, type = 'info', duration = 4000) {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
             toastContainer.appendChild(toast);
-            // Показываем
             requestAnimationFrame(() => {
                 toast.classList.add('show');
             });
-            // Убираем через duration
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => {
@@ -1049,10 +1052,9 @@
             return `${days} дн`;
         }
 
-        // Вычисление максимального HP для уровня
         function getMaxHPForLevel(level) {
             if (level === BOSS_LEVEL) {
-                return 1000 * HP_SCALE; // 1000 или 100
+                return 1000 * HP_SCALE;
             }
             return BASE_HP * (1 + (level - 1) * 0.1);
         }
@@ -1282,6 +1284,9 @@
             if (error) console.error('Ошибка сохранения времени:', error);
         }
 
+        // ============================================================
+        //  СБРОС ПРОГРЕССА (без alert)
+        // ============================================================
         async function resetProgress() {
             if (!currentUser || !playerData) {
                 showToast('⚠️ Данные игрока не загружены', 'warning');
@@ -1480,13 +1485,10 @@
                 bossTimer--;
                 updateTimerBar();
                 if (bossTimer <= 0) {
-                    // Время вышло – восстанавливаем HP босса
                     clearBossTimer();
                     moonHP = maxHP;
                     updateUI();
-                    // Уведомление вместо alert
                     showToast('⏰ Время вышло! Босс восстановил здоровье.', 'warning');
-                    // Сохраняем состояние
                     const now = new Date().toISOString();
                     updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
                 }
@@ -1517,21 +1519,17 @@
             counterEl.textContent = clickCount;
             levelDisplay.textContent = `Уровень ${currentLevel}`;
 
-            // Отображаем HP в абсолютных значениях
             const currentHP = Math.round(moonHP);
             const maxHPDisplay = Math.round(maxHP);
             hpDisplay.textContent = `❤️ ${currentHP}/${maxHPDisplay}`;
             hpPercent.textContent = `${currentHP}/${maxHPDisplay}`;
 
-            // Прогресс-бар
             const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
             hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
-            // Масштаб луны
             const scale = Math.max(0.05, moonHP / maxHP);
             moonInner.style.transform = `scale(${scale})`;
 
-            // Управление боссом
             if (currentLevel === BOSS_LEVEL && moonHP > 0) {
                 if (!bossTimerRunning) {
                     startBossTimer();
@@ -1550,25 +1548,23 @@
         }
 
         // ============================================================
-        //  ОТКАТ УРОВНЯ
+        //  ОТКАТ УРОВНЯ (без alert)
         // ============================================================
         async function rollbackLevel() {
             if (currentLevel <= 1) {
                 showToast('⚠️ Вы уже на первом уровне', 'warning');
                 return;
             }
-            // Подтверждение через кастомное окно
+            // Используем кастомное окно подтверждения (без системного confirm)
             confirmOverlay.classList.add('active');
             confirmMessage.textContent = `Вы уверены, что хотите откатиться на уровень ${currentLevel - 1}?`;
-            // Временно переопределяем обработчики для подтверждения
+            // Временно переопределяем обработчики
             const yesHandler = async () => {
                 confirmOverlay.classList.remove('active');
-                // Откат
                 const newLevel = currentLevel - 1;
                 currentLevel = newLevel;
                 maxHP = getMaxHPForLevel(currentLevel);
                 moonHP = maxHP;
-                // Сброс босса
                 clearBossTimer();
                 isBossActive = false;
                 bossTimerRunning = false;
@@ -1576,7 +1572,7 @@
                 const now = new Date().toISOString();
                 await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
                 showToast(`↩️ Откат на уровень ${currentLevel} выполнен`, 'info');
-                // Восстанавливаем стандартные обработчики
+                // Восстанавливаем обработчики
                 confirmYes.onclick = defaultYesHandler;
                 confirmNo.onclick = defaultNoHandler;
             };
@@ -1585,7 +1581,6 @@
                 confirmYes.onclick = defaultYesHandler;
                 confirmNo.onclick = defaultNoHandler;
             };
-            // Сохраняем стандартные обработчики (для сброса прогресса)
             const defaultYesHandler = confirmYes.onclick;
             const defaultNoHandler = confirmNo.onclick;
             confirmYes.onclick = yesHandler;
@@ -1622,7 +1617,6 @@
             const savedMode = localStorage.getItem('moonMode') || 'normal';
             setMoonMode(savedMode);
 
-            // Загружаем состояние фиксации уровня
             const savedLock = localStorage.getItem('levelLocked') === 'true';
             levelLocked = savedLock;
             lockLevelCheckbox.checked = savedLock;
@@ -1638,10 +1632,8 @@
             clickCount++;
             moonHP = Math.max(0, moonHP - 1);
 
-            // Если луна разрушена
             if (moonHP === 0) {
                 if (levelLocked) {
-                    // Фиксация включена – восстанавливаем HP
                     moonHP = maxHP;
                     showToast(`🔒 Уровень ${currentLevel} зафиксирован. HP восстановлено.`, 'info');
                     updateUI();
@@ -1650,9 +1642,7 @@
                     return;
                 }
 
-                // Переход на следующий уровень
                 if (currentLevel === BOSS_LEVEL) {
-                    // Победа над боссом
                     clearBossTimer();
                     showToast(`🎉 Босс побеждён! Переход на уровень ${currentLevel + 1}`, 'success');
                 } else {
@@ -1661,7 +1651,6 @@
                 currentLevel++;
                 maxHP = getMaxHPForLevel(currentLevel);
                 moonHP = maxHP;
-                // Анимация
                 moonInner.classList.remove('level-up');
                 void moonInner.offsetWidth;
                 moonInner.classList.add('level-up');
@@ -1671,11 +1660,9 @@
                 return;
             }
 
-            // Обычный клик
             counterEl.textContent = clickCount;
             updateUI();
 
-            // Эффект клика
             const clickEffectEl = document.getElementById('clickEffect');
             clickEffectEl.classList.remove('active');
             void clickEffectEl.offsetWidth;
@@ -1725,11 +1712,9 @@
         resetProgressBtn.addEventListener('click', () => {
             confirmOverlay.classList.add('active');
             confirmMessage.textContent = 'Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.';
-            // Восстанавливаем стандартные обработчики для сброса
             confirmYes.onclick = async () => {
                 confirmOverlay.classList.remove('active');
                 await resetProgress();
-                // Восстанавливаем обработчики
                 confirmYes.onclick = defaultResetYes;
                 confirmNo.onclick = defaultResetNo;
             };
@@ -1738,15 +1723,12 @@
                 confirmYes.onclick = defaultResetYes;
                 confirmNo.onclick = defaultResetNo;
             };
-            // Сохраняем стандартные обработчики
             const defaultResetYes = confirmYes.onclick;
             const defaultResetNo = confirmNo.onclick;
         });
 
-        // Обработчик отката уровня
         rollbackLevelBtn.addEventListener('click', rollbackLevel);
 
-        // Обработчик фиксации уровня
         lockLevelCheckbox.addEventListener('change', () => {
             levelLocked = lockLevelCheckbox.checked;
             localStorage.setItem('levelLocked', levelLocked);
