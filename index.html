@@ -977,15 +977,7 @@
                 .eq('id', playerId);
             if (updateError) console.error('Ошибка обновления players:', updateError);
 
-            const { error: insertError } = await supabaseClient
-                .from('clicks')
-                .insert({
-                    player_id: playerId,
-                    click_time: clickTimestamp,
-                    x: x,
-                    y: y
-                });
-            if (insertError) console.error('Ошибка вставки клика:', insertError);
+            // Не отправляем клики в таблицу clicks - используем только players
         }
 
         async function saveTimeOnly() {
@@ -1028,13 +1020,6 @@
             totalTimeDisplay.textContent = '0 ч';
             playerData.total_clicks = 0;
             playerData.total_seconds_played = 0;
-
-            // Очистить таблицу кликов
-            const { error: deleteError } = await supabaseClient
-                .from('clicks')
-                .delete()
-                .eq('player_id', currentUser.id);
-            if (deleteError) console.error('Ошибка удаления кликов:', deleteError);
 
             alert('✅ Прогресс успешно сброшен!');
             settingsModal.classList.remove('active');
@@ -1280,7 +1265,8 @@
 
         bgOptions.addEventListener('click', (e) => {
             if (e.target.hasAttribute('data-bg')) {
-                setMoonMode(e.target.getAttribute('data-bg'));
+                const mode = e.target.getAttribute('data-bg');
+                setMoonMode(mode);
             }
         });
 
