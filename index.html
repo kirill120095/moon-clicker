@@ -109,7 +109,7 @@
             }
         }
 
-        /* ---------- КОНТЕЙНЕР (увеличен на 30%) ---------- */
+        /* ---------- КОНТЕЙНЕР ---------- */
         .container {
             position: relative;
             z-index: 1;
@@ -120,9 +120,18 @@
             backdrop-filter: blur(8px);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            max-width: 680px;
+            max-width: 700px;
             width: 100%;
-            transform: scale(1.0); /* можно увеличить масштаб, но проще увеличить размеры */
+            transition: all 0.5s ease;
+        }
+        /* Красный режим для кровавой луны */
+        .container.blood-mode {
+            box-shadow: 0 0 60px rgba(255, 0, 0, 0.2), 0 20px 60px rgba(0, 0, 0, 0.8);
+            border-color: rgba(255, 0, 0, 0.2);
+        }
+        .container.blood-mode .subtitle {
+            color: #ff6b6b;
+            text-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
         }
 
         /* ---------- ЗАГОЛОВОК ---------- */
@@ -133,6 +142,7 @@
             letter-spacing: 8px;
             text-shadow: 0 0 30px rgba(255, 215, 150, 0.15);
             margin-bottom: 25px;
+            transition: all 0.5s ease;
         }
 
         /* ---------- ШЕСТЕРЁНКА ---------- */
@@ -209,20 +219,27 @@
             height: 18px;
             cursor: pointer;
         }
-        .auth-form input {
+        .auth-form .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .auth-form .row input {
+            flex: 1;
+            min-width: 150px;
             padding: 14px 18px;
             border-radius: 30px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.05);
             color: #f0e6d0;
-            font-size: 1.1rem;
+            font-size: 1.0rem;
             outline: none;
             transition: border 0.3s;
         }
-        .auth-form input:focus {
+        .auth-form .row input:focus {
             border-color: rgba(255, 215, 150, 0.5);
         }
-        .auth-form input::placeholder {
+        .auth-form .row input::placeholder {
             color: rgba(255, 255, 255, 0.3);
         }
         .auth-form .buttons {
@@ -267,7 +284,7 @@
             display: block;
         }
 
-        /* ---------- ЛУНА (увеличена) ---------- */
+        /* ---------- ЛУНА ---------- */
         .moon-wrapper {
             display: inline-block;
             cursor: pointer;
@@ -298,8 +315,16 @@
                 inset 35px 35px 90px rgba(255, 255, 255, 0.3);
             position: relative;
             animation: moonOrbit 30s linear infinite, pulseGlow 4s ease-in-out infinite alternate;
+            transition: box-shadow 0.5s ease;
         }
-
+        /* Красный режим для луны */
+        .container.blood-mode .moon {
+            box-shadow:
+                0 0 60px rgba(255, 0, 0, 0.6),
+                0 0 120px rgba(255, 0, 0, 0.3),
+                inset -35px -35px 90px rgba(0, 0, 0, 0.4),
+                inset 35px 35px 90px rgba(255, 0, 0, 0.2);
+        }
         @keyframes moonOrbit {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -307,6 +332,14 @@
         @keyframes pulseGlow {
             0% { box-shadow: 0 0 40px rgba(255,215,150,0.3), 0 0 80px rgba(255,215,150,0.1), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,255,255,0.3); }
             100% { box-shadow: 0 0 100px rgba(255,215,150,0.6), 0 0 200px rgba(255,215,150,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,255,255,0.4); }
+        }
+        /* Красная пульсация */
+        .container.blood-mode .moon {
+            animation: moonOrbit 30s linear infinite, pulseGlowRed 4s ease-in-out infinite alternate;
+        }
+        @keyframes pulseGlowRed {
+            0% { box-shadow: 0 0 40px rgba(255,0,0,0.4), 0 0 80px rgba(255,0,0,0.2), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,0,0,0.2); }
+            100% { box-shadow: 0 0 100px rgba(255,0,0,0.8), 0 0 200px rgba(255,0,0,0.4), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,0,0,0.3); }
         }
 
         .click-effect {
@@ -329,6 +362,10 @@
             0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
         }
+        /* Красный эффект клика */
+        .container.blood-mode .click-effect {
+            background: radial-gradient(circle, rgba(255, 0, 0, 0.8), transparent 70%);
+        }
 
         /* ---------- СЧЁТЧИК ---------- */
         .counter {
@@ -345,6 +382,13 @@
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255, 255, 255, 0.06);
             min-width: 160px;
+            transition: all 0.5s ease;
+        }
+        .container.blood-mode .counter {
+            color: #ff6b6b;
+            text-shadow: 0 0 40px rgba(255, 0, 0, 0.3);
+            border-color: rgba(255, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.5);
         }
         .counter-label {
             color: rgba(255, 255, 255, 0.3);
@@ -352,9 +396,13 @@
             text-transform: uppercase;
             letter-spacing: 4px;
             margin-top: 2px;
+            transition: color 0.5s ease;
+        }
+        .container.blood-mode .counter-label {
+            color: rgba(255, 0, 0, 0.5);
         }
 
-        /* ---------- ИНФО (никнейм + время) ---------- */
+        /* ---------- ИНФО ---------- */
         .player-info {
             color: rgba(255, 255, 255, 0.35);
             font-size: 0.85rem;
@@ -370,6 +418,9 @@
         }
         .player-info .time {
             color: rgba(255, 215, 150, 0.5);
+        }
+        .container.blood-mode .player-info .time {
+            color: #ff6b6b;
         }
 
         /* ---------- КНОПКА ВЫХОДА ---------- */
@@ -495,6 +546,70 @@
             color: rgba(255,255,255,0.7);
         }
 
+        /* ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ ---------- */
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .confirm-overlay.active {
+            display: flex;
+        }
+        .confirm-box {
+            background: #1a1f35;
+            border-radius: 30px;
+            padding: 30px 40px;
+            max-width: 420px;
+            width: 90%;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+            text-align: center;
+        }
+        .confirm-box p {
+            color: #f0e6d0;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        .confirm-box .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .confirm-box .buttons button {
+            padding: 10px 30px;
+            border-radius: 30px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            min-width: 100px;
+        }
+        .confirm-box .btn-yes {
+            background: rgba(255, 80, 80, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 80, 80, 0.3);
+        }
+        .confirm-box .btn-yes:hover {
+            background: rgba(255, 80, 80, 0.3);
+            transform: scale(1.05);
+        }
+        .confirm-box .btn-no {
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .confirm-box .btn-no:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.05);
+        }
+
         /* ---------- АДАПТИВ ---------- */
         @media (max-width: 700px) {
             .container { padding: 30px; max-width: 100%; }
@@ -504,6 +619,7 @@
             .settings-icon { font-size: 1.6rem; top: 15px; right: 18px; }
             .planet-1 { width: 40px; height: 40px; }
             .planet-2 { width: 30px; height: 30px; }
+            .auth-form .row input { min-width: 120px; }
         }
         @media (max-width: 450px) {
             .moon-wrapper { width: 200px; height: 200px; }
@@ -511,6 +627,8 @@
             .subtitle { font-size: 1.6rem; }
             .container { padding: 20px; }
             .auth-form { padding: 15px; }
+            .auth-form .row { flex-direction: column; gap: 8px; }
+            .auth-form .row input { min-width: 100%; }
         }
     </style>
 </head>
@@ -525,9 +643,7 @@
 
     <!-- ---------- КОНТЕЙНЕР ---------- -->
     <div class="container" id="app">
-        <!-- Шестерёнка (настройки) -->
         <button class="settings-icon" id="settingsBtn" title="Настройки">⚙️</button>
-
         <div class="subtitle">Кликни по луне</div>
 
         <!-- АВТОРИЗАЦИЯ -->
@@ -540,16 +656,20 @@
             <div id="loginFields">
                 <div class="login-type">
                     <label><input type="radio" name="loginType" value="email" checked /> По email</label>
-                    <label><input type="radio" name="loginType" value="nickname" /> По никнейму</label>
+                    <label><input type="radio" name="loginType" value="nickname" /> По логину</label>
                 </div>
-                <input type="text" id="loginInput" placeholder="Введите email или никнейм" />
-                <input type="password" id="passwordInput" placeholder="Пароль" />
+                <div class="row">
+                    <input type="text" id="loginInput" placeholder="Логин или email" />
+                    <input type="password" id="passwordInput" placeholder="Пароль" />
+                </div>
             </div>
 
             <div id="registerFields" class="hidden">
-                <input type="email" id="regEmailInput" placeholder="Email (обязательно)" />
-                <input type="text" id="regNicknameInput" placeholder="Никнейм (обязательно)" />
-                <input type="password" id="regPasswordInput" placeholder="Пароль (не менее 6 символов)" />
+                <div class="row">
+                    <input type="email" id="regEmailInput" placeholder="Email (обязательно)" />
+                    <input type="text" id="regNicknameInput" placeholder="Логин (обязательно)" />
+                </div>
+                <input type="password" id="regPasswordInput" placeholder="Пароль (не менее 6 символов)" style="width:100%;" />
             </div>
 
             <div class="buttons">
@@ -580,18 +700,25 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <h2>⚙️ Настройки</h2>
-
             <div class="section-title">🎨 Фон луны</div>
             <div class="bg-options" id="bgOptions">
                 <button data-bg="main-moon.jpg">🌕 Обычная</button>
-                <button data-bg="blood-moon.jpg">🌕 Кровавая</button>
-                <!-- можно добавить ещё кнопки -->
+                <button data-bg="blood-moon.jpg">🔴 Кровавая</button>
             </div>
-
             <div class="section-title" style="margin-top:20px;">🗑️ Прогресс</div>
             <button class="btn-danger" id="resetProgressBtn">Сбросить прогресс</button>
-
             <button class="close-btn" id="closeSettingsBtn">Закрыть</button>
+        </div>
+    </div>
+
+    <!-- ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ ---------- -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-box">
+            <p id="confirmMessage">Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.</p>
+            <div class="buttons">
+                <button class="btn-yes" id="confirmYes">Да</button>
+                <button class="btn-no" id="confirmNo">Нет</button>
+            </div>
         </div>
     </div>
 
@@ -619,6 +746,7 @@
         let totalSecondsPlayed = 0;
         let sessionStartTimestamp = null;
         let timeUpdateInterval = null;
+        let autoSaveInterval = null;
 
         // DOM-элементы
         const authBlock = document.getElementById('authBlock');
@@ -646,8 +774,13 @@
         const closeSettingsBtn = document.getElementById('closeSettingsBtn');
         const resetProgressBtn = document.getElementById('resetProgressBtn');
         const bgOptions = document.getElementById('bgOptions');
+        const confirmOverlay = document.getElementById('confirmOverlay');
+        const confirmYes = document.getElementById('confirmYes');
+        const confirmNo = document.getElementById('confirmNo');
+        const confirmMessage = document.getElementById('confirmMessage');
 
         let currentMode = 'login';
+        let pendingReset = false; // флаг для подтверждения сброса
 
         // ============================================================
         //  УПРАВЛЕНИЕ ВКЛАДКАМИ
@@ -858,8 +991,29 @@
             if (insertError) console.error('Ошибка вставки клика:', insertError);
         }
 
+        // Отдельная функция для сохранения времени (без кликов)
+        async function saveTimeOnly() {
+            if (!currentUser || !playerData) return;
+            const currentTotal = getCurrentTotalSeconds();
+            // Обновляем только total_seconds_played
+            const { error } = await supabaseClient
+                .from('players')
+                .update({
+                    total_seconds_played: currentTotal,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', currentUser.id);
+            if (error) console.error('Ошибка автосохранения времени:', error);
+            else {
+                // Обновляем локальный playerData.total_seconds_played
+                playerData.total_seconds_played = currentTotal;
+                // Сбрасываем сессию, чтобы не дублировать время
+                sessionStartTimestamp = Date.now();
+            }
+        }
+
         // ============================================================
-        //  ФУНКЦИИ ОБНОВЛЕНИЯ ВРЕМЕНИ (исправлены)
+        //  ФУНКЦИИ ОБНОВЛЕНИЯ ВРЕМЕНИ
         // ============================================================
         function getCurrentTotalSeconds() {
             if (!playerData) return 0;
@@ -883,7 +1037,7 @@
         }
 
         // ============================================================
-        //  ОСНОВНАЯ ЛОГИКА ИГРЫ (исправлена логика времени)
+        //  ОСНОВНАЯ ЛОГИКА ИГРЫ
         // ============================================================
         function updateUI() {
             counterEl.textContent = clickCount;
@@ -929,8 +1083,27 @@
             moonWrapper.style.transform = 'scale(0.92)';
             setTimeout(() => { moonWrapper.style.transform = 'scale(1)'; }, 150);
 
-            // Сохраняем в БД асинхронно (не ждём)
-            updateClicksAndTime(currentUser.id, clickCount, secondsAdded, nowISO, x, y);
+            // Сохраняем в БД (включая время)
+            await updateClicksAndTime(currentUser.id, clickCount, secondsAdded, nowISO, x, y);
+        }
+
+        // ============================================================
+        //  АВТОСОХРАНЕНИЕ ВРЕМЕНИ (каждые 30 секунд)
+        // ============================================================
+        function startAutoSave() {
+            if (autoSaveInterval) clearInterval(autoSaveInterval);
+            autoSaveInterval = setInterval(() => {
+                if (currentUser && playerData) {
+                    saveTimeOnly();
+                }
+            }, 30000); // каждые 30 секунд
+        }
+
+        function stopAutoSave() {
+            if (autoSaveInterval) {
+                clearInterval(autoSaveInterval);
+                autoSaveInterval = null;
+            }
         }
 
         // ============================================================
@@ -948,7 +1121,7 @@
                     .eq('username', login)
                     .maybeSingle();
                 if (error || !data || !data.email) {
-                    authMessage.textContent = '❌ Пользователь с таким никнеймом не найден.';
+                    authMessage.textContent = '❌ Пользователь с таким логином не найден.';
                     return false;
                 }
                 email = data.email;
@@ -1002,9 +1175,14 @@
         }
 
         async function signOut() {
+            stopAutoSave();
             if (timeUpdateInterval) {
                 clearInterval(timeUpdateInterval);
                 timeUpdateInterval = null;
+            }
+            // Сохраняем время перед выходом
+            if (currentUser && playerData) {
+                await saveTimeOnly();
             }
             await supabaseClient.auth.signOut();
             window.location.reload();
@@ -1031,6 +1209,9 @@
                 if (timeUpdateInterval) clearInterval(timeUpdateInterval);
                 timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
                 updateTimeDisplay();
+
+                // Запускаем автосохранение времени
+                startAutoSave();
             } else {
                 const loaded = await loadPlayerData(user.id);
                 if (loaded) {
@@ -1043,6 +1224,7 @@
                     if (timeUpdateInterval) clearInterval(timeUpdateInterval);
                     timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
                     updateTimeDisplay();
+                    startAutoSave();
                 } else {
                     authMessage.textContent = '⚠️ Ошибка загрузки профиля.';
                 }
@@ -1050,17 +1232,23 @@
         }
 
         // ============================================================
-        //  УПРАВЛЕНИЕ ФОНОМ ЛУНЫ (изменено)
+        //  УПРАВЛЕНИЕ ФОНОМ ЛУНЫ И РЕЖИМАМИ
         // ============================================================
         function setMoonBackground(bgName) {
-            if (bgName === 'default') {
-                // резервный вариант, если картинка не загрузится
+            const container = document.getElementById('app');
+            // Убираем предыдущий режим
+            container.classList.remove('blood-mode');
+
+            if (bgName === 'blood-moon.jpg') {
+                container.classList.add('blood-mode');
+                moonElement.style.background = `url('images/${bgName}') center/cover no-repeat`;
+            } else if (bgName === 'main-moon.jpg') {
+                moonElement.style.background = `url('images/${bgName}') center/cover no-repeat`;
+            } else {
+                // fallback
                 moonElement.style.background = 'radial-gradient(circle at 35% 30%, #f5f0e8, #c8bda8 60%, #8a7e6b)';
                 moonElement.style.backgroundSize = 'cover';
                 moonElement.style.backgroundPosition = 'center';
-            } else {
-                // устанавливаем картинку из папки images
-                moonElement.style.background = `url('images/${bgName}') center/cover no-repeat`;
             }
             localStorage.setItem('moonBackground', bgName);
             // Обновляем активную кнопку
@@ -1071,7 +1259,7 @@
 
         function loadMoonBackground() {
             const saved = localStorage.getItem('moonBackground');
-            if (saved) {
+            if (saved && (saved === 'main-moon.jpg' || saved === 'blood-moon.jpg')) {
                 setMoonBackground(saved);
             } else {
                 // по умолчанию ставим main-moon.jpg
@@ -1080,46 +1268,71 @@
         }
 
         // ============================================================
-        //  СБРОС ПРОГРЕССА (исправлен текст)
+        //  СБРОС ПРОГРЕССА (с кастомным подтверждением)
         // ============================================================
+        function showConfirm(message, onYes, onNo) {
+            confirmMessage.textContent = message;
+            confirmOverlay.classList.add('active');
+            // Убираем старые обработчики
+            const yesHandler = () => {
+                confirmOverlay.classList.remove('active');
+                if (onYes) onYes();
+            };
+            const noHandler = () => {
+                confirmOverlay.classList.remove('active');
+                if (onNo) onNo();
+            };
+            confirmYes.onclick = yesHandler;
+            confirmNo.onclick = noHandler;
+            // Закрытие по клику на оверлей
+            confirmOverlay.onclick = (e) => {
+                if (e.target === confirmOverlay) {
+                    confirmOverlay.classList.remove('active');
+                    if (onNo) onNo();
+                }
+            };
+        }
+
         async function resetProgress() {
             if (!currentUser) return;
-            const confirmed = confirm('Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.');
-            if (!confirmed) return;
+            showConfirm('Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.', async () => {
+                // Пользователь подтвердил
+                try {
+                    const { error: deleteError } = await supabaseClient
+                        .from('clicks')
+                        .delete()
+                        .eq('player_id', currentUser.id);
+                    if (deleteError) throw deleteError;
 
-            try {
-                const { error: deleteError } = await supabaseClient
-                    .from('clicks')
-                    .delete()
-                    .eq('player_id', currentUser.id);
-                if (deleteError) throw deleteError;
+                    const { error: updateError } = await supabaseClient
+                        .from('players')
+                        .update({
+                            total_clicks: 0,
+                            total_seconds_played: 0,
+                            last_click_at: null,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', currentUser.id);
+                    if (updateError) throw updateError;
 
-                const { error: updateError } = await supabaseClient
-                    .from('players')
-                    .update({
-                        total_clicks: 0,
-                        total_seconds_played: 0,
-                        last_click_at: null,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', currentUser.id);
-                if (updateError) throw updateError;
+                    // Обновляем локальные данные
+                    playerData.total_clicks = 0;
+                    playerData.total_seconds_played = 0;
+                    playerData.last_click_at = null;
+                    clickCount = 0;
+                    totalSecondsPlayed = 0;
+                    lastClickTime = null;
+                    sessionStartTimestamp = Date.now();
+                    updateUI();
 
-                // Обновляем локальные данные
-                playerData.total_clicks = 0;
-                playerData.total_seconds_played = 0;
-                playerData.last_click_at = null;
-                clickCount = 0;
-                totalSecondsPlayed = 0;
-                lastClickTime = null;
-                sessionStartTimestamp = Date.now();
-                updateUI();
-
-                alert('✅ Прогресс сброшен!');
-            } catch (error) {
-                console.error('Ошибка сброса:', error);
-                alert('❌ Не удалось сбросить прогресс: ' + error.message);
-            }
+                    alert('✅ Прогресс сброшен!');
+                } catch (error) {
+                    console.error('Ошибка сброса:', error);
+                    alert('❌ Не удалось сбросить прогресс: ' + error.message);
+                }
+            }, () => {
+                // Отмена
+            });
         }
 
         // ============================================================
