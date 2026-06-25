@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2">
     </script>
     <style>
-        /* (стили без изменений - можно взять из вашего кода) */
+        /* Стили (те же, что были) */
         * {
             margin: 0;
             padding: 0;
@@ -249,10 +249,10 @@
 
     <script>
         // ============================================================
-        //  НАСТРОЙКА SUPABASE (замените на свои данные)
+        //  1. НАСТРОЙКА SUPABASE
         // ============================================================
-        const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co'; // ваш URL
-        const SUPABASE_ANON_KEY = 'ВАШ_ANON_ПУБЛИЧНЫЙ_КЛЮЧ'; // сюда вставьте правильный anon ключ
+        const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt'; // ваш publishable ключ
 
         // Проверяем, загрузилась ли библиотека
         if (typeof window.supabase === 'undefined') {
@@ -263,14 +263,361 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ============================================================
-        //  ОСТАЛЬНАЯ ЛОГИКА (полностью аналогична вашему коду)
-        //  Ниже вставьте ВЕСЬ ваш код (переменные, функции, обработчики)
-        //  Но только ОДИН РАЗ, без дублирования.
+        //  2. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
         // ============================================================
+        let currentUser = null;
+        let playerData = null;
+        let clickCount = 0;
+        let lastClickTime = null;
+        let totalSecondsPlayed = 0;
 
-        // (Здесь продолжается ваш код, который вы уже написали,
-        //  начиная с объявления let currentUser = null; ... и до конца.)
-        // Внимание: убедитесь, что этот блок не повторяется дважды!
+        // DOM-элементы
+        const authBlock = document.getElementById('authBlock');
+        const gameArea = document.getElementById('gameArea');
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const authMessage = document.getElementById('authMessage');
+        const counterEl = document.getElementById('counter');
+        const playerInfo = document.getElementById('playerInfo');
+        const moonWrapper = document.getElementById('moonWrapper');
+        const clickEffect = document.getElementById('clickEffect');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        // ============================================================
+        //  3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (сбор статистики)
+        // ============================================================
+        function getDeviceType() {
+            const ua = navigator.userAgent;
+            if (/(tablet|ipad|playbook|silk)|(android(?!.*mobile))/i.test(ua)) return 'tablet';
+            if (/Mobile|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(ua)) return 'mobile';
+            return 'desktop';
+        }
+
+        function getBrowserInfo() {
+            const ua = navigator.userAgent;
+            let browser = 'Unknown', version = 'Unknown';
+            if (ua.indexOf('Chrome') > -1) { browser = 'Chrome'; version = ua.match(/Chrome\/(\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Firefox') > -1) { browser = 'Firefox'; version = ua.match(/Firefox\/(\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Safari') > -1) { browser = 'Safari'; version = ua.match(/Version\/(\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Edge') > -1) { browser = 'Edge'; version = ua.match(/Edge\/(\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Opera') > -1 || ua.indexOf('OPR') > -1) { browser = 'Opera'; version = ua.match(/(Opera|OPR)\/(\d+)/)?.[2] || ''; }
+            return { browser, version };
+        }
+
+        function getOSInfo() {
+            const ua = navigator.userAgent;
+            let os = 'Unknown', version = '';
+            if (ua.indexOf('Windows') > -1) { os = 'Windows'; version = ua.match(/Windows NT (\d+\.\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('Mac OS') > -1) { os = 'macOS'; version = ua.match(/Mac OS X (\d+[._\d]+)/)?.[1]?.replace(/_/g, '.') || ''; }
+            else if (ua.indexOf('Android') > -1) { os = 'Android'; version = ua.match(/Android (\d+\.\d+)/)?.[1] || ''; }
+            else if (ua.indexOf('iOS') > -1 || ua.indexOf('iPhone') > -1 || ua.indexOf('iPad') > -1) { os = 'iOS'; version = ua.match(/OS (\d+[._\d]+)/)?.[1]?.replace(/_/g, '.') || ''; }
+            else if (ua.indexOf('Linux') > -1) { os = 'Linux'; }
+            return { os, version };
+        }
+
+        function getScreenInfo() {
+            return { width: window.screen.width, height: window.screen.height, colorDepth: window.screen.colorDepth };
+        }
+
+        function getLanguage() { return navigator.language || navigator.userLanguage || 'en'; }
+        function getTimezone() { return Intl.DateTimeFormat().resolvedOptions().timeZone; }
+
+        async function fetchGeoData() {
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                if (!res.ok) throw new Error('Geo API error');
+                const data = await res.json();
+                return { country: data.country_name || '', city: data.city || '', region: data.region || '', postal: data.postal || '', ip: data.ip || '' };
+            } catch (e) {
+                console.warn('Не удалось получить геоданные', e);
+                return { country: '', city: '', region: '', postal: '', ip: '' };
+            }
+        }
+
+        function collectStaticDeviceData() {
+            const browser = getBrowserInfo();
+            const os = getOSInfo();
+            const screen = getScreenInfo();
+            return {
+                device_type: getDeviceType(),
+                browser: browser.browser,
+                browser_version: browser.version,
+                os: os.os,
+                os_version: os.version,
+                screen_width: screen.width,
+                screen_height: screen.height,
+                color_depth: screen.colorDepth,
+                language: getLanguage(),
+                timezone: getTimezone(),
+                user_agent: navigator.userAgent,
+                referrer: document.referrer || ''
+            };
+        }
+
+        // ============================================================
+        //  4. РАБОТА С БАЗОЙ ДАННЫХ
+        // ============================================================
+        async function createOrUpdatePlayer(userId, geoData) {
+            const staticData = collectStaticDeviceData();
+            const { data: existing, error: selectError } = await supabase
+                .from('players')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+
+            if (selectError && selectError.code !== 'PGRST116') {
+                console.error('Ошибка проверки игрока:', selectError);
+                return null;
+            }
+
+            if (existing) {
+                const { data, error } = await supabase
+                    .from('players')
+                    .update({
+                        ip: geoData.ip || existing.ip,
+                        country: geoData.country || existing.country,
+                        city: geoData.city || existing.city,
+                        region: geoData.region || existing.region,
+                        postal: geoData.postal || existing.postal,
+                        session_count: (existing.session_count || 0) + 1,
+                        current_session_start: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', userId)
+                    .select()
+                    .single();
+                if (error) console.error('Ошибка обновления игрока:', error);
+                return data || existing;
+            } else {
+                const newPlayer = {
+                    id: userId,
+                    username: null,
+                    total_clicks: 0,
+                    first_click_at: new Date().toISOString(),
+                    last_click_at: null,
+                    session_count: 1,
+                    total_seconds_played: 0,
+                    current_session_start: new Date().toISOString(),
+                    ...staticData,
+                    ...geoData,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                const { data, error } = await supabase
+                    .from('players')
+                    .insert(newPlayer)
+                    .select()
+                    .single();
+                if (error) {
+                    console.error('Ошибка создания игрока:', error);
+                    return null;
+                }
+                return data;
+            }
+        }
+
+        async function loadPlayerData(userId) {
+            const { data, error } = await supabase
+                .from('players')
+                .select('*')
+                .eq('id', userId)
+                .single();
+            if (error) {
+                console.error('Ошибка загрузки данных:', error);
+                return null;
+            }
+            return data;
+        }
+
+        async function updateClicksAndTime(playerId, newTotal, secondsAdded, clickTimestamp, x, y) {
+            const updateData = {
+                total_clicks: newTotal,
+                last_click_at: clickTimestamp,
+                total_seconds_played: totalSecondsPlayed,
+                updated_at: new Date().toISOString()
+            };
+            const { error: updateError } = await supabase
+                .from('players')
+                .update(updateData)
+                .eq('id', playerId);
+            if (updateError) console.error('Ошибка обновления players:', updateError);
+
+            const { error: insertError } = await supabase
+                .from('clicks')
+                .insert({
+                    player_id: playerId,
+                    click_time: clickTimestamp,
+                    x: x,
+                    y: y
+                });
+            if (insertError) console.error('Ошибка вставки клика:', insertError);
+        }
+
+        // ============================================================
+        //  5. ОСНОВНАЯ ЛОГИКА ИГРЫ
+        // ============================================================
+        function updateUI() {
+            counterEl.textContent = clickCount;
+            counterEl.style.transform = 'scale(1.1)';
+            setTimeout(() => { counterEl.style.transform = 'scale(1)'; }, 100);
+            if (playerData) {
+                const info = `👤 ${playerData.email || 'anon'} | Сессий: ${playerData.session_count || 0} | Всего времени: ${Math.floor((playerData.total_seconds_played || 0) / 60)} мин`;
+                playerInfo.textContent = info;
+            }
+        }
+
+        async function handleClick(e) {
+            if (!currentUser) return;
+            const rect = moonWrapper.getBoundingClientRect();
+            const x = Math.round(e.clientX - rect.left);
+            const y = Math.round(e.clientY - rect.top);
+            const now = new Date();
+            const nowISO = now.toISOString();
+            let secondsAdded = 0;
+            if (lastClickTime) {
+                secondsAdded = (now - lastClickTime) / 1000;
+                totalSecondsPlayed += secondsAdded;
+            }
+            lastClickTime = now;
+            clickCount++;
+            updateUI();
+
+            clickEffect.classList.remove('active');
+            void clickEffect.offsetWidth;
+            clickEffect.classList.add('active');
+            moonWrapper.style.transform = 'scale(0.92)';
+            setTimeout(() => { moonWrapper.style.transform = 'scale(1)'; }, 100);
+
+            await updateClicksAndTime(currentUser.id, clickCount, secondsAdded, nowISO, x, y);
+        }
+
+        // ============================================================
+        //  6. АВТОРИЗАЦИЯ
+        // ============================================================
+        async function signIn(email, password) {
+            authMessage.textContent = '';
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                authMessage.textContent = '❌ ' + error.message;
+                return false;
+            }
+            return true;
+        }
+
+        async function signUp(email, password) {
+            authMessage.textContent = '';
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) {
+                authMessage.textContent = '❌ ' + error.message;
+                return false;
+            }
+            authMessage.textContent = '✅ Регистрация успешна! Теперь войдите.';
+            authMessage.className = 'success';
+            return true;
+        }
+
+        async function signOut() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            playerData = null;
+            clickCount = 0;
+            lastClickTime = null;
+            totalSecondsPlayed = 0;
+            authBlock.style.display = 'block';
+            gameArea.classList.remove('active');
+            counterEl.textContent = '0';
+            playerInfo.textContent = '';
+            authMessage.textContent = '';
+            authMessage.className = 'error';
+        }
+
+        // ============================================================
+        //  7. ИНИЦИАЛИЗАЦИЯ ПОСЛЕ ВХОДА
+        // ============================================================
+        async function onUserLoggedIn(user) {
+            currentUser = user;
+            authBlock.style.display = 'none';
+            gameArea.classList.add('active');
+            const geoData = await fetchGeoData();
+            const updatedPlayer = await createOrUpdatePlayer(user.id, geoData);
+            if (updatedPlayer) {
+                playerData = updatedPlayer;
+                clickCount = playerData.total_clicks || 0;
+                totalSecondsPlayed = playerData.total_seconds_played || 0;
+                lastClickTime = playerData.last_click_at ? new Date(playerData.last_click_at) : null;
+                updateUI();
+            } else {
+                const loaded = await loadPlayerData(user.id);
+                if (loaded) {
+                    playerData = loaded;
+                    clickCount = loaded.total_clicks || 0;
+                    totalSecondsPlayed = loaded.total_seconds_played || 0;
+                    lastClickTime = loaded.last_click_at ? new Date(loaded.last_click_at) : null;
+                    updateUI();
+                } else {
+                    authMessage.textContent = '⚠️ Ошибка загрузки профиля.';
+                }
+            }
+        }
+
+        // ============================================================
+        //  8. ОБРАБОТЧИКИ СОБЫТИЙ
+        // ============================================================
+        loginBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            const pass = passwordInput.value.trim();
+            if (!email || !pass) { authMessage.textContent = 'Заполните email и пароль'; return; }
+            const ok = await signIn(email, pass);
+            if (ok) {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) await onUserLoggedIn(user);
+            }
+        });
+
+        registerBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            const pass = passwordInput.value.trim();
+            if (!email || !pass) { authMessage.textContent = 'Заполните email и пароль'; return; }
+            if (pass.length < 6) { authMessage.textContent = 'Пароль должен быть не менее 6 символов'; return; }
+            await signUp(email, pass);
+        });
+
+        logoutBtn.addEventListener('click', signOut);
+
+        moonWrapper.addEventListener('click', handleClick);
+        moonWrapper.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const rect = moonWrapper.getBoundingClientRect();
+                const fakeEvent = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
+                handleClick(fakeEvent);
+            }
+        });
+        moonWrapper.setAttribute('tabindex', '0');
+        moonWrapper.setAttribute('role', 'button');
+
+        // ============================================================
+        //  9. ПРОВЕРКА СОСТОЯНИЯ АУТЕНТИФИКАЦИИ ПРИ ЗАГРУЗКЕ
+        // ============================================================
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                await onUserLoggedIn(session.user);
+            } else {
+                authBlock.style.display = 'block';
+                gameArea.classList.remove('active');
+            }
+            supabase.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_IN' && session?.user) {
+                    await onUserLoggedIn(session.user);
+                } else if (event === 'SIGNED_OUT') {
+                    await signOut();
+                }
+            });
+        }
+        init();
     </script>
 </body>
 </html>
