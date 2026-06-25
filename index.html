@@ -4,11 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>🌙 Лунный кликер с аккаунтами</title>
-    <!-- Подключаем Supabase JS -->
     <script src="https://unpkg.com/@supabase/supabase-js@2">
     </script>
     <style>
-        /* ---------- Стили (те же, что были) ---------- */
+        /* (стили такие же, как в предыдущей версии, сократим для краткости) */
         * {
             margin: 0;
             padding: 0;
@@ -224,7 +223,6 @@
         <h1>🌙 Лунный кликер</h1>
         <p class="subtitle">Кликни по луне</p>
 
-        <!-- ---------- БЛОК АВТОРИЗАЦИИ (с полем никнейма) ---------- -->
         <div id="authBlock" class="auth-form">
             <input type="email" id="emailInput" placeholder="Email" />
             <input type="password" id="passwordInput" placeholder="Пароль" />
@@ -236,7 +234,6 @@
             <div id="authMessage" class="error"></div>
         </div>
 
-        <!-- ---------- ИГРОВАЯ ЗОНА ---------- -->
         <div id="gameArea" class="game-area">
             <div class="moon-wrapper" id="moonWrapper">
                 <div class="moon" id="moon"></div>
@@ -253,7 +250,7 @@
 
     <script>
         // ============================================================
-        //  НАСТРОЙКА SUPABASE (используем уникальное имя переменной)
+        //  НАСТРОЙКА SUPABASE
         // ============================================================
         const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
@@ -336,7 +333,6 @@
 
         function getTimezone() { return Intl.DateTimeFormat().resolvedOptions().timeZone; }
 
-        // --- НОВАЯ функция геолокации (через ip-api.com) ---
         async function fetchGeoData() {
             try {
                 const res = await fetch('https://ip-api.com/json/');
@@ -380,8 +376,6 @@
         // ============================================================
         async function createOrUpdatePlayer(userId, geoData) {
             const staticData = collectStaticDeviceData();
-
-            // Проверяем, существует ли запись
             const { data: existing, error: selectError } = await supabaseClient
                 .from('players')
                 .select('*')
@@ -393,11 +387,9 @@
                 return null;
             }
 
-            // Берём никнейм из метаданных пользователя (если есть)
             const username = currentUser?.user_metadata?.username || null;
 
             if (existing) {
-                // Обновляем существующего
                 const { data, error } = await supabaseClient
                     .from('players')
                     .update({
@@ -417,7 +409,6 @@
                 if (error) console.error('Ошибка обновления игрока:', error);
                 return data || existing;
             } else {
-                // Создаём нового
                 const newPlayer = {
                     id: userId,
                     username: username,
@@ -491,7 +482,6 @@
             setTimeout(() => { counterEl.style.transform = 'scale(1)'; }, 100);
 
             if (playerData && currentUser) {
-                // Показываем никнейм из таблицы, если есть, иначе email
                 const displayName = playerData.username || currentUser.email || 'anon';
                 const info = `👤 ${displayName} | Сессий: ${playerData.session_count || 0} | Всего времени: ${Math.floor((playerData.total_seconds_played || 0) / 60)} мин`;
                 playerInfo.textContent = info;
@@ -524,7 +514,7 @@
         }
 
         // ============================================================
-        //  АВТОРИЗАЦИЯ (с никнеймом)
+        //  АВТОРИЗАЦИЯ И ВЫХОД (исправленный выход)
         // ============================================================
         async function signIn(email, password) {
             authMessage.textContent = '';
@@ -554,8 +544,8 @@
             return true;
         }
 
-        async function signOut() {
-            await supabaseClient.auth.signOut();
+        // ----- Очистка локального состояния (без вызова auth.signOut) -----
+        function clearLocalState() {
             currentUser = null;
             playerData = null;
             clickCount = 0;
@@ -567,6 +557,15 @@
             playerInfo.textContent = '';
             authMessage.textContent = '';
             authMessage.className = 'error';
+        }
+
+        // ----- Выход (вызывается по кнопке) -----
+        async function signOut() {
+            // Вызываем выход из Supabase, после чего сработает событие SIGNED_OUT,
+            // которое вызовет clearLocalState()
+            await supabaseClient.auth.signOut();
+            // Дополнительная очистка на случай, если событие не сработает:
+            clearLocalState();
         }
 
         // ============================================================
@@ -637,7 +636,7 @@
         moonWrapper.setAttribute('role', 'button');
 
         // ============================================================
-        //  ПРОВЕРКА АУТЕНТИФИКАЦИИ ПРИ ЗАГРУЗКЕ
+        //  ПРОВЕРКА АУТЕНТИФИКАЦИИ И ПОДПИСКА НА СОБЫТИЯ
         // ============================================================
         async function init() {
             const { data: { session } } = await supabaseClient.auth.getSession();
@@ -647,11 +646,15 @@
                 authBlock.style.display = 'block';
                 gameArea.classList.remove('active');
             }
+
+            // Подписка на изменения состояния
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (event === 'SIGNED_IN' && session?.user) {
                     await onUserLoggedIn(session.user);
                 } else if (event === 'SIGNED_OUT') {
-                    await signOut();
+                    // При выходе просто очищаем локальное состояние,
+                    // но не вызываем signOut(), чтобы избежать цикла.
+                    clearLocalState();
                 }
             });
         }
