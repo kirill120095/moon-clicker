@@ -166,6 +166,9 @@
 
         /* ---------- ФОРМА АВТОРИЗАЦИИ ---------- */
         .auth-form {
+            display: none;
+        }
+        .auth-form.active {
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -173,51 +176,6 @@
             background: rgba(0, 0, 0, 0.4);
             padding: 25px;
             border-radius: 40px;
-        }
-        .auth-form .tabs {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 12px;
-        }
-        .auth-form .tabs button {
-            padding: 10px 25px;
-            border-radius: 30px;
-            border: none;
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.5);
-            cursor: pointer;
-            transition: 0.3s;
-            font-size: 1.0rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .auth-form .tabs button.active {
-            background: rgba(255, 215, 150, 0.15);
-            color: #f0e6d0;
-            border-color: rgba(255, 215, 150, 0.3);
-        }
-        .auth-form .tabs button:hover {
-            background: rgba(255, 215, 150, 0.1);
-        }
-        .auth-form .login-type {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 5px;
-        }
-        .auth-form .login-type label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-        .auth-form .login-type input[type="radio"] {
-            accent-color: #f0e6d0;
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
         }
         .auth-form .row {
             display: flex;
@@ -266,10 +224,6 @@
             color: #ff6b6b;
             font-size: 0.9rem;
             margin-top: 5px;
-        }
-        .auth-form .success {
-            color: #69db7c;
-            font-size: 0.9rem;
         }
         .hidden {
             display: none !important;
@@ -389,17 +343,6 @@
             border-color: rgba(255, 0, 0, 0.2);
             background: rgba(0, 0, 0, 0.5);
         }
-        .counter-label {
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-top: 2px;
-            transition: color 0.5s ease;
-        }
-        .container.blood-mode .counter-label {
-            color: rgba(255, 0, 0, 0.5);
-        }
 
         /* ---------- ИНФО ---------- */
         .player-info {
@@ -468,6 +411,8 @@
             width: 90%;
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .modal h2 {
             color: #f0e6d0;
@@ -507,6 +452,67 @@
         .modal .bg-options button.active {
             background: rgba(255,215,150,0.25);
             border-color: rgba(255,215,150,0.5);
+        }
+        .modal .auth-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .modal .tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .modal .tabs button {
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+        .modal .tabs button.active {
+            background: rgba(255,215,150,0.15);
+            color: #f0e6d0;
+            border-color: rgba(255,215,150,0.3);
+        }
+        .modal .tabs button:hover {
+            background: rgba(255,215,150,0.1);
+        }
+        .modal .auth-form input {
+            width: 100%;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #f0e6d0;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .modal .auth-form input:focus {
+            border-color: rgba(255,215,150,0.5);
+        }
+        .modal .auth-form input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        .modal .auth-btn {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,215,150,0.2);
+            background: rgba(255,215,150,0.15);
+            color: #f0e6d0;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .modal .auth-btn:hover {
+            background: rgba(255,215,150,0.25);
         }
         .modal .btn-danger {
             display: block;
@@ -624,7 +630,7 @@
             .counter { font-size: 2.2rem; padding: 6px 15px; min-width: 90px; }
             .subtitle { font-size: 1.6rem; }
             .container { padding: 20px; }
-            .auth-form { padding: 15px; }
+            .modal { padding: 20px 25px; }
         }
     </style>
 </head>
@@ -642,38 +648,6 @@
         <button class="settings-icon" id="settingsBtn" title="Настройки">⚙️</button>
         <div class="subtitle">Кликни по луне</div>
 
-        <!-- АВТОРИЗАЦИЯ -->
-        <div id="authBlock" class="auth-form">
-            <div class="tabs">
-                <button id="tabLogin" class="active">Вход</button>
-                <button id="tabRegister">Регистрация</button>
-            </div>
-
-            <div id="loginFields">
-                <div class="login-type">
-                    <label><input type="radio" name="loginType" value="email" checked /> По email</label>
-                    <label><input type="radio" name="loginType" value="nickname" /> По логину</label>
-                </div>
-                <div class="row">
-                    <input type="text" id="loginInput" placeholder="Логин или email" />
-                    <input type="password" id="passwordInput" placeholder="Пароль" />
-                </div>
-            </div>
-
-            <div id="registerFields" class="hidden">
-                <div class="row">
-                    <input type="email" id="regEmailInput" placeholder="Email (обязательно)" />
-                    <input type="text" id="regNicknameInput" placeholder="Логин (обязательно)" />
-                    <input type="password" id="regPasswordInput" placeholder="Пароль (не менее 6 символов)" />
-                </div>
-            </div>
-
-            <div class="buttons">
-                <button id="actionBtn">Войти</button>
-            </div>
-            <div id="authMessage" class="error"></div>
-        </div>
-
         <!-- ИГРОВАЯ ЗОНА -->
         <div id="gameArea" class="game-area">
             <div class="moon-wrapper" id="moonWrapper">
@@ -682,11 +656,10 @@
             </div>
             <div>
                 <div class="counter" id="counter">0</div>
-                <div class="counter-label">кликов</div>
             </div>
             <div class="player-info">
                 <span class="nickname" id="nicknameDisplay">Загружаем...</span>
-                <span class="time" id="timeDisplay">⏱ 0 сек</span>
+                <span class="time" id="timeDisplay">⏱ 0 ч</span>
             </div>
             <button class="logout-btn" id="logoutBtn">🚀 Выйти</button>
         </div>
@@ -696,13 +669,56 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <h2>⚙️ Настройки</h2>
+            
+            <div class="section-title">⏱️ Общее время</div>
+            <div class="player-info" style="justify-content: center; margin-bottom: 15px;">
+                <span class="time" id="totalTimeDisplay" style="color: rgba(255, 215, 150, 0.7); font-size: 1rem;">0 ч</span>
+            </div>
+
             <div class="section-title">🎨 Фон луны</div>
             <div class="bg-options" id="bgOptions">
-                <button data-bg="main-moon.jpg">🌕 Обычная</button>
-                <button data-bg="blood-moon.jpg">🔴 Кровавая</button>
+                <button data-bg="normal">⚪ Обычная</button>
+                <button data-bg="blood">🔴 Кровавая</button>
             </div>
-            <div class="section-title" style="margin-top:20px;">🗑️ Прогресс</div>
-            <button class="btn-danger" id="resetProgressBtn">Сбросить прогресс</button>
+
+            <div class="auth-section">
+                <h3 style="color: #f0e6d0; font-size: 1.2rem; margin-bottom: 15px;">👤 Аккаунт</h3>
+                <div class="tabs" id="authTabs">
+                    <button class="auth-tab active" data-tab="login">Вход</button>
+                    <button class="auth-tab" data-tab="register">Регистрация</button>
+                </div>
+
+                <div id="loginForm" class="auth-form active">
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 10px;">
+                        <label style="display: flex; align-items: center; gap: 6px; justify-content: center; cursor: pointer;">
+                            <input type="radio" name="loginType" value="email" checked style="accent-color: #f0e6d0;" />
+                            По email
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; justify-content: center; cursor: pointer; margin-top: 5px;">
+                            <input type="radio" name="loginType" value="nickname" style="accent-color: #f0e6d0;" />
+                            По логину
+                        </label>
+                    </div>
+                    <input type="text" id="loginInput" placeholder="Логин или email" />
+                    <input type="password" id="passwordInput" placeholder="Пароль" />
+                    <button class="auth-btn" id="loginBtn">Войти</button>
+                    <div id="loginMessage" class="error" style="margin-top: 8px;"></div>
+                </div>
+
+                <div id="registerForm" class="auth-form hidden">
+                    <input type="email" id="regEmailInput" placeholder="Email (обязательно)" />
+                    <input type="text" id="regNicknameInput" placeholder="Логин (обязательно)" />
+                    <input type="password" id="regPasswordInput" placeholder="Пароль (минимум 6 символов)" />
+                    <button class="auth-btn" id="registerBtn">Зарегистрироваться</button>
+                    <div id="registerMessage" class="error" style="margin-top: 8px;"></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="section-title">🗑️ Прогресс</div>
+                <button class="btn-danger" id="resetProgressBtn">Сбросить прогресс</button>
+            </div>
+
             <button class="close-btn" id="closeSettingsBtn">Закрыть</button>
         </div>
     </div>
@@ -726,7 +742,7 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 
         if (typeof window.supabase === 'undefined') {
-            document.getElementById('authMessage').textContent = '⚠️ Не удалось загрузить библиотеку Supabase. Проверьте интернет.';
+            alert('⚠️ Не удалось загрузить библиотеку Supabase. Проверьте интернет.');
             throw new Error('Supabase library not loaded');
         }
 
@@ -744,24 +760,21 @@
         let autoSaveInterval = null;
 
         // DOM-элементы
-        const authBlock = document.getElementById('authBlock');
         const gameArea = document.getElementById('gameArea');
-        const tabLogin = document.getElementById('tabLogin');
-        const tabRegister = document.getElementById('tabRegister');
-        const loginFields = document.getElementById('loginFields');
-        const registerFields = document.getElementById('registerFields');
         const loginInput = document.getElementById('loginInput');
         const passwordInput = document.getElementById('passwordInput');
         const regEmailInput = document.getElementById('regEmailInput');
         const regNicknameInput = document.getElementById('regNicknameInput');
         const regPasswordInput = document.getElementById('regPasswordInput');
-        const actionBtn = document.getElementById('actionBtn');
-        const authMessage = document.getElementById('authMessage');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const loginMessage = document.getElementById('loginMessage');
+        const registerMessage = document.getElementById('registerMessage');
         const counterEl = document.getElementById('counter');
         const nicknameDisplay = document.getElementById('nicknameDisplay');
         const timeDisplay = document.getElementById('timeDisplay');
+        const totalTimeDisplay = document.getElementById('totalTimeDisplay');
         const moonWrapper = document.getElementById('moonWrapper');
-        const moonElement = document.getElementById('moon');
         const clickEffect = document.getElementById('clickEffect');
         const logoutBtn = document.getElementById('logoutBtn');
         const settingsBtn = document.getElementById('settingsBtn');
@@ -772,42 +785,45 @@
         const confirmOverlay = document.getElementById('confirmOverlay');
         const confirmYes = document.getElementById('confirmYes');
         const confirmNo = document.getElementById('confirmNo');
-        const confirmMessage = document.getElementById('confirmMessage');
-
-        let currentMode = 'login';
-        let pendingReset = false;
+        const authTabs = document.getElementById('authTabs');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
 
         // ============================================================
-        //  УПРАВЛЕНИЕ ВКЛАДКАМИ
+        //  ФОРМАТИРОВАНИЕ ВРЕМЕНИ
         // ============================================================
-        function setMode(mode) {
-            currentMode = mode;
-            if (mode === 'login') {
-                tabLogin.classList.add('active');
-                tabRegister.classList.remove('active');
-                loginFields.classList.remove('hidden');
-                registerFields.classList.add('hidden');
-                actionBtn.textContent = 'Войти';
-                regEmailInput.value = '';
-                regNicknameInput.value = '';
-                regPasswordInput.value = '';
-                authMessage.textContent = '';
-                authMessage.className = 'error';
-            } else {
-                tabRegister.classList.add('active');
-                tabLogin.classList.remove('active');
-                registerFields.classList.remove('hidden');
-                loginFields.classList.add('hidden');
-                actionBtn.textContent = 'Зарегистрироваться';
-                loginInput.value = '';
-                passwordInput.value = '';
-                authMessage.textContent = '';
-                authMessage.className = 'error';
-            }
+        function formatTime(seconds) {
+            if (seconds < 60) return `${seconds} сек`;
+            
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes} мин`;
+            
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours} ч`;
+            
+            const days = Math.floor(hours / 24);
+            return `${days} дн`;
         }
 
-        tabLogin.addEventListener('click', () => setMode('login'));
-        tabRegister.addEventListener('click', () => setMode('register'));
+        // ============================================================
+        //  УПРАВЛЕНИЕ ВКЛАДКАМИ АВТОРИЗАЦИИ
+        // ============================================================
+        authTabs.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('auth-tab')) return;
+            
+            document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            if (e.target.dataset.tab === 'login') {
+                loginForm.classList.add('active');
+                registerForm.classList.add('hidden');
+                loginMessage.textContent = '';
+            } else {
+                registerForm.classList.remove('hidden');
+                loginForm.classList.remove('active');
+                registerMessage.textContent = '';
+            }
+        });
 
         // ============================================================
         //  ЗВЁЗДЫ
@@ -830,7 +846,7 @@
         createStars();
 
         // ============================================================
-        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (без гео)
+        //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
         // ============================================================
         function getDeviceType() {
             const ua = navigator.userAgent;
@@ -1027,13 +1043,16 @@
             const elapsedMs = now - sessionStartTimestamp;
             const elapsedSeconds = Math.floor(elapsedMs / 1000);
             totalSecondsPlayed = (playerData?.total_seconds_played || 0) + elapsedSeconds;
-            timeDisplay.textContent = `⏱ ${totalSecondsPlayed} сек`;
+            const formatted = formatTime(totalSecondsPlayed);
+            timeDisplay.textContent = `⏱ ${formatted}`;
+            totalTimeDisplay.textContent = formatted;
         }
 
         function startTimeTracking() {
             sessionStartTimestamp = Date.now();
             if (timeUpdateInterval) clearInterval(timeUpdateInterval);
             timeUpdateInterval = setInterval(updateTimeDisplay, 1000);
+            updateTimeDisplay();
         }
 
         function stopTimeTracking() {
@@ -1087,118 +1106,134 @@
         // ============================================================
         //  АВТОРИЗАЦИЯ
         // ============================================================
-        async function handleAuth() {
-            authMessage.textContent = '';
-            authMessage.className = 'error';
+        async function handleLogin() {
+            const loginType = document.querySelector('input[name="loginType"]:checked').value;
+            const identifier = loginInput.value.trim();
+            const password = passwordInput.value.trim();
 
-            if (currentMode === 'login') {
-                const loginType = document.querySelector('input[name="loginType"]:checked').value;
-                const identifier = loginInput.value.trim();
-                const password = passwordInput.value.trim();
+            if (!identifier || !password) {
+                loginMessage.textContent = '❌ Заполните все поля';
+                loginMessage.className = 'error';
+                return;
+            }
 
-                if (!identifier || !password) {
-                    authMessage.textContent = '❌ Заполните все поля';
-                    return;
-                }
+            loginMessage.textContent = 'Входим...';
+            loginMessage.className = '';
 
-                authMessage.textContent = 'Входим...';
-                authMessage.className = '';
-
-                try {
-                    let response;
-                    if (loginType === 'email') {
-                        response = await supabaseClient.auth.signInWithPassword({
-                            email: identifier,
-                            password: password
-                        });
-                    } else {
-                        const { data: players } = await supabaseClient
-                            .from('players')
-                            .select('id')
-                            .eq('username', identifier)
-                            .single();
-
-                        if (!players) throw new Error('Пользователь не найден');
-                        
-                        const { data: authData } = await supabaseClient.auth.admin.getUserById(players.id);
-                        if (!authData?.user) throw new Error('Ошибка авторизации');
-
-                        response = await supabaseClient.auth.signInWithPassword({
-                            email: authData.user.email,
-                            password: password
-                        });
-                    }
-
-                    if (response.error) throw response.error;
-
-                    currentUser = response.data.user;
-                    playerData = await createOrUpdatePlayer(currentUser.id, currentUser.email);
-
-                    if (!playerData) throw new Error('Ошибка загрузки данных игрока');
-
-                    clickCount = playerData.total_clicks || 0;
-                    counterEl.textContent = clickCount;
-                    nicknameDisplay.textContent = playerData.username || currentUser.email;
-
-                    startTimeTracking();
-                    startAutoSave();
-
-                    authBlock.classList.add('hidden');
-                    gameArea.classList.add('active');
-                } catch (error) {
-                    authMessage.textContent = '❌ ' + (error.message || 'Ошибка входа');
-                    authMessage.className = 'error';
-                }
-            } else {
-                const email = regEmailInput.value.trim();
-                const nickname = regNicknameInput.value.trim();
-                const password = regPasswordInput.value.trim();
-
-                if (!email || !nickname || !password) {
-                    authMessage.textContent = '❌ Заполните все поля';
-                    return;
-                }
-                if (password.length < 6) {
-                    authMessage.textContent = '❌ Пароль должен быть минимум 6 символов';
-                    return;
-                }
-
-                authMessage.textContent = 'Регистрируем...';
-                authMessage.className = '';
-
-                try {
-                    const { data, error } = await supabaseClient.auth.signUp({
-                        email: email,
-                        password: password,
-                        options: {
-                            data: { username: nickname }
-                        }
+            try {
+                let response;
+                if (loginType === 'email') {
+                    response = await supabaseClient.auth.signInWithPassword({
+                        email: identifier,
+                        password: password
                     });
+                } else {
+                    const { data: players } = await supabaseClient
+                        .from('players')
+                        .select('id')
+                        .eq('username', identifier)
+                        .single();
 
-                    if (error) throw error;
+                    if (!players) throw new Error('Пользователь не найден');
+                    
+                    const { data: authData } = await supabaseClient.auth.admin.getUserById(players.id);
+                    if (!authData?.user) throw new Error('Ошибка авторизации');
 
-                    currentUser = data.user;
-                    playerData = await createOrUpdatePlayer(currentUser.id, currentUser.email);
-
-                    if (!playerData) throw new Error('Ошибка создания профиля');
-
-                    clickCount = 0;
-                    counterEl.textContent = clickCount;
-                    nicknameDisplay.textContent = nickname;
-
-                    startTimeTracking();
-                    startAutoSave();
-
-                    authBlock.classList.add('hidden');
-                    gameArea.classList.add('active');
-                } catch (error) {
-                    authMessage.textContent = '❌ ' + (error.message || 'Ошибка регистрации');
-                    authMessage.className = 'error';
+                    response = await supabaseClient.auth.signInWithPassword({
+                        email: authData.user.email,
+                        password: password
+                    });
                 }
+
+                if (response.error) throw response.error;
+
+                currentUser = response.data.user;
+                playerData = await createOrUpdatePlayer(currentUser.id, currentUser.email);
+
+                if (!playerData) throw new Error('Ошибка загрузки данных игрока');
+
+                clickCount = playerData.total_clicks || 0;
+                counterEl.textContent = clickCount;
+                nicknameDisplay.textContent = playerData.username || currentUser.email;
+
+                startTimeTracking();
+                startAutoSave();
+
+                settingsModal.classList.remove('active');
+                gameArea.classList.add('active');
+                loginInput.value = '';
+                passwordInput.value = '';
+            } catch (error) {
+                loginMessage.textContent = '❌ ' + (error.message || 'Ошибка входа');
+                loginMessage.className = 'error';
             }
         }
 
-        actionBtn.addEventListener('click', handleAuth);
+        async function handleRegister() {
+            const email = regEmailInput.value.trim();
+            const nickname = regNicknameInput.value.trim();
+            const password = regPasswordInput.value.trim();
+
+            if (!email || !nickname || !password) {
+                registerMessage.textContent = '❌ Заполните все поля';
+                registerMessage.className = 'error';
+                return;
+            }
+            if (password.length < 6) {
+                registerMessage.textContent = '❌ Пароль должен быть минимум 6 символов';
+                registerMessage.className = 'error';
+                return;
+            }
+
+            registerMessage.textContent = 'Регистрируем...';
+            registerMessage.className = '';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: { username: nickname }
+                    }
+                });
+
+                if (error) throw error;
+
+                currentUser = data.user;
+                playerData = await createOrUpdatePlayer(currentUser.id, currentUser.email);
+
+                if (!playerData) throw new Error('Ошибка создания профиля');
+
+                clickCount = 0;
+                counterEl.textContent = clickCount;
+                nicknameDisplay.textContent = nickname;
+
+                startTimeTracking();
+                startAutoSave();
+
+                settingsModal.classList.remove('active');
+                gameArea.classList.add('active');
+                regEmailInput.value = '';
+                regNicknameInput.value = '';
+                regPasswordInput.value = '';
+            } catch (error) {
+                registerMessage.textContent = '❌ ' + (error.message || 'Ошибка регистрации');
+                registerMessage.className = 'error';
+            }
+        }
+
+        loginBtn.addEventListener('click', handleLogin);
+        registerBtn.addEventListener('click', handleRegister);
+
+        loginInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+        regPasswordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleRegister();
+        });
 
         // ============================================================
         //  ВЫХОД
@@ -1218,9 +1253,8 @@
             clickCount = 0;
             totalSecondsPlayed = 0;
 
-            authBlock.classList.remove('hidden');
             gameArea.classList.remove('active');
-            setMode('login');
+            settingsModal.classList.remove('active');
         }
 
         logoutBtn.addEventListener('click', handleLogout);
@@ -1242,7 +1276,7 @@
                 e.target.classList.add('active');
 
                 const bg = e.target.dataset.bg;
-                if (bg === 'blood-moon.jpg') {
+                if (bg === 'blood') {
                     document.getElementById('app').classList.add('blood-mode');
                     localStorage.setItem('moonMode', 'blood');
                 } else {
@@ -1261,11 +1295,9 @@
                 const success = await resetPlayerProgress(currentUser.id);
                 if (success) {
                     clickCount = 0;
-                    totalSecondsPlayed = playerData.total_seconds_played || 0;
+                    totalSecondsPlayed = 0;
                     counterEl.textContent = '0';
                     updateTimeDisplay();
-                    authMessage.textContent = '✅ Прогресс сброшен';
-                    authMessage.className = 'success';
                     confirmOverlay.classList.remove('active');
                 }
             }
@@ -1294,7 +1326,6 @@
                     startTimeTracking();
                     startAutoSave();
 
-                    authBlock.classList.add('hidden');
                     gameArea.classList.add('active');
                 }
             }
@@ -1302,9 +1333,9 @@
             const savedMode = localStorage.getItem('moonMode');
             if (savedMode === 'blood') {
                 document.getElementById('app').classList.add('blood-mode');
-                document.querySelector('[data-bg="blood-moon.jpg"]').classList.add('active');
+                document.querySelector('[data-bg="blood"]').classList.add('active');
             } else {
-                document.querySelector('[data-bg="main-moon.jpg"]').classList.add('active');
+                document.querySelector('[data-bg="normal"]').classList.add('active');
             }
         }
 
