@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2">
     </script>
     <style>
-        /* ---------- ОСНОВНЫЕ СТИЛИ (без изменений) ---------- */
+        /* ---------- ОСНОВНЫЕ СТИЛИ ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -405,7 +405,7 @@
             color: #ff6b6b;
         }
 
-        /* ---------- УПРАВЛЕНИЕ (эмодзи) ---------- */
+        /* ---------- УПРАВЛЕНИЕ ---------- */
         .game-controls {
             display: flex;
             gap: 15px;
@@ -425,6 +425,8 @@
             transition: 0.3s;
             backdrop-filter: blur(5px);
             line-height: 1;
+            opacity: 1;
+            pointer-events: auto;
         }
         .btn-rollback:hover {
             background: rgba(255, 215, 150, 0.2);
@@ -432,6 +434,11 @@
         }
         .btn-rollback:active {
             transform: scale(0.95);
+        }
+        .btn-rollback.disabled {
+            opacity: 0.35;
+            pointer-events: none;
+            cursor: default;
         }
         .lock-toggle {
             font-size: 1.4rem;
@@ -628,23 +635,6 @@
             background: rgba(255, 80, 80, 0.25);
             transform: scale(1.02);
         }
-        .modal .btn-secondary {
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 30px;
-            border: none;
-            background: rgba(255, 215, 150, 0.1);
-            color: #f0e6d0;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.3s;
-            border: 1px solid rgba(255, 215, 150, 0.2);
-            margin: 4px;
-        }
-        .modal .btn-secondary:hover {
-            background: rgba(255, 215, 150, 0.2);
-            transform: scale(1.03);
-        }
         .modal .close-btn {
             display: block;
             width: 100%;
@@ -728,7 +718,7 @@
             transform: scale(1.05);
         }
 
-        /* ---------- TOAST (уведомления) ---------- */
+        /* ---------- TOAST (только для ошибок и сброса) ---------- */
         .toast-container {
             position: fixed;
             bottom: 30px;
@@ -799,6 +789,29 @@
             .container { padding: 20px; }
             .modal { padding: 20px 25px; }
             .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
+        }
+
+        /* ---------- ЧЕКБОКС В НАСТРОЙКАХ (тестовый режим) ---------- */
+        .modal .checkbox-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .modal .checkbox-row label {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .modal .checkbox-row input[type="checkbox"] {
+            accent-color: #f0e6d0;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -877,7 +890,7 @@
                     <span class="bar-percent" id="timerPercent">30с</span>
                 </div>
             </div>
-            <!-- Управление (эмодзи) -->
+            <!-- Управление -->
             <div class="game-controls">
                 <button class="btn-rollback" id="rollbackBtnMain" title="Откатить уровень">⬅️</button>
                 <button class="lock-toggle" id="lockToggleMain" title="Зафиксировать уровень">🔓</button>
@@ -897,6 +910,13 @@
             <div class="bg-options" id="bgOptions">
                 <button data-bg="normal">⚪ Обычная</button>
                 <button data-bg="blood">🔴 Кровавая</button>
+            </div>
+
+            <div class="section-title">🧪 Тестовый режим</div>
+            <div class="checkbox-row">
+                <label>
+                    <input type="checkbox" id="testModeToggle" /> 1 клик = уничтожение луны (для быстрого тестирования)
+                </label>
             </div>
 
             <div class="account-info">
@@ -952,7 +972,7 @@
         const TEST_MODE = true;
         const HP_SCALE = TEST_MODE ? 0.1 : 1;
 
-        const BOSS_LEVEL = 10;
+        const BOSS_INTERVAL = 10;
         const BOSS_TIMER = 30;
         const BASE_HP = 100 * HP_SCALE;
 
@@ -976,6 +996,7 @@
         let bossTimerRunning = false;
 
         let levelLocked = false;
+        let testMode = false; // флаг тестового режима
 
         // DOM-элементы
         const authBlock = document.getElementById('authBlock');
@@ -1016,6 +1037,7 @@
         const rollbackBtnMain = document.getElementById('rollbackBtnMain');
         const lockToggleMain = document.getElementById('lockToggleMain');
         const toastContainer = document.getElementById('toastContainer');
+        const testModeToggle = document.getElementById('testModeToggle');
 
         let currentMode = 'login';
 
@@ -1052,10 +1074,15 @@
         }
 
         function getMaxHPForLevel(level) {
-            if (level === BOSS_LEVEL) {
-                return 1000 * HP_SCALE;
+            if (level % BOSS_INTERVAL === 0) {
+                return BASE_HP * level;
+            } else {
+                return BASE_HP * (1 + (level - 1) * 0.1);
             }
-            return BASE_HP * (1 + (level - 1) * 0.1);
+        }
+
+        function isBossLevel(level) {
+            return level % BOSS_INTERVAL === 0;
         }
 
         function updateBossUI(show) {
@@ -1180,7 +1207,7 @@
         }
 
         // ============================================================
-        //  РАБОТА С БАЗОЙ ДАННЫХ (без изменений)
+        //  РАБОТА С БАЗОЙ ДАННЫХ
         // ============================================================
         async function createOrUpdatePlayer(userId, email) {
             const staticData = collectStaticDeviceData();
@@ -1333,7 +1360,7 @@
         }
 
         // ============================================================
-        //  РЕГИСТРАЦИЯ / АВТОРИЗАЦИЯ (без изменений)
+        //  РЕГИСТРАЦИЯ / АВТОРИЗАЦИЯ
         // ============================================================
         async function handleRegister() {
             const email = regEmailInput.value.trim();
@@ -1485,7 +1512,6 @@
                     clearBossTimer();
                     moonHP = maxHP;
                     updateUI();
-                    showToast('⏰ Время вышло! Босс восстановил здоровье.', 'warning');
                     const now = new Date().toISOString();
                     updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
                 }
@@ -1523,12 +1549,10 @@
             const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
             hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
-            // Масштаб луны
             const scale = Math.max(0.05, moonHP / maxHP);
             moonInner.style.transform = `scale(${scale})`;
 
-            // Босс-таймер
-            if (currentLevel === BOSS_LEVEL && moonHP > 0) {
+            if (isBossLevel(currentLevel) && moonHP > 0) {
                 if (!bossTimerRunning) {
                     startBossTimer();
                 }
@@ -1538,6 +1562,13 @@
                 }
                 updateBossUI(false);
             }
+
+            if (currentLevel <= 1) {
+                rollbackBtnMain.classList.add('disabled');
+            } else {
+                rollbackBtnMain.classList.remove('disabled');
+            }
+
             updateTimeDisplay();
         }
 
@@ -1546,13 +1577,10 @@
         }
 
         // ============================================================
-        //  ОТКАТ УРОВНЯ (без подтверждения)
+        //  ОТКАТ УРОВНЯ
         // ============================================================
         async function rollbackLevel() {
-            if (currentLevel <= 1) {
-                showToast('⚠️ Вы уже на первом уровне', 'warning');
-                return;
-            }
+            if (currentLevel <= 1) return;
             const newLevel = currentLevel - 1;
             currentLevel = newLevel;
             maxHP = getMaxHPForLevel(currentLevel);
@@ -1563,7 +1591,6 @@
             updateUI();
             const now = new Date().toISOString();
             await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
-            showToast(`↩️ Откат на уровень ${currentLevel}`, 'info');
         }
 
         // ============================================================
@@ -1601,45 +1628,45 @@
             lockToggleMain.textContent = levelLocked ? '🔒' : '🔓';
             if (levelLocked) lockToggleMain.classList.add('locked');
             else lockToggleMain.classList.remove('locked');
+
+            const savedTestMode = localStorage.getItem('testMode') === 'true';
+            testMode = savedTestMode;
+            testModeToggle.checked = savedTestMode;
         }
 
         // ============================================================
-        //  КЛИК ПО ЛУНЕ (с исправлением масштаба)
+        //  КЛИК ПО ЛУНЕ
         // ============================================================
         moonWrapper.addEventListener('click', async (e) => {
             if (!currentUser) return;
             if (moonHP <= 0) return;
 
             clickCount++;
-            moonHP = Math.max(0, moonHP - 1);
+
+            // Тестовый режим: луна уничтожается за 1 клик
+            if (testMode) {
+                moonHP = 0;
+            } else {
+                moonHP = Math.max(0, moonHP - 1);
+            }
 
             if (moonHP === 0) {
                 if (levelLocked) {
                     moonHP = maxHP;
-                    // НЕ выводим уведомление
                     updateUI();
                     const now = new Date().toISOString();
                     await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
                     return;
                 }
 
-                if (currentLevel === BOSS_LEVEL) {
-                    clearBossTimer();
-                    showToast(`🎉 Босс побеждён! Переход на уровень ${currentLevel + 1}`, 'success');
-                } else {
-                    showToast(`⬆️ Переход на уровень ${currentLevel + 1}`, 'success');
-                }
                 currentLevel++;
                 maxHP = getMaxHPForLevel(currentLevel);
                 moonHP = maxHP;
-                // Запускаем анимацию
                 moonInner.classList.remove('level-up');
                 void moonInner.offsetWidth;
                 moonInner.classList.add('level-up');
-                // Удаляем класс после окончания анимации, чтобы не блокировать трансформацию
                 setTimeout(() => {
                     moonInner.classList.remove('level-up');
-                    // После анимации принудительно обновляем масштаб
                     const scale2 = Math.max(0.05, moonHP / maxHP);
                     moonInner.style.transform = `scale(${scale2})`;
                 }, 800);
@@ -1716,20 +1743,24 @@
             const defaultResetNo = confirmNo.onclick;
         });
 
-        // Откат (без подтверждения)
         rollbackBtnMain.addEventListener('click', rollbackLevel);
 
-        // Переключение замка
         lockToggleMain.addEventListener('click', () => {
             levelLocked = !levelLocked;
             localStorage.setItem('levelLocked', levelLocked);
             lockToggleMain.textContent = levelLocked ? '🔒' : '🔓';
             if (levelLocked) lockToggleMain.classList.add('locked');
             else lockToggleMain.classList.remove('locked');
-            if (levelLocked) {
-                showToast('🔒 Фиксация уровня включена', 'info');
+        });
+
+        // ---------- ТЕСТОВЫЙ РЕЖИМ ----------
+        testModeToggle.addEventListener('change', () => {
+            testMode = testModeToggle.checked;
+            localStorage.setItem('testMode', testMode);
+            if (testMode) {
+                showToast('🧪 Тестовый режим включён: луна уничтожается за 1 клик', 'info');
             } else {
-                showToast('🔓 Фиксация уровня отключена', 'info');
+                showToast('🧪 Тестовый режим выключен', 'info');
             }
         });
 
