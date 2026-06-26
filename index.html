@@ -107,19 +107,10 @@
             }
         }
 
-        /* ---------- ОСНОВНОЙ КОНТЕЙНЕР ---------- */
-        .main-wrapper {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-            max-width: 1100px;
-            width: 100%;
-            justify-content: center;
-        }
+        /* ---------- ИГРОВОЙ КОНТЕЙНЕР ---------- */
         .container {
             position: relative;
+            z-index: 1;
             text-align: center;
             padding: 40px 50px;
             background: rgba(255, 255, 255, 0.03);
@@ -173,25 +164,29 @@
             transform: scale(1.1);
         }
 
-        /* ---------- БОКОВАЯ ПАНЕЛЬ ---------- */
+        /* ---------- БОКОВАЯ ПАНЕЛЬ (fixed) ---------- */
         .side-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 40px;
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 320px;
+            background: rgba(15, 20, 35, 0.95);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.8);
+            z-index: 50;
             padding: 20px;
-            min-width: 280px;
-            max-width: 320px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-            transition: all 0.3s ease;
-            max-height: 80vh;
             overflow-y: auto;
-            display: none;
-            /* скрыта по умолчанию */
+            transform: translateX(100%);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
         }
         .side-panel.active {
-            display: block;
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: auto;
         }
         .side-panel::-webkit-scrollbar {
             width: 4px;
@@ -200,11 +195,26 @@
             background: rgba(255,255,255,0.2);
             border-radius: 4px;
         }
+        .side-panel .panel-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .side-panel .panel-close:hover {
+            color: rgba(255, 255, 255, 0.7);
+            transform: rotate(90deg);
+        }
         .side-panel .panel-tabs {
             display: flex;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 15px;
+            margin: 35px 0 15px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             padding-bottom: 10px;
         }
@@ -930,42 +940,19 @@
         }
 
         /* ---------- АДАПТИВ ---------- */
-        @media (max-width: 950px) {
-            .main-wrapper {
-                flex-direction: column;
-                align-items: center;
-            }
-            .side-panel {
-                max-width: 100%;
-                min-width: unset;
-                max-height: 50vh;
-                order: 2;
-            }
-            .container {
-                order: 1;
-                max-width: 100%;
-            }
-            .top-actions {
-                position: relative;
-                top: auto;
-                right: auto;
-                justify-content: flex-end;
-                margin-bottom: 10px;
-            }
-        }
         @media (max-width: 700px) {
             .container { padding: 30px; }
             .moon-wrapper { width: 260px; height: 260px; }
             .counter { font-size: 2.8rem; padding: 8px 20px; min-width: 120px; }
             .subtitle { font-size: 2rem; letter-spacing: 4px; }
-            .side-panel { max-height: 40vh; padding: 15px; }
+            .side-panel { width: 280px; }
         }
         @media (max-width: 450px) {
             .moon-wrapper { width: 200px; height: 200px; }
             .counter { font-size: 2.2rem; padding: 6px 15px; min-width: 90px; }
             .subtitle { font-size: 1.6rem; }
             .container { padding: 20px; }
-            .side-panel { padding: 12px; }
+            .side-panel { width: 260px; padding: 15px; }
             .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
         }
     </style>
@@ -979,107 +966,103 @@
         <div class="planet planet-2"></div>
     </div>
 
-    <!-- ---------- ОСНОВНОЙ КОНТЕЙНЕР С ПАНЕЛЬЮ ---------- -->
-    <div class="main-wrapper">
+    <!-- ---------- ИГРОВОЙ КОНТЕЙНЕР ---------- -->
+    <div class="container" id="app">
+        <div class="top-actions">
+            <button id="statsToggleBtn" title="Статистика и лидеры">📊</button>
+            <button class="settings-icon" id="settingsBtn" title="Настройки">⚙️</button>
+        </div>
+        <div class="subtitle">Кликни по луне</div>
 
-        <!-- ИГРОВОЙ КОНТЕЙНЕР -->
-        <div class="container" id="app">
-            <div class="top-actions">
-                <button id="statsToggleBtn" title="Статистика и лидеры">📊</button>
-                <button class="settings-icon" id="settingsBtn" title="Настройки">⚙️</button>
-            </div>
-            <div class="subtitle">Кликни по луне</div>
-
-            <!-- АВТОРИЗАЦИЯ -->
-            <div id="authBlock" class="auth-form">
-                <div class="tabs">
-                    <button id="tabLogin" class="active">Вход</button>
-                    <button id="tabRegister">Регистрация</button>
-                </div>
-
-                <div id="loginFields">
-                    <div class="login-type">
-                        <label><input type="radio" name="loginType" value="email" checked /> По email</label>
-                        <label><input type="radio" name="loginType" value="nickname" /> По логину</label>
-                    </div>
-                    <div class="row">
-                        <input type="text" id="loginInput" placeholder="Логин или email" />
-                        <input type="password" id="passwordInput" placeholder="Пароль" />
-                    </div>
-                </div>
-
-                <div id="registerFields" class="hidden">
-                    <div class="row">
-                        <input type="email" id="regEmailInput" placeholder="Email (обязательно)" />
-                        <input type="text" id="regNicknameInput" placeholder="Логин (обязательно)" />
-                        <input type="password" id="regPasswordInput" placeholder="Пароль (минимум 6 символов)" />
-                    </div>
-                </div>
-
-                <div class="buttons">
-                    <button id="actionBtn">Войти</button>
-                </div>
-                <div id="authMessage" class="error"></div>
+        <!-- АВТОРИЗАЦИЯ -->
+        <div id="authBlock" class="auth-form">
+            <div class="tabs">
+                <button id="tabLogin" class="active">Вход</button>
+                <button id="tabRegister">Регистрация</button>
             </div>
 
-            <!-- ИГРОВАЯ ЗОНА -->
-            <div id="gameArea" class="game-area">
-                <div class="moon-wrapper" id="moonWrapper">
-                    <div class="moon" id="moon">
-                        <div class="moon-inner" id="moonInner"></div>
-                    </div>
-                    <div class="click-effect" id="clickEffect"></div>
+            <div id="loginFields">
+                <div class="login-type">
+                    <label><input type="radio" name="loginType" value="email" checked /> По email</label>
+                    <label><input type="radio" name="loginType" value="nickname" /> По логину</label>
                 </div>
-                <div>
-                    <div class="counter" id="counter">0</div>
-                    <div class="level-title" id="levelTitle">Уровень 1</div>
+                <div class="row">
+                    <input type="text" id="loginInput" placeholder="Логин или email" />
+                    <input type="password" id="passwordInput" placeholder="Пароль" />
                 </div>
-                <!-- Прогресс-бары -->
-                <div class="bars">
-                    <div class="bar-container">
-                        <span class="bar-label">❤️</span>
-                        <div class="bar-track">
-                            <div class="bar-fill hp-fill" id="hpBar" style="width:100%"></div>
-                        </div>
-                        <span class="bar-percent" id="hpPercent">100/100</span>
-                    </div>
-                    <div class="bar-container timer-bar-container" id="timerBarContainer">
-                        <span class="bar-label">⏱️</span>
-                        <div class="bar-track">
-                            <div class="bar-fill timer-fill" id="timerBar" style="width:100%"></div>
-                        </div>
-                        <span class="bar-percent" id="timerPercent">30с</span>
-                    </div>
-                </div>
-                <!-- Управление -->
-                <div class="game-controls">
-                    <button class="btn-rollback" id="rollbackBtnMain" title="Откатить уровень">⬅️</button>
-                    <button class="lock-toggle" id="lockToggleMain" title="Зафиксировать уровень">🔓</button>
-                </div>
-                <button class="logout-btn" id="logoutBtn">🚀 Выйти</button>
             </div>
+
+            <div id="registerFields" class="hidden">
+                <div class="row">
+                    <input type="email" id="regEmailInput" placeholder="Email (обязательно)" />
+                    <input type="text" id="regNicknameInput" placeholder="Логин (обязательно)" />
+                    <input type="password" id="regPasswordInput" placeholder="Пароль (минимум 6 символов)" />
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button id="actionBtn">Войти</button>
+            </div>
+            <div id="authMessage" class="error"></div>
         </div>
 
-        <!-- БОКОВАЯ ПАНЕЛЬ (статистика и лидеры) -->
-        <div class="side-panel" id="sidePanel">
-            <div class="panel-tabs">
-                <button class="active" data-tab="leaders">🏆</button>
-                <button data-tab="profile">👤</button>
+        <!-- ИГРОВАЯ ЗОНА -->
+        <div id="gameArea" class="game-area">
+            <div class="moon-wrapper" id="moonWrapper">
+                <div class="moon" id="moon">
+                    <div class="moon-inner" id="moonInner"></div>
+                </div>
+                <div class="click-effect" id="clickEffect"></div>
             </div>
-            <div class="panel-content active" id="panelLeaders">
-                <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Топ игроков</div>
-                <div id="leadersList">
-                    <div class="no-data">Загрузка...</div>
+            <div>
+                <div class="counter" id="counter">0</div>
+                <div class="level-title" id="levelTitle">Уровень 1</div>
+            </div>
+            <!-- Прогресс-бары -->
+            <div class="bars">
+                <div class="bar-container">
+                    <span class="bar-label">❤️</span>
+                    <div class="bar-track">
+                        <div class="bar-fill hp-fill" id="hpBar" style="width:100%"></div>
+                    </div>
+                    <span class="bar-percent" id="hpPercent">100/100</span>
+                </div>
+                <div class="bar-container timer-bar-container" id="timerBarContainer">
+                    <span class="bar-label">⏱️</span>
+                    <div class="bar-track">
+                        <div class="bar-fill timer-fill" id="timerBar" style="width:100%"></div>
+                    </div>
+                    <span class="bar-percent" id="timerPercent">30с</span>
                 </div>
             </div>
-            <div class="panel-content" id="panelProfile">
-                <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Мой профиль</div>
-                <div id="profileContent">
-                    <div class="no-data">Войдите, чтобы увидеть статистику</div>
-                </div>
+            <!-- Управление -->
+            <div class="game-controls">
+                <button class="btn-rollback" id="rollbackBtnMain" title="Откатить уровень">⬅️</button>
+                <button class="lock-toggle" id="lockToggleMain" title="Зафиксировать уровень">🔓</button>
+            </div>
+            <button class="logout-btn" id="logoutBtn">🚀 Выйти</button>
+        </div>
+    </div>
+
+    <!-- ---------- БОКОВАЯ ПАНЕЛЬ (fixed) ---------- -->
+    <div class="side-panel" id="sidePanel">
+        <button class="panel-close" id="panelClose">✕</button>
+        <div class="panel-tabs">
+            <button class="active" data-tab="leaders">🏆</button>
+            <button data-tab="profile">👤</button>
+        </div>
+        <div class="panel-content active" id="panelLeaders">
+            <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Топ игроков</div>
+            <div id="leadersList">
+                <div class="no-data">Загрузка...</div>
             </div>
         </div>
-
+        <div class="panel-content" id="panelProfile">
+            <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Мой профиль</div>
+            <div id="profileContent">
+                <div class="no-data">Войдите, чтобы увидеть статистику</div>
+            </div>
+        </div>
     </div>
 
     <!-- ---------- МОДАЛЬНОЕ ОКНО НАСТРОЕК ---------- -->
@@ -1221,6 +1204,7 @@
         const testModeCheckbox = document.getElementById('testModeCheckbox');
         const statsToggleBtn = document.getElementById('statsToggleBtn');
         const sidePanel = document.getElementById('sidePanel');
+        const panelClose = document.getElementById('panelClose');
         const panelTabs = document.querySelectorAll('.panel-tabs button');
         const panelContents = document.querySelectorAll('.panel-content');
         const leadersList = document.getElementById('leadersList');
@@ -1280,6 +1264,17 @@
                 timerBarContainer.classList.remove('active');
                 hpBar.className = 'bar-fill hp-fill';
             }
+        }
+
+        // Получение титула по уровню
+        function getTitle(level) {
+            if (level < 10) return '🌱 Новичок';
+            if (level < 20) return '🚀 Исследователь';
+            if (level < 50) return '⚡ Мастер';
+            if (level < 100) return '🌟 Легенда';
+            if (level < 200) return '👑 Герой';
+            if (level < 500) return '🔥 Мифический';
+            return '💎 Бессмертный';
         }
 
         // ============================================================
@@ -1552,7 +1547,6 @@
 
             showToast('✅ Прогресс успешно сброшен!', 'success');
             settingsModal.classList.remove('active');
-            // Обновляем панель
             if (currentUser) updateProfileAndLeaders();
         }
 
@@ -1831,7 +1825,6 @@
             testMode = savedTestMode;
             testModeCheckbox.checked = savedTestMode;
 
-            // Обновляем панель
             if (currentUser) updateProfileAndLeaders();
         }
 
@@ -1871,7 +1864,6 @@
                 updateUI();
                 const now = new Date().toISOString();
                 await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
-                // Обновляем панель после перехода уровня
                 if (currentUser) updateProfileAndLeaders();
                 return;
             }
@@ -1890,7 +1882,6 @@
 
             const now = new Date().toISOString();
             await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
-            // Обновляем панель после каждого клика (чтобы лидеры обновлялись)
             if (currentUser) updateProfileAndLeaders();
         });
 
@@ -1899,28 +1890,34 @@
         // ============================================================
         async function updateProfileAndLeaders() {
             if (!currentUser) return;
+
             // Профиль
             if (playerData) {
                 const data = playerData;
                 const totalBosses = Math.floor((data.level || 1) / 10);
                 const timePlayed = data.total_seconds_played || 0;
-                const device = data.device_type || 'unknown';
-                const browser = data.browser || 'unknown';
-                const os = data.os || 'unknown';
-                const screen = data.screen_width && data.screen_height ? `${data.screen_width}x${data.screen_height}` : 'unknown';
+                const title = getTitle(data.level || 1);
+
+                // Среднее время между кликами (если есть last_click_at и total_clicks > 1)
+                let avgTime = '—';
+                if (data.total_clicks > 1 && data.last_click_at && data.first_click_at) {
+                    const first = new Date(data.first_click_at).getTime();
+                    const last = new Date(data.last_click_at).getTime();
+                    if (last > first) {
+                        const diff = (last - first) / (data.total_clicks - 1) / 1000; // секунды
+                        avgTime = diff.toFixed(1) + ' сек';
+                    }
+                }
+
                 profileContent.innerHTML = `
                     <div class="profile-row"><span class="label">Никнейм</span><span class="value">${data.username || '—'}</span></div>
                     <div class="profile-row"><span class="label">Email</span><span class="value">${currentUser.email || '—'}</span></div>
+                    <div class="profile-row"><span class="label">Титул</span><span class="value">${title}</span></div>
                     <div class="profile-row"><span class="label">Уровень</span><span class="value">${data.level || 1}</span></div>
                     <div class="profile-row"><span class="label">Всего кликов</span><span class="value">${data.total_clicks || 0}</span></div>
                     <div class="profile-row"><span class="label">Общее время</span><span class="value">${formatTime(timePlayed)}</span></div>
                     <div class="profile-row"><span class="label">Убито боссов</span><span class="value">${totalBosses}</span></div>
-                    <div class="profile-row"><span class="label">Сессий</span><span class="value">${data.session_count || 0}</span></div>
-                    <div class="profile-section-title">📱 Устройство</div>
-                    <div class="profile-row"><span class="label">Тип</span><span class="value">${device}</span></div>
-                    <div class="profile-row"><span class="label">Браузер</span><span class="value">${browser}</span></div>
-                    <div class="profile-row"><span class="label">ОС</span><span class="value">${os}</span></div>
-                    <div class="profile-row"><span class="label">Экран</span><span class="value">${screen}</span></div>
+                    <div class="profile-row"><span class="label">Ср. время между кликами</span><span class="value">${avgTime}</span></div>
                 `;
             }
 
@@ -1961,22 +1958,32 @@
         }
 
         // ============================================================
-        //  ПАНЕЛЬ (вкладки и переключение)
+        //  ПАНЕЛЬ (открытие/закрытие)
         // ============================================================
-        let panelVisible = false;
+        function togglePanel(show) {
+            if (show) {
+                sidePanel.classList.add('active');
+                if (currentUser) {
+                    updateProfileAndLeaders();
+                } else {
+                    leadersList.innerHTML = '<div class="no-data">Войдите, чтобы увидеть лидеров</div>';
+                    profileContent.innerHTML = '<div class="no-data">Войдите, чтобы увидеть статистику</div>';
+                }
+            } else {
+                sidePanel.classList.remove('active');
+            }
+        }
 
         statsToggleBtn.addEventListener('click', () => {
-            panelVisible = !panelVisible;
-            sidePanel.classList.toggle('active', panelVisible);
-            if (panelVisible && currentUser) {
-                updateProfileAndLeaders();
-            } else if (panelVisible && !currentUser) {
-                // показать сообщение о необходимости входа
-                leadersList.innerHTML = '<div class="no-data">Войдите, чтобы увидеть лидеров</div>';
-                profileContent.innerHTML = '<div class="no-data">Войдите, чтобы увидеть статистику</div>';
-            }
+            const isActive = sidePanel.classList.contains('active');
+            togglePanel(!isActive);
         });
 
+        panelClose.addEventListener('click', () => togglePanel(false));
+
+        // Закрытие по клику вне панели (не обязательно, но можно добавить позже)
+
+        // Вкладки панели
         panelTabs.forEach(btn => {
             btn.addEventListener('click', () => {
                 panelTabs.forEach(b => b.classList.remove('active'));
@@ -2009,9 +2016,8 @@
             gameArea.classList.remove('active');
             setMode('login');
             showToast('👋 Вы вышли из аккаунта', 'info');
-            // закрыть панель
-            sidePanel.classList.remove('active');
-            panelVisible = false;
+            // Закрыть панель
+            togglePanel(false);
         });
 
         settingsBtn.addEventListener('click', () => {
