@@ -1266,7 +1266,6 @@
             }
         }
 
-        // Получение титула по уровню
         function getTitle(level) {
             if (level < 10) return '🌱 Новичок';
             if (level < 20) return '🚀 Исследователь';
@@ -1473,10 +1472,11 @@
         }
 
         async function updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
+            if (!playerId) return;
             const updateData = {
                 total_clicks: newTotal,
                 last_click_at: clickTimestamp,
-                total_seconds_played: totalSecondsPlayed,
+                total_seconds_played: totalSecondsPlayed || 0,
                 level: newLevel,
                 moon_hp: Math.round(newMoonHP),
                 updated_at: new Date().toISOString()
@@ -1485,7 +1485,10 @@
                 .from('players')
                 .update(updateData)
                 .eq('id', playerId);
-            if (error) console.error('Ошибка обновления прогресса:', error);
+            if (error) {
+                console.error('Ошибка обновления прогресса:', error);
+                showToast('⚠️ Ошибка сохранения прогресса', 'warning');
+            }
         }
 
         async function saveTimeOnly() {
@@ -1493,13 +1496,14 @@
             const { error } = await supabaseClient
                 .from('players')
                 .update({
-                    total_seconds_played: totalSecondsPlayed,
+                    total_seconds_played: totalSecondsPlayed || 0,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', currentUser.id);
             if (error) console.error('Ошибка сохранения времени:', error);
         }
 
+        // ИСПРАВЛЕННЫЙ СБРОС ПРОГРЕССА
         async function resetProgress() {
             if (!currentUser || !playerData) {
                 showToast('⚠️ Данные игрока не загружены', 'warning');
@@ -1523,19 +1527,33 @@
                 return;
             }
 
-            clickCount = 0;
-            totalSecondsPlayed = 0;
-            currentLevel = 1;
-            moonHP = BASE_HP;
-            maxHP = getMaxHPForLevel(1);
+            // Перезагружаем данные из БД
+            const freshData = await loadPlayerData(currentUser.id);
+            if (freshData) {
+                playerData = freshData;
+                clickCount = freshData.total_clicks || 0;
+                totalSecondsPlayed = freshData.total_seconds_played || 0;
+                currentLevel = freshData.level || 1;
+                moonHP = freshData.moon_hp || BASE_HP;
+                maxHP = getMaxHPForLevel(currentLevel);
+            } else {
+                // fallback
+                playerData = {
+                    ...playerData,
+                    total_clicks: 0,
+                    total_seconds_played: 0,
+                    level: 1,
+                    moon_hp: Math.round(BASE_HP)
+                };
+                clickCount = 0;
+                totalSecondsPlayed = 0;
+                currentLevel = 1;
+                moonHP = BASE_HP;
+                maxHP = BASE_HP;
+            }
+
             counterEl.textContent = '0';
             totalTimeDisplay.textContent = '0 ч';
-            if (playerData) {
-                playerData.total_clicks = 0;
-                playerData.total_seconds_played = 0;
-                playerData.level = 1;
-                playerData.moon_hp = Math.round(BASE_HP);
-            }
             clearBossTimer();
             isBossActive = false;
             bossTimerRunning = false;
@@ -1684,9 +1702,11 @@
         });
 
         // ============================================================
-        //  БОСС И ТАЙМЕР
+        //  БОСС И ТАЙМЕР (ИСПРАВЛЕН)
         // ============================================================
         function startBossTimer() {
+            // Защита от повторного запуска
+            if (bossTimerRunning) return;
             if (bossTimerInterval) {
                 clearInterval(bossTimerInterval);
                 bossTimerInterval = null;
@@ -1743,6 +1763,7 @@
             const scale = Math.max(0.05, moonHP / maxHP);
             moonInner.style.transform = `scale(${scale})`;
 
+            // Управление боссом
             if (isBossLevel(currentLevel) && moonHP > 0) {
                 if (!bossTimerRunning) {
                     startBossTimer();
@@ -1868,6 +1889,7 @@
                 return;
             }
 
+            // обычный клик
             counterEl.textContent = clickCount;
             updateUI();
 
@@ -1886,29 +1908,25 @@
         });
 
         // ============================================================
-        //  ЛИДЕРЫ И ПРОФИЛЬ (загрузка данных)
+        //  ЛИДЕРЫ И ПРОФИЛЬ
         // ============================================================
         async function updateProfileAndLeaders() {
             if (!currentUser) return;
 
-            // Профиль
             if (playerData) {
                 const data = playerData;
                 const totalBosses = Math.floor((data.level || 1) / 10);
                 const timePlayed = data.total_seconds_played || 0;
                 const title = getTitle(data.level || 1);
-
-                // Среднее время между кликами (если есть last_click_at и total_clicks > 1)
                 let avgTime = '—';
                 if (data.total_clicks > 1 && data.last_click_at && data.first_click_at) {
                     const first = new Date(data.first_click_at).getTime();
                     const last = new Date(data.last_click_at).getTime();
                     if (last > first) {
-                        const diff = (last - first) / (data.total_clicks - 1) / 1000; // секунды
+                        const diff = (last - first) / (data.total_clicks - 1) / 1000;
                         avgTime = diff.toFixed(1) + ' сек';
                     }
                 }
-
                 profileContent.innerHTML = `
                     <div class="profile-row"><span class="label">Никнейм</span><span class="value">${data.username || '—'}</span></div>
                     <div class="profile-row"><span class="label">Email</span><span class="value">${currentUser.email || '—'}</span></div>
@@ -1921,7 +1939,6 @@
                 `;
             }
 
-            // Лидеры
             const { data: leaders, error } = await supabaseClient
                 .from('players')
                 .select('username, level, total_clicks, total_seconds_played')
@@ -1958,7 +1975,7 @@
         }
 
         // ============================================================
-        //  ПАНЕЛЬ (открытие/закрытие)
+        //  ПАНЕЛЬ
         // ============================================================
         function togglePanel(show) {
             if (show) {
@@ -1981,9 +1998,6 @@
 
         panelClose.addEventListener('click', () => togglePanel(false));
 
-        // Закрытие по клику вне панели (не обязательно, но можно добавить позже)
-
-        // Вкладки панели
         panelTabs.forEach(btn => {
             btn.addEventListener('click', () => {
                 panelTabs.forEach(b => b.classList.remove('active'));
@@ -2016,7 +2030,6 @@
             gameArea.classList.remove('active');
             setMode('login');
             showToast('👋 Вы вышли из аккаунта', 'info');
-            // Закрыть панель
             togglePanel(false);
         });
 
