@@ -64,7 +64,7 @@
                 <div class="click-effect" id="clickEffect"></div>
             </div>
 
-            <!-- HP и таймер (под луной) -->
+            <!-- HP и таймер -->
             <div class="bars">
                 <div class="bar-container">
                     <span class="bar-label">❤️</span>
@@ -82,9 +82,10 @@
                 </div>
             </div>
 
-            <!-- Счётчик кликов по центру -->
+            <!-- Счётчик -->
             <div class="counter" id="counter">0</div>
 
+            <!-- Управление -->
             <div class="game-controls">
                 <button class="btn-rollback" id="rollbackBtnMain" title="Откатить уровень">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -117,28 +118,9 @@
             </svg>
         </button>
         <div class="panel-tabs">
-            <button class="active" data-tab="leaders">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 3h14v4a7 7 0 0 1-14 0V3z" />
-                    <path d="M5 7a7 7 0 0 0 14 0" />
-                    <path d="M12 11v6" />
-                    <path d="M9 17h6" />
-                    <path d="M6 3v1" />
-                    <path d="M18 3v1" />
-                </svg>
-            </button>
-            <button data-tab="profile">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                </svg>
-            </button>
-            <button data-tab="settings">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M12 1v4M12 19v4M1 12h4M19 12h4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-                </svg>
-            </button>
+            <button class="active" data-tab="leaders">🏆</button>
+            <button data-tab="profile">👤</button>
+            <button data-tab="settings">⚙️</button>
         </div>
         <div class="panel-actions">
             <button id="refreshDataBtn" class="panel-refresh-btn" title="Обновить данные">
