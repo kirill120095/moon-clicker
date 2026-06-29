@@ -1,5 +1,5 @@
 // ============================================================
-//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ФИНАЛ)
+//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ИСПРАВЛЕНО)
 // ============================================================
 import { handleLogin, handleRegister, logout } from './auth.js';
 import { 
@@ -17,8 +17,6 @@ const lockClosedSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="non
 
 function setLockIcon(btn, locked) {
     if (!btn) return;
-    // Очищаем содержимое перед вставкой, чтобы удалить возможный текст/эмодзи
-    btn.textContent = '';
     btn.innerHTML = locked ? lockClosedSVG : lockOpenSVG;
     btn.classList.toggle('locked', locked);
 }
@@ -171,7 +169,7 @@ export function initUI() {
 
     // --- ЗАМОК – инициализация и обработчик ---
     if (lockToggleMain) {
-        // Принудительно устанавливаем иконку
+        // Принудительно очищаем и устанавливаем иконку
         setLockIcon(lockToggleMain, levelLocked);
         lockToggleMain.addEventListener('click', () => {
             const newState = !levelLocked;
