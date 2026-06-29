@@ -1,17 +1,21 @@
 // ============================================================
-//  ПРОФИЛЬ И ЛИДЕРЫ
+//  ПРОФИЛЬ И ЛИДЕРЫ (ИСПРАВЛЕНО)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData } from './state.js';
 import { formatTime, getTitle } from './utils.js';
 
-export async function updateProfileAndLeaders() {
+let lastUpdate = 0;
+
+export async function updateProfileAndLeaders(force = false) {
     if (!currentUser) return;
+    if (!force && Date.now() - lastUpdate < 8000) return;
+    lastUpdate = Date.now();
 
     const profileContent = document.getElementById('profileContent');
     const leadersList = document.getElementById('leadersList');
 
-    // --- Профиль ---
+    // Профиль
     if (playerData) {
         const data = playerData;
         const totalBosses = Math.floor((data.level || 1) / 10);
@@ -22,8 +26,7 @@ export async function updateProfileAndLeaders() {
             const first = new Date(data.first_click_at).getTime();
             const last = new Date(data.last_click_at).getTime();
             if (last > first) {
-                const diff = (last - first) / (data.total_clicks - 1) / 1000;
-                avgTime = diff.toFixed(1) + ' сек';
+                avgTime = ((last - first) / (data.total_clicks - 1) / 1000).toFixed(1) + ' сек';
             }
         }
         profileContent.innerHTML = `
@@ -38,7 +41,7 @@ export async function updateProfileAndLeaders() {
         `;
     }
 
-    // --- Лидеры ---
+    // Лидеры
     const { data: leaders, error } = await supabaseClient
         .from('players')
         .select('username, level, total_clicks, total_seconds_played')
@@ -46,20 +49,14 @@ export async function updateProfileAndLeaders() {
         .order('total_clicks', { ascending: false })
         .limit(10);
 
-    if (error) {
-        console.error('Ошибка загрузки лидеров:', error);
+    if (error || !leaders) {
         leadersList.innerHTML = '<div class="no-data">Ошибка загрузки</div>';
-        return;
-    }
-
-    if (!leaders || leaders.length === 0) {
-        leadersList.innerHTML = '<div class="no-data">Нет данных</div>';
         return;
     }
 
     let html = '';
     leaders.forEach((p, i) => {
-        const isMe = p.username === playerData?.username && p.level === playerData?.level;
+        const isMe = p.username === playerData?.username;
         html += `
             <div class="leader-item ${isMe ? 'me' : ''}">
                 <span class="pos">#${i+1}</span>
@@ -71,5 +68,5 @@ export async function updateProfileAndLeaders() {
             </div>
         `;
     });
-    leadersList.innerHTML = html;
+    leadersList.innerHTML = html || '<div class="no-data">Нет данных</div>';
 }
