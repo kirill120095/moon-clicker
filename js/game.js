@@ -223,7 +223,7 @@ function clearBossTimer() {
 }
 
 function updateTimerBar() {
-    // Таймер уменьшается за секунды
+    // Таймер уменьшается за секунды - полоска визуально уменьшается
     const percent = Math.max(0, (bossTimer / BOSS_TIMER) * 100);
     if (timerBar) timerBar.style.width = percent + '%';
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
