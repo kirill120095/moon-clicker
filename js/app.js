@@ -3,7 +3,7 @@
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { initToastContainer, createStars, showToast } from './utils.js';
-import { initUI, togglePanel } from './ui.js';
+import { initUI } from './ui.js';
 import { initGame } from './game.js';
 import { setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
 import { loadPlayerData, initAuthElements, createOrUpdatePlayer } from './auth.js';
@@ -15,7 +15,17 @@ const toastContainer = document.getElementById('toastContainer');
 initToastContainer(toastContainer);
 createStars();
 initAuthElements();
-initUI();
+
+// Ждём загрузки DOM перед инициализацией UI
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initUI();
+        checkAuth();
+    });
+} else {
+    initUI();
+    checkAuth();
+}
 
 // Проверка авторизации
 async function checkAuth() {
@@ -46,10 +56,6 @@ async function checkAuth() {
             document.getElementById('gameArea').classList.add('active');
 
             initGame();
-            // Если панель была открыта, обновим данные
-            if (document.getElementById('sidePanel').classList.contains('active')) {
-                // обновление произойдёт автоматически при открытии
-            }
         } else {
             // Гостевой режим
             document.getElementById('authBlock').classList.remove('hidden');
@@ -60,5 +66,3 @@ async function checkAuth() {
         showToast('Проблема с подключением', 'warning');
     }
 }
-
-checkAuth();
