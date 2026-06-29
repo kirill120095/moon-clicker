@@ -229,10 +229,29 @@ body {
 }
 .side-panel .panel-actions {
     display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-bottom: 10px;
+    justify-content: center;
+    margin-bottom: 12px;
 }
+.side-panel .panel-actions .panel-refresh-btn {
+    background: none;
+    border: none;
+    color: #f0e6d0;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    padding: 0;
+}
+.side-panel .panel-actions .panel-refresh-btn:hover {
+    color: #d4af37;
+}
+.side-panel .panel-actions .panel-refresh-btn.spinning {
+    animation: spin 0.4s linear;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .side-panel .panel-content {
     display: none;
     color: rgba(255, 255, 255, 0.7);
@@ -301,6 +320,41 @@ body {
     margin: 12px 0 6px;
     border-top: 1px solid rgba(255,255,255,0.05);
     padding-top: 12px;
+}
+.profile-bg-options {
+    display: flex;
+    gap: 10px;
+    margin: 8px 0 15px;
+}
+.profile-bg-options button {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: #f0e6d0;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.profile-bg-options button:hover {
+    background: rgba(255,215,150,0.15);
+    border-color: rgba(255,215,150,0.3);
+}
+.profile-bg-options button.active {
+    background: rgba(255,215,150,0.25);
+    border-color: rgba(255,215,150,0.5);
+}
+.profile-account {
+    margin: 10px 0;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.profile-account p {
+    margin: 4px 0;
+}
+.profile-account strong {
+    color: #f0e6d0;
 }
 
 .auth-form {
@@ -503,7 +557,7 @@ body {
 }
 
 .counter {
-    margin: 8px 0 5px;
+    margin: 12px auto 8px;
     color: #f0e6d0;
     font-size: 4rem;
     font-weight: 700;
@@ -524,13 +578,6 @@ body {
     border-color: rgba(255, 0, 0, 0.2);
     background: rgba(0, 0, 0, 0.5);
 }
-.counter-label {
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    margin-top: 2px;
-}
 
 .level-title {
     font-size: 1.3rem;
@@ -542,12 +589,6 @@ body {
 }
 .container.blood-mode .level-title {
     color: #ff6b6b;
-}
-
-.time-display {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.9rem;
-    margin: 5px 0 10px;
 }
 
 .game-controls {
@@ -606,7 +647,7 @@ body {
 }
 
 .bars {
-    margin: 6px auto 10px;
+    margin: 10px auto 12px;
     max-width: 90%;
 }
 .bar-container {
@@ -720,30 +761,6 @@ body {
     margin-top: 15px;
     margin-bottom: 8px;
 }
-.modal .bg-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-}
-.modal .bg-options button {
-    padding: 8px 18px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05);
-    color: #f0e6d0;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.modal .bg-options button:hover {
-    background: rgba(255,215,150,0.15);
-    border-color: rgba(255,215,150,0.3);
-}
-.modal .bg-options button.active {
-    background: rgba(255,215,150,0.25);
-    border-color: rgba(255,215,150,0.5);
-}
 .modal .checkbox-row {
     display: flex;
     align-items: center;
@@ -764,20 +781,6 @@ body {
     width: 18px;
     height: 18px;
     cursor: pointer;
-}
-.modal .account-info {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    text-align: left;
-}
-.modal .account-info p {
-    color: rgba(255,255,255,0.6);
-    font-size: 0.9rem;
-    margin-bottom: 8px;
-}
-.modal .account-info strong {
-    color: #f0e6d0;
 }
 .modal .btn-danger {
     display: block;
@@ -927,26 +930,6 @@ body {
 }
 .moon-inner.level-up {
     animation: levelUp 0.8s ease-out forwards;
-}
-
-.panel-refresh-btn {
-    background: none;
-    border: none;
-    color: #f0e6d0;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 4px 8px;
-    transition: transform 0.3s ease;
-}
-.panel-refresh-btn:hover {
-    color: #d4af37;
-}
-.panel-refresh-btn.spinning {
-    animation: spin 0.4s linear;
-}
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
 }
 
 @media (max-width: 700px) {
