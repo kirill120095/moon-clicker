@@ -54,10 +54,20 @@ export function updateUI() {
     const scale = Math.max(0.18, Math.min(1.0, moonHP / maxHP));
     if (moonInner) moonInner.style.transform = `scale(${scale})`;
 
+    // --- ТАЙМЕР БОССА ПОКАЗЫВАЕМ ТОЛЬКО НА БОССАХ ---
     if (isBossLevel(currentLevel, BOSS_INTERVAL) && moonHP > 0) {
         if (!bossTimerRunning) startBossTimer();
-    } else if (bossTimerRunning) {
-        clearBossTimer();
+        // Показываем таймер
+        timerBarContainer.classList.add('active');
+        hpBar.className = 'bar-fill boss-fill';
+    } else {
+        if (bossTimerRunning) clearBossTimer();
+        // Скрываем таймер
+        timerBarContainer.classList.remove('active');
+        hpBar.className = 'bar-fill hp-fill';
+        // Сбрасываем отображение таймера
+        if (timerBar) timerBar.style.width = '100%';
+        if (timerPercent) timerPercent.textContent = '30с';
     }
 
     if (currentLevel <= 1) rollbackBtnMain.classList.add('disabled');
@@ -76,8 +86,6 @@ function startBossTimer() {
 
     setBossTimer(BOSS_TIMER);
     setBossTimerRunning(true);
-    timerBarContainer.classList.add('active');
-    hpBar.className = 'bar-fill boss-fill';
     updateTimerBar();
 
     const interval = setInterval(() => {
