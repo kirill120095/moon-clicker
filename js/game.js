@@ -57,12 +57,10 @@ export function updateUI() {
     // --- ТАЙМЕР БОССА ПОКАЗЫВАЕМ ТОЛЬКО НА БОССАХ ---
     if (isBossLevel(currentLevel, BOSS_INTERVAL) && moonHP > 0) {
         if (!bossTimerRunning) startBossTimer();
-        // Показываем таймер
         timerBarContainer.classList.add('active');
         hpBar.className = 'bar-fill boss-fill';
     } else {
         if (bossTimerRunning) clearBossTimer();
-        // Скрываем таймер
         timerBarContainer.classList.remove('active');
         hpBar.className = 'bar-fill hp-fill';
         // Сбрасываем отображение таймера
