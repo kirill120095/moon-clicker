@@ -254,22 +254,34 @@ export function toggleRightPanel() {
     console.log('[UI] Правая панель:', isOpen ? 'закрыта' : 'открыта');
 }
 
-// Применение стиля луны
+// Применение стиля луны (включая глобальные цвета)
 export function applyMoonStyle(moonId) {
     const moonInner = document.getElementById('moonInner');
-    if (!moonInner) return;
+    const container = document.getElementById('app');
+    if (!moonInner || !container) return;
     const moon = MOON_TYPES[moonId];
     if (!moon) return;
-    // Устанавливаем градиент и тень
+
+    // Устанавливаем градиент и тень луны
     moonInner.style.backgroundImage = moon.gradient;
     moonInner.style.boxShadow = moon.shadow;
-    // Добавляем/убираем класс blood-mode для контейнера (для старых стилей)
-    const container = document.getElementById('app');
-    if (container) {
-        if (moonId === 'blood') {
-            container.classList.add('blood-mode');
-        } else {
-            container.classList.remove('blood-mode');
-        }
+
+    // Удаляем старые классы тем
+    container.classList.remove('moon-theme-normal', 'moon-theme-blood', 'moon-theme-ice', 'moon-theme-shadow', 'moon-theme-gold');
+    // Добавляем класс текущей темы
+    container.classList.add(`moon-theme-${moonId}`);
+
+    // Устанавливаем CSS-переменные для глобального акцентного цвета
+    const accent = moon.accentColor || '#d4af37';
+    container.style.setProperty('--moon-accent', accent);
+    container.style.setProperty('--moon-glow', `0 0 30px ${accent}33, 0 0 60px ${accent}22`);
+    container.style.setProperty('--moon-border', `${accent}44`);
+    container.style.setProperty('--moon-text', accent);
+
+    // Для кровавой луны добавляем старый класс blood-mode для совместимости
+    if (moonId === 'blood') {
+        container.classList.add('blood-mode');
+    } else {
+        container.classList.remove('blood-mode');
     }
 }
