@@ -140,8 +140,12 @@ function initEvents() {
             panelContents.forEach(c => c.classList.remove('active'));
 
             tab.classList.add('active');
-            const targetId = tab.getAttribute('data-tab') === 'leaders' ? 'panelLeaders' : 'panelProfile';
-            document.getElementById(targetId).classList.add('active');
+            const tabType = tab.getAttribute('data-tab');
+            if (tabType === 'leaders') {
+                document.getElementById('panelLeaders').classList.add('active');
+            } else if (tabType === 'profile') {
+                document.getElementById('panelProfile').classList.add('active');
+            }
         });
     });
 
@@ -157,12 +161,11 @@ function initEvents() {
     });
     closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
 
-    // Выбор фона луны (Обычная / Кровавая) + Подсветка кнопок
+    // Выбор фонда луны (Обычная / Кровавая) + Подсветка кнопок
     bgOptions.forEach(btn => {
         btn.addEventListener('click', () => {
             const mode = btn.getAttribute('data-bg');
             setMoonMode(mode);
-            syncMoonBgHighlight();
         });
     });
 
@@ -206,7 +209,7 @@ function initEvents() {
     }
 }
 
-// Функция внутренней установки стилей луны
+// Функция установки стилей луны с сохранением и обновлением подсветки кнопок
 export function setMoonMode(mode) {
     const container = document.getElementById('app');
     const moonInner = document.getElementById('moonInner');
@@ -218,13 +221,15 @@ export function setMoonMode(mode) {
         if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
     }
     localStorage.setItem('moonMode', mode);
+    syncMoonBgHighlight();
 }
 
 // Функция синхронизации класса .active на кнопках выбора луны
 export function syncMoonBgHighlight() {
     const currentMode = localStorage.getItem('moonMode') || 'normal';
-    if (!bgOptions) return;
-    bgOptions.forEach(btn => {
+    const buttons = document.querySelectorAll('#bgOptions button');
+    if (!buttons) return;
+    buttons.forEach(btn => {
         if (btn.getAttribute('data-bg') === currentMode) {
             btn.classList.add('active');
         } else {
