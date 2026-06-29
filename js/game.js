@@ -1,5 +1,5 @@
 // ============================================================
-//  ИГРОВАЯ ЛОГИКА (ПОЛНОСТЬЮ ИСПРАВЛЕНО)
+//  ИГРОВАЯ ЛОГИКА (ИСПРАВЛЕНО — УБРАН ДУБЛИКАТ saveTimeout)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import {
@@ -19,7 +19,7 @@ let moonWrapper, moonInner, clickEffect, counterEl, levelTitle, hpBar, hpPercent
 
 export let timeUpdateIntervalRef = null;
 export let autoSaveIntervalRef = null;
-let saveTimeout = null;
+let saveTimeout = null;   // ← Только одно объявление
 
 export function initGameElements(elements) {
     moonWrapper = elements.moonWrapper;
@@ -109,7 +109,7 @@ function updateTimerBar() {
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
 }
 
-let saveTimeout = null;
+// Debounced save
 export async function debouncedUpdateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
@@ -221,7 +221,6 @@ export function initGame() {
     if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
     autoSaveIntervalRef = setInterval(saveTimeOnly, 30000);
 
-    // По умолчанию — обычная луна
     const savedMode = localStorage.getItem('moonMode') || 'normal';
     setMoonMode(savedMode);
 
