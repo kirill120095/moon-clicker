@@ -46,7 +46,6 @@ export async function updateProfileAndLeaders(force = false) {
             moonsHtml += `
                 <button class="profile-moon-btn ${isActive ? 'active' : ''}" data-moon-id="${moonId}">
                     ${moon.emoji} ${moon.name}${bonusText}
-                    ${isActive ? ' <span style="color:#4ecdc4; font-weight:normal;">Активна</span>' : ''}
                 </button>
             `;
         });
