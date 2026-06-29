@@ -67,10 +67,7 @@
     cursor: pointer;
 }
 .modal .btn-danger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    display: block;
     width: 100%;
     padding: 14px;
     margin: 15px 0 8px;
@@ -82,14 +79,11 @@
     cursor: pointer;
     transition: 0.3s;
     border: 1px solid rgba(255, 80, 80, 0.2);
+    text-align: center;
 }
 .modal .btn-danger:hover {
     background: rgba(255, 80, 80, 0.25);
     transform: scale(1.02);
-}
-.modal .btn-danger svg {
-    width: 20px;
-    height: 20px;
 }
 .modal .close-btn {
     display: block;
