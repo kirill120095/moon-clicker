@@ -1,5 +1,5 @@
 // ============================================================
-//  ИГРОВАЯ ЛОГИКА (ИСПРАВЛЕНО — УБРАН ДУБЛИКАТ saveTimeout)
+//  ИГРОВАЯ ЛОГИКА (ИСПРАВЛЕНО — ИМПОРТЫ)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import {
@@ -8,7 +8,8 @@ import {
     levelLocked, testMode,
     setClickCount, setTotalSecondsPlayed, setCurrentLevel,
     setMoonHP, setMaxHP, setSessionStartTimestamp,
-    setBossTimerRunning, setBossTimer, setBossTimerInterval, setLevelLocked
+    setBossTimerRunning, setBossTimer, setBossTimerInterval, 
+    setLevelLocked, setTestMode
 } from './state.js';
 import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
 import { updateProfileAndLeaders } from './profile.js';
@@ -19,7 +20,7 @@ let moonWrapper, moonInner, clickEffect, counterEl, levelTitle, hpBar, hpPercent
 
 export let timeUpdateIntervalRef = null;
 export let autoSaveIntervalRef = null;
-let saveTimeout = null;   // ← Только одно объявление
+let saveTimeout = null;
 
 export function initGameElements(elements) {
     moonWrapper = elements.moonWrapper;
@@ -109,7 +110,6 @@ function updateTimerBar() {
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
 }
 
-// Debounced save
 export async function debouncedUpdateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
