@@ -9,7 +9,8 @@ import {
     resetProgress,
     updateShopUI,
     buyMoon,
-    selectMoon
+    selectMoon,
+    buyClickDamage
 } from './game.js';
 import { levelLocked, setLevelLocked, setTestMode, currentUser, activeMoon } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
@@ -173,7 +174,7 @@ export function initUI() {
     const buyBtn = document.getElementById('buyClickDamageBtn');
     if (buyBtn) {
         buyBtn.addEventListener('click', () => {
-            import('./game.js').then(module => module.buyClickDamage());
+            buyClickDamage();
         });
     }
 
