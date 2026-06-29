@@ -1,5 +1,5 @@
 // ============================================================
-//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ИСПРАВЛЕНО)
+//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ФИНАЛЬНАЯ ВЕРСИЯ)
 // ============================================================
 import { handleLogin, handleRegister, logout } from './auth.js';
 import { 
@@ -72,8 +72,9 @@ export function initUI() {
     // Навешивание событий
     initEvents();
     
-    // Синхронизируем подсветку активной луны при старте
-    syncMoonBgHighlight();
+    // Принудительно восстанавливаем сохраненный режим луны из памяти
+    const savedMode = localStorage.getItem('moonMode') || 'normal';
+    applyMoonStyle(savedMode);
 }
 
 export function setMode(mode) {
@@ -133,17 +134,19 @@ function initEvents() {
     });
     panelClose.addEventListener('click', () => sidePanel.classList.remove('active'));
 
-    // Переключение вкладок внутри боковой панели (Лидеры 🏆 / Профиль 👤)
+    // Исправленное переключение вкладок внутри боковой панели (Лидеры 🏆 / Профиль 👤)
     panelTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             panelTabs.forEach(t => t.classList.remove('active'));
             panelContents.forEach(c => c.classList.remove('active'));
 
             tab.classList.add('active');
+            
+            // Проверяем data-tab или иконки/текст кнопки
             const tabType = tab.getAttribute('data-tab');
-            if (tabType === 'leaders') {
+            if (tabType === 'leaders' || tab.textContent.includes('🏆')) {
                 document.getElementById('panelLeaders').classList.add('active');
-            } else if (tabType === 'profile') {
+            } else {
                 document.getElementById('panelProfile').classList.add('active');
             }
         });
@@ -157,15 +160,17 @@ function initEvents() {
             document.getElementById('accountNickname').textContent = currentUser.user_metadata?.username || 'Игрок';
             document.getElementById('accountEmail').textContent = currentUser.email || '-';
         }
-        syncMoonBgHighlight();
+        const savedMode = localStorage.getItem('moonMode') || 'normal';
+        applyMoonStyle(savedMode);
     });
     closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
 
-    // Выбор фонда луны (Обычная / Кровавая) + Подсветка кнопок
+    // Выбор фона луны (Обычная / Кровавая)
     bgOptions.forEach(btn => {
         btn.addEventListener('click', () => {
             const mode = btn.getAttribute('data-bg');
-            setMoonMode(mode);
+            localStorage.setItem('moonMode', mode);
+            applyMoonStyle(mode);
         });
     });
 
@@ -209,28 +214,23 @@ function initEvents() {
     }
 }
 
-// Функция установки стилей луны с сохранением и обновлением подсветки кнопок
-export function setMoonMode(mode) {
+// Универсальная функция применения стиля луны и подсветки кнопок
+export function applyMoonStyle(mode) {
     const container = document.getElementById('app');
     const moonInner = document.getElementById('moonInner');
+    
     if (mode === 'blood') {
-        container.classList.add('blood-mode');
+        if (container) container.classList.add('blood-mode');
         if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #ff4444, #cc0000)';
     } else {
-        container.classList.remove('blood-mode');
+        if (container) container.classList.remove('blood-mode');
         if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
     }
-    localStorage.setItem('moonMode', mode);
-    syncMoonBgHighlight();
-}
 
-// Функция синхронизации класса .active на кнопках выбора луны
-export function syncMoonBgHighlight() {
-    const currentMode = localStorage.getItem('moonMode') || 'normal';
+    // Синхронизация подсветки кнопок
     const buttons = document.querySelectorAll('#bgOptions button');
-    if (!buttons) return;
     buttons.forEach(btn => {
-        if (btn.getAttribute('data-bg') === currentMode) {
+        if (btn.getAttribute('data-bg') === mode) {
             btn.classList.add('active');
         } else {
             btn.classList.remove('active');
