@@ -1,5 +1,5 @@
 // ============================================================
-//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ИСПРАВЛЕННЫЙ)
+//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ
 // ============================================================
 import { handleLogin, handleRegister, logout } from './auth.js';
 import { 
@@ -85,47 +85,43 @@ export function initUI() {
 
 export function setMode(mode) {
     if (mode === 'login') {
-        if (tabLogin) tabLogin.classList.add('active');
-        if (tabRegister) tabRegister.classList.remove('active');
-        if (loginFields) loginFields.classList.remove('hidden');
-        if (registerFields) registerFields.classList.add('hidden');
-        if (actionBtn) actionBtn.textContent = 'Войти';
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+        loginFields.classList.remove('hidden');
+        registerFields.classList.add('hidden');
+        actionBtn.textContent = 'Войти';
     } else {
-        if (tabLogin) tabLogin.classList.remove('active');
-        if (tabRegister) tabRegister.classList.add('active');
-        if (loginFields) loginFields.classList.add('hidden');
-        if (registerFields) registerFields.classList.remove('hidden');
-        if (actionBtn) actionBtn.textContent = 'Зарегистрироваться';
+        tabLogin.classList.remove('active');
+        tabRegister.classList.add('active');
+        loginFields.classList.add('hidden');
+        registerFields.classList.remove('hidden');
+        actionBtn.textContent = 'Зарегистрироваться';
     }
     if (authMessageEl) authMessageEl.textContent = '';
 }
 
 function initEvents() {
     // Вкладки авторизации
-    if (tabLogin) tabLogin.addEventListener('click', () => setMode('login'));
-    if (tabRegister) tabRegister.addEventListener('click', () => setMode('register'));
+    tabLogin.addEventListener('click', () => setMode('login'));
+    tabRegister.addEventListener('click', () => setMode('register'));
 
     // Кнопка действия авторизации
-    if (actionBtn) {
-        actionBtn.addEventListener('click', () => {
-            if (tabLogin && tabLogin.classList.contains('active')) {
-                handleLogin();
-            } else {
-                handleRegister();
-            }
-        });
-    }
+    actionBtn.addEventListener('click', () => {
+        if (tabLogin.classList.contains('active')) {
+            handleLogin();
+        } else {
+            handleRegister();
+        }
+    });
 
     // Радиокнопки типа входа
     document.querySelectorAll('input[name="loginType"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             const input = document.getElementById('loginInput');
-            if (input) {
-                if (e.target.value === 'email') {
-                    input.placeholder = 'Email вашего аккаунта';
-                } else {
-                    input.placeholder = 'Ваш игровой логин';
-                }
+            if (e.target.value === 'email') {
+                input.placeholder = 'Email вашего аккаунта';
+            } else {
+                input.placeholder = 'Ваш игровой логин';
             }
         });
     });
@@ -135,7 +131,7 @@ function initEvents() {
         moonWrapper.addEventListener('click', handleClick);
     }
 
-    // Триггер панели (стрелка)
+    // Триггер панели (стрелка) – проверяем наличие
     if (panelTrigger) {
         panelTrigger.addEventListener('click', togglePanel);
     }
@@ -166,6 +162,14 @@ function initEvents() {
             const panel = document.getElementById(panelId);
             if (panel) panel.classList.add('active');
 
+            // При переключении на вкладку "Настройки" обновляем чекбокс тестового режима
+            if (tabType === 'settings') {
+                const savedTest = localStorage.getItem('testMode') === 'true';
+                const checkbox = document.getElementById('testModeCheckbox');
+                if (checkbox) checkbox.checked = savedTest;
+            }
+
+            // Мягкое обновление данных при клике на вкладку
             updateProfileAndLeaders(true);
         });
     });
@@ -181,17 +185,15 @@ function initEvents() {
     // Сброс прогресса
     if (resetProgressBtn) {
         resetProgressBtn.addEventListener('click', () => {
-            if (confirmOverlay) confirmOverlay.classList.add('active');
+            confirmOverlay.classList.add('active');
         });
     }
     if (confirmNo) {
-        confirmNo.addEventListener('click', () => {
-            if (confirmOverlay) confirmOverlay.classList.remove('active');
-        });
+        confirmNo.addEventListener('click', () => confirmOverlay.classList.remove('active'));
     }
     if (confirmYes) {
         confirmYes.addEventListener('click', () => {
-            if (confirmOverlay) confirmOverlay.classList.remove('active');
+            confirmOverlay.classList.remove('active');
             resetProgress();
         });
     }
@@ -204,6 +206,7 @@ function initEvents() {
 
     const lockToggleMain = document.getElementById('lockToggleMain');
     if (lockToggleMain) {
+        // Устанавливаем начальное состояние
         setLockIcon(lockToggleMain, levelLocked);
         lockToggleMain.addEventListener('click', () => {
             const newState = !levelLocked;
