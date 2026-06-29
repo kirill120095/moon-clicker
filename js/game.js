@@ -1,15 +1,14 @@
 // ============================================================
-//  ИГРОВАЯ ЛОГИКА (ИСПРАВЛЕНО)
+//  ИГРОВАЯ ЛОГИКА (ПОЛНОСТЬЮ ИСПРАВЛЕНО)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import {
     currentUser, playerData, clickCount, totalSecondsPlayed,
-    currentLevel, moonHP, maxHP,
-    bossTimer, bossTimerInterval, bossTimerRunning,
+    currentLevel, moonHP, maxHP, bossTimer, bossTimerInterval, bossTimerRunning,
     levelLocked, testMode,
     setClickCount, setTotalSecondsPlayed, setCurrentLevel,
-    setMoonHP, setMaxHP, setBossTimerRunning, setBossTimer, setBossTimerInterval,
-    setLevelLocked
+    setMoonHP, setMaxHP, setSessionStartTimestamp,
+    setBossTimerRunning, setBossTimer, setBossTimerInterval, setLevelLocked
 } from './state.js';
 import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
 import { updateProfileAndLeaders } from './profile.js';
@@ -50,7 +49,6 @@ export function updateUI() {
     const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
     hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
-    // Исправленный масштаб луны
     const scale = Math.max(0.18, Math.min(1.0, moonHP / maxHP));
     moonInner.style.transform = `scale(${scale})`;
 
@@ -60,11 +58,8 @@ export function updateUI() {
         clearBossTimer();
     }
 
-    if (currentLevel <= 1) {
-        rollbackBtnMain.classList.add('disabled');
-    } else {
-        rollbackBtnMain.classList.remove('disabled');
-    }
+    if (currentLevel <= 1) rollbackBtnMain.classList.add('disabled');
+    else rollbackBtnMain.classList.remove('disabled');
 
     updateTimeDisplay();
 }
@@ -73,22 +68,57 @@ export function updateTimeDisplay() {
     if (totalTimeDisplay) totalTimeDisplay.textContent = formatTime(totalSecondsPlayed);
 }
 
-// Босс таймер (без изменений)
-function startBossTimer() { /* ... оставь как было ... */ }
-function clearBossTimer() { /* ... оставь как было ... */ }
-function updateTimerBar() { /* ... оставь как было ... */ }
+function startBossTimer() {
+    if (bossTimerRunning) return;
+    if (bossTimerInterval) clearInterval(bossTimerInterval);
 
-// Debounced save
+    setBossTimer(BOSS_TIMER);
+    setBossTimerRunning(true);
+    timerBarContainer.classList.add('active');
+    hpBar.className = 'bar-fill boss-fill';
+    updateTimerBar();
+
+    const interval = setInterval(() => {
+        const newTimer = bossTimer - 1;
+        setBossTimer(newTimer);
+        updateTimerBar();
+        if (newTimer <= 0) {
+            clearBossTimer();
+            setMoonHP(maxHP);
+            updateUI();
+        }
+    }, 1000);
+    setBossTimerInterval(interval);
+}
+
+function clearBossTimer() {
+    if (bossTimerInterval) {
+        clearInterval(bossTimerInterval);
+        setBossTimerInterval(null);
+    }
+    setBossTimerRunning(false);
+    timerBarContainer.classList.remove('active');
+    if (timerBar) timerBar.style.width = '100%';
+    if (timerPercent) timerPercent.textContent = '0с';
+    hpBar.className = 'bar-fill hp-fill';
+}
+
+function updateTimerBar() {
+    const percent = Math.max(0, (bossTimer / BOSS_TIMER) * 100);
+    if (timerBar) timerBar.style.width = percent + '%';
+    if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
+}
+
+let saveTimeout = null;
 export async function debouncedUpdateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP);
+    saveTimeout = setTimeout(async () => {
+        await updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP);
     }, 650);
 }
 
 export async function updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (!playerId || !currentUser) return false;
-
     const updateData = {
         total_clicks: newTotal,
         last_click_at: clickTimestamp,
@@ -99,13 +129,7 @@ export async function updateProgress(playerId, newTotal, clickTimestamp, newLeve
     };
 
     try {
-        const { error } = await supabaseClient
-            .from('players')
-            .update(updateData)
-            .eq('id', playerId)
-            .select()
-            .single();
-
+        const { error } = await supabaseClient.from('players').update(updateData).eq('id', playerId);
         if (error) throw error;
         if (playerData) Object.assign(playerData, updateData);
         return true;
@@ -119,32 +143,22 @@ export async function updateProgress(playerId, newTotal, clickTimestamp, newLeve
 export async function saveTimeOnly() {
     if (!currentUser) return;
     try {
-        await supabaseClient.from('players').update({
-            total_seconds_played: totalSecondsPlayed,
-            updated_at: new Date().toISOString()
-        }).eq('id', currentUser.id);
+        await supabaseClient.from('players')
+            .update({ total_seconds_played: totalSecondsPlayed, updated_at: new Date().toISOString() })
+            .eq('id', currentUser.id);
     } catch (e) {}
 }
 
 export async function resetProgress() {
     if (!currentUser) return;
     try {
-        const { error } = await supabaseClient
-            .from('players')
-            .update({
-                total_clicks: 0,
-                total_seconds_played: 0,
-                level: 1,
-                moon_hp: Math.round(BASE_HP),
-                updated_at: new Date().toISOString()
-            })
+        const { error } = await supabaseClient.from('players')
+            .update({ total_clicks: 0, total_seconds_played: 0, level: 1, moon_hp: Math.round(BASE_HP), updated_at: new Date().toISOString() })
             .eq('id', currentUser.id);
 
         if (error) throw error;
 
-        const { data: freshData } = await supabaseClient
-            .from('players').select('*').eq('id', currentUser.id).single();
-
+        const { data: freshData } = await supabaseClient.from('players').select('*').eq('id', currentUser.id).single();
         if (freshData) {
             setPlayerData(freshData);
             setClickCount(0);
@@ -156,15 +170,19 @@ export async function resetProgress() {
 
         clearBossTimer();
         setLevelLocked(false);
-        document.getElementById('lockToggleMain').textContent = '🔓';
-        document.getElementById('lockToggleMain').classList.remove('locked');
+        const lockBtn = document.getElementById('lockToggleMain');
+        if (lockBtn) {
+            lockBtn.textContent = '🔓';
+            lockBtn.classList.remove('locked');
+        }
         localStorage.setItem('levelLocked', 'false');
         updateUI();
         showToast('✅ Прогресс сброшен!', 'success');
         document.getElementById('settingsModal').classList.remove('active');
         updateProfileAndLeaders();
     } catch (err) {
-        showToast('⚠️ Ошибка сброса', 'warning');
+        console.error(err);
+        showToast('⚠️ Ошибка сброса прогресса', 'warning');
     }
 }
 
@@ -192,8 +210,8 @@ export function initGame() {
     if (moonHP < 0) setMoonHP(0);
 
     updateUI();
-
     setSessionStartTimestamp(Date.now());
+
     if (timeUpdateIntervalRef) clearInterval(timeUpdateIntervalRef);
     timeUpdateIntervalRef = setInterval(() => {
         setTotalSecondsPlayed(totalSecondsPlayed + 1);
@@ -203,9 +221,10 @@ export function initGame() {
     if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
     autoSaveIntervalRef = setInterval(saveTimeOnly, 30000);
 
-    // Загрузка настроек
+    // По умолчанию — обычная луна
     const savedMode = localStorage.getItem('moonMode') || 'normal';
     setMoonMode(savedMode);
+
     const savedLock = localStorage.getItem('levelLocked') === 'true';
     setLevelLocked(savedLock);
     const lockToggle = document.getElementById('lockToggleMain');
@@ -213,11 +232,11 @@ export function initGame() {
         lockToggle.textContent = savedLock ? '🔒' : '🔓';
         lockToggle.classList.toggle('locked', savedLock);
     }
+
     const savedTest = localStorage.getItem('testMode') === 'true';
     setTestMode(savedTest);
-    if (document.getElementById('testModeCheckbox')) {
-        document.getElementById('testModeCheckbox').checked = savedTest;
-    }
+    const testCheckbox = document.getElementById('testModeCheckbox');
+    if (testCheckbox) testCheckbox.checked = savedTest;
 
     updateProfileAndLeaders();
 }
@@ -226,14 +245,9 @@ export async function handleClick(e) {
     if (!currentUser || moonHP <= 0) return;
 
     setClickCount(clickCount + 1);
+    if (testMode) setMoonHP(0);
+    else setMoonHP(Math.max(0, moonHP - 1));
 
-    if (testMode) {
-        setMoonHP(0);
-    } else {
-        setMoonHP(Math.max(0, moonHP - 1));
-    }
-
-    // Эффекты
     const eff = document.getElementById('clickEffect');
     if (eff) {
         eff.classList.remove('active');
@@ -242,7 +256,7 @@ export async function handleClick(e) {
     }
     if (moonWrapper) {
         moonWrapper.style.transform = 'scale(0.92)';
-        setTimeout(() => moonWrapper.style.transform = 'scale(1)', 150);
+        setTimeout(() => { moonWrapper.style.transform = 'scale(1)'; }, 150);
     }
 
     if (moonHP === 0) {
