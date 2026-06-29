@@ -147,10 +147,10 @@ body {
     color: rgba(255, 255, 255, 0.3);
     transition: 0.3s;
     line-height: 1;
-    display: none; /* скрыты по умолчанию */
+    display: none;
 }
 .top-actions button.visible {
-    display: inline-block; /* или inline-flex, если нужно */
+    display: inline-block;
 }
 .top-actions button:hover {
     color: rgba(255, 255, 255, 0.7);
@@ -226,6 +226,12 @@ body {
 }
 .side-panel .panel-tabs button:hover {
     color: rgba(255, 255, 255, 0.7);
+}
+.side-panel .panel-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 10px;
 }
 .side-panel .panel-content {
     display: none;
@@ -425,7 +431,6 @@ body {
 .moon-wrapper:active {
     transform: scale(0.92);
 }
-
 .moon {
     width: 100%;
     height: 100%;
@@ -433,7 +438,6 @@ body {
     position: relative;
     animation: moonOrbit 30s linear infinite;
 }
-
 .moon-inner {
     width: 100%;
     height: 100%;
@@ -449,7 +453,6 @@ body {
     transform: scale(1);
     will-change: transform;
 }
-
 .container.blood-mode .moon-inner {
     box-shadow:
         0 0 60px rgba(255, 0, 0, 0.6),
@@ -457,12 +460,10 @@ body {
         inset -35px -35px 90px rgba(0, 0, 0, 0.4),
         inset 35px 35px 90px rgba(255, 0, 0, 0.2);
 }
-
 @keyframes moonOrbit {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
-
 .moon-inner {
     animation: pulseGlow 4s ease-in-out infinite alternate;
 }
@@ -470,7 +471,6 @@ body {
     0% { box-shadow: 0 0 40px rgba(255,215,150,0.3), 0 0 80px rgba(255,215,150,0.1), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,255,255,0.3); }
     100% { box-shadow: 0 0 100px rgba(255,215,150,0.6), 0 0 200px rgba(255,215,150,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,255,255,0.4); }
 }
-
 .container.blood-mode .moon-inner {
     animation: pulseGlowRed 4s ease-in-out infinite alternate;
 }
@@ -478,7 +478,6 @@ body {
     0% { box-shadow: 0 0 40px rgba(255,0,0,0.4), 0 0 80px rgba(255,0,0,0.2), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,0,0,0.2); }
     100% { box-shadow: 0 0 100px rgba(255,0,0,0.8), 0 0 200px rgba(255,0,0,0.4), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,0,0,0.3); }
 }
-
 .click-effect {
     position: absolute;
     top: 50%;
@@ -525,6 +524,13 @@ body {
     border-color: rgba(255, 0, 0, 0.2);
     background: rgba(0, 0, 0, 0.5);
 }
+.counter-label {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-top: 2px;
+}
 
 .level-title {
     font-size: 1.3rem;
@@ -536,6 +542,12 @@ body {
 }
 .container.blood-mode .level-title {
     color: #ff6b6b;
+}
+
+.time-display {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.9rem;
+    margin: 5px 0 10px;
 }
 
 .game-controls {
@@ -917,6 +929,26 @@ body {
     animation: levelUp 0.8s ease-out forwards;
 }
 
+.panel-refresh-btn {
+    background: none;
+    border: none;
+    color: #f0e6d0;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: transform 0.3s ease;
+}
+.panel-refresh-btn:hover {
+    color: #d4af37;
+}
+.panel-refresh-btn.spinning {
+    animation: spin 0.4s linear;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 @media (max-width: 700px) {
     .container { padding: 30px; }
     .moon-wrapper { width: 260px; height: 260px; }
@@ -931,27 +963,4 @@ body {
     .container { padding: 20px; }
     .side-panel { width: 260px; padding: 15px; }
     .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
-}
-/* Кнопка обновления в боковой панели */
-.panel-refresh-btn {
-    background: none;
-    border: none;
-    color: #f0e6d0; /* Ваш дефолтный цвет текста */
-    font-size: 1.1rem;
-    cursor: pointer;
-    padding: 0;
-    margin: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.3s ease;
-}
-
-.panel-refresh-btn:hover {
-    color: #d4af37; /* Золотистый цвет при наведении */
-}
-
-/* Анимация плавного вращения */
-.panel-refresh-btn.spinning {
-    transform: rotate(360deg);
 }
