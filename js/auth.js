@@ -192,7 +192,9 @@ export async function handleLogin() {
 
         // Показываем кнопку боковой панели
         const panelTrigger = document.getElementById('panelTrigger');
-        if (panelTrigger) panelTrigger.style.display = 'flex';
+        if (panelTrigger) {
+            panelTrigger.style.display = 'flex';
+        }
 
         // Закрываем панель при входе
         const sidePanel = document.getElementById('sidePanel');
@@ -227,7 +229,9 @@ export async function logout() {
 
     // Скрываем кнопку панели
     const panelTrigger = document.getElementById('panelTrigger');
-    if (panelTrigger) panelTrigger.style.display = 'none';
+    if (panelTrigger) {
+        panelTrigger.style.display = 'none';
+    }
 
     // Закрываем панель
     const sidePanel = document.getElementById('sidePanel');
