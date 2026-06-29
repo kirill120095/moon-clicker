@@ -21,15 +21,6 @@
     color: #ff6b6b;
 }
 
-/* ---------- ОСКОЛКИ ---------- */
-.shards-display {
-    color: #ffd700;
-    font-size: 1.4rem;
-    margin: 5px 0 10px;
-    text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
-    letter-spacing: 1px;
-}
-
 /* ---------- ЛУНА ---------- */
 .moon-wrapper {
     display: inline-block;
@@ -108,20 +99,20 @@
     100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
 }
 
-/* ---------- СЧЁТЧИК ---------- */
+/* ---------- СЧЁТЧИК (теперь показывает валюту) ---------- */
 .counter {
     margin: 12px auto 8px;
-    color: #f0e6d0;
+    color: #ffd700;
     font-size: 4rem;
     font-weight: 700;
     letter-spacing: 2px;
-    text-shadow: 0 0 40px rgba(255, 215, 150, 0.2);
+    text-shadow: 0 0 40px rgba(255, 215, 150, 0.3);
     background: rgba(0, 0, 0, 0.3);
     padding: 10px 35px;
     border-radius: 60px;
     display: inline-block;
     backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 215, 0, 0.15);
     min-width: 160px;
     transition: all 0.5s ease;
 }
