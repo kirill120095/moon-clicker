@@ -1,5 +1,5 @@
 // ============================================================
-//  ИГРОВАЯ ЛОГИКА (С DEBOUNCE) — ЛИНЕЙНОЕ УМЕНЬШЕНИЕ
+//  ИГРОВАЯ ЛОГИКА (С DEBOUNCE + НАГРАДЫ)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import {
@@ -51,10 +51,9 @@ export function updateUI() {
     const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
     hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
-    // --- ЛИНЕЙНОЕ УМЕНЬШЕНИЕ ЛУНЫ ---
-    // Масштаб = оставшееся HP / максимальное HP
-    // 100% HP = 100% размера, 50% HP = 50% размера, 0% HP = 0% размера
-    const scale = Math.max(0, Math.min(1, moonHP / maxHP));
+    // --- УМЕНЬШЕНИЕ ЛУНЫ (степенная) ---
+    const hpRatio = Math.max(0, Math.min(1, moonHP / maxHP));
+    const scale = Math.pow(hpRatio, 0.4) * 0.95 + 0.05;
     if (moonInner) {
         moonInner.style.transform = `scale(${scale})`;
     }
@@ -76,10 +75,32 @@ export function updateUI() {
     else rollbackBtnMain.classList.remove('disabled');
 
     updateTimeDisplay();
+    
+    // --- Обновляем отображение осколков ---
+    updateShardsDisplay();
 }
 
 export function updateTimeDisplay() {
     if (totalTimeDisplay) totalTimeDisplay.textContent = formatTime(totalSecondsPlayed);
+}
+
+// --- Отображение осколков ---
+export function updateShardsDisplay() {
+    const shardsEl = document.getElementById('shardsCount');
+    if (shardsEl && playerData) {
+        shardsEl.textContent = playerData.shards || 0;
+    }
+}
+
+// --- Расчёт награды за победу ---
+function calculateShardReward(level, isBoss) {
+    let shards = Math.floor(level / 10) + 1;
+    if (isBoss) {
+        shards = Math.floor(level / 10) * 10 * 5;
+    }
+    // Применяем множитель (пока 1, в будущем можно добавить)
+    const multiplier = playerData?.shard_multiplier || 1;
+    return Math.floor(shards * multiplier);
 }
 
 function startBossTimer() {
@@ -161,6 +182,39 @@ export async function updateProgress(playerId, newTotal, clickTimestamp, newLeve
     }
 }
 
+// --- СОХРАНЕНИЕ ОСКОЛКОВ И УЛУЧШЕНИЙ ---
+export async function updatePlayerStats(playerId, shards, clickDamage, clickDamageLevel) {
+    if (!playerId || !currentUser) return false;
+
+    const updateData = {
+        shards: shards,
+        click_damage: clickDamage,
+        click_damage_level: clickDamageLevel,
+        updated_at: new Date().toISOString()
+    };
+
+    try {
+        const { error } = await supabaseClient
+            .from('players')
+            .update(updateData)
+            .eq('id', playerId);
+
+        if (error) throw error;
+
+        if (playerData) {
+            playerData.shards = shards;
+            playerData.click_damage = clickDamage;
+            playerData.click_damage_level = clickDamageLevel;
+        }
+        updateShardsDisplay();
+        return true;
+    } catch (err) {
+        console.error('Ошибка сохранения статистики:', err);
+        showToast('⚠️ Ошибка сохранения', 'warning');
+        return false;
+    }
+}
+
 export async function saveTimeOnly() {
     if (!currentUser) return;
     try {
@@ -176,7 +230,16 @@ export async function resetProgress() {
     if (!currentUser) return;
     try {
         const { error } = await supabaseClient.from('players')
-            .update({ total_clicks: 0, total_seconds_played: 0, level: 1, moon_hp: Math.round(BASE_HP), updated_at: new Date().toISOString() })
+            .update({ 
+                total_clicks: 0, 
+                total_seconds_played: 0, 
+                level: 1, 
+                moon_hp: Math.round(BASE_HP),
+                shards: 0,
+                click_damage: 1,
+                click_damage_level: 0,
+                updated_at: new Date().toISOString()
+            })
             .eq('id', currentUser.id);
 
         if (error) throw error;
@@ -262,14 +325,21 @@ export function initGame() {
     if (testCheckbox) testCheckbox.checked = savedTest;
 
     updateProfileAndLeaders();
+    updateShardsDisplay();
 }
 
 export async function handleClick(e) {
     if (!currentUser || moonHP <= 0) return;
 
+    // --- Урон с учётом улучшения ---
+    const damage = playerData?.click_damage || 1;
+    
     setClickCount(clickCount + 1);
-    if (testMode) setMoonHP(0);
-    else setMoonHP(Math.max(0, moonHP - 1));
+    if (testMode) {
+        setMoonHP(0);
+    } else {
+        setMoonHP(Math.max(0, moonHP - damage));
+    }
 
     const eff = document.getElementById('clickEffect');
     if (eff) {
@@ -288,6 +358,19 @@ export async function handleClick(e) {
             updateUI();
             return;
         }
+        
+        // --- ПОБЕДА! Рассчитываем награду ---
+        const isBoss = isBossLevel(currentLevel, BOSS_INTERVAL);
+        const shardReward = calculateShardReward(currentLevel, isBoss);
+        const currentShards = (playerData?.shards || 0) + shardReward;
+        
+        // Показываем уведомление о награде
+        showToast(`💎 +${shardReward} лунных осколков!`, 'success', 2000);
+        
+        // Сохраняем осколки
+        await updatePlayerStats(currentUser.id, currentShards, playerData?.click_damage || 1, playerData?.click_damage_level || 0);
+        
+        // --- ПЕРЕХОД НА СЛЕДУЮЩИЙ УРОВЕНЬ ---
         const newLevel = currentLevel + 1;
         setCurrentLevel(newLevel);
         const newMax = getMaxHPForLevel(newLevel, BASE_HP, BOSS_INTERVAL);
@@ -300,13 +383,14 @@ export async function handleClick(e) {
         }
         updateUI();
         const now = new Date().toISOString();
-        await debouncedUpdateProgress(currentUser.id, clickCount, now, newLevel, moonHP);
+        await updateProgress(currentUser.id, clickCount, now, newLevel, moonHP);
         updateProfileAndLeaders();
+        updateShardsDisplay();
         return;
     }
 
     updateUI();
     const now = new Date().toISOString();
-    await debouncedUpdateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
+    await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
     updateProfileAndLeaders();
 }
