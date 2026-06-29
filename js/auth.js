@@ -1,5 +1,5 @@
 // ============================================================
-//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД (ИСПРАВЛЕН ВЫХОД)
+//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД (ИСПРАВЛЕНО)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
@@ -191,35 +191,17 @@ export async function handleLogin() {
         document.getElementById('gameArea').classList.add('active');
         // Переходим в игру (без перезагрузки)
         initGame();
-        // Показываем панель, если была открыта
-        const sidePanel = document.getElementById('sidePanel');
-        if (sidePanel && sidePanel.classList.contains('active')) {
-            // обновим данные при входе
-            import('./profile.js').then(module => {
-                module.updateProfileAndLeaders(true);
-            });
-        }
+        // Обновляем профиль и лидеров
+        import('./profile.js').then(module => {
+            module.updateProfileAndLeaders(true);
+        });
         showToast('✅ Добро пожаловать!', 'success');
     }
 }
 
-// Выход (исправлен: игнорируем ошибку 403, просто выходим)
+// Выход (исправлен: убраны лишние вызовы, добавлена обработка ошибок)
 export async function logout() {
-    showToast('⏳ Выход...', 'info', 1000);
-
-    if (timeUpdateIntervalRef) clearInterval(timeUpdateIntervalRef);
-    if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
-    // удаляем возможный интервал босса, если он есть
-    if (window.bossTimerInterval) clearInterval(window.bossTimerInterval);
-
-    try {
-        await supabaseClient.auth.signOut();
-    } catch (err) {
-        // Если ошибка 403 или любая другая, мы всё равно выходим локально
-        console.warn('Ошибка при выходе из Supabase:', err);
-        // Игнорируем, потому что мы уже очищаем локальное состояние
-    }
-
+    // Сразу очищаем локальное состояние, чтобы UI отреагировал
     setUser(null);
     setPlayerData(null);
     setClickCount(0);
@@ -227,11 +209,31 @@ export async function logout() {
     setCurrentLevel(1);
     setMoonHP(BASE_HP);
 
-    document.getElementById('sidePanel').classList.remove('active');
+    // Останавливаем таймеры
+    if (timeUpdateIntervalRef) clearInterval(timeUpdateIntervalRef);
+    if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
+    if (window.bossTimerInterval) clearInterval(window.bossTimerInterval);
+
+    // Закрываем панель
+    const sidePanel = document.getElementById('sidePanel');
+    if (sidePanel) sidePanel.classList.remove('active');
+
+    // Переключаем UI на форму входа
     document.getElementById('gameArea').classList.remove('active');
     document.getElementById('authBlock').classList.remove('hidden');
-
     setMode('login');
     updateUI();
-    showToast('👋 Вы вышли из аккаунта', 'success');
+
+    // Показываем тост
+    showToast('👋 Выход...', 'info', 1500);
+
+    // Вызываем signOut с обработкой ошибок (не блокируем UI)
+    try {
+        await supabaseClient.auth.signOut();
+        showToast('👋 Вы вышли из аккаунта', 'success');
+    } catch (err) {
+        console.warn('Ошибка при выходе из Supabase:', err);
+        // Даже если ошибка, мы уже очистили локальное состояние
+        showToast('⚠️ Ошибка при выходе, но сессия очищена', 'warning');
+    }
 }
