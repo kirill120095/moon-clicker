@@ -1,5 +1,5 @@
 // ============================================================
-//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД (ИСПРАВЛЕНО)
+//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
@@ -189,19 +189,32 @@ export async function handleLogin() {
         // Показываем игровую зону
         document.getElementById('authBlock').classList.add('hidden');
         document.getElementById('gameArea').classList.add('active');
-        // Переходим в игру (без перезагрузки)
+        // Переходим в игру
         initGame();
-        // Обновляем профиль и лидеров
-        import('./profile.js').then(module => {
-            module.updateProfileAndLeaders(true);
-        });
+        // Обновляем панель, если она открыта
+        const sidePanel = document.getElementById('sidePanel');
+        if (sidePanel && sidePanel.classList.contains('active')) {
+            import('./profile.js').then(module => {
+                module.updateProfileAndLeaders(true);
+            });
+        }
         showToast('✅ Добро пожаловать!', 'success');
     }
 }
 
-// Выход (исправлен: убраны лишние вызовы, добавлена обработка ошибок)
+// Выход (исправлен)
 export async function logout() {
-    // Сразу очищаем локальное состояние, чтобы UI отреагировал
+    showToast('⏳ Выход...', 'info', 1000);
+
+    // Останавливаем таймеры
+    if (timeUpdateIntervalRef) clearInterval(timeUpdateIntervalRef);
+    if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
+    if (window.bossTimerInterval) clearInterval(window.bossTimerInterval);
+
+    // Выходим из Supabase
+    await supabaseClient.auth.signOut();
+
+    // Очищаем локальное состояние
     setUser(null);
     setPlayerData(null);
     setClickCount(0);
@@ -209,31 +222,12 @@ export async function logout() {
     setCurrentLevel(1);
     setMoonHP(BASE_HP);
 
-    // Останавливаем таймеры
-    if (timeUpdateIntervalRef) clearInterval(timeUpdateIntervalRef);
-    if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
-    if (window.bossTimerInterval) clearInterval(window.bossTimerInterval);
-
     // Закрываем панель
-    const sidePanel = document.getElementById('sidePanel');
-    if (sidePanel) sidePanel.classList.remove('active');
-
-    // Переключаем UI на форму входа
+    document.getElementById('sidePanel').classList.remove('active');
     document.getElementById('gameArea').classList.remove('active');
     document.getElementById('authBlock').classList.remove('hidden');
+
     setMode('login');
     updateUI();
-
-    // Показываем тост
-    showToast('👋 Выход...', 'info', 1500);
-
-    // Вызываем signOut с обработкой ошибок (не блокируем UI)
-    try {
-        await supabaseClient.auth.signOut();
-        showToast('👋 Вы вышли из аккаунта', 'success');
-    } catch (err) {
-        console.warn('Ошибка при выходе из Supabase:', err);
-        // Даже если ошибка, мы уже очистили локальное состояние
-        showToast('⚠️ Ошибка при выходе, но сессия очищена', 'warning');
-    }
+    showToast('👋 Вы вышли из аккаунта', 'success');
 }
