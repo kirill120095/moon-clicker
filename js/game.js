@@ -60,7 +60,7 @@ export function updateUI() {
         // Используем степенную функцию для более плавного уменьшения в конце
         // При hpRatio = 0.1 (10% HP) масштаб будет ~0.3
         // При hpRatio = 0.01 (1% HP) масштаб будет ~0.1
-        scale = Math.pow(hpRatio, 0.4) * 0.95 + 0.05;
+        scale = Math.pow(hpRatio, 0.2) * 0.95 + 0.05;
         // Гарантируем, что масштаб не меньше 0.01 и не больше 1
         scale = Math.max(0.01, Math.min(1, scale));
     } else {
