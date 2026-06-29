@@ -1,1 +1,51 @@
+/* ============================================================
+   АДАПТИВ (МЕДИА-ЗАПРОСЫ)
+   ============================================================ */
+@media (max-width: 700px) {
+    .container {
+        padding: 30px;
+    }
+    .moon-wrapper {
+        width: 260px;
+        height: 260px;
+    }
+    .counter {
+        font-size: 2.8rem;
+        padding: 8px 20px;
+        min-width: 120px;
+    }
+    .subtitle {
+        font-size: 2rem;
+        letter-spacing: 4px;
+    }
+    .side-panel {
+        width: 280px;
+    }
+}
 
+@media (max-width: 450px) {
+    .moon-wrapper {
+        width: 200px;
+        height: 200px;
+    }
+    .counter {
+        font-size: 2.2rem;
+        padding: 6px 15px;
+        min-width: 90px;
+    }
+    .subtitle {
+        font-size: 1.6rem;
+    }
+    .container {
+        padding: 20px;
+    }
+    .side-panel {
+        width: 260px;
+        padding: 15px;
+    }
+    .bar-label,
+    .bar-percent {
+        font-size: 0.7rem;
+        min-width: 25px;
+    }
+}
