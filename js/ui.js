@@ -13,10 +13,10 @@ import { updateProfileAndLeaders } from './profile.js';
 
 // DOM-элементы
 let tabLogin, tabRegister, loginFields, registerFields, actionBtn, authMessageEl;
-let sidePanel, panelTrigger, panelTabs, panelContents, refreshDataBtn;
+let sidePanel, panelTrigger, panelClose, panelTabs, panelContents, refreshDataBtn;
 let testModeCheckbox, resetProgressBtn;
 let confirmOverlay, confirmYes, confirmNo;
-let moonWrapper;
+let moonWrapper, lockToggleMain;
 
 export function initUI() {
     // Авторизация
@@ -30,6 +30,7 @@ export function initUI() {
     // Панели управления
     sidePanel = document.getElementById('sidePanel');
     panelTrigger = document.getElementById('panelTrigger');
+    panelClose = document.getElementById('panelClose');
     panelTabs = document.querySelectorAll('.side-panel .panel-tabs button');
     panelContents = document.querySelectorAll('.side-panel .panel-content');
     refreshDataBtn = document.getElementById('refreshDataBtn');
@@ -46,7 +47,7 @@ export function initUI() {
     // Игровые элементы
     moonWrapper = document.getElementById('moonWrapper');
     const rollbackBtnMain = document.getElementById('rollbackBtnMain');
-    const lockToggleMain = document.getElementById('lockToggleMain');
+    lockToggleMain = document.getElementById('lockToggleMain');
 
     // Передаем элементы в game.js
     initGameElements({
@@ -126,7 +127,12 @@ function initEvents() {
         panelTrigger.addEventListener('click', togglePanel);
     }
 
-    // Кнопка ручного обновления данных
+    // Кнопка закрытия панели (крестик)
+    if (panelClose) {
+        panelClose.addEventListener('click', () => togglePanel(false));
+    }
+
+    // Кнопка обновления данных (внизу панели)
     if (refreshDataBtn) {
         refreshDataBtn.addEventListener('click', () => {
             refreshDataBtn.classList.add('spinning');
@@ -153,6 +159,7 @@ function initEvents() {
                 if (testModeCheckbox) testModeCheckbox.checked = savedTest;
             }
 
+            // Мягкое обновление данных при клике на вкладку
             updateProfileAndLeaders(true);
         });
     });
@@ -187,22 +194,21 @@ function initEvents() {
         rollbackBtnMain.addEventListener('click', rollbackLevel);
     }
 
-    const lockToggleMain = document.getElementById('lockToggleMain');
+    // Замок – инициализация и обработчик
     if (lockToggleMain) {
-        // Устанавливаем начальное состояние (подсветка)
+        // Устанавливаем начальное состояние (иконка уже в HTML, просто добавляем класс)
         if (levelLocked) {
-            lockToggleMain.classList.add('active');
-        } else {
-            lockToggleMain.classList.remove('active');
+            lockToggleMain.classList.add('locked');
         }
         lockToggleMain.addEventListener('click', () => {
             const newState = !levelLocked;
             setLevelLocked(newState);
             localStorage.setItem('levelLocked', newState);
+            // Переключаем класс locked
             if (newState) {
-                lockToggleMain.classList.add('active');
+                lockToggleMain.classList.add('locked');
             } else {
-                lockToggleMain.classList.remove('active');
+                lockToggleMain.classList.remove('locked');
             }
         });
     }
