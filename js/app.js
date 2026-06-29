@@ -5,7 +5,7 @@ import { supabaseClient } from './supabase.js';
 import { initToastContainer, createStars, showToast } from './utils.js';
 import { initUI } from './ui.js';
 import { initGame } from './game.js';
-import { setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
+import { setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP, setActiveMoon, setOwnedMoons } from './state.js';
 import { loadPlayerData, initAuthElements, createOrUpdatePlayer } from './auth.js';
 import { BASE_HP } from './config.js';
 import { getMaxHPForLevel } from './utils.js';
@@ -49,6 +49,8 @@ async function checkAuth() {
                 setCurrentLevel(player.level || 1);
                 setMoonHP(player.moon_hp || BASE_HP);
                 setMaxHP(getMaxHPForLevel(player.level || 1, BASE_HP, 10));
+                if (player.active_moon) setActiveMoon(player.active_moon);
+                if (player.owned_moons) setOwnedMoons(JSON.parse(player.owned_moons));
             }
 
             // Скрываем авторизацию
