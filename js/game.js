@@ -41,7 +41,7 @@ export function initGameElements(elements) {
 
 export function updateUI() {
     if (!counterEl) return;
-    // Теперь счетчик показывает осколки, а не клики
+    // Теперь счетчик показывает осколки
     const shards = playerData?.shards || 0;
     counterEl.textContent = `💎 ${shards}`;
     
@@ -51,6 +51,7 @@ export function updateUI() {
     const maxHPDisplay = Math.round(maxHP);
     hpPercent.textContent = `${currentHP}/${maxHPDisplay}`;
 
+    // HP бар уменьшается от кликов
     const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
     hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
@@ -222,6 +223,7 @@ function clearBossTimer() {
 }
 
 function updateTimerBar() {
+    // Таймер уменьшается за секунды
     const percent = Math.max(0, (bossTimer / BOSS_TIMER) * 100);
     if (timerBar) timerBar.style.width = percent + '%';
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
