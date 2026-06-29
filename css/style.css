@@ -147,6 +147,10 @@ body {
     color: rgba(255, 255, 255, 0.3);
     transition: 0.3s;
     line-height: 1;
+    display: none; /* скрыты по умолчанию */
+}
+.top-actions button.visible {
+    display: inline-block; /* или inline-flex, если нужно */
 }
 .top-actions button:hover {
     color: rgba(255, 255, 255, 0.7);
