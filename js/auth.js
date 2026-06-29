@@ -181,6 +181,7 @@ export async function handleLogin() {
         setTotalSecondsPlayed(player.total_seconds_played || 0);
         setCurrentLevel(player.level || 1);
         setMoonHP(player.moon_hp || BASE_HP);
+        setMaxHP(getMaxHPForLevel(player.level || 1, BASE_HP, 10));
 
         if (authMessageEl) {
             authMessageEl.textContent = '✅ Вход успешен!';
@@ -190,16 +191,20 @@ export async function handleLogin() {
         document.getElementById('authBlock').classList.add('hidden');
         document.getElementById('gameArea').classList.add('active');
 
-        // Показываем кнопку боковой панели (добавляем класс visible)
-        const panelTrigger = document.getElementById('panelTrigger');
-        if (panelTrigger) {
-            panelTrigger.classList.add('visible');
-        }
+        // Показываем кнопки боковых панелей
+        const leftTrigger = document.getElementById('panelTrigger');
+        const rightTrigger = document.getElementById('shopTrigger');
+        if (leftTrigger) leftTrigger.classList.add('visible');
+        if (rightTrigger) rightTrigger.classList.add('visible');
 
-        // Закрываем панель при входе
+        // Закрываем панели при входе
         const sidePanel = document.getElementById('sidePanel');
         if (sidePanel) sidePanel.classList.remove('active');
-        if (panelTrigger) panelTrigger.classList.remove('active');
+        if (leftTrigger) leftTrigger.classList.remove('active');
+
+        const shopPanel = document.getElementById('shopPanel');
+        if (shopPanel) shopPanel.classList.remove('active');
+        if (rightTrigger) rightTrigger.classList.remove('active');
 
         // Переходим в игру
         initGame();
@@ -226,17 +231,22 @@ export async function logout() {
     setTotalSecondsPlayed(0);
     setCurrentLevel(1);
     setMoonHP(BASE_HP);
+    setMaxHP(BASE_HP);
 
-    // Скрываем кнопку панели (убираем класс visible)
-    const panelTrigger = document.getElementById('panelTrigger');
-    if (panelTrigger) {
-        panelTrigger.classList.remove('visible');
-    }
+    // Скрываем кнопки панелей
+    const leftTrigger = document.getElementById('panelTrigger');
+    const rightTrigger = document.getElementById('shopTrigger');
+    if (leftTrigger) leftTrigger.classList.remove('visible');
+    if (rightTrigger) rightTrigger.classList.remove('visible');
 
-    // Закрываем панель
+    // Закрываем панели
     const sidePanel = document.getElementById('sidePanel');
     if (sidePanel) sidePanel.classList.remove('active');
-    if (panelTrigger) panelTrigger.classList.remove('active');
+    if (leftTrigger) leftTrigger.classList.remove('active');
+
+    const shopPanel = document.getElementById('shopPanel');
+    if (shopPanel) shopPanel.classList.remove('active');
+    if (rightTrigger) rightTrigger.classList.remove('active');
 
     document.getElementById('gameArea').classList.remove('active');
     document.getElementById('authBlock').classList.remove('hidden');
