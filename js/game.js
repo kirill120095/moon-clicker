@@ -14,6 +14,7 @@ import {
 import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
 import { updateProfileAndLeaders } from './profile.js';
 import { BASE_HP, BOSS_INTERVAL, BOSS_TIMER } from './config.js';
+import { applyMoonStyle } from './ui.js';
 
 let moonWrapper, moonInner, clickEffect, counterEl, levelTitle, hpBar, hpPercent,
     timerBarContainer, timerBar, timerPercent, totalTimeDisplay, rollbackBtnMain, lockToggleMain;
@@ -51,7 +52,7 @@ export function updateUI() {
     hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
     const scale = Math.max(0.18, Math.min(1.0, moonHP / maxHP));
-    moonInner.style.transform = `scale(${scale})`;
+    if (moonInner) moonInner.style.transform = `scale(${scale})`;
 
     if (isBossLevel(currentLevel, BOSS_INTERVAL) && moonHP > 0) {
         if (!bossTimerRunning) startBossTimer();
@@ -221,8 +222,9 @@ export function initGame() {
     if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
     autoSaveIntervalRef = setInterval(saveTimeOnly, 30000);
 
+    // Безопасная инициализация сохраненного стиля луны из памяти
     const savedMode = localStorage.getItem('moonMode') || 'normal';
-    setMoonMode(savedMode);
+    applyMoonStyle(savedMode);
 
     const savedLock = localStorage.getItem('levelLocked') === 'true';
     setLevelLocked(savedLock);
@@ -285,16 +287,4 @@ export async function handleClick(e) {
     const now = new Date().toISOString();
     await debouncedUpdateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
     updateProfileAndLeaders();
-}
-
-function setMoonMode(mode) {
-    const container = document.getElementById('app');
-    if (mode === 'blood') {
-        container.classList.add('blood-mode');
-        if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #ff4444, #cc0000)';
-    } else {
-        container.classList.remove('blood-mode');
-        if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
-    }
-    localStorage.setItem('moonMode', mode);
 }
