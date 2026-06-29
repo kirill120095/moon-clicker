@@ -1,5 +1,5 @@
 // ============================================================
-//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД (ИСПРАВЛЕНО)
+//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
@@ -154,13 +154,14 @@ export async function handleLogin() {
         setMoonHP(player.moon_hp || BASE_HP);
 
         authMessageEl.textContent = '✅ Вход успешен!';
-        document.getElementById('statsToggleBtn').classList.add('visible');
-        document.getElementById('settingsBtn').classList.add('visible');
+        // Убираем обращение к statsToggleBtn и settingsBtn, т.к. их больше нет
+        // document.getElementById('statsToggleBtn').classList.add('visible'); // УДАЛЕНО
+        // document.getElementById('settingsBtn').classList.add('visible');   // УДАЛЕНО
         setTimeout(initGame, 300);
     }
 }
 
-// Выход (исправлено)
+// Выход
 export async function logout() {
     showToast('⏳ Выход...', 'info', 1000);
 
@@ -181,8 +182,9 @@ export async function logout() {
     document.getElementById('gameArea').classList.remove('active');
     document.getElementById('authBlock').classList.remove('hidden');
 
-    document.getElementById('statsToggleBtn').classList.remove('visible');
-    document.getElementById('settingsBtn').classList.remove('visible');
+    // Убираем класс visible с удалённых кнопок (их нет, но на всякий случай)
+    // document.getElementById('statsToggleBtn').classList.remove('visible'); // УДАЛЕНО
+    // document.getElementById('settingsBtn').classList.remove('visible');   // УДАЛЕНО
 
     setMode('login');
     updateUI();
