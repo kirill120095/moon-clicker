@@ -254,7 +254,7 @@ export function toggleRightPanel() {
     console.log('[UI] Правая панель:', isOpen ? 'закрыта' : 'открыта');
 }
 
-// Применение стиля луны (включая глобальные цвета)
+// Применение стиля луны (включая глобальные цвета и свечение)
 export function applyMoonStyle(moonId) {
     const moonInner = document.getElementById('moonInner');
     const container = document.getElementById('app');
@@ -262,7 +262,7 @@ export function applyMoonStyle(moonId) {
     const moon = MOON_TYPES[moonId];
     if (!moon) return;
 
-    // Устанавливаем градиент и тень луны
+    // Устанавливаем градиент и тень луны (теперь без !important конфликтов)
     moonInner.style.backgroundImage = moon.gradient;
     moonInner.style.boxShadow = moon.shadow;
 
