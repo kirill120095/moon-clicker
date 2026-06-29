@@ -38,10 +38,15 @@ export async function updateProfileAndLeaders(force = false) {
             const moon = MOON_TYPES[moonId];
             if (!moon) return;
             const isActive = (activeMoon === moonId);
+            // Формируем описание бонусов
+            let bonusDesc = [];
+            if (moon.damageBonus > 0) bonusDesc.push(`урон +${Math.round(moon.damageBonus*100)}%`);
+            if (moon.shardBonus > 0) bonusDesc.push(`осколки +${Math.round(moon.shardBonus*100)}%`);
+            const bonusText = bonusDesc.length ? ` (${bonusDesc.join(', ')})` : '';
             moonsHtml += `
                 <button class="profile-moon-btn ${isActive ? 'active' : ''}" data-moon-id="${moonId}">
-                    ${moon.emoji} ${moon.name}
-                    ${isActive ? ' ✅' : ''}
+                    ${moon.emoji} ${moon.name}${bonusText}
+                    ${isActive ? ' <span style="color:#4ecdc4; font-weight:normal;">Активна</span>' : ''}
                 </button>
             `;
         });
@@ -59,7 +64,7 @@ export async function updateProfileAndLeaders(force = false) {
             <div class="profile-row"><span class="label">Общее время</span><span class="value">${formatTime(timePlayed)}</span></div>
             <div class="profile-row"><span class="label">Убито боссов</span><span class="value">${totalBosses}</span></div>
             <div class="profile-row"><span class="label">Ср. время между кликами</span><span class="value">${avgTime}</span></div>
-            <div class="profile-section-title">🌙 Активная луна</div>
+            <div class="profile-section-title">🌙 Мои луны</div>
             <div class="profile-moons">
                 ${moonsHtml}
             </div>
