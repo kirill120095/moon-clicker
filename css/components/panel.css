@@ -1,81 +1,20 @@
 /* ============================================================
-   БОКОВАЯ ПАНЕЛЬ
+   БОКОВЫЕ ПАНЕЛИ (ЛЕВАЯ И ПРАВАЯ)
    ============================================================ */
 
-/* ---------- ТРИГГЕР ПАНЕЛИ (СТРЕЛКА) ---------- */
-.panel-trigger {
-    position: fixed !important;
-    right: 0 !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    z-index: 60 !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-right: none !important;
-    border-radius: 30px 0 0 30px !important;
-    padding: 14px 8px 14px 12px !important;
-    cursor: pointer !important;
-    color: rgba(255, 255, 255, 0.4) !important;
-    transition: all 0.3s ease !important;
-    backdrop-filter: blur(8px) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
-.panel-trigger.visible {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-}
-.panel-trigger:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    transform: scale(1.05) translateY(-50%) !important;
-}
-.panel-trigger:active {
-    transform: scale(0.95) translateY(-50%) !important;
-}
-.panel-trigger svg {
-    width: 28px !important;
-    height: 28px !important;
-}
-.panel-trigger.active {
-    right: 320px !important;
-    background: none !important;
-    border: none !important;
-    padding: 14px 12px 14px 8px !important;
-}
-.panel-trigger.active svg {
-    transform: rotate(180deg) !important;
-}
-@media (max-width: 700px) {
-    .panel-trigger.active {
-        right: 280px !important;
-    }
-}
-@media (max-width: 450px) {
-    .panel-trigger.active {
-        right: 260px !important;
-    }
-}
-
-/* ---------- САМА ПАНЕЛЬ ---------- */
+/* ---------- ОБЩИЕ СТИЛИ ДЛЯ ПАНЕЛЕЙ ---------- */
 .side-panel {
     position: fixed;
     top: 0;
-    right: 0;
     bottom: 0;
     width: 320px;
     background: rgba(15, 20, 35, 0.95);
     backdrop-filter: blur(12px);
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
     z-index: 50;
     padding: 20px;
     overflow-y: auto;
-    transform: translateX(100%);
     transition: transform 0.3s ease, opacity 0.3s ease;
     opacity: 0;
     pointer-events: none;
@@ -83,7 +22,6 @@
     flex-direction: column;
 }
 .side-panel.active {
-    transform: translateX(0);
     opacity: 1;
     pointer-events: auto;
 }
@@ -95,7 +33,110 @@
     border-radius: 4px;
 }
 
-/* ---------- ВКЛАДКИ ---------- */
+/* Левая панель (статистика) */
+.left-panel {
+    left: 0;
+    border-left: none;
+    border-radius: 0 30px 30px 0;
+    transform: translateX(-100%);
+}
+.left-panel.active {
+    transform: translateX(0);
+}
+
+/* Правая панель (магазин) */
+.right-panel {
+    right: 0;
+    border-right: none;
+    border-radius: 30px 0 0 30px;
+    transform: translateX(100%);
+}
+.right-panel.active {
+    transform: translateX(0);
+}
+
+/* ---------- ТРИГГЕРЫ ПАНЕЛЕЙ ---------- */
+.panel-trigger {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 60;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 14px 8px 14px 12px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.panel-trigger:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+}
+.panel-trigger svg {
+    width: 28px;
+    height: 28px;
+}
+.panel-trigger.active svg {
+    transform: rotate(180deg);
+}
+
+/* Левый триггер */
+.left-trigger {
+    left: 0;
+    border-left: none;
+    border-radius: 0 30px 30px 0;
+    padding: 14px 12px 14px 8px;
+}
+.left-trigger.active {
+    left: 320px;
+}
+.left-trigger.active svg {
+    transform: rotate(180deg);
+}
+
+/* Правый триггер */
+.right-trigger {
+    right: 0;
+    border-right: none;
+    border-radius: 30px 0 0 30px;
+    padding: 14px 8px 14px 12px;
+}
+.right-trigger.active {
+    right: 320px;
+}
+.right-trigger.active svg {
+    transform: rotate(180deg);
+}
+
+@media (max-width: 700px) {
+    .left-trigger.active {
+        left: 280px;
+    }
+    .right-trigger.active {
+        right: 280px;
+    }
+    .side-panel {
+        width: 280px;
+    }
+}
+@media (max-width: 450px) {
+    .left-trigger.active {
+        left: 260px;
+    }
+    .right-trigger.active {
+        right: 260px;
+    }
+    .side-panel {
+        width: 260px;
+        padding: 15px;
+    }
+}
+
+/* ---------- ВКЛАДКИ ПАНЕЛЕЙ ---------- */
 .side-panel .panel-tabs {
     display: flex;
     gap: 10px;
@@ -124,7 +165,6 @@
     color: rgba(255, 255, 255, 0.7);
 }
 
-/* ---------- КОНТЕНТ ---------- */
 .side-panel .panel-content {
     display: none;
     color: rgba(255, 255, 255, 0.7);
@@ -136,7 +176,7 @@
     display: block;
 }
 
-/* ---------- ФУТЕР (кнопка обновления) ---------- */
+/* ---------- ФУТЕР ПАНЕЛЕЙ ---------- */
 .side-panel .panel-footer {
     margin-top: auto;
     padding-top: 15px;
@@ -169,120 +209,70 @@
     animation: spin 0.4s linear;
 }
 
-/* ---------- ЛИДЕРЫ ---------- */
-.leader-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-.leader-item .pos {
-    color: rgba(255, 255, 255, 0.3);
-    font-weight: 300;
-    min-width: 28px;
-}
-.leader-item .name {
-    flex: 1;
-    color: #f0e6d0;
-}
-.leader-item .stats {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.8rem;
-    text-align: right;
-}
-.leader-item .stats span {
-    display: block;
-}
-.leader-item.me {
-    background: rgba(255, 215, 150, 0.08);
-    border-radius: 12px;
-    padding: 8px 12px;
-    margin: 4px -6px;
-}
-.no-data {
-    color: rgba(255,255,255,0.3);
-    text-align: center;
-    padding: 20px 0;
-}
-
-/* ---------- ПРОФИЛЬ ---------- */
-.profile-row {
+/* ---------- МАГАЗИН ---------- */
+.shop-item {
     display: flex;
     justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    font-size: 0.9rem;
+    align-items: center;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: 0.3s;
 }
-.profile-row .label {
-    color: rgba(255,255,255,0.4);
+.shop-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
 }
-.profile-row .value {
-    color: #f0e6d0;
-    font-weight: 400;
-}
-.profile-section-title {
-    color: rgba(255,255,255,0.5);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 12px 0 6px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    padding-top: 12px;
-}
-.profile-bg-options {
+.shop-item-info {
     display: flex;
-    gap: 10px;
-    margin: 8px 0 15px;
+    flex-direction: column;
+    gap: 2px;
 }
-.profile-bg-options button {
-    padding: 6px 16px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05);
+.shop-item-name {
     color: #f0e6d0;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.profile-bg-options button:hover {
-    background: rgba(255,215,150,0.15);
-    border-color: rgba(255,215,150,0.3);
-}
-.profile-bg-options button.active {
-    background: rgba(255,215,150,0.25);
-    border-color: rgba(255,215,150,0.5);
-}
-.profile-account {
-    margin: 10px 0;
-    padding: 10px 0;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.profile-account p {
-    margin: 4px 0;
-}
-.profile-account strong {
-    color: #f0e6d0;
-}
-
-/* ---------- КНОПКА СБРОСА ПРОГРЕССА В НАСТРОЙКАХ ---------- */
-#panelSettings .btn-danger {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    margin: 15px 0 8px;
-    border-radius: 30px;
-    border: none;
-    background: rgba(255, 80, 80, 0.15);
-    color: #ff6b6b;
     font-size: 1rem;
+    font-weight: 500;
+}
+.shop-item-desc {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+}
+.shop-item-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+.shop-item-price {
+    color: #ffd700;
+    font-size: 0.9rem;
+}
+.shop-item-level {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.7rem;
+}
+.shop-buy-btn {
+    padding: 4px 16px;
+    border-radius: 20px;
+    border: none;
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+    font-size: 0.8rem;
     cursor: pointer;
     transition: 0.3s;
-    border: 1px solid rgba(255, 80, 80, 0.2);
-    text-align: center;
 }
-#panelSettings .btn-danger:hover {
-    background: rgba(255, 80, 80, 0.25);
-    transform: scale(1.02);
+.shop-buy-btn:hover:not(:disabled) {
+    background: rgba(255, 215, 0, 0.25);
+    transform: scale(1.05);
+}
+.shop-buy-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+.shop-buy-btn.locked {
+    background: rgba(255, 80, 80, 0.1);
+    color: #ff6b6b;
+    cursor: not-allowed;
 }
