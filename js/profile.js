@@ -26,7 +26,8 @@ export async function updateProfileAndLeaders(force = false) {
             const first = new Date(data.first_click_at).getTime();
             const last = new Date(data.last_click_at).getTime();
             if (last > first) {
-                avgTime = ((last - first) / (data.total_clicks - 1) / 1000).toFixed(1) + ' сек';
+                const avgSec = (last - first) / (data.total_clicks - 1) / 1000;
+                avgTime = formatTime(avgSec);
             }
         }
         const savedMode = localStorage.getItem('moonMode') || 'normal';
@@ -48,7 +49,6 @@ export async function updateProfileAndLeaders(force = false) {
             <div class="profile-row"><span class="label">Убито боссов</span><span class="value">${totalBosses}</span></div>
             <div class="profile-row"><span class="label">Ср. время между кликами</span><span class="value">${avgTime}</span></div>
         `;
-        // Подсвечиваем активную кнопку фона
         document.querySelectorAll('.profile-bg-options button').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.bg === savedMode);
         });
