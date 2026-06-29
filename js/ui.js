@@ -7,11 +7,14 @@ import {
     handleClick, 
     rollbackLevel, 
     resetProgress,
-    updateShopUI
+    updateShopUI,
+    buyMoon,
+    selectMoon
 } from './game.js';
-import { levelLocked, setLevelLocked, setTestMode, currentUser } from './state.js';
+import { levelLocked, setLevelLocked, setTestMode, currentUser, activeMoon } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
 import { showToast } from './utils.js';
+import { MOON_TYPES } from './config.js';
 
 const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 const lockClosedSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>`;
@@ -166,18 +169,7 @@ export function initUI() {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
-    // Выбор фона луны
-    document.addEventListener('click', (e) => {
-        const target = e.target.closest('.profile-bg-options button');
-        if (target) {
-            const mode = target.getAttribute('data-bg');
-            localStorage.setItem('moonMode', mode);
-            applyMoonStyle(mode);
-            updateProfileAndLeaders(true);
-        }
-    });
-
-    // Кнопка покупки
+    // Кнопка покупки улучшения клика
     const buyBtn = document.getElementById('buyClickDamageBtn');
     if (buyBtn) {
         buyBtn.addEventListener('click', () => {
@@ -185,9 +177,8 @@ export function initUI() {
         });
     }
 
-    // Восстановление режима луны
-    const savedMode = localStorage.getItem('moonMode') || 'normal';
-    applyMoonStyle(savedMode);
+    // Применить стиль начальной луны
+    applyMoonStyle(activeMoon || 'normal');
 
     // Синхронизация состояния триггеров при загрузке
     if (leftPanel && leftTrigger) {
@@ -198,9 +189,6 @@ export function initUI() {
         if (rightPanel.classList.contains('active')) rightTrigger.classList.add('active');
         else rightTrigger.classList.remove('active');
     }
-
-    // По умолчанию триггеры скрыты (класс visible отсутствует)
-    // Их видимость управляется через app.js при входе/выходе
 
     console.log('[UI] Инициализация завершена');
 }
@@ -265,14 +253,22 @@ export function toggleRightPanel() {
     console.log('[UI] Правая панель:', isOpen ? 'закрыта' : 'открыта');
 }
 
-export function applyMoonStyle(mode) {
-    const container = document.getElementById('app');
+// Применение стиля луны
+export function applyMoonStyle(moonId) {
     const moonInner = document.getElementById('moonInner');
-    if (mode === 'blood') {
-        if (container) container.classList.add('blood-mode');
-        if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #ff4444, #cc0000)';
-    } else {
-        if (container) container.classList.remove('blood-mode');
-        if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
+    if (!moonInner) return;
+    const moon = MOON_TYPES[moonId];
+    if (!moon) return;
+    // Устанавливаем градиент и тень
+    moonInner.style.backgroundImage = moon.gradient;
+    moonInner.style.boxShadow = moon.shadow;
+    // Добавляем/убираем класс blood-mode для контейнера (для старых стилей)
+    const container = document.getElementById('app');
+    if (container) {
+        if (moonId === 'blood') {
+            container.classList.add('blood-mode');
+        } else {
+            container.classList.remove('blood-mode');
+        }
     }
 }
