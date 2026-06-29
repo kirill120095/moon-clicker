@@ -4,8 +4,8 @@
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
 import { showToast, collectStaticDeviceData } from './utils.js';
-import { initGame } from './game.js';
-import { setMode, updateUI } from './ui.js';
+import { initGame, updateUI } from './game.js';
+import { setMode } from './ui.js';
 import { BASE_HP } from './config.js';
 
 // DOM-элементы (устанавливаются при инициализации)
@@ -247,7 +247,7 @@ export async function logout() {
     setTotalSecondsPlayed(0);
     setCurrentLevel(1);
     setMoonHP(BASE_HP);
-    // Закрываем панель (через ui.js)
+    // Закрываем панель
     const sidePanel = document.getElementById('sidePanel');
     if (sidePanel) sidePanel.classList.remove('active');
     // Переключаем на форму входа
