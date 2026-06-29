@@ -1,5 +1,5 @@
 // ============================================================
-//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ
+//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ФИНАЛ)
 // ============================================================
 import { handleLogin, handleRegister, logout } from './auth.js';
 import { 
@@ -21,40 +21,35 @@ function setLockIcon(btn, locked) {
     btn.classList.toggle('locked', locked);
 }
 
-// DOM-элементы
-let tabLogin, tabRegister, loginFields, registerFields, actionBtn, authMessageEl;
-let sidePanel, panelTrigger, panelTabs, panelContents, refreshDataBtn;
-let testModeCheckbox, resetProgressBtn;
-let confirmOverlay, confirmYes, confirmNo;
-let moonWrapper, lockToggleMain;
+let sidePanel, panelTrigger, lockToggleMain;
 
 export function initUI() {
     // Авторизация
-    tabLogin = document.getElementById('tabLogin');
-    tabRegister = document.getElementById('tabRegister');
-    loginFields = document.getElementById('loginFields');
-    registerFields = document.getElementById('registerFields');
-    actionBtn = document.getElementById('actionBtn');
-    authMessageEl = document.getElementById('authMessage');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const loginFields = document.getElementById('loginFields');
+    const registerFields = document.getElementById('registerFields');
+    const actionBtn = document.getElementById('actionBtn');
+    const authMessageEl = document.getElementById('authMessage');
 
     // Панели управления
     sidePanel = document.getElementById('sidePanel');
     panelTrigger = document.getElementById('panelTrigger');
-    panelTabs = document.querySelectorAll('.side-panel .panel-tabs button');
-    panelContents = document.querySelectorAll('.side-panel .panel-content');
-    refreshDataBtn = document.getElementById('refreshDataBtn');
+    const panelTabs = document.querySelectorAll('.side-panel .panel-tabs button');
+    const panelContents = document.querySelectorAll('.side-panel .panel-content');
+    const refreshDataBtn = document.getElementById('refreshDataBtn');
 
     // Настройки
-    testModeCheckbox = document.getElementById('testModeCheckbox');
-    resetProgressBtn = document.getElementById('resetProgressBtn');
+    const testModeCheckbox = document.getElementById('testModeCheckbox');
+    const resetProgressBtn = document.getElementById('resetProgressBtn');
 
     // Модалка подтверждения
-    confirmOverlay = document.getElementById('confirmOverlay');
-    confirmYes = document.getElementById('confirmYes');
-    confirmNo = document.getElementById('confirmNo');
+    const confirmOverlay = document.getElementById('confirmOverlay');
+    const confirmYes = document.getElementById('confirmYes');
+    const confirmNo = document.getElementById('confirmNo');
 
     // Игровые элементы
-    moonWrapper = document.getElementById('moonWrapper');
+    const moonWrapper = document.getElementById('moonWrapper');
     const rollbackBtnMain = document.getElementById('rollbackBtnMain');
     lockToggleMain = document.getElementById('lockToggleMain');
 
@@ -75,15 +70,155 @@ export function initUI() {
         lockToggleMain
     });
 
-    // Навешивание событий
-    initEvents();
-    
-    // Восстанавливаем сохраненный режим луны из памяти
+    // --- Вкладки авторизации ---
+    tabLogin.addEventListener('click', () => setMode('login'));
+    tabRegister.addEventListener('click', () => setMode('register'));
+
+    // --- Кнопка действия авторизации ---
+    actionBtn.addEventListener('click', () => {
+        if (tabLogin.classList.contains('active')) {
+            handleLogin();
+        } else {
+            handleRegister();
+        }
+    });
+
+    // --- Радиокнопки типа входа ---
+    document.querySelectorAll('input[name="loginType"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const input = document.getElementById('loginInput');
+            if (e.target.value === 'email') {
+                input.placeholder = 'Email вашего аккаунта';
+            } else {
+                input.placeholder = 'Ваш игровой логин';
+            }
+        });
+    });
+
+    // --- Клик по луне ---
+    if (moonWrapper) {
+        moonWrapper.addEventListener('click', handleClick);
+    }
+
+    // --- ТРИГГЕР ПАНЕЛИ (СТРЕЛКА) – открывает/закрывает ---
+    if (panelTrigger) {
+        panelTrigger.addEventListener('click', togglePanel);
+        console.log('[UI] panelTrigger найден, слушатель повешен');
+    } else {
+        console.error('[UI] panelTrigger не найден!');
+    }
+
+    // --- Кнопка обновления данных ---
+    if (refreshDataBtn) {
+        refreshDataBtn.addEventListener('click', () => {
+            refreshDataBtn.classList.add('spinning');
+            setTimeout(() => { refreshDataBtn.classList.remove('spinning'); }, 400);
+            updateProfileAndLeaders(true);
+        });
+    }
+
+    // --- Переключение вкладок боковой панели ---
+    panelTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            panelTabs.forEach(t => t.classList.remove('active'));
+            panelContents.forEach(c => c.classList.remove('active'));
+
+            tab.classList.add('active');
+            const tabType = tab.getAttribute('data-tab');
+            const panelId = `panel${tabType.charAt(0).toUpperCase() + tabType.slice(1)}`;
+            const panel = document.getElementById(panelId);
+            if (panel) panel.classList.add('active');
+
+            if (tabType === 'settings') {
+                const savedTest = localStorage.getItem('testMode') === 'true';
+                if (testModeCheckbox) testModeCheckbox.checked = savedTest;
+            }
+
+            updateProfileAndLeaders(true);
+        });
+    });
+
+    // --- Тестовый режим ---
+    if (testModeCheckbox) {
+        testModeCheckbox.addEventListener('change', (e) => {
+            setTestMode(e.target.checked);
+            localStorage.setItem('testMode', e.target.checked);
+        });
+    }
+
+    // --- Сброс прогресса ---
+    if (resetProgressBtn) {
+        resetProgressBtn.addEventListener('click', () => {
+            confirmOverlay.classList.add('active');
+        });
+    }
+    if (confirmNo) {
+        confirmNo.addEventListener('click', () => confirmOverlay.classList.remove('active'));
+    }
+    if (confirmYes) {
+        confirmYes.addEventListener('click', () => {
+            confirmOverlay.classList.remove('active');
+            resetProgress();
+        });
+    }
+
+    // --- Игровой контроль ---
+    if (rollbackBtnMain) {
+        rollbackBtnMain.addEventListener('click', rollbackLevel);
+    }
+
+    // --- ЗАМОК – инициализация и обработчик ---
+    if (lockToggleMain) {
+        // Устанавливаем начальную иконку
+        setLockIcon(lockToggleMain, levelLocked);
+        lockToggleMain.addEventListener('click', () => {
+            const newState = !levelLocked;
+            setLevelLocked(newState);
+            localStorage.setItem('levelLocked', newState);
+            setLockIcon(lockToggleMain, newState);
+        });
+        console.log('[UI] Замок инициализирован, состояние:', levelLocked);
+    } else {
+        console.error('[UI] lockToggleMain не найден!');
+    }
+
+    // --- Выход из аккаунта ---
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+
+    // --- Выбор фона луны в профиле ---
+    document.addEventListener('click', (e) => {
+        const target = e.target.closest('.profile-bg-options button');
+        if (target) {
+            const mode = target.getAttribute('data-bg');
+            localStorage.setItem('moonMode', mode);
+            applyMoonStyle(mode);
+            updateProfileAndLeaders(true);
+        }
+    });
+
+    // --- Восстанавливаем сохраненный режим луны ---
     const savedMode = localStorage.getItem('moonMode') || 'normal';
     applyMoonStyle(savedMode);
+
+    // --- Если панель была открыта – синхронизируем кнопку ---
+    if (sidePanel && sidePanel.classList.contains('active')) {
+        panelTrigger?.classList.add('active');
+    }
+
+    console.log('[UI] Инициализация завершена');
 }
 
 export function setMode(mode) {
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const loginFields = document.getElementById('loginFields');
+    const registerFields = document.getElementById('registerFields');
+    const actionBtn = document.getElementById('actionBtn');
+    const authMessageEl = document.getElementById('authMessage');
+
     if (mode === 'login') {
         tabLogin.classList.add('active');
         tabRegister.classList.remove('active');
@@ -100,158 +235,24 @@ export function setMode(mode) {
     if (authMessageEl) authMessageEl.textContent = '';
 }
 
-function initEvents() {
-    // Вкладки авторизации
-    tabLogin.addEventListener('click', () => setMode('login'));
-    tabRegister.addEventListener('click', () => setMode('register'));
-
-    // Кнопка действия авторизации
-    actionBtn.addEventListener('click', () => {
-        if (tabLogin.classList.contains('active')) {
-            handleLogin();
-        } else {
-            handleRegister();
-        }
-    });
-
-    // Радиокнопки типа входа
-    document.querySelectorAll('input[name="loginType"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const input = document.getElementById('loginInput');
-            if (e.target.value === 'email') {
-                input.placeholder = 'Email вашего аккаунта';
-            } else {
-                input.placeholder = 'Ваш игровой логин';
-            }
-        });
-    });
-
-    // Клик по луне
-    if (moonWrapper) {
-        moonWrapper.addEventListener('click', handleClick);
-    }
-
-    // Триггер панели (стрелка) – открывает/закрывает
-    if (panelTrigger) {
-        panelTrigger.addEventListener('click', togglePanel);
-    }
-
-    // Кнопка обновления данных (внизу панели)
-    if (refreshDataBtn) {
-        refreshDataBtn.addEventListener('click', () => {
-            refreshDataBtn.classList.add('spinning');
-            setTimeout(() => { refreshDataBtn.classList.remove('spinning'); }, 400);
-            updateProfileAndLeaders(true);
-        });
-    }
-
-    // Переключение вкладок внутри боковой панели
-    panelTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            panelTabs.forEach(t => t.classList.remove('active'));
-            panelContents.forEach(c => c.classList.remove('active'));
-
-            tab.classList.add('active');
-            const tabType = tab.getAttribute('data-tab');
-            const panelId = `panel${tabType.charAt(0).toUpperCase() + tabType.slice(1)}`;
-            const panel = document.getElementById(panelId);
-            if (panel) panel.classList.add('active');
-
-            // При переключении на вкладку "Настройки" обновляем чекбокс тестового режима
-            if (tabType === 'settings') {
-                const savedTest = localStorage.getItem('testMode') === 'true';
-                if (testModeCheckbox) testModeCheckbox.checked = savedTest;
-            }
-
-            // Мягкое обновление данных при клике на вкладку
-            updateProfileAndLeaders(true);
-        });
-    });
-
-    // Тестовый режим
-    if (testModeCheckbox) {
-        testModeCheckbox.addEventListener('change', (e) => {
-            setTestMode(e.target.checked);
-            localStorage.setItem('testMode', e.target.checked);
-        });
-    }
-
-    // Сброс прогресса
-    if (resetProgressBtn) {
-        resetProgressBtn.addEventListener('click', () => {
-            confirmOverlay.classList.add('active');
-        });
-    }
-    if (confirmNo) {
-        confirmNo.addEventListener('click', () => confirmOverlay.classList.remove('active'));
-    }
-    if (confirmYes) {
-        confirmYes.addEventListener('click', () => {
-            confirmOverlay.classList.remove('active');
-            resetProgress();
-        });
-    }
-
-    // Игровой контроль
-    const rollbackBtnMain = document.getElementById('rollbackBtnMain');
-    if (rollbackBtnMain) {
-        rollbackBtnMain.addEventListener('click', rollbackLevel);
-    }
-
-    // Замок – инициализация и обработчик
-    if (lockToggleMain) {
-        // Устанавливаем начальную иконку (сразу, без задержки)
-        setLockIcon(lockToggleMain, levelLocked);
-        lockToggleMain.addEventListener('click', () => {
-            const newState = !levelLocked;
-            setLevelLocked(newState);
-            localStorage.setItem('levelLocked', newState);
-            setLockIcon(lockToggleMain, newState);
-        });
-    }
-
-    // Выход из аккаунта
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
-    }
-
-    // Выбор фона луны в профиле (обработчики через делегирование)
-    document.addEventListener('click', (e) => {
-        const target = e.target.closest('.profile-bg-options button');
-        if (target) {
-            const mode = target.getAttribute('data-bg');
-            localStorage.setItem('moonMode', mode);
-            applyMoonStyle(mode);
-            updateProfileAndLeaders(true);
-        }
-    });
-}
-
 // Функция открытия/закрытия панели
-export function togglePanel(show) {
+export function togglePanel() {
+    if (!sidePanel || !panelTrigger) {
+        console.error('[UI] togglePanel: элементы не найдены');
+        return;
+    }
     const isOpen = sidePanel.classList.contains('active');
-    if (show === undefined) {
-        // переключение
-        if (isOpen) {
-            sidePanel.classList.remove('active');
-            panelTrigger.classList.remove('active');
-        } else {
-            sidePanel.classList.add('active');
-            panelTrigger.classList.add('active');
-            if (currentUser) {
-                updateProfileAndLeaders(true);
-            }
-        }
-    } else if (show) {
+    if (isOpen) {
+        sidePanel.classList.remove('active');
+        panelTrigger.classList.remove('active');
+        console.log('[UI] Панель закрыта');
+    } else {
         sidePanel.classList.add('active');
         panelTrigger.classList.add('active');
         if (currentUser) {
             updateProfileAndLeaders(true);
         }
-    } else {
-        sidePanel.classList.remove('active');
-        panelTrigger.classList.remove('active');
+        console.log('[UI] Панель открыта');
     }
 }
 
