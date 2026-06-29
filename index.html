@@ -18,21 +18,7 @@
 
     <!-- ---------- ИГРОВОЙ КОНТЕЙНЕР ---------- -->
     <div class="container" id="app">
-        <div class="top-actions">
-            <button id="statsToggleBtn" title="Статистика и лидеры">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="12" width="4" height="9" rx="1" />
-                    <rect x="10" y="6" width="4" height="15" rx="1" />
-                    <rect x="17" y="3" width="4" height="18" rx="1" />
-                </svg>
-            </button>
-            <button id="settingsBtn" title="Настройки">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M12 1v4M12 19v4M1 12h4M19 12h4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-                </svg>
-            </button>
-        </div>
+        <!-- Убраны кнопки настроек и статистики сверху -->
         <div class="subtitle">Кликни по луне</div>
 
         <!-- АВТОРИЗАЦИЯ -->
@@ -144,6 +130,12 @@
                     <circle cx="12" cy="7" r="4" />
                 </svg>
             </button>
+            <button data-tab="settings">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 1v4M12 19v4M1 12h4M19 12h4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+                </svg>
+            </button>
         </div>
         <div class="panel-actions">
             <button id="refreshDataBtn" class="panel-refresh-btn" title="Обновить данные">
@@ -165,20 +157,15 @@
                 <div class="no-data">Войдите, чтобы увидеть статистику</div>
             </div>
         </div>
-    </div>
-
-    <!-- ---------- МОДАЛЬНОЕ ОКНО НАСТРОЕК ---------- -->
-    <div class="modal-overlay" id="settingsModal">
-        <div class="modal">
-            <h2>⚙️ Настройки</h2>
-
+        <div class="panel-content" id="panelSettings">
+            <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Настройки</div>
+            <!-- Содержимое из модалки настроек -->
             <div class="section-title">🧪 Тестовый режим</div>
             <div class="checkbox-row">
                 <label>
                     <input type="checkbox" id="testModeCheckbox" /> 1 клик = 1 уровень (убивает любую луну)
                 </label>
             </div>
-
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
                 <div class="section-title">🗑️ Прогресс</div>
                 <button class="btn-danger" id="resetProgressBtn">
@@ -189,12 +176,17 @@
                     Сбросить прогресс
                 </button>
             </div>
-
-            <button class="close-btn" id="closeSettingsBtn">Закрыть</button>
         </div>
     </div>
 
-    <!-- ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ ---------- -->
+    <!-- ---------- ТРИГГЕР БОКОВОЙ ПАНЕЛИ (СТРЕЛКА) ---------- -->
+    <button class="panel-trigger" id="panelTrigger" title="Открыть панель">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+        </svg>
+    </button>
+
+    <!-- ---------- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ (оставляем, т.к. используется) ---------- -->
     <div class="confirm-overlay" id="confirmOverlay">
         <div class="confirm-box">
             <p id="confirmMessage">Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.</p>
