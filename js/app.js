@@ -1,9 +1,9 @@
 // ============================================================
-//  ТОЧКА ВХОДА – ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ (ИСПРАВЛЕНО)
+//  ТОЧКА ВХОДА – ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { initToastContainer, createStars, showToast } from './utils.js';
-import { initUI } from './ui.js';
+import { initUI, togglePanel } from './ui.js';
 import { initGame } from './game.js';
 import { setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
 import { loadPlayerData, initAuthElements, createOrUpdatePlayer } from './auth.js';
@@ -41,19 +41,19 @@ async function checkAuth() {
                 setMaxHP(getMaxHPForLevel(player.level || 1, BASE_HP, 10));
             }
 
-            // Скрываем авторизацию сразу
+            // Скрываем авторизацию
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('gameArea').classList.add('active');
-            document.getElementById('statsToggleBtn').classList.add('visible');
-            document.getElementById('settingsBtn').classList.add('visible');
 
             initGame();
+            // Если панель была открыта, обновим данные
+            if (document.getElementById('sidePanel').classList.contains('active')) {
+                // обновление произойдёт автоматически при открытии
+            }
         } else {
             // Гостевой режим
             document.getElementById('authBlock').classList.remove('hidden');
             document.getElementById('gameArea').classList.remove('active');
-            document.getElementById('statsToggleBtn').classList.remove('visible');
-            document.getElementById('settingsBtn').classList.remove('visible');
         }
     } catch (err) {
         console.error('Auth check failed:', err);
