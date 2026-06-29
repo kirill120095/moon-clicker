@@ -1,5 +1,5 @@
 // ============================================================
-//  ПРОФИЛЬ И ЛИДЕРЫ (ИСПРАВЛЕНО)
+//  ПРОФИЛЬ И ЛИДЕРЫ (ОПТИМИЗИРОВАННОЕ ОБНОВЛЕНИЕ)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData } from './state.js';
@@ -9,14 +9,15 @@ let lastUpdate = 0;
 
 export async function updateProfileAndLeaders(force = false) {
     if (!currentUser) return;
-    if (!force && Date.now() - lastUpdate < 8000) return;
+    // Лимит снижен до 3 секунд для комфортных авто-обновлений во время геймплея
+    if (!force && Date.now() - lastUpdate < 3000) return;
     lastUpdate = Date.now();
 
     const profileContent = document.getElementById('profileContent');
     const leadersList = document.getElementById('leadersList');
 
-    // Профиль
-    if (playerData) {
+    // Рендеринг данных профиля
+    if (playerData && profileContent) {
         const data = playerData;
         const totalBosses = Math.floor((data.level || 1) / 10);
         const timePlayed = data.total_seconds_played || 0;
@@ -30,10 +31,8 @@ export async function updateProfileAndLeaders(force = false) {
             }
         }
         profileContent.innerHTML = `
-            <div class="profile-row"><span class="label">Никнейм</span><span class="value">${data.username || '—'}</span></div>
-            <div class="profile-row"><span class="label">Email</span><span class="value">${currentUser.email || '—'}</span></div>
-            <div class="profile-row"><span class="label">Титул</span><span class="value">${title}</span></div>
-            <div class="profile-row"><span class="label">Уровень</span><span class="value">${data.level || 1}</span></div>
+            <div class="profile-row"><span class="label">Звание</span><span class="value" style="color:#d4af37; font-weight:bold;">${title}</span></div>
+            <div class="profile-row"><span class="label">Текущий уровень</span><span class="value">${data.level || 1}</span></div>
             <div class="profile-row"><span class="label">Всего кликов</span><span class="value">${data.total_clicks || 0}</span></div>
             <div class="profile-row"><span class="label">Общее время</span><span class="value">${formatTime(timePlayed)}</span></div>
             <div class="profile-row"><span class="label">Убито боссов</span><span class="value">${totalBosses}</span></div>
@@ -41,32 +40,34 @@ export async function updateProfileAndLeaders(force = false) {
         `;
     }
 
-    // Лидеры
-    const { data: leaders, error } = await supabaseClient
-        .from('players')
-        .select('username, level, total_clicks, total_seconds_played')
-        .order('level', { ascending: false })
-        .order('total_clicks', { ascending: false })
-        .limit(10);
+    // Загрузка и рендеринг таблицы лидеров из Supabase
+    if (leadersList) {
+        const { data: leaders, error } = await supabaseClient
+            .from('players')
+            .select('username, level, total_clicks, total_seconds_played')
+            .order('level', { ascending: false })
+            .order('total_clicks', { ascending: false })
+            .limit(10);
 
-    if (error || !leaders) {
-        leadersList.innerHTML = '<div class="no-data">Ошибка загрузки</div>';
-        return;
+        if (error || !leaders) {
+            leadersList.innerHTML = '<div class="no-data">Ошибка загрузки</div>';
+            return;
+        }
+
+        let html = '';
+        leaders.forEach((p, i) => {
+            const isMe = p.username === playerData?.username;
+            html += `
+                <div class="leader-item ${isMe ? 'me' : ''}">
+                    <span class="pos">#${i+1}</span>
+                    <span class="name">${p.username || 'Аноним'}</span>
+                    <span class="stats">
+                        <span>Ур. ${p.level || 0}</span>
+                        <span style="font-size:0.7rem;">кликов: ${p.total_clicks || 0}</span>
+                    </span>
+                </div>
+            `;
+        });
+        leadersList.innerHTML = html;
     }
-
-    let html = '';
-    leaders.forEach((p, i) => {
-        const isMe = p.username === playerData?.username;
-        html += `
-            <div class="leader-item ${isMe ? 'me' : ''}">
-                <span class="pos">#${i+1}</span>
-                <span class="name">${p.username || 'Аноним'}</span>
-                <span class="stats">
-                    <span>Ур. ${p.level || 0}</span>
-                    <span style="font-size:0.7rem;">кликов: ${p.total_clicks || 0}</span>
-                </span>
-            </div>
-        `;
-    });
-    leadersList.innerHTML = html || '<div class="no-data">Нет данных</div>';
 }
