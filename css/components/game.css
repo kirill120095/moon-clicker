@@ -1,1 +1,256 @@
+/* ============================================================
+   ИГРОВАЯ ЗОНА
+   ============================================================ */
+.game-area {
+    display: none;
+}
+.game-area.active {
+    display: block;
+}
 
+/* ---------- УРОВЕНЬ ---------- */
+.level-title {
+    font-size: 1.3rem;
+    color: #f0e6d0;
+    font-weight: 300;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    text-shadow: 0 0 20px rgba(255, 215, 150, 0.1);
+}
+.container.blood-mode .level-title {
+    color: #ff6b6b;
+}
+
+/* ---------- ЛУНА ---------- */
+.moon-wrapper {
+    display: inline-block;
+    cursor: pointer;
+    position: relative;
+    margin: 15px 0 10px;
+    width: 340px;
+    height: 340px;
+    transition: transform 0.2s ease;
+}
+.moon-wrapper:hover {
+    transform: scale(1.08);
+}
+.moon-wrapper:active {
+    transform: scale(0.92);
+}
+.moon {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    animation: moonOrbit 30s linear infinite;
+}
+.moon-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    box-shadow:
+        0 0 60px rgba(255, 215, 150, 0.4),
+        0 0 120px rgba(255, 215, 150, 0.2),
+        inset -35px -35px 90px rgba(0, 0, 0, 0.4),
+        inset 35px 35px 90px rgba(255, 255, 255, 0.3);
+    transition: box-shadow 0.5s ease, transform 0.15s ease;
+    transform: scale(1);
+    will-change: transform;
+}
+.container.blood-mode .moon-inner {
+    box-shadow:
+        0 0 60px rgba(255, 0, 0, 0.6),
+        0 0 120px rgba(255, 0, 0, 0.3),
+        inset -35px -35px 90px rgba(0, 0, 0, 0.4),
+        inset 35px 35px 90px rgba(255, 0, 0, 0.2);
+}
+.container.blood-mode .moon-inner {
+    animation: pulseGlowRed 4s ease-in-out infinite alternate;
+}
+@keyframes pulseGlowRed {
+    0% { box-shadow: 0 0 40px rgba(255,0,0,0.4), 0 0 80px rgba(255,0,0,0.2), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,0,0,0.2); }
+    100% { box-shadow: 0 0 100px rgba(255,0,0,0.8), 0 0 200px rgba(255,0,0,0.4), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,0,0,0.3); }
+}
+
+/* ---------- ЭФФЕКТ КЛИКА ---------- */
+.click-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 215, 150, 0.6), transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s;
+}
+.click-effect.active {
+    animation: flash 0.4s ease-out forwards;
+}
+.container.blood-mode .click-effect {
+    background: radial-gradient(circle, rgba(255, 0, 0, 0.8), transparent 70%);
+}
+
+/* ---------- СЧЁТЧИК ---------- */
+.counter {
+    margin: 12px auto 8px;
+    color: #f0e6d0;
+    font-size: 4rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-shadow: 0 0 40px rgba(255, 215, 150, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 35px;
+    border-radius: 60px;
+    display: inline-block;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    min-width: 160px;
+    transition: all 0.5s ease;
+}
+.container.blood-mode .counter {
+    color: #ff6b6b;
+    text-shadow: 0 0 40px rgba(255, 0, 0, 0.3);
+    border-color: rgba(255, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- УПРАВЛЕНИЕ ---------- */
+.game-controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 12px 0 8px;
+}
+.btn-rollback,
+.lock-toggle {
+    padding: 6px 14px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 215, 150, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: #f0e6d0;
+    cursor: pointer;
+    transition: 0.3s;
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.btn-rollback:hover,
+.lock-toggle:hover {
+    background: rgba(255, 215, 150, 0.15);
+    transform: scale(1.05);
+}
+.btn-rollback:active,
+.lock-toggle:active {
+    transform: scale(0.95);
+}
+.btn-rollback.disabled {
+    opacity: 0.2;
+    pointer-events: none;
+    cursor: default;
+}
+.btn-rollback svg,
+.lock-toggle svg {
+    width: 24px;
+    height: 24px;
+}
+.lock-toggle.locked {
+    background: rgba(255, 215, 150, 0.25);
+    border-color: #ffd700;
+    color: #ffd700;
+}
+.lock-toggle.locked:hover {
+    background: rgba(255, 215, 150, 0.35);
+}
+
+/* ---------- ПРОГРЕСС-БАРЫ ---------- */
+.bars {
+    margin: 10px auto 12px;
+    max-width: 90%;
+}
+.bar-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.bar-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    min-width: 30px;
+    text-align: right;
+}
+.bar-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+}
+.bar-fill {
+    height: 100%;
+    width: 100%;
+    border-radius: 10px;
+    transition: width 0.2s ease;
+    background: linear-gradient(90deg, #ff6b6b, #ffb07c);
+}
+.bar-fill.hp-fill {
+    background: linear-gradient(90deg, #ff6b6b, #ffb07c);
+}
+.bar-fill.timer-fill {
+    background: linear-gradient(90deg, #4ecdc4, #44a08d);
+}
+.bar-fill.boss-fill {
+    background: linear-gradient(90deg, #ff4444, #cc0000);
+}
+.bar-percent {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    min-width: 70px;
+    text-align: left;
+}
+.timer-bar-container {
+    display: none !important;
+}
+.timer-bar-container.active {
+    display: flex !important;
+}
+
+/* ---------- КНОПКА ВЫХОДА ---------- */
+.logout-btn {
+    margin-top: 15px;
+    padding: 10px 30px;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+    backdrop-filter: blur(5px);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.logout-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+.logout-btn:active {
+    transform: scale(0.95);
+}
+.logout-btn svg {
+    width: 22px;
+    height: 22px;
+}
