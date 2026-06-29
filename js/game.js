@@ -51,8 +51,22 @@ export function updateUI() {
     const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
     hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
-    // --- УМЕНЬШЕНИЕ ЛУНЫ ---
-    const scale = Math.max(0.18, Math.min(1.0, moonHP / maxHP));
+    // --- НОВАЯ ЛОГИКА УМЕНЬШЕНИЯ ЛУНЫ ---
+    let scale = 1;
+    if (moonHP > 0) {
+        // От 1 до 0.05 при приближении к 0 HP
+        // Чем меньше HP, тем меньше луна
+        const hpRatio = moonHP / maxHP; // от 0 до 1
+        // Используем степенную функцию для более плавного уменьшения в конце
+        // При hpRatio = 0.1 (10% HP) масштаб будет ~0.3
+        // При hpRatio = 0.01 (1% HP) масштаб будет ~0.1
+        scale = Math.pow(hpRatio, 0.4) * 0.95 + 0.05;
+        // Гарантируем, что масштаб не меньше 0.01 и не больше 1
+        scale = Math.max(0.01, Math.min(1, scale));
+    } else {
+        scale = 0; // при 0 HP луна полностью исчезает
+    }
+    
     if (moonInner) {
         moonInner.style.transform = `scale(${scale})`;
     }
