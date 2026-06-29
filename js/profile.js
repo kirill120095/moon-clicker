@@ -22,15 +22,15 @@ export async function updateProfileAndLeaders(force = false) {
         const timePlayed = data.total_seconds_played || 0;
         const title = getTitle(data.level || 1);
         const shards = data.shards || 0;
+        
+        // Исправленная формула среднего времени между кликами
+        // Среднее время = общее время / количество кликов
         let avgTime = '—';
-        if (data.total_clicks > 1 && data.last_click_at && data.first_click_at) {
-            const first = new Date(data.first_click_at).getTime();
-            const last = new Date(data.last_click_at).getTime();
-            if (last > first) {
-                const avgSec = (last - first) / (data.total_clicks - 1) / 1000;
-                avgTime = formatTime(avgSec);
-            }
+        if (data.total_clicks > 0 && data.total_seconds_played > 0) {
+            const avgSec = data.total_seconds_played / data.total_clicks;
+            avgTime = formatTime(avgSec);
         }
+        
         const savedMode = localStorage.getItem('moonMode') || 'normal';
         profileContent.innerHTML = `
             <div class="profile-account">
