@@ -1,5 +1,5 @@
 // ============================================================
-//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ОБНОВЛЕННАЯ ВЕРСИЯ)
+//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ИСПРАВЛЕННЫЙ ВИЗУАЛ)
 // ============================================================
 import { handleLogin, handleRegister, logout } from './auth.js';
 import { 
@@ -138,16 +138,13 @@ function initEvents() {
     // Кнопка ручного обновления данных 🔄
     if (refreshDataBtn) {
         refreshDataBtn.addEventListener('click', () => {
-            // Крутая анимация вращения иконки при клике
-            refreshDataBtn.style.transform = 'rotate(360deg)';
-            setTimeout(() => { refreshDataBtn.style.transform = 'rotate(0deg)'; }, 300);
-            
-            // Принудительно скачиваем свежие данные
+            refreshDataBtn.classList.add('spinning');
+            setTimeout(() => { refreshDataBtn.classList.remove('spinning'); }, 400);
             updateProfileAndLeaders(true);
         });
     }
 
-    // Переключение вкладок внутри боковой панели (Лидеры 🏆 / Профиль 👤) + автообновление
+    // Переключение вкладок внутри боковой панели (Лидеры / Профиль)
     panelTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             panelTabs.forEach(t => t.classList.remove('active'));
@@ -162,7 +159,7 @@ function initEvents() {
                 document.getElementById('panelProfile').classList.add('active');
             }
 
-            // Идея пользователя: обновлять данные при смене вкладок!
+            // Мягкое обновление данных при клике на вкладку без лагов UI
             updateProfileAndLeaders(true);
         });
     });
@@ -228,8 +225,6 @@ function initEvents() {
     }
 }
 
-// Универсальная функция применения стиля луны и подсветки кнопок (больше не сбрасывается)
-// Экспортируем, чтобы файл game.js тоже мог её безопасно вызывать при старте
 export function applyMoonStyle(mode) {
     const container = document.getElementById('app');
     const moonInner = document.getElementById('moonInner');
