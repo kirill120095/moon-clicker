@@ -1,1 +1,38 @@
+/* ============================================================
+   CSS-ПЕРЕМЕННЫЕ
+   ============================================================ */
+:root {
+    /* Цвета */
+    --color-bg: #0b0e1a;
+    --color-text: #f0e6d0;
+    --color-text-secondary: rgba(255, 255, 255, 0.4);
+    --color-text-muted: rgba(255, 255, 255, 0.3);
+    --color-border: rgba(255, 255, 255, 0.05);
+    --color-border-light: rgba(255, 255, 255, 0.08);
+    --color-gold: #d4af37;
+    --color-gold-light: #ffd700;
+    --color-red: #ff6b6b;
+    --color-red-dark: #cc0000;
+    --color-green: #69db7c;
+    --color-blue: #4ecdc4;
+    --color-blue-dark: #44a08d;
 
+    /* Размеры */
+    --radius-large: 80px;
+    --radius-medium: 40px;
+    --radius-small: 30px;
+    --radius-xs: 20px;
+    --radius-xxs: 12px;
+
+    /* Отступы */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 20px;
+    --spacing-xl: 25px;
+    --spacing-xxl: 30px;
+
+    /* Тени */
+    --shadow-default: 0 20px 60px rgba(0, 0, 0, 0.8);
+    --shadow-panel: -10px 0 40px rgba(0, 0, 0, 0.8);
+}
