@@ -189,15 +189,14 @@ export async function handleLogin() {
         // Показываем игровую зону
         document.getElementById('authBlock').classList.add('hidden');
         document.getElementById('gameArea').classList.add('active');
+        // Закрываем панель при входе
+        const sidePanel = document.getElementById('sidePanel');
+        const panelTrigger = document.getElementById('panelTrigger');
+        if (sidePanel) sidePanel.classList.remove('active');
+        if (panelTrigger) panelTrigger.classList.remove('active');
         // Переходим в игру
         initGame();
-        // Обновляем панель, если она открыта
-        const sidePanel = document.getElementById('sidePanel');
-        if (sidePanel && sidePanel.classList.contains('active')) {
-            import('./profile.js').then(module => {
-                module.updateProfileAndLeaders(true);
-            });
-        }
+        // Обновляем панель, если она открыта (но она закрыта)
         showToast('✅ Добро пожаловать!', 'success');
     }
 }
