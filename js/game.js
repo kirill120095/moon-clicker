@@ -54,15 +54,17 @@ export function updateUI() {
     const scale = Math.max(0.18, Math.min(1.0, moonHP / maxHP));
     if (moonInner) moonInner.style.transform = `scale(${scale})`;
 
-    // --- ТАЙМЕР БОССА ПОКАЗЫВАЕМ ТОЛЬКО НА БОССАХ ---
+    // --- ТАЙМЕР БОССА ПОЯВЛЯЕТСЯ ТОЛЬКО НА БОССАХ ---
     if (isBossLevel(currentLevel, BOSS_INTERVAL) && moonHP > 0) {
         if (!bossTimerRunning) startBossTimer();
-        timerBarContainer.classList.add('active');
-        hpBar.className = 'bar-fill boss-fill';
+        // Показываем таймер (он уже есть в DOM, просто делаем активным)
+        if (timerBarContainer) timerBarContainer.classList.add('active');
+        if (hpBar) hpBar.className = 'bar-fill boss-fill';
     } else {
         if (bossTimerRunning) clearBossTimer();
-        timerBarContainer.classList.remove('active');
-        hpBar.className = 'bar-fill hp-fill';
+        // Скрываем таймер
+        if (timerBarContainer) timerBarContainer.classList.remove('active');
+        if (hpBar) hpBar.className = 'bar-fill hp-fill';
         // Сбрасываем отображение таймера
         if (timerBar) timerBar.style.width = '100%';
         if (timerPercent) timerPercent.textContent = '30с';
@@ -105,10 +107,10 @@ function clearBossTimer() {
         setBossTimerInterval(null);
     }
     setBossTimerRunning(false);
-    timerBarContainer.classList.remove('active');
+    if (timerBarContainer) timerBarContainer.classList.remove('active');
     if (timerBar) timerBar.style.width = '100%';
     if (timerPercent) timerPercent.textContent = '0с';
-    hpBar.className = 'bar-fill hp-fill';
+    if (hpBar) hpBar.className = 'bar-fill hp-fill';
 }
 
 function updateTimerBar() {
