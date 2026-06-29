@@ -1,5 +1,5 @@
 // ============================================================
-//  ИГРОВАЯ ЛОГИКА (ФИНАЛЬНАЯ ВЕРСИЯ)
+//  ИГРОВАЯ ЛОГИКА (ИСПРАВЛЕННОЕ СОХРАНЕНИЕ)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import {
@@ -111,15 +111,10 @@ function updateTimerBar() {
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
 }
 
-export async function debouncedUpdateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(async () => {
-        await updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP);
-    }, 650);
-}
-
+// --- СОХРАНЕНИЕ ПРОГРЕССА (исправлено) ---
 export async function updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (!playerId || !currentUser) return false;
+
     const updateData = {
         total_clicks: newTotal,
         last_click_at: clickTimestamp,
@@ -130,13 +125,21 @@ export async function updateProgress(playerId, newTotal, clickTimestamp, newLeve
     };
 
     try {
-        const { error } = await supabaseClient.from('players').update(updateData).eq('id', playerId);
+        const { error } = await supabaseClient
+            .from('players')
+            .update(updateData)
+            .eq('id', playerId);
+
         if (error) throw error;
-        if (playerData) Object.assign(playerData, updateData);
+
+        // Обновляем локальные данные
+        if (playerData) {
+            Object.assign(playerData, updateData);
+        }
         return true;
     } catch (err) {
-        console.error(err);
-        showToast('⚠️ Ошибка сохранения', 'warning');
+        console.error('Ошибка сохранения прогресса:', err);
+        showToast('⚠️ Ошибка сохранения прогресса', 'warning');
         return false;
     }
 }
@@ -147,7 +150,9 @@ export async function saveTimeOnly() {
         await supabaseClient.from('players')
             .update({ total_seconds_played: totalSecondsPlayed, updated_at: new Date().toISOString() })
             .eq('id', currentUser.id);
-    } catch (e) {}
+    } catch (e) {
+        console.error('Ошибка сохранения времени:', e);
+    }
 }
 
 export async function resetProgress() {
@@ -179,7 +184,7 @@ export async function resetProgress() {
         localStorage.setItem('levelLocked', 'false');
         updateUI();
         showToast('✅ Прогресс сброшен!', 'success');
-        document.getElementById('settingsModal').classList.remove('active');
+        document.getElementById('settingsModal')?.classList.remove('active');
         updateProfileAndLeaders();
     } catch (err) {
         console.error(err);
@@ -278,13 +283,13 @@ export async function handleClick(e) {
         }
         updateUI();
         const now = new Date().toISOString();
-        await debouncedUpdateProgress(currentUser.id, clickCount, now, newLevel, moonHP);
+        await updateProgress(currentUser.id, clickCount, now, newLevel, moonHP);
         updateProfileAndLeaders();
         return;
     }
 
     updateUI();
     const now = new Date().toISOString();
-    await debouncedUpdateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
+    await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
     updateProfileAndLeaders();
 }
