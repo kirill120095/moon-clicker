@@ -25,7 +25,8 @@
     border-radius: 50% !important;
     background-size: cover !important;
     background-position: center !important;
-    box-shadow: 0 0 60px rgba(255, 215, 150, 0.4), 0 0 120px rgba(255, 215, 150, 0.2), inset -35px -35px 90px rgba(0, 0, 0, 0.4), inset 35px 35px 90px rgba(255, 255, 255, 0.3) !important;
+    /* Убираем !important у box-shadow, чтобы JS мог менять */
+    box-shadow: 0 0 60px rgba(255, 215, 150, 0.4), 0 0 120px rgba(255, 215, 150, 0.2), inset -35px -35px 90px rgba(0, 0, 0, 0.4), inset 35px 35px 90px rgba(255, 255, 255, 0.3);
     transition: box-shadow 0.5s ease, transform 0.15s ease !important;
     transform: scale(1);
     will-change: transform !important;
