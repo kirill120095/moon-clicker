@@ -26,6 +26,10 @@ export function initUI() {
         lockToggleMain: document.getElementById('lockToggleMain')
     });
 
+    // --- Скрываем кнопки настроек и статистики до входа ---
+    document.getElementById('statsToggleBtn').style.display = 'none';
+    document.getElementById('settingsBtn').style.display = 'none';
+
     // --- Вкладки авторизации ---
     const tabLogin = document.getElementById('tabLogin');
     const tabRegister = document.getElementById('tabRegister');
