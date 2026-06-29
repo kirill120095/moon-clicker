@@ -4,7 +4,7 @@
 import { supabaseClient } from './supabase.js';
 import { initToastContainer, createStars, showToast } from './utils.js';
 import { initUI } from './ui.js';
-import { initGame } from './game.js';
+import { initGame, restoreFallbackSave } from './game.js';
 import { setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP, setActiveMoon, setOwnedMoons } from './state.js';
 import { loadPlayerData, initAuthElements, createOrUpdatePlayer } from './auth.js';
 import { BASE_HP } from './config.js';
@@ -36,6 +36,9 @@ async function checkAuth() {
         if (session?.user) {
             const user = session.user;
             setUser(user);
+
+            // Восстанавливаем fallback сохранение, если есть
+            await restoreFallbackSave(user.id);
 
             let player = await loadPlayerData(user.id);
             if (!player) {
