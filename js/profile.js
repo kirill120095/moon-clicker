@@ -9,14 +9,13 @@ let lastUpdate = 0;
 
 export async function updateProfileAndLeaders(force = false) {
     if (!currentUser) return;
-    // Лимит снижен до 3 секунд для комфортных авто-обновлений во время геймплея
     if (!force && Date.now() - lastUpdate < 3000) return;
     lastUpdate = Date.now();
 
     const profileContent = document.getElementById('profileContent');
     const leadersList = document.getElementById('leadersList');
 
-    // Рендеринг данных профиля
+    // Профиль
     if (playerData && profileContent) {
         const data = playerData;
         const totalBosses = Math.floor((data.level || 1) / 10);
@@ -40,7 +39,7 @@ export async function updateProfileAndLeaders(force = false) {
         `;
     }
 
-    // Загрузка и рендеринг таблицы лидеров из Supabase
+    // Таблица лидеров
     if (leadersList) {
         const { data: leaders, error } = await supabaseClient
             .from('players')
