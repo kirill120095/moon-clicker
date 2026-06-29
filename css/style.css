@@ -151,9 +151,15 @@ body {
     color: rgba(255, 255, 255, 0.4) !important;
     transition: all 0.3s ease !important;
     backdrop-filter: blur(8px) !important;
-    display: none !important;
+    display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+.panel-trigger.visible {
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
 .panel-trigger:hover {
     background: rgba(255, 255, 255, 0.08) !important;
