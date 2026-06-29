@@ -59,7 +59,16 @@
         <!-- ИГРОВАЯ ЗОНА -->
         <div id="gameArea" class="game-area">
             <div class="level-title" id="levelTitle">Уровень 1</div>
-            <!-- Прогресс-бары -->
+
+            <!-- Луна -->
+            <div class="moon-wrapper" id="moonWrapper">
+                <div class="moon">
+                    <div class="moon-inner" id="moonInner"></div>
+                </div>
+                <div class="click-effect" id="clickEffect"></div>
+            </div>
+
+            <!-- HP и таймер (под луной) -->
             <div class="bars">
                 <div class="bar-container">
                     <span class="bar-label">❤️</span>
@@ -77,21 +86,11 @@
                 </div>
             </div>
 
-            <!-- Луна -->
-            <div class="moon-wrapper" id="moonWrapper">
-                <div class="moon">
-                    <div class="moon-inner" id="moonInner"></div>
-                </div>
-                <div class="click-effect" id="clickEffect"></div>
-            </div>
-
+            <!-- Счётчик кликов (по центру) -->
             <div class="counter" id="counter">0</div>
             <div class="counter-label">кликов</div>
 
-            <div class="time-display">
-                ⏱️ <span id="totalTimeDisplay">0 сек</span>
-            </div>
-
+            <!-- Управление -->
             <div class="game-controls">
                 <button class="btn-rollback" id="rollbackBtnMain" title="Откатить уровень">⬅️</button>
                 <button class="lock-toggle" id="lockToggleMain" title="Зафиксировать уровень">🔓</button>
@@ -111,17 +110,36 @@
         <div class="panel-actions">
             <button id="refreshDataBtn" class="panel-refresh-btn" title="Обновить данные">🔄</button>
         </div>
+
+        <!-- Вкладка Лидеры -->
         <div class="panel-content active" id="panelLeaders">
             <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Топ игроков</div>
             <div id="leadersList">
                 <div class="no-data">Загрузка...</div>
             </div>
         </div>
+
+        <!-- Вкладка Профиль -->
         <div class="panel-content" id="panelProfile">
             <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Мой профиль</div>
-            <div id="profileContent">
-                <div class="no-data">Войдите, чтобы увидеть статистику</div>
+            <!-- Информация об аккаунте -->
+            <div class="account-info">
+                <p>👤 <strong id="accountNickname">Гость</strong></p>
+                <p>📧 <strong id="accountEmail">-</strong></p>
+                <p>⏱️ Общее время: <strong id="profileTotalTime">0</strong></p>
             </div>
+            <!-- Выбор фона луны -->
+            <div style="margin: 15px 0;">
+                <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:6px;">🎨 Фон луны</div>
+                <div class="bg-options" id="bgOptionsProfile">
+                    <button data-bg="normal">⚪ Обычная</button>
+                    <button data-bg="blood">🔴 Кровавая</button>
+                </div>
+            </div>
+            <!-- Сброс прогресса -->
+            <button class="btn-danger" id="resetProgressBtn" style="width:100%; margin-top:15px;">Сбросить прогресс</button>
+            <!-- Выход -->
+            <button class="logout-btn" id="logoutBtnPanel" style="width:100%; margin-top:10px;">🚀 Выйти</button>
         </div>
     </div>
 
@@ -129,32 +147,12 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="modal">
             <h2>⚙️ Настройки</h2>
-            <div class="section-title">⏱️ Общее время</div>
-            <div style="color: rgba(255, 215, 150, 0.7); font-size: 1rem; margin-bottom: 15px;" id="totalTimeDisplayModal">0 ч</div>
-
-            <div class="section-title">🎨 Фон луны</div>
-            <div class="bg-options" id="bgOptions">
-                <button data-bg="normal">⚪ Обычная</button>
-                <button data-bg="blood">🔴 Кровавая</button>
-            </div>
-
             <div class="section-title">🧪 Тестовый режим</div>
             <div class="checkbox-row">
                 <label>
                     <input type="checkbox" id="testModeCheckbox" /> 1 клик = 1 уровень (убивает любую луну)
                 </label>
             </div>
-
-            <div class="account-info">
-                <p>👤 <strong id="accountNickname">Гость</strong></p>
-                <p>📧 <strong id="accountEmail">-</strong></p>
-            </div>
-
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <div class="section-title">🗑️ Прогресс</div>
-                <button class="btn-danger" id="resetProgressBtn">Сбросить прогресс</button>
-            </div>
-
             <button class="close-btn" id="closeSettingsBtn">Закрыть</button>
         </div>
     </div>
