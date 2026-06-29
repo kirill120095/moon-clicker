@@ -265,3 +265,24 @@
 .profile-account strong {
     color: #f0e6d0;
 }
+
+/* ---------- КНОПКА СБРОСА ПРОГРЕССА В НАСТРОЙКАХ ---------- */
+#panelSettings .btn-danger {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin: 15px 0 8px;
+    border-radius: 30px;
+    border: none;
+    background: rgba(255, 80, 80, 0.15);
+    color: #ff6b6b;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.3s;
+    border: 1px solid rgba(255, 80, 80, 0.2);
+    text-align: center;
+}
+#panelSettings .btn-danger:hover {
+    background: rgba(255, 80, 80, 0.25);
+    transform: scale(1.02);
+}
