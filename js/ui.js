@@ -41,7 +41,6 @@ export function initUI() {
     // Правая панель (магазин)
     rightPanel = document.getElementById('shopPanel');
     rightTrigger = document.getElementById('shopTrigger');
-    const refreshShopBtn = document.getElementById('refreshShopBtn');
     
     const panelTabs = document.querySelectorAll('.left-panel .panel-tabs button');
     const panelContents = document.querySelectorAll('.left-panel .panel-content');
@@ -122,18 +121,6 @@ export function initUI() {
         console.log('[UI] rightTrigger найден');
     } else {
         console.error('[UI] rightTrigger не найден!');
-    }
-
-    // --- Кнопка обновления магазина ---
-    if (refreshShopBtn) {
-        refreshShopBtn.addEventListener('click', () => {
-            refreshShopBtn.classList.add('spinning');
-            setTimeout(() => { refreshShopBtn.classList.remove('spinning'); }, 400);
-            if (currentUser) {
-                updateShopUI();
-                showToast('🔄 Магазин обновлен', 'info', 1000);
-            }
-        });
     }
 
     // --- Кнопка обновления данных ---
@@ -276,7 +263,7 @@ export function setMode(mode) {
     if (authMessageEl) authMessageEl.textContent = '';
 }
 
-// Функция открытия/закрытия левой панели
+// Функция открытия/закрытия левой панели (ИСПРАВЛЕНА)
 export function toggleLeftPanel(show) {
     if (!leftPanel || !leftTrigger) {
         console.error('[UI] toggleLeftPanel: элементы не найдены');
@@ -284,6 +271,7 @@ export function toggleLeftPanel(show) {
     }
     const isOpen = leftPanel.classList.contains('active');
     if (show === undefined) {
+        // Переключаем состояние
         if (isOpen) {
             leftPanel.classList.remove('active');
             leftTrigger.classList.remove('active');
@@ -294,7 +282,7 @@ export function toggleLeftPanel(show) {
                 updateProfileAndLeaders(true);
             }
         }
-    } else if (show) {
+    } else if (show === true) {
         leftPanel.classList.add('active');
         leftTrigger.classList.add('active');
         if (currentUser) {
@@ -306,7 +294,7 @@ export function toggleLeftPanel(show) {
     }
 }
 
-// Функция открытия/закрытия правой панели (магазин)
+// Функция открытия/закрытия правой панели (ИСПРАВЛЕНА)
 export function toggleRightPanel(show) {
     if (!rightPanel || !rightTrigger) {
         console.error('[UI] toggleRightPanel: элементы не найдены');
@@ -314,6 +302,7 @@ export function toggleRightPanel(show) {
     }
     const isOpen = rightPanel.classList.contains('active');
     if (show === undefined) {
+        // Переключаем состояние
         if (isOpen) {
             rightPanel.classList.remove('active');
             rightTrigger.classList.remove('active');
@@ -324,7 +313,7 @@ export function toggleRightPanel(show) {
                 updateShopUI();
             }
         }
-    } else if (show) {
+    } else if (show === true) {
         rightPanel.classList.add('active');
         rightTrigger.classList.add('active');
         if (currentUser) {
