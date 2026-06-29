@@ -51,21 +51,21 @@ export function updateUI() {
     const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
     hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
+    // --- УМЕНЬШЕНИЕ ЛУНЫ ---
     const scale = Math.max(0.18, Math.min(1.0, moonHP / maxHP));
-    if (moonInner) moonInner.style.transform = `scale(${scale})`;
+    if (moonInner) {
+        moonInner.style.transform = `scale(${scale})`;
+    }
 
-    // --- ТАЙМЕР БОССА ПОЯВЛЯЕТСЯ ТОЛЬКО НА БОССАХ ---
+    // --- ТАЙМЕР БОССА ---
     if (isBossLevel(currentLevel, BOSS_INTERVAL) && moonHP > 0) {
         if (!bossTimerRunning) startBossTimer();
-        // Показываем таймер (он уже есть в DOM, просто делаем активным)
         if (timerBarContainer) timerBarContainer.classList.add('active');
         if (hpBar) hpBar.className = 'bar-fill boss-fill';
     } else {
         if (bossTimerRunning) clearBossTimer();
-        // Скрываем таймер
         if (timerBarContainer) timerBarContainer.classList.remove('active');
         if (hpBar) hpBar.className = 'bar-fill hp-fill';
-        // Сбрасываем отображение таймера
         if (timerBar) timerBar.style.width = '100%';
         if (timerPercent) timerPercent.textContent = '30с';
     }
