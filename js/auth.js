@@ -1,11 +1,11 @@
 // ============================================================
-//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД
+//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД (ИСПРАВЛЕНО)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
 import { showToast, collectStaticDeviceData } from './utils.js';
 import { initGame, updateUI, timeUpdateIntervalRef, autoSaveIntervalRef } from './game.js';
-import { setMode } from './ui.js';
+import { setMode, togglePanel } from './ui.js';
 import { BASE_HP } from './config.js';
 
 let authMessageEl = null;
@@ -83,25 +83,33 @@ export async function handleRegister() {
     const password = document.getElementById('regPasswordInput').value.trim();
 
     if (!email || !nickname || !password) {
-        authMessageEl.textContent = '❌ Заполните все поля';
+        if (authMessageEl) {
+            authMessageEl.textContent = '❌ Заполните все поля';
+        }
         return;
     }
     if (password.length < 6) {
-        authMessageEl.textContent = '❌ Пароль минимум 6 символов';
+        if (authMessageEl) {
+            authMessageEl.textContent = '❌ Пароль минимум 6 символов';
+        }
         return;
     }
 
-    authMessageEl.textContent = '⏳ Регистрация...';
-    actionBtn.disabled = true;
+    if (authMessageEl) {
+        authMessageEl.textContent = '⏳ Регистрация...';
+    }
+    if (actionBtn) actionBtn.disabled = true;
 
     const { data, error } = await supabaseClient.auth.signUp({
         email, password, options: { data: { username: nickname } }
     });
 
-    actionBtn.disabled = false;
+    if (actionBtn) actionBtn.disabled = false;
 
     if (error) {
-        authMessageEl.textContent = `❌ ${error.message}`;
+        if (authMessageEl) {
+            authMessageEl.textContent = `❌ ${error.message}`;
+        }
         return;
     }
 
@@ -109,15 +117,17 @@ export async function handleRegister() {
         setUser(data.user);
         const player = await createOrUpdatePlayer(data.user.id, data.user.email);
         setPlayerData(player);
-        authMessageEl.textContent = '✅ Регистрация успешна! Войдите.';
+        if (authMessageEl) {
+            authMessageEl.textContent = '✅ Регистрация успешна! Войдите.';
+        }
         setMode('login');
         showToast('✅ Регистрация успешна!', 'success');
     }
 }
 
-// Вход
+// Вход (исправлено)
 export async function handleLogin() {
-    const loginType = document.querySelector('input[name="loginType"]:checked').value;
+    const loginType = document.querySelector('input[name="loginType"]:checked')?.value || 'email';
     let email = '';
 
     if (loginType === 'email') {
@@ -130,15 +140,26 @@ export async function handleLogin() {
 
     const password = document.getElementById('passwordInput').value.trim();
 
-    authMessageEl.textContent = '⏳ Вход...';
-    actionBtn.disabled = true;
+    if (!email || !password) {
+        if (authMessageEl) {
+            authMessageEl.textContent = '❌ Заполните все поля';
+        }
+        return;
+    }
+
+    if (authMessageEl) {
+        authMessageEl.textContent = '⏳ Вход...';
+    }
+    if (actionBtn) actionBtn.disabled = true;
 
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-    actionBtn.disabled = false;
+    if (actionBtn) actionBtn.disabled = false;
 
     if (error) {
-        authMessageEl.textContent = `❌ ${error.message}`;
+        if (authMessageEl) {
+            authMessageEl.textContent = `❌ ${error.message}`;
+        }
         return;
     }
 
@@ -152,12 +173,25 @@ export async function handleLogin() {
         setTotalSecondsPlayed(player.total_seconds_played || 0);
         setCurrentLevel(player.level || 1);
         setMoonHP(player.moon_hp || BASE_HP);
+        setMaxHP(player.moon_hp || BASE_HP);
 
-        authMessageEl.textContent = '✅ Вход успешен!';
-        // Убираем обращение к statsToggleBtn и settingsBtn, т.к. их больше нет
-        // document.getElementById('statsToggleBtn').classList.add('visible'); // УДАЛЕНО
-        // document.getElementById('settingsBtn').classList.add('visible');   // УДАЛЕНО
-        setTimeout(initGame, 300);
+        if (authMessageEl) {
+            authMessageEl.textContent = '✅ Вход успешен!';
+        }
+
+        // Убедимся, что игра инициализируется после небольшой задержки
+        setTimeout(() => {
+            // Скрываем форму входа и показываем игру
+            const authBlock = document.getElementById('authBlock');
+            const gameArea = document.getElementById('gameArea');
+            if (authBlock) authBlock.classList.add('hidden');
+            if (gameArea) gameArea.classList.add('active');
+
+            // Вызываем инициализацию игры
+            initGame();
+            // Закрываем панель, если она открыта
+            togglePanel(false);
+        }, 300);
     }
 }
 
@@ -178,13 +212,14 @@ export async function logout() {
     setCurrentLevel(1);
     setMoonHP(BASE_HP);
 
-    document.getElementById('sidePanel').classList.remove('active');
-    document.getElementById('gameArea').classList.remove('active');
-    document.getElementById('authBlock').classList.remove('hidden');
+    // Закрываем панель
+    togglePanel(false);
 
-    // Убираем класс visible с удалённых кнопок (их нет, но на всякий случай)
-    // document.getElementById('statsToggleBtn').classList.remove('visible'); // УДАЛЕНО
-    // document.getElementById('settingsBtn').classList.remove('visible');   // УДАЛЕНО
+    // Показываем форму авторизации
+    const authBlock = document.getElementById('authBlock');
+    const gameArea = document.getElementById('gameArea');
+    if (authBlock) authBlock.classList.remove('hidden');
+    if (gameArea) gameArea.classList.remove('active');
 
     setMode('login');
     updateUI();
