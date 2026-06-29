@@ -8,15 +8,17 @@ import {
     rollbackLevel, 
     resetProgress 
 } from './game.js';
-import { levelLocked, setLevelLocked, testMode, setTestMode, currentUser } from './state.js';
+import { levelLocked, setLevelLocked, testMode, setTestMode, currentUser, playerData, totalSecondsPlayed } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
+import { formatTime } from './utils.js';
 
 // DOM-элементы
 let tabLogin, tabRegister, loginFields, registerFields, actionBtn, authMessageEl;
 let sidePanel, statsToggleBtn, settingsBtn, panelClose, panelTabs, panelContents, refreshDataBtn;
-let settingsModal, closeSettingsBtn, bgOptions, testModeCheckbox, resetProgressBtn;
+let settingsModal, closeSettingsBtn, testModeCheckbox, resetProgressBtn;
 let confirmOverlay, confirmYes, confirmNo;
 let moonWrapper;
+let bgOptionsProfile;
 
 export function initUI() {
     // Авторизация
@@ -39,7 +41,6 @@ export function initUI() {
     // Настройки
     settingsModal = document.getElementById('settingsModal');
     closeSettingsBtn = document.getElementById('closeSettingsBtn');
-    bgOptions = document.querySelectorAll('#bgOptions button');
     testModeCheckbox = document.getElementById('testModeCheckbox');
     resetProgressBtn = document.getElementById('resetProgressBtn');
 
@@ -65,15 +66,18 @@ export function initUI() {
         timerBarContainer: document.getElementById('timerBarContainer'),
         timerBar: document.getElementById('timerBar'),
         timerPercent: document.getElementById('timerPercent'),
-        totalTimeDisplay: document.getElementById('totalTimeDisplay'),
+        totalTimeDisplay: null, // больше не используется на главном экране
         rollbackBtnMain,
         lockToggleMain
     });
 
+    // Фоны в профиле
+    bgOptionsProfile = document.querySelectorAll('#bgOptionsProfile button');
+
     // Навешивание событий
     initEvents();
     
-    // Восстанавливаем сохраненный режим луны из памяти
+    // Восстанавливаем сохраненный режим луны
     const savedMode = localStorage.getItem('moonMode') || 'normal';
     applyMoonStyle(savedMode);
 }
@@ -131,6 +135,7 @@ function initEvents() {
         sidePanel.classList.toggle('active');
         if (sidePanel.classList.contains('active')) {
             updateProfileAndLeaders(true);
+            updateProfileInfo(); // обновляем информацию в профиле
         }
     });
     panelClose.addEventListener('click', () => sidePanel.classList.remove('active'));
@@ -141,10 +146,11 @@ function initEvents() {
             refreshDataBtn.classList.add('spinning');
             setTimeout(() => { refreshDataBtn.classList.remove('spinning'); }, 400);
             updateProfileAndLeaders(true);
+            updateProfileInfo();
         });
     }
 
-    // Переключение вкладок внутри боковой панели (Лидеры / Профиль)
+    // Переключение вкладок внутри боковой панели
     panelTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             panelTabs.forEach(t => t.classList.remove('active'));
@@ -157,9 +163,9 @@ function initEvents() {
                 document.getElementById('panelLeaders').classList.add('active');
             } else {
                 document.getElementById('panelProfile').classList.add('active');
+                updateProfileInfo(); // обновляем профиль при переключении
             }
 
-            // Мягкое обновление данных при клике на вкладку без лагов UI
             updateProfileAndLeaders(true);
         });
     });
@@ -167,17 +173,11 @@ function initEvents() {
     // Открытие/закрытие настроек
     settingsBtn.addEventListener('click', () => {
         settingsModal.classList.add('active');
-        if (currentUser) {
-            document.getElementById('accountNickname').textContent = currentUser.user_metadata?.username || 'Игрок';
-            document.getElementById('accountEmail').textContent = currentUser.email || '-';
-        }
-        const savedMode = localStorage.getItem('moonMode') || 'normal';
-        applyMoonStyle(savedMode);
     });
     closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
 
-    // Выбор фонда луны (Обычная / Кровавая)
-    bgOptions.forEach(btn => {
+    // Выбор фона луны в профиле
+    bgOptionsProfile.forEach(btn => {
         btn.addEventListener('click', () => {
             const mode = btn.getAttribute('data-bg');
             localStorage.setItem('moonMode', mode);
@@ -191,7 +191,7 @@ function initEvents() {
         localStorage.setItem('testMode', e.target.checked);
     });
 
-    // Сброс прогресса
+    // Сброс прогресса (через кнопку в профиле)
     resetProgressBtn.addEventListener('click', () => {
         confirmOverlay.classList.add('active');
     });
@@ -199,6 +199,8 @@ function initEvents() {
     confirmYes.addEventListener('click', () => {
         confirmOverlay.classList.remove('active');
         resetProgress();
+        // после сброса обновляем профиль
+        setTimeout(updateProfileInfo, 500);
     });
 
     // Игровой контроль
@@ -218,13 +220,35 @@ function initEvents() {
         });
     }
 
-    // Выход из аккаунта
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
+    // Выход из аккаунта (через кнопку в профиле)
+    const logoutBtnPanel = document.getElementById('logoutBtnPanel');
+    if (logoutBtnPanel) {
+        logoutBtnPanel.addEventListener('click', logout);
     }
 }
 
+// Функция для обновления информации в профиле (ник, email, время)
+export function updateProfileInfo() {
+    const nicknameEl = document.getElementById('accountNickname');
+    const emailEl = document.getElementById('accountEmail');
+    const timeEl = document.getElementById('profileTotalTime');
+
+    if (currentUser) {
+        nicknameEl.textContent = currentUser.user_metadata?.username || currentUser.email || 'Гость';
+        emailEl.textContent = currentUser.email || '-';
+        if (playerData) {
+            timeEl.textContent = formatTime(playerData.total_seconds_played || 0);
+        } else {
+            timeEl.textContent = '0';
+        }
+    } else {
+        nicknameEl.textContent = 'Гость';
+        emailEl.textContent = '-';
+        timeEl.textContent = '0';
+    }
+}
+
+// Применение стиля луны
 export function applyMoonStyle(mode) {
     const container = document.getElementById('app');
     const moonInner = document.getElementById('moonInner');
@@ -237,8 +261,8 @@ export function applyMoonStyle(mode) {
         if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
     }
 
-    const buttons = document.querySelectorAll('#bgOptions button');
-    buttons.forEach(btn => {
+    // Обновляем активную кнопку в профиле
+    document.querySelectorAll('#bgOptionsProfile button').forEach(btn => {
         if (btn.getAttribute('data-bg') === mode) {
             btn.classList.add('active');
         } else {
