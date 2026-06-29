@@ -51,7 +51,7 @@ export function updateUI() {
     const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
     hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
-    // --- ЛИНЕЙНОЕ УМЕНЬШЕНИЕ ЛУНЫ (ПРОПОРЦИОНАЛЬНО HP) ---
+    // --- ЛИНЕЙНОЕ УМЕНЬШЕНИЕ ЛУНЫ ---
     // Масштаб = оставшееся HP / максимальное HP
     // 100% HP = 100% размера, 50% HP = 50% размера, 0% HP = 0% размера
     const scale = Math.max(0, Math.min(1, moonHP / maxHP));
@@ -150,7 +150,6 @@ export async function updateProgress(playerId, newTotal, clickTimestamp, newLeve
 
         if (error) throw error;
 
-        // Обновляем локальные данные
         if (playerData) {
             Object.assign(playerData, updateData);
         }
@@ -196,7 +195,6 @@ export async function resetProgress() {
         setLevelLocked(false);
         const lockBtn = document.getElementById('lockToggleMain');
         if (lockBtn) {
-            // Обновляем иконку замка
             const { setLockIcon } = await import('./ui.js');
             setLockIcon(lockBtn, false);
         }
