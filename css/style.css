@@ -22,3 +22,246 @@
 /* ---------- УТИЛИТЫ ---------- */
 @import url('utils/animations.css');
 @import url('utils/fixes.css');
+
+/* ============================================================
+   ТЕМЫ ЛУН (глобальные стили для свечения UI)
+   ============================================================ */
+
+.container {
+    transition: box-shadow 0.5s ease, border-color 0.5s ease;
+}
+
+/* Акцентные цвета для разных лун */
+.moon-theme-normal {
+    --moon-accent: #d4af37;
+    --moon-glow: 0 0 30px #d4af3733, 0 0 60px #d4af3722;
+    --moon-border: #d4af3744;
+    --moon-text: #d4af37;
+}
+.moon-theme-blood {
+    --moon-accent: #cc0000;
+    --moon-glow: 0 0 30px #cc000033, 0 0 60px #cc000022;
+    --moon-border: #cc000044;
+    --moon-text: #cc0000;
+}
+.moon-theme-ice {
+    --moon-accent: #4fc3f7;
+    --moon-glow: 0 0 30px #4fc3f733, 0 0 60px #4fc3f722;
+    --moon-border: #4fc3f744;
+    --moon-text: #4fc3f7;
+}
+.moon-theme-shadow {
+    --moon-accent: #6a1b9a;
+    --moon-glow: 0 0 30px #6a1b9a33, 0 0 60px #6a1b9a22;
+    --moon-border: #6a1b9a44;
+    --moon-text: #6a1b9a;
+}
+.moon-theme-gold {
+    --moon-accent: #ffd700;
+    --moon-glow: 0 0 30px #ffd70033, 0 0 60px #ffd70022;
+    --moon-border: #ffd70044;
+    --moon-text: #ffd700;
+}
+
+/* Применяем к контейнеру */
+.container.moon-theme-normal {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px #d4af3722;
+    border-color: #d4af3744;
+}
+.container.moon-theme-blood {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px #cc000033;
+    border-color: #cc000044;
+}
+.container.moon-theme-ice {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px #4fc3f733;
+    border-color: #4fc3f744;
+}
+.container.moon-theme-shadow {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px #6a1b9a33;
+    border-color: #6a1b9a44;
+}
+.container.moon-theme-gold {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px #ffd70033;
+    border-color: #ffd70044;
+}
+
+/* Свечение для заголовка и уровня */
+.moon-theme-blood .subtitle,
+.moon-theme-blood .level-title {
+    text-shadow: 0 0 30px rgba(255,0,0,0.3);
+}
+.moon-theme-ice .subtitle,
+.moon-theme-ice .level-title {
+    text-shadow: 0 0 30px rgba(79,195,247,0.3);
+}
+.moon-theme-shadow .subtitle,
+.moon-theme-shadow .level-title {
+    text-shadow: 0 0 30px rgba(106,27,154,0.3);
+}
+.moon-theme-gold .subtitle,
+.moon-theme-gold .level-title {
+    text-shadow: 0 0 30px rgba(255,215,0,0.3);
+}
+
+/* Счетчик осколков */
+.moon-theme-blood .counter {
+    border-color: rgba(255,0,0,0.3);
+    text-shadow: 0 0 40px rgba(255,0,0,0.2);
+}
+.moon-theme-ice .counter {
+    border-color: rgba(79,195,247,0.3);
+    text-shadow: 0 0 40px rgba(79,195,247,0.2);
+}
+.moon-theme-shadow .counter {
+    border-color: rgba(106,27,154,0.3);
+    text-shadow: 0 0 40px rgba(106,27,154,0.2);
+}
+.moon-theme-gold .counter {
+    border-color: rgba(255,215,0,0.3);
+    text-shadow: 0 0 40px rgba(255,215,0,0.2);
+}
+
+/* Кнопки и элементы управления */
+.moon-theme-blood .btn-rollback,
+.moon-theme-blood .lock-toggle {
+    border-color: rgba(255,0,0,0.3);
+}
+.moon-theme-blood .btn-rollback:hover,
+.moon-theme-blood .lock-toggle:hover {
+    background: rgba(255,0,0,0.15);
+}
+.moon-theme-blood .lock-toggle.locked {
+    background: rgba(255,0,0,0.25);
+    border-color: #ff0000;
+    color: #ff0000;
+}
+
+.moon-theme-ice .btn-rollback,
+.moon-theme-ice .lock-toggle {
+    border-color: rgba(79,195,247,0.3);
+}
+.moon-theme-ice .btn-rollback:hover,
+.moon-theme-ice .lock-toggle:hover {
+    background: rgba(79,195,247,0.15);
+}
+.moon-theme-ice .lock-toggle.locked {
+    background: rgba(79,195,247,0.25);
+    border-color: #4fc3f7;
+    color: #4fc3f7;
+}
+
+.moon-theme-shadow .btn-rollback,
+.moon-theme-shadow .lock-toggle {
+    border-color: rgba(106,27,154,0.3);
+}
+.moon-theme-shadow .btn-rollback:hover,
+.moon-theme-shadow .lock-toggle:hover {
+    background: rgba(106,27,154,0.15);
+}
+.moon-theme-shadow .lock-toggle.locked {
+    background: rgba(106,27,154,0.25);
+    border-color: #6a1b9a;
+    color: #6a1b9a;
+}
+
+.moon-theme-gold .btn-rollback,
+.moon-theme-gold .lock-toggle {
+    border-color: rgba(255,215,0,0.3);
+}
+.moon-theme-gold .btn-rollback:hover,
+.moon-theme-gold .lock-toggle:hover {
+    background: rgba(255,215,0,0.15);
+}
+.moon-theme-gold .lock-toggle.locked {
+    background: rgba(255,215,0,0.25);
+    border-color: #ffd700;
+    color: #ffd700;
+}
+
+/* Кнопка выхода */
+.moon-theme-blood .logout-btn {
+    border-color: rgba(255,0,0,0.2);
+}
+.moon-theme-blood .logout-btn:hover {
+    background: rgba(255,0,0,0.1);
+    border-color: rgba(255,0,0,0.4);
+}
+.moon-theme-ice .logout-btn {
+    border-color: rgba(79,195,247,0.2);
+}
+.moon-theme-ice .logout-btn:hover {
+    background: rgba(79,195,247,0.1);
+    border-color: rgba(79,195,247,0.4);
+}
+.moon-theme-shadow .logout-btn {
+    border-color: rgba(106,27,154,0.2);
+}
+.moon-theme-shadow .logout-btn:hover {
+    background: rgba(106,27,154,0.1);
+    border-color: rgba(106,27,154,0.4);
+}
+.moon-theme-gold .logout-btn {
+    border-color: rgba(255,215,0,0.2);
+}
+.moon-theme-gold .logout-btn:hover {
+    background: rgba(255,215,0,0.1);
+    border-color: rgba(255,215,0,0.4);
+}
+
+/* Прогресс-бары */
+.moon-theme-blood .bar-fill.hp-fill {
+    background: linear-gradient(90deg, #ff6b6b, #cc0000) !important;
+}
+.moon-theme-blood .bar-fill.boss-fill {
+    background: linear-gradient(90deg, #cc0000, #ff0000) !important;
+}
+.moon-theme-ice .bar-fill.hp-fill {
+    background: linear-gradient(90deg, #4fc3f7, #b3e5fc) !important;
+}
+.moon-theme-ice .bar-fill.boss-fill {
+    background: linear-gradient(90deg, #0288d1, #4fc3f7) !important;
+}
+.moon-theme-shadow .bar-fill.hp-fill {
+    background: linear-gradient(90deg, #6a1b9a, #9c27b0) !important;
+}
+.moon-theme-shadow .bar-fill.boss-fill {
+    background: linear-gradient(90deg, #4a148c, #6a1b9a) !important;
+}
+.moon-theme-gold .bar-fill.hp-fill {
+    background: linear-gradient(90deg, #ffd700, #fff9c4) !important;
+}
+.moon-theme-gold .bar-fill.boss-fill {
+    background: linear-gradient(90deg, #f57f17, #ffd700) !important;
+}
+
+/* Панели (боковые) */
+.moon-theme-blood .side-panel {
+    border-color: rgba(255,0,0,0.15);
+}
+.moon-theme-ice .side-panel {
+    border-color: rgba(79,195,247,0.15);
+}
+.moon-theme-shadow .side-panel {
+    border-color: rgba(106,27,154,0.15);
+}
+.moon-theme-gold .side-panel {
+    border-color: rgba(255,215,0,0.15);
+}
+
+/* Активные вкладки в панелях */
+.moon-theme-blood .side-panel .panel-tabs button.active {
+    background: rgba(255,0,0,0.15);
+    color: #ff6b6b;
+}
+.moon-theme-ice .side-panel .panel-tabs button.active {
+    background: rgba(79,195,247,0.15);
+    color: #4fc3f7;
+}
+.moon-theme-shadow .side-panel .panel-tabs button.active {
+    background: rgba(106,27,154,0.15);
+    color: #9c27b0;
+}
+.moon-theme-gold .side-panel .panel-tabs button.active {
+    background: rgba(255,215,0,0.15);
+    color: #ffd700;
+}
