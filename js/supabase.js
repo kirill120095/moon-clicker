@@ -10,4 +10,11 @@ if (typeof window.supabase === 'undefined') {
     throw new Error('Supabase library not loaded');
 }
 
-export const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+        persistSession: false,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce'
+    }
+});
