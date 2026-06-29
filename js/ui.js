@@ -102,9 +102,10 @@ export function initUI() {
 }
 
 function updateAccountInfo() {
-    document.getElementById('accountNickname').textContent = 
-        playerData?.username || currentUser?.user_metadata?.username || 'Гость';
-    document.getElementById('accountEmail').textContent = currentUser?.email || '-';
+    const nick = playerData?.username || currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Гость';
+    const email = currentUser?.email || '-';
+    document.getElementById('accountNickname').textContent = nick;
+    document.getElementById('accountEmail').textContent = email;
 }
 
 export function setMode(mode) {
