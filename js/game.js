@@ -20,6 +20,10 @@ import { BASE_HP, BOSS_INTERVAL, BOSS_TIMER } from './config.js';
 let moonWrapper, moonInner, clickEffect, counterEl, levelTitle, hpBar, hpPercent,
     timerBarContainer, timerBar, timerPercent, totalTimeDisplay, rollbackBtnMain, lockToggleMain;
 
+// --- Ссылки на интервалы (для остановки из auth.js) ---
+export let timeUpdateIntervalRef = null;
+export let autoSaveIntervalRef = null;
+
 export function initGameElements(elements) {
     moonWrapper = elements.moonWrapper;
     moonInner = elements.moonInner;
@@ -287,14 +291,14 @@ export function initGame() {
 
     // Запускаем таймеры
     setSessionStartTimestamp(Date.now());
-    if (timeUpdateInterval) clearInterval(timeUpdateInterval);
-    timeUpdateInterval = setInterval(() => {
+    if (timeUpdateIntervalRef) clearInterval(timeUpdateIntervalRef);
+    timeUpdateIntervalRef = setInterval(() => {
         setTotalSecondsPlayed(totalSecondsPlayed + 1);
         updateTimeDisplay();
     }, 1000);
 
-    if (autoSaveInterval) clearInterval(autoSaveInterval);
-    autoSaveInterval = setInterval(saveTimeOnly, 30000);
+    if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
+    autoSaveIntervalRef = setInterval(saveTimeOnly, 30000);
 
     // Загружаем настройки из localStorage
     const savedMode = localStorage.getItem('moonMode') || 'normal';
