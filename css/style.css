@@ -135,7 +135,7 @@ body {
     display: none !important;
 }
 
-/* ---------- КНОПКА БОКОВОЙ ПАНЕЛИ (СТРЕЛКА) - ФИКС ---------- */
+/* ---------- ТРИГГЕР ПАНЕЛИ (СТРЕЛКА) ---------- */
 .panel-trigger {
     position: fixed !important;
     right: 0 !important;
@@ -151,7 +151,7 @@ body {
     color: rgba(255, 255, 255, 0.4) !important;
     transition: all 0.3s ease !important;
     backdrop-filter: blur(8px) !important;
-    display: flex !important;
+    display: none !important;
     align-items: center !important;
     justify-content: center !important;
 }
