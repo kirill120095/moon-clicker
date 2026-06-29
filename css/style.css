@@ -1,4 +1,4 @@
-/* ---------- ОСНОВНЫЕ СТИЛИ (без изменений, только дополнения) ---------- */
+/* ---------- ОСНОВНЫЕ СТИЛИ ---------- */
 * {
     margin: 0;
     padding: 0;
@@ -217,30 +217,11 @@ body {
     background: rgba(255,255,255,0.2);
     border-radius: 4px;
 }
-.side-panel .panel-close {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 1.8rem;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.side-panel .panel-close:hover {
-    color: rgba(255, 255, 255, 0.7);
-    transform: rotate(90deg);
-}
-.side-panel .panel-close svg {
-    width: 22px;
-    height: 22px;
-}
 .side-panel .panel-tabs {
     display: flex;
     gap: 10px;
     justify-content: center;
-    margin: 35px 0 15px;
+    margin: 20px 0 15px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     padding-bottom: 10px;
 }
