@@ -94,10 +94,7 @@
                     </svg>
                 </button>
                 <button class="lock-toggle" id="lockToggleMain" title="Зафиксировать уровень">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
+                    <!-- содержимое будет вставлено через JS -->
                 </button>
             </div>
 
@@ -114,12 +111,6 @@
 
     <!-- ---------- БОКОВАЯ ПАНЕЛЬ ---------- -->
     <div class="side-panel" id="sidePanel">
-        <button class="panel-close" id="panelClose">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-        </button>
         <div class="panel-tabs">
             <button class="active" data-tab="leaders">🏆</button>
             <button data-tab="profile">👤</button>
@@ -162,7 +153,7 @@
     </div>
 
     <!-- ---------- ТРИГГЕР БОКОВОЙ ПАНЕЛИ (СТРЕЛКА) ---------- -->
-    <button class="panel-trigger" id="panelTrigger" title="Открыть панель">
+    <button class="panel-trigger" id="panelTrigger" title="Открыть/закрыть панель">
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6" />
         </svg>
