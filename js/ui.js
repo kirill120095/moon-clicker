@@ -1,5 +1,5 @@
 // ============================================================
-//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ИСПРАВЛЕННЫЙ ВИЗУАЛ)
+//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (С ИКОНКАМИ SVG)
 // ============================================================
 import { handleLogin, handleRegister, logout } from './auth.js';
 import { 
@@ -8,8 +8,17 @@ import {
     rollbackLevel, 
     resetProgress 
 } from './game.js';
-import { levelLocked, setLevelLocked, testMode, setTestMode, currentUser } from './state.js';
+import { levelLocked, setLevelLocked, setTestMode, currentUser } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
+
+// SVG для замка (открытый / закрытый)
+const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const lockClosedSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>`;
+
+function setLockIcon(btn, locked) {
+    btn.innerHTML = locked ? lockClosedSVG : lockOpenSVG;
+    btn.classList.toggle('locked', locked);
+}
 
 // DOM-элементы
 let tabLogin, tabRegister, loginFields, registerFields, actionBtn, authMessageEl;
@@ -195,12 +204,13 @@ function initEvents() {
 
     const lockToggleMain = document.getElementById('lockToggleMain');
     if (lockToggleMain) {
+        // Устанавливаем начальное состояние
+        setLockIcon(lockToggleMain, levelLocked);
         lockToggleMain.addEventListener('click', () => {
             const newState = !levelLocked;
             setLevelLocked(newState);
             localStorage.setItem('levelLocked', newState);
-            lockToggleMain.textContent = newState ? '🔒' : '🔓';
-            lockToggleMain.classList.toggle('locked', newState);
+            setLockIcon(lockToggleMain, newState);
         });
     }
 
