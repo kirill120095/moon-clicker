@@ -203,9 +203,13 @@ export function initUI() {
     const savedMode = localStorage.getItem('moonMode') || 'normal';
     applyMoonStyle(savedMode);
 
-    // --- Если панель была открыта – синхронизируем кнопку ---
-    if (sidePanel && sidePanel.classList.contains('active')) {
-        panelTrigger?.classList.add('active');
+    // --- Синхронизируем состояние кнопки и панели ---
+    if (sidePanel && panelTrigger) {
+        if (sidePanel.classList.contains('active')) {
+            panelTrigger.classList.add('active');
+        } else {
+            panelTrigger.classList.remove('active');
+        }
     }
 
     console.log('[UI] Инициализация завершена');
