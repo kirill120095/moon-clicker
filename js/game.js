@@ -22,6 +22,73 @@ let moonWrapper, moonInner, clickEffect, counterEl, levelTitle, hpBar, hpPercent
 export let timeUpdateIntervalRef = null;
 export let autoSaveIntervalRef = null;
 let saveTimeout = null;
+let pendingSave = null; // для fallback сохранения
+
+// Функция сохранения с retry и fallback в localStorage
+async function saveWithRetry(updateData, retries = 3, delay = 1000) {
+    if (!currentUser) return false;
+    try {
+        const { error } = await supabaseClient
+            .from('players')
+            .update(updateData)
+            .eq('id', currentUser.id);
+        if (error) throw error;
+        // Если сохранилось в БД, удаляем fallback
+        localStorage.removeItem(`fallback_save_${currentUser.id}`);
+        return true;
+    } catch (err) {
+        console.warn('Ошибка сохранения в Supabase, попытка', retries, err);
+        if (retries > 0) {
+            // Ждём и повторяем
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return saveWithRetry(updateData, retries - 1, delay * 1.5);
+        } else {
+            // Сохраняем в localStorage как fallback
+            console.error('Сохранение в Supabase не удалось, сохраняем в localStorage');
+            const fallbackKey = `fallback_save_${currentUser.id}`;
+            const fallbackData = {
+                ...updateData,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(fallbackKey, JSON.stringify(fallbackData));
+            showToast('⚠️ Проблема с соединением, прогресс сохранён локально', 'warning', 3000);
+            return false;
+        }
+    }
+}
+
+// Функция восстановления fallback-сохранения при входе
+export async function restoreFallbackSave(userId) {
+    const fallbackKey = `fallback_save_${userId}`;
+    const saved = localStorage.getItem(fallbackKey);
+    if (!saved) return false;
+    try {
+        const data = JSON.parse(saved);
+        // Пытаемся отправить в БД
+        const { error } = await supabaseClient
+            .from('players')
+            .update({
+                total_clicks: data.total_clicks,
+                last_click_at: data.last_click_at,
+                total_seconds_played: data.total_seconds_played,
+                level: data.level,
+                moon_hp: data.moon_hp,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', userId);
+        if (!error) {
+            localStorage.removeItem(fallbackKey);
+            showToast('✅ Локальный прогресс восстановлен', 'success', 2000);
+            return true;
+        } else {
+            console.warn('Не удалось восстановить fallback сохранение', error);
+            return false;
+        }
+    } catch (e) {
+        console.warn('Ошибка восстановления fallback', e);
+        return false;
+    }
+}
 
 export function initGameElements(elements) {
     moonWrapper = elements.moonWrapper;
@@ -178,22 +245,17 @@ export async function buyMoon(moonId) {
 
     const newShards = (playerData.shards || 0) - moon.cost;
     // Обновляем только shards в БД, луны хранятся в localStorage
-    const { error } = await supabaseClient
-        .from('players')
-        .update({
-            shards: newShards,
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', currentUser.id);
-
-    if (error) {
-        console.error('Ошибка покупки луны:', error);
-        showToast('⚠️ Ошибка при покупке', 'warning');
-        return;
+    const updateData = {
+        shards: newShards,
+        updated_at: new Date().toISOString()
+    };
+    const success = await saveWithRetry(updateData);
+    if (!success) {
+        // Если сохранение не удалось, всё равно обновляем локально
+        playerData.shards = newShards;
     }
 
     // Обновляем локальное состояние
-    playerData.shards = newShards;
     addOwnedMoon(moonId);
     setActiveMoon(moonId);
 
@@ -276,52 +338,57 @@ export async function updateProgress(playerId, newTotal, clickTimestamp, newLeve
         moon_hp: Math.round(newMoonHP),
         updated_at: new Date().toISOString()
     };
-    try {
-        const { error } = await supabaseClient.from('players').update(updateData).eq('id', playerId);
-        if (error) throw error;
+    const success = await saveWithRetry(updateData);
+    if (success && playerData) {
+        Object.assign(playerData, updateData);
+    } else if (!success) {
+        // fallback уже сохранён в localStorage
+        // но мы всё равно обновляем локальные данные
         if (playerData) Object.assign(playerData, updateData);
-        return true;
-    } catch (err) {
-        console.error('Ошибка сохранения:', err);
-        showToast('⚠️ Ошибка сохранения прогресса', 'warning');
-        return false;
     }
+    return success;
 }
 
 export async function saveTimeOnly() {
     if (!currentUser) return;
-    try {
-        await supabaseClient.from('players')
-            .update({ total_seconds_played: totalSecondsPlayed, updated_at: new Date().toISOString() })
-            .eq('id', currentUser.id);
-    } catch (e) {
-        console.error('Ошибка сохранения времени:', e);
-    }
+    const updateData = {
+        total_seconds_played: totalSecondsPlayed,
+        updated_at: new Date().toISOString()
+    };
+    await saveWithRetry(updateData);
 }
 
 export async function resetProgress() {
     if (!currentUser) return;
     try {
-        const { error } = await supabaseClient.from('players')
-            .update({ 
-                total_clicks: 0, total_seconds_played: 0, level: 1, 
-                moon_hp: Math.round(BASE_HP), shards: 0,
-                click_damage: 1, click_damage_level: 0,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', currentUser.id);
-        if (error) throw error;
-        const { data: freshData } = await supabaseClient.from('players').select('*').eq('id', currentUser.id).single();
-        if (freshData) {
-            setPlayerData(freshData);
-            setClickCount(0);
-            setTotalSecondsPlayed(0);
-            setCurrentLevel(1);
-            setMoonHP(BASE_HP);
-            setMaxHP(BASE_HP);
-            // Сбрасываем луны
-            setActiveMoon('normal');
-            setOwnedMoons(['normal']);
+        const updateData = { 
+            total_clicks: 0, total_seconds_played: 0, level: 1, 
+            moon_hp: Math.round(BASE_HP), shards: 0,
+            click_damage: 1, click_damage_level: 0,
+            updated_at: new Date().toISOString()
+        };
+        const success = await saveWithRetry(updateData);
+        if (!success) {
+            // fallback сохранён, но мы обновляем локально
+        }
+        // Обновляем локальные данные
+        setClickCount(0);
+        setTotalSecondsPlayed(0);
+        setCurrentLevel(1);
+        setMoonHP(BASE_HP);
+        setMaxHP(BASE_HP);
+        setActiveMoon('normal');
+        setOwnedMoons(['normal']);
+        if (playerData) {
+            Object.assign(playerData, {
+                total_clicks: 0,
+                total_seconds_played: 0,
+                level: 1,
+                moon_hp: Math.round(BASE_HP),
+                shards: 0,
+                click_damage: 1,
+                click_damage_level: 0
+            });
         }
         clearBossTimer();
         setLevelLocked(false);
@@ -357,6 +424,11 @@ export async function rollbackLevel() {
 export function initGame() {
     document.getElementById('authBlock').classList.add('hidden');
     document.getElementById('gameArea').classList.add('active');
+
+    // Восстанавливаем fallback сохранение, если есть
+    if (currentUser) {
+        restoreFallbackSave(currentUser.id);
+    }
 
     const newMax = getMaxHPForLevel(currentLevel, BASE_HP, BOSS_INTERVAL);
     setMaxHP(newMax);
@@ -447,9 +519,12 @@ export async function handleClick(e) {
         
         showToast(`💎 +${shardReward} лунных осколков!`, 'success', 2000);
         
-        await supabaseClient.from('players')
-            .update({ shards: currentShards, updated_at: new Date().toISOString() })
-            .eq('id', currentUser.id);
+        // Сохраняем осколки с retry
+        const updateData = {
+            shards: currentShards,
+            updated_at: new Date().toISOString()
+        };
+        await saveWithRetry(updateData);
         if (playerData) playerData.shards = currentShards;
         updateUI();
         updateShopUI();
@@ -504,25 +579,23 @@ export async function buyClickDamage() {
     const newLevel = currentLevelUpgrade + 1;
     const newDamage = playerData.click_damage + 1;
     
-    const { error } = await supabaseClient
-        .from('players')
-        .update({
-            shards: newShards,
-            click_damage: newDamage,
-            click_damage_level: newLevel,
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', currentUser.id);
-    
-    if (error) {
-        console.error('Ошибка покупки:', error);
-        showToast('⚠️ Ошибка при покупке', 'warning');
-        return;
+    const updateData = {
+        shards: newShards,
+        click_damage: newDamage,
+        click_damage_level: newLevel,
+        updated_at: new Date().toISOString()
+    };
+    const success = await saveWithRetry(updateData);
+    if (!success) {
+        // fallback сохранён, обновляем локально
+        playerData.shards = newShards;
+        playerData.click_damage = newDamage;
+        playerData.click_damage_level = newLevel;
+    } else {
+        playerData.shards = newShards;
+        playerData.click_damage = newDamage;
+        playerData.click_damage_level = newLevel;
     }
-    
-    playerData.shards = newShards;
-    playerData.click_damage = newDamage;
-    playerData.click_damage_level = newLevel;
     
     updateUI();
     updateShopUI();
