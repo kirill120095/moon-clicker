@@ -2,15 +2,23 @@
 //  УТИЛИТЫ
 // ============================================================
 
-// Форматирование времени (секунды -> "X ч X мин X сек")
+// Форматирование времени (секунды -> "X дн X ч X мин X сек")
 export function formatTime(seconds) {
-    if (seconds < 60) return `${seconds} сек`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} мин`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} ч`;
-    const days = Math.floor(hours / 24);
-    return `${days} дн`;
+    if (seconds < 0) seconds = 0;
+    const totalSec = Math.round(seconds); // округляем до целых
+
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+
+    let parts = [];
+    if (days > 0) parts.push(`${days} дн`);
+    if (hours > 0) parts.push(`${hours} ч`);
+    if (minutes > 0) parts.push(`${minutes} мин`);
+    if (secs > 0 || parts.length === 0) parts.push(`${secs} сек`);
+
+    return parts.join(' ');
 }
 
 // HP для уровня (босс – BASE_HP * level, обычный – BASE_HP * (1+(level-1)*0.1))
