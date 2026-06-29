@@ -189,16 +189,16 @@ export async function handleLogin() {
         // Показываем игровую зону
         document.getElementById('authBlock').classList.add('hidden');
         document.getElementById('gameArea').classList.add('active');
-        
+
         // Показываем кнопку боковой панели
         const panelTrigger = document.getElementById('panelTrigger');
         if (panelTrigger) panelTrigger.style.display = 'flex';
-        
+
         // Закрываем панель при входе
         const sidePanel = document.getElementById('sidePanel');
         if (sidePanel) sidePanel.classList.remove('active');
         if (panelTrigger) panelTrigger.classList.remove('active');
-        
+
         // Переходим в игру
         initGame();
         showToast('✅ Добро пожаловать!', 'success');
@@ -228,7 +228,7 @@ export async function logout() {
     // Скрываем кнопку панели
     const panelTrigger = document.getElementById('panelTrigger');
     if (panelTrigger) panelTrigger.style.display = 'none';
-    
+
     // Закрываем панель
     const sidePanel = document.getElementById('sidePanel');
     if (sidePanel) sidePanel.classList.remove('active');
