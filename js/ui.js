@@ -6,10 +6,14 @@ import {
     initGameElements, 
     handleClick, 
     rollbackLevel, 
-    resetProgress 
+    resetProgress,
+    updateShardsDisplay,
+    updateShopUI,
+    buyClickDamage
 } from './game.js';
-import { levelLocked, setLevelLocked, setTestMode, currentUser } from './state.js';
+import { levelLocked, setLevelLocked, setTestMode, currentUser, playerData } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
+import { UPGRADE_COSTS } from './config.js';
 
 // SVG для замка (открытый / закрытый)
 const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
@@ -21,7 +25,7 @@ export function setLockIcon(btn, locked) {
     btn.classList.toggle('locked', locked);
 }
 
-let sidePanel, panelTrigger, lockToggleMain;
+let leftPanel, leftTrigger, rightPanel, rightTrigger, lockToggleMain;
 
 export function initUI() {
     // Авторизация
@@ -32,11 +36,17 @@ export function initUI() {
     const actionBtn = document.getElementById('actionBtn');
     const authMessageEl = document.getElementById('authMessage');
 
-    // Панели управления
-    sidePanel = document.getElementById('sidePanel');
-    panelTrigger = document.getElementById('panelTrigger');
-    const panelTabs = document.querySelectorAll('.side-panel .panel-tabs button');
-    const panelContents = document.querySelectorAll('.side-panel .panel-content');
+    // Левая панель (статистика)
+    leftPanel = document.getElementById('sidePanel');
+    leftTrigger = document.getElementById('panelTrigger');
+    
+    // Правая панель (магазин)
+    rightPanel = document.getElementById('shopPanel');
+    rightTrigger = document.getElementById('shopTrigger');
+    const closeShopBtn = document.getElementById('closeShopBtn');
+    
+    const panelTabs = document.querySelectorAll('.left-panel .panel-tabs button');
+    const panelContents = document.querySelectorAll('.left-panel .panel-content');
     const refreshDataBtn = document.getElementById('refreshDataBtn');
 
     // Настройки
@@ -100,12 +110,24 @@ export function initUI() {
         moonWrapper.addEventListener('click', handleClick);
     }
 
-    // --- ТРИГГЕР ПАНЕЛИ (СТРЕЛКА) – открывает/закрывает ---
-    if (panelTrigger) {
-        panelTrigger.addEventListener('click', togglePanel);
-        console.log('[UI] panelTrigger найден, слушатель повешен');
+    // --- ЛЕВАЯ ПАНЕЛЬ (статистика) ---
+    if (leftTrigger) {
+        leftTrigger.addEventListener('click', toggleLeftPanel);
+        console.log('[UI] leftTrigger найден');
     } else {
-        console.error('[UI] panelTrigger не найден!');
+        console.error('[UI] leftTrigger не найден!');
+    }
+
+    // --- ПРАВАЯ ПАНЕЛЬ (магазин) ---
+    if (rightTrigger) {
+        rightTrigger.addEventListener('click', toggleRightPanel);
+        console.log('[UI] rightTrigger найден');
+    } else {
+        console.error('[UI] rightTrigger не найден!');
+    }
+
+    if (closeShopBtn) {
+        closeShopBtn.addEventListener('click', () => toggleRightPanel(false));
     }
 
     // --- Кнопка обновления данных ---
@@ -117,7 +139,7 @@ export function initUI() {
         });
     }
 
-    // --- Переключение вкладок боковой панели ---
+    // --- Переключение вкладок левой панели ---
     panelTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             panelTabs.forEach(t => t.classList.remove('active'));
@@ -169,7 +191,6 @@ export function initUI() {
 
     // --- ЗАМОК – инициализация и обработчик ---
     if (lockToggleMain) {
-        // Устанавливаем начальную иконку (сразу, без задержки)
         setLockIcon(lockToggleMain, levelLocked);
         lockToggleMain.addEventListener('click', () => {
             const newState = !levelLocked;
@@ -199,16 +220,22 @@ export function initUI() {
         }
     });
 
+    // --- Кнопка покупки улучшения ---
+    const buyBtn = document.getElementById('buyClickDamageBtn');
+    if (buyBtn) {
+        buyBtn.addEventListener('click', buyClickDamage);
+    }
+
     // --- Восстанавливаем сохраненный режим луны ---
     const savedMode = localStorage.getItem('moonMode') || 'normal';
     applyMoonStyle(savedMode);
 
     // --- Синхронизируем состояние кнопки и панели ---
-    if (sidePanel && panelTrigger) {
-        if (sidePanel.classList.contains('active')) {
-            panelTrigger.classList.add('active');
+    if (leftPanel && leftTrigger) {
+        if (leftPanel.classList.contains('active')) {
+            leftTrigger.classList.add('active');
         } else {
-            panelTrigger.classList.remove('active');
+            leftTrigger.classList.remove('active');
         }
     }
 
@@ -239,24 +266,63 @@ export function setMode(mode) {
     if (authMessageEl) authMessageEl.textContent = '';
 }
 
-// Функция открытия/закрытия панели
-export function togglePanel() {
-    if (!sidePanel || !panelTrigger) {
-        console.error('[UI] togglePanel: элементы не найдены');
+// Функция открытия/закрытия левой панели
+export function toggleLeftPanel(show) {
+    if (!leftPanel || !leftTrigger) {
+        console.error('[UI] toggleLeftPanel: элементы не найдены');
         return;
     }
-    const isOpen = sidePanel.classList.contains('active');
-    if (isOpen) {
-        sidePanel.classList.remove('active');
-        panelTrigger.classList.remove('active');
-        console.log('[UI] Панель закрыта');
-    } else {
-        sidePanel.classList.add('active');
-        panelTrigger.classList.add('active');
+    const isOpen = leftPanel.classList.contains('active');
+    if (show === undefined) {
+        if (isOpen) {
+            leftPanel.classList.remove('active');
+            leftTrigger.classList.remove('active');
+        } else {
+            leftPanel.classList.add('active');
+            leftTrigger.classList.add('active');
+            if (currentUser) {
+                updateProfileAndLeaders(true);
+            }
+        }
+    } else if (show) {
+        leftPanel.classList.add('active');
+        leftTrigger.classList.add('active');
         if (currentUser) {
             updateProfileAndLeaders(true);
         }
-        console.log('[UI] Панель открыта');
+    } else {
+        leftPanel.classList.remove('active');
+        leftTrigger.classList.remove('active');
+    }
+}
+
+// Функция открытия/закрытия правой панели (магазин)
+export function toggleRightPanel(show) {
+    if (!rightPanel || !rightTrigger) {
+        console.error('[UI] toggleRightPanel: элементы не найдены');
+        return;
+    }
+    const isOpen = rightPanel.classList.contains('active');
+    if (show === undefined) {
+        if (isOpen) {
+            rightPanel.classList.remove('active');
+            rightTrigger.classList.remove('active');
+        } else {
+            rightPanel.classList.add('active');
+            rightTrigger.classList.add('active');
+            if (currentUser) {
+                updateShopUI();
+            }
+        }
+    } else if (show) {
+        rightPanel.classList.add('active');
+        rightTrigger.classList.add('active');
+        if (currentUser) {
+            updateShopUI();
+        }
+    } else {
+        rightPanel.classList.remove('active');
+        rightTrigger.classList.remove('active');
     }
 }
 
