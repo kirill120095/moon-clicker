@@ -1,1 +1,95 @@
+/* ============================================================
+   ГАЛАКТИКА, ЗВЁЗДЫ, ПЛАНЕТЫ
+   ============================================================ */
+.galaxy {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background: radial-gradient(ellipse at 20% 50%, #0d1b2a, #1b1f3a 60%, #0b0e1a);
+    overflow: hidden;
+}
 
+/* ---------- ЗВЁЗДЫ ---------- */
+.stars {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--duration) infinite alternate;
+}
+
+/* ---------- ПЛАНЕТЫ ---------- */
+.planet {
+    position: absolute;
+    border-radius: 50%;
+    box-shadow: 0 0 40px rgba(255, 180, 100, 0.2);
+    animation: orbit linear infinite;
+    pointer-events: none;
+}
+
+.planet::after {
+    content: '';
+    position: absolute;
+    width: 20%;
+    height: 20%;
+    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3), transparent);
+    border-radius: 50%;
+    top: 15%;
+    left: 20%;
+}
+
+.planet-1 {
+    width: 60px;
+    height: 60px;
+    top: 15%;
+    left: 85%;
+    background: radial-gradient(circle at 30% 30%, #ffb07c, #d98c5f);
+    animation-duration: 25s;
+    animation-name: orbit1;
+    box-shadow: 0 0 60px rgba(255, 150, 80, 0.2);
+}
+
+.planet-2 {
+    width: 40px;
+    height: 40px;
+    top: 75%;
+    left: 10%;
+    background: radial-gradient(circle at 30% 30%, #8fc7ff, #4a7db5);
+    animation-duration: 35s;
+    animation-name: orbit2;
+    box-shadow: 0 0 50px rgba(100, 180, 255, 0.2);
+}
+
+@keyframes orbit1 {
+    0% { transform: rotate(0deg) translateX(200px) rotate(0deg); }
+    100% { transform: rotate(360deg) translateX(200px) rotate(-360deg); }
+}
+
+@keyframes orbit2 {
+    0% { transform: rotate(0deg) translateX(-180px) rotate(0deg); }
+    100% { transform: rotate(360deg) translateX(-180px) rotate(-360deg); }
+}
+
+@media (max-width: 600px) {
+    .planet-1 { width: 40px; height: 40px; }
+    .planet-2 { width: 30px; height: 30px; }
+    @keyframes orbit1 {
+        0% { transform: rotate(0deg) translateX(100px) rotate(0deg); }
+        100% { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+    }
+    @keyframes orbit2 {
+        0% { transform: rotate(0deg) translateX(-90px) rotate(0deg); }
+        100% { transform: rotate(360deg) translateX(-90px) rotate(-360deg); }
+    }
+}
