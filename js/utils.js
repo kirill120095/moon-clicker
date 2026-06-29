@@ -111,7 +111,7 @@ export function collectStaticDeviceData() {
     };
 }
 
-// --- Toast-уведомления (исправлено: очищает контейнер перед добавлением) ---
+// --- Toast-уведомления ---
 let toastContainer = null;
 
 export function initToastContainer(container) {
