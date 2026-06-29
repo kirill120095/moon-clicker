@@ -13,10 +13,22 @@ export function formatTime(seconds) {
     const secs = totalSec % 60;
 
     let parts = [];
-    if (days > 0) parts.push(`${days} дн`);
-    if (hours > 0) parts.push(`${hours} ч`);
-    if (minutes > 0) parts.push(`${minutes} мин`);
-    if (secs > 0 || parts.length === 0) parts.push(`${secs} сек`);
+
+    // Логика: если есть дни, показываем только дни и часы (минуты и секунды опускаем)
+    if (days > 0) {
+        parts.push(`${days} дн`);
+        if (hours > 0) parts.push(`${hours} ч`);
+        // минуты и секунды не добавляем
+    } else if (hours > 0) {
+        parts.push(`${hours} ч`);
+        if (minutes > 0) parts.push(`${minutes} мин`);
+        // секунды не добавляем
+    } else if (minutes > 0) {
+        parts.push(`${minutes} мин`);
+        if (secs > 0) parts.push(`${secs} сек`);
+    } else {
+        parts.push(`${secs} сек`);
+    }
 
     return parts.join(' ');
 }
