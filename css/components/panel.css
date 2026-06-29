@@ -176,6 +176,142 @@
     display: block;
 }
 
+/* ---------- СТИЛИ ДЛЯ ПРОФИЛЯ ---------- */
+.profile-account {
+    background: rgba(255,255,255,0.03);
+    padding: 12px 16px;
+    border-radius: 16px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.profile-account p {
+    margin: 4px 0;
+    color: rgba(255,255,255,0.7);
+}
+.profile-account strong {
+    color: #f0e6d0;
+}
+.profile-section-title {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 15px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.profile-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.profile-row .label {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.9rem;
+}
+.profile-row .value {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.9rem;
+}
+.profile-bg-options {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+.profile-bg-options button {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 0.85rem;
+}
+.profile-bg-options button:hover {
+    background: rgba(255,255,255,0.06);
+}
+.profile-bg-options button.active {
+    background: rgba(255,215,150,0.15);
+    color: #f0e6d0;
+    border-color: rgba(255,215,150,0.2);
+}
+
+/* ---------- СТИЛИ ДЛЯ ЛИДЕРОВ ---------- */
+.leader-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.02);
+    transition: 0.2s;
+}
+.leader-item:hover {
+    background: rgba(255,255,255,0.04);
+}
+.leader-item.me {
+    background: rgba(255,215,150,0.08);
+    border: 1px solid rgba(255,215,150,0.1);
+}
+.leader-item .pos {
+    color: rgba(255,255,255,0.3);
+    font-size: 0.8rem;
+    min-width: 30px;
+}
+.leader-item .name {
+    color: #f0e6d0;
+    flex: 1;
+    font-size: 0.95rem;
+}
+.leader-item .stats {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.8rem;
+    display: flex;
+    gap: 10px;
+}
+.no-data {
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    padding: 20px 0;
+    font-size: 0.9rem;
+}
+
+/* ---------- СТИЛИ ДЛЯ НАСТРОЕК ---------- */
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.6);
+}
+.settings-row input[type="checkbox"] {
+    margin-left: auto;
+    accent-color: #f0e6d0;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+.btn-danger {
+    width: 100%;
+    padding: 12px;
+    border-radius: 30px;
+    border: 1px solid rgba(255,80,80,0.2);
+    background: rgba(255,80,80,0.1);
+    color: #ff6b6b;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.3s;
+    text-align: center;
+}
+.btn-danger:hover {
+    background: rgba(255,80,80,0.2);
+    transform: scale(1.02);
+}
+
 /* ---------- ФУТЕР ПАНЕЛЕЙ ---------- */
 .side-panel .panel-footer {
     margin-top: auto;
