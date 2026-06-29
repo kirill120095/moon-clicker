@@ -252,9 +252,9 @@ export async function handleLogin() {
             authMessageEl.textContent = '✅ Вход успешен!';
             authMessageEl.className = 'error';
         }
-        // Показываем кнопки
-        document.getElementById('statsToggleBtn').style.display = '';
-        document.getElementById('settingsBtn').style.display = '';
+        // Показываем кнопки (добавляем класс visible)
+        document.getElementById('statsToggleBtn').classList.add('visible');
+        document.getElementById('settingsBtn').classList.add('visible');
         // Переходим в игру
         setTimeout(initGame, 300);
     }
@@ -284,9 +284,9 @@ export async function logout() {
     const gameArea = document.getElementById('gameArea');
     if (authBlock) authBlock.classList.remove('hidden');
     if (gameArea) gameArea.classList.remove('active');
-    // Скрываем кнопки
-    document.getElementById('statsToggleBtn').style.display = 'none';
-    document.getElementById('settingsBtn').style.display = 'none';
+    // Скрываем кнопки (удаляем класс visible)
+    document.getElementById('statsToggleBtn').classList.remove('visible');
+    document.getElementById('settingsBtn').classList.remove('visible');
     // Обновим UI
     updateUI();
     showToast('👋 Вы вышли из аккаунта', 'info');
