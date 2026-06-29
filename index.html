@@ -94,7 +94,10 @@
                     </svg>
                 </button>
                 <button class="lock-toggle" id="lockToggleMain" title="Зафиксировать уровень">
-                    <!-- содержимое будет вставлено через JS -->
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
                 </button>
             </div>
 
@@ -111,12 +114,6 @@
 
     <!-- ---------- БОКОВАЯ ПАНЕЛЬ ---------- -->
     <div class="side-panel" id="sidePanel">
-        <button class="panel-close" id="panelClose">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-        </button>
         <div class="panel-tabs">
             <button class="active" data-tab="leaders">🏆</button>
             <button data-tab="profile">👤</button>
@@ -144,21 +141,15 @@
         </div>
         <div class="panel-content" id="panelSettings">
             <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Настройки</div>
-            <div class="section-title">🧪 Тестовый режим</div>
+            <div class="section-title">🧪</div>
             <div class="checkbox-row">
                 <label>
-                    <input type="checkbox" id="testModeCheckbox" /> 1 клик = 1 уровень (убивает любую луну)
+                    <input type="checkbox" id="testModeCheckbox" />
                 </label>
             </div>
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
                 <div class="section-title">🗑️ Прогресс</div>
-                <button class="btn-danger" id="resetProgressBtn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                    Сбросить прогресс
-                </button>
+                <button class="btn-danger" id="resetProgressBtn">Сбросить прогресс</button>
             </div>
         </div>
     </div>
