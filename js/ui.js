@@ -1,11 +1,11 @@
 // ============================================================
-//  УПРАВЛЕНИЕ UI (ИСПРАВЛЕНО)
+//  УПРАВЛЕНИЕ UI (ИСПРАВЛЕНО — ИМПОРТЫ)
 // ============================================================
 import { showToast } from './utils.js';
 import { handleLogin, handleRegister, logout } from './auth.js';
 import { handleClick, initGame, rollbackLevel, resetProgress, updateUI, initGameElements } from './game.js';
 import { updateProfileAndLeaders } from './profile.js';
-import { currentUser, levelLocked, setLevelLocked, setTestMode } from './state.js';
+import { currentUser, playerData, levelLocked, setLevelLocked, setTestMode } from './state.js';
 
 export function initUI() {
     initGameElements({
@@ -24,21 +24,16 @@ export function initUI() {
         lockToggleMain: document.getElementById('lockToggleMain')
     });
 
-    // Табы авторизации
     document.getElementById('tabLogin').addEventListener('click', () => setMode('login'));
     document.getElementById('tabRegister').addEventListener('click', () => setMode('register'));
 
     document.getElementById('actionBtn').addEventListener('click', () => {
-        if (document.getElementById('loginFields').classList.contains('hidden')) {
-            handleRegister();
-        } else {
-            handleLogin();
-        }
+        if (document.getElementById('loginFields').classList.contains('hidden')) handleRegister();
+        else handleLogin();
     });
 
     document.getElementById('logoutBtn').addEventListener('click', logout);
 
-    // Настройки
     document.getElementById('settingsBtn').addEventListener('click', () => {
         updateAccountInfo();
         document.getElementById('settingsModal').classList.add('active');
@@ -48,7 +43,6 @@ export function initUI() {
         document.getElementById('settingsModal').classList.remove('active');
     });
 
-    // Сброс прогресса
     document.getElementById('resetProgressBtn').addEventListener('click', () => {
         document.getElementById('confirmOverlay').classList.add('active');
     });
@@ -62,7 +56,6 @@ export function initUI() {
 
     document.getElementById('rollbackBtnMain').addEventListener('click', rollbackLevel);
 
-    // Lock
     document.getElementById('lockToggleMain').addEventListener('click', () => {
         const newState = !levelLocked;
         setLevelLocked(newState);
@@ -72,26 +65,21 @@ export function initUI() {
         btn.classList.toggle('locked', newState);
     });
 
-    // Test mode
     document.getElementById('testModeCheckbox').addEventListener('change', function() {
         setTestMode(this.checked);
         localStorage.setItem('testMode', this.checked);
     });
 
-    // Фоны
     document.getElementById('bgOptions').addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (btn) setMoonModeUI(btn.getAttribute('data-bg'));
     });
 
-    // Панель
     document.getElementById('statsToggleBtn').addEventListener('click', togglePanel);
     document.getElementById('panelClose').addEventListener('click', () => togglePanel(false));
 
-    // Клик по луне
     document.getElementById('moonWrapper').addEventListener('click', handleClick);
 
-    // Закрытие модалки
     document.getElementById('settingsModal').addEventListener('click', (e) => {
         if (e.target === document.getElementById('settingsModal')) {
             document.getElementById('settingsModal').classList.remove('active');
@@ -102,7 +90,8 @@ export function initUI() {
 }
 
 function updateAccountInfo() {
-    const nick = playerData?.username || currentUser?.user_metadata?.username || currentUser?.email?.split('@')[0] || 'Гость';
+    const nick = playerData?.username || currentUser?.user_metadata?.username || 
+                (currentUser?.email ? currentUser.email.split('@')[0] : 'Гость');
     const email = currentUser?.email || '-';
     document.getElementById('accountNickname').textContent = nick;
     document.getElementById('accountEmail').textContent = email;
