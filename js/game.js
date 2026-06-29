@@ -1,5 +1,5 @@
 // ============================================================
-//  ИГРОВАЯ ЛОГИКА (С DEBOUNCE + НАГРАДЫ)
+//  ИГРОВАЯ ЛОГИКА
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import {
@@ -41,7 +41,7 @@ export function initGameElements(elements) {
 
 export function updateUI() {
     if (!counterEl) return;
-    // Теперь счетчик показывает осколки
+    // Счетчик показывает осколки
     const shards = playerData?.shards || 0;
     counterEl.textContent = `💎 ${shards}`;
     
@@ -54,15 +54,14 @@ export function updateUI() {
     // HP бар уменьшается от кликов
     const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
     hpBar.style.width = Math.min(100, hpPercentValue) + '%';
+    console.log('[UI] HP bar:', hpPercentValue.toFixed(1) + '%');
 
-    // --- УМЕНЬШЕНИЕ ЛУНЫ (степенная) ---
+    // Уменьшение луны
     const hpRatio = Math.max(0, Math.min(1, moonHP / maxHP));
     const scale = Math.pow(hpRatio, 0.4) * 0.95 + 0.05;
-    if (moonInner) {
-        moonInner.style.transform = `scale(${scale})`;
-    }
+    if (moonInner) moonInner.style.transform = `scale(${scale})`;
 
-    // --- ТАЙМЕР БОССА ---
+    // Таймер босса
     if (isBossLevel(currentLevel, BOSS_INTERVAL) && moonHP > 0) {
         if (!bossTimerRunning) startBossTimer();
         if (timerBarContainer) timerBarContainer.classList.add('active');
@@ -79,8 +78,6 @@ export function updateUI() {
     else rollbackBtnMain.classList.remove('disabled');
 
     updateTimeDisplay();
-    
-    // Обновляем магазин
     updateShopUI();
 }
 
@@ -94,24 +91,15 @@ export function updateShopUI() {
     const buyBtn = document.getElementById('buyClickDamageBtn');
     const priceEl = document.getElementById('clickDamagePrice');
     const levelEl = document.getElementById('clickDamageLevel');
-    
     if (!buyBtn || !priceEl || !levelEl) return;
     
     const level = currentLevel || 1;
     const isUnlocked = level >= 5;
-    
-    // Обновляем сообщение о разблокировке
     if (shopLockMessage) {
-        if (isUnlocked) {
-            shopLockMessage.textContent = '✅ Магазин доступен';
-            shopLockMessage.style.color = 'rgba(80, 255, 150, 0.5)';
-        } else {
-            shopLockMessage.textContent = `🔒 Доступно с 5 уровня (сейчас ${level})`;
-            shopLockMessage.style.color = 'rgba(255, 255, 255, 0.3)';
-        }
+        shopLockMessage.textContent = isUnlocked ? '✅ Магазин доступен' : `🔒 Доступно с 5 уровня (сейчас ${level})`;
+        shopLockMessage.style.color = isUnlocked ? 'rgba(80, 255, 150, 0.5)' : 'rgba(255, 255, 255, 0.3)';
     }
     
-    // Стоимость следующего улучшения
     const currentLevelUpgrade = playerData?.click_damage_level || 0;
     const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
     const currentDamage = playerData?.click_damage || 1;
@@ -120,45 +108,33 @@ export function updateShopUI() {
     priceEl.textContent = `${cost} 💎`;
     levelEl.textContent = `Ур. ${currentLevelUpgrade} (${currentDamage}→${nextDamage})`;
     
-    // Доступность кнопки
     const hasEnoughShards = (playerData?.shards || 0) >= cost;
     buyBtn.disabled = !isUnlocked || !hasEnoughShards || currentLevelUpgrade >= 10;
     buyBtn.textContent = currentLevelUpgrade >= 10 ? 'MAX' : 'Купить';
-    
-    if (!isUnlocked) {
-        buyBtn.classList.add('locked');
-    } else {
-        buyBtn.classList.remove('locked');
-    }
+    buyBtn.classList.toggle('locked', !isUnlocked);
 }
 
-// --- Покупка улучшения ---
 export async function buyClickDamage() {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
         return;
     }
-    
     const level = currentLevel || 1;
     if (level < 5) {
         showToast('🔒 Магазин доступен с 5 уровня', 'warning');
         return;
     }
-    
     const currentLevelUpgrade = playerData.click_damage_level || 0;
     if (currentLevelUpgrade >= 10) {
         showToast('⚠️ Максимальный уровень улучшения', 'warning');
         return;
     }
-    
     const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
-    
     if ((playerData.shards || 0) < cost) {
         showToast(`⚠️ Недостаточно осколков! Нужно ${cost}`, 'warning');
         return;
     }
     
-    // Списываем осколки и повышаем уровень
     const newShards = (playerData.shards || 0) - cost;
     const newLevel = currentLevelUpgrade + 1;
     const newDamage = playerData.click_damage + 1;
@@ -179,7 +155,6 @@ export async function buyClickDamage() {
         return;
     }
     
-    // Обновляем локальные данные
     playerData.shards = newShards;
     playerData.click_damage = newDamage;
     playerData.click_damage_level = newLevel;
@@ -189,10 +164,10 @@ export async function buyClickDamage() {
     showToast(`✅ Улучшение куплено! Урон: ${newDamage}`, 'success');
 }
 
+// --- Таймер босса ---
 function startBossTimer() {
     if (bossTimerRunning) return;
     if (bossTimerInterval) clearInterval(bossTimerInterval);
-
     setBossTimer(BOSS_TIMER);
     setBossTimerRunning(true);
     updateTimerBar();
@@ -223,24 +198,16 @@ function clearBossTimer() {
 }
 
 function updateTimerBar() {
-    // Таймер уменьшается за секунды - полоска визуально уменьшается
+    // Таймер уменьшается за секунды
     const percent = Math.max(0, (bossTimer / BOSS_TIMER) * 100);
     if (timerBar) timerBar.style.width = percent + '%';
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
+    console.log('[UI] Timer bar:', percent.toFixed(1) + '%');
 }
 
-// --- DEBOUNCE для сохранения прогресса ---
-export function debouncedUpdateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(async () => {
-        await updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP);
-    }, 300);
-}
-
-// --- СОХРАНЕНИЕ ПРОГРЕССА ---
+// --- Сохранение ---
 export async function updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (!playerId || !currentUser) return false;
-
     const updateData = {
         total_clicks: newTotal,
         last_click_at: clickTimestamp,
@@ -249,21 +216,13 @@ export async function updateProgress(playerId, newTotal, clickTimestamp, newLeve
         moon_hp: Math.round(newMoonHP),
         updated_at: new Date().toISOString()
     };
-
     try {
-        const { error } = await supabaseClient
-            .from('players')
-            .update(updateData)
-            .eq('id', playerId);
-
+        const { error } = await supabaseClient.from('players').update(updateData).eq('id', playerId);
         if (error) throw error;
-
-        if (playerData) {
-            Object.assign(playerData, updateData);
-        }
+        if (playerData) Object.assign(playerData, updateData);
         return true;
     } catch (err) {
-        console.error('Ошибка сохранения прогресса:', err);
+        console.error('Ошибка сохранения:', err);
         showToast('⚠️ Ошибка сохранения прогресса', 'warning');
         return false;
     }
@@ -285,19 +244,13 @@ export async function resetProgress() {
     try {
         const { error } = await supabaseClient.from('players')
             .update({ 
-                total_clicks: 0, 
-                total_seconds_played: 0, 
-                level: 1, 
-                moon_hp: Math.round(BASE_HP),
-                shards: 0,
-                click_damage: 1,
-                click_damage_level: 0,
+                total_clicks: 0, total_seconds_played: 0, level: 1, 
+                moon_hp: Math.round(BASE_HP), shards: 0,
+                click_damage: 1, click_damage_level: 0,
                 updated_at: new Date().toISOString()
             })
             .eq('id', currentUser.id);
-
         if (error) throw error;
-
         const { data: freshData } = await supabaseClient.from('players').select('*').eq('id', currentUser.id).single();
         if (freshData) {
             setPlayerData(freshData);
@@ -307,7 +260,6 @@ export async function resetProgress() {
             setMoonHP(BASE_HP);
             setMaxHP(BASE_HP);
         }
-
         clearBossTimer();
         setLevelLocked(false);
         const lockBtn = document.getElementById('lockToggleMain');
@@ -384,9 +336,7 @@ export function initGame() {
 export async function handleClick(e) {
     if (!currentUser || moonHP <= 0) return;
 
-    // --- Урон с учётом улучшения ---
     const damage = playerData?.click_damage || 1;
-    
     setClickCount(clickCount + 1);
     if (testMode) {
         setMoonHP(0);
@@ -412,36 +362,22 @@ export async function handleClick(e) {
             return;
         }
         
-        // --- ПОБЕДА! Рассчитываем награду ---
         const isBoss = isBossLevel(currentLevel, BOSS_INTERVAL);
         let shardReward = Math.floor(currentLevel / 10) + 1;
-        if (isBoss) {
-            shardReward = Math.floor(currentLevel / 10) * 10 * 5;
-        }
+        if (isBoss) shardReward = Math.floor(currentLevel / 10) * 10 * 5;
         const multiplier = playerData?.shard_multiplier || 1;
         shardReward = Math.floor(shardReward * multiplier);
-        
         const currentShards = (playerData?.shards || 0) + shardReward;
         
-        // Показываем уведомление о награде
         showToast(`💎 +${shardReward} лунных осколков!`, 'success', 2000);
         
-        // Сохраняем осколки
-        const { error: updateError } = await supabaseClient
-            .from('players')
-            .update({
-                shards: currentShards,
-                updated_at: new Date().toISOString()
-            })
+        await supabaseClient.from('players')
+            .update({ shards: currentShards, updated_at: new Date().toISOString() })
             .eq('id', currentUser.id);
-        
-        if (!updateError && playerData) {
-            playerData.shards = currentShards;
-        }
+        if (playerData) playerData.shards = currentShards;
         updateUI();
         updateShopUI();
         
-        // --- ПЕРЕХОД НА СЛЕДУЮЩИЙ УРОВЕНЬ ---
         const newLevel = currentLevel + 1;
         setCurrentLevel(newLevel);
         const newMax = getMaxHPForLevel(newLevel, BASE_HP, BOSS_INTERVAL);
