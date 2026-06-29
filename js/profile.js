@@ -21,6 +21,7 @@ export async function updateProfileAndLeaders(force = false) {
         const totalBosses = Math.floor((data.level || 1) / 10);
         const timePlayed = data.total_seconds_played || 0;
         const title = getTitle(data.level || 1);
+        const shards = data.shards || 0;
         let avgTime = '—';
         if (data.total_clicks > 1 && data.last_click_at && data.first_click_at) {
             const first = new Date(data.first_click_at).getTime();
@@ -40,6 +41,7 @@ export async function updateProfileAndLeaders(force = false) {
             <div class="profile-row"><span class="label">Звание</span><span class="value" style="color:#d4af37; font-weight:bold;">${title}</span></div>
             <div class="profile-row"><span class="label">Текущий уровень</span><span class="value">${data.level || 1}</span></div>
             <div class="profile-row"><span class="label">Всего кликов</span><span class="value">${data.total_clicks || 0}</span></div>
+            <div class="profile-row"><span class="label">Лунных осколков</span><span class="value" style="color:#ffd700;">${shards} 💎</span></div>
             <div class="profile-row"><span class="label">Общее время</span><span class="value">${formatTime(timePlayed)}</span></div>
             <div class="profile-row"><span class="label">Убито боссов</span><span class="value">${totalBosses}</span></div>
             <div class="profile-row"><span class="label">Ср. время между кликами</span><span class="value">${avgTime}</span></div>
