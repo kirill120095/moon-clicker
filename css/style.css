@@ -163,6 +163,7 @@ body {
 .panel-trigger svg {
     width: 28px;
     height: 28px;
+    transition: transform 0.3s ease;
 }
 .panel-trigger.active {
     right: 320px;
@@ -216,30 +217,11 @@ body {
     background: rgba(255,255,255,0.2);
     border-radius: 4px;
 }
-.side-panel .panel-close {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 1.8rem;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.side-panel .panel-close:hover {
-    color: rgba(255, 255, 255, 0.7);
-    transform: rotate(90deg);
-}
-.side-panel .panel-close svg {
-    width: 22px;
-    height: 22px;
-}
 .side-panel .panel-tabs {
     display: flex;
     gap: 10px;
     justify-content: center;
-    margin: 35px 0 15px;
+    margin: 15px 0 15px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     padding-bottom: 10px;
 }
@@ -254,10 +236,6 @@ body {
     border-radius: 20px;
     display: flex;
     align-items: center;
-}
-.side-panel .panel-tabs button svg {
-    width: 28px;
-    height: 28px;
 }
 .side-panel .panel-tabs button.active {
     background: rgba(255, 215, 150, 0.15);
@@ -318,7 +296,7 @@ body {
 #panelSettings .checkbox-row {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 10px;
     margin: 8px 0;
 }
@@ -356,10 +334,6 @@ body {
 #panelSettings .btn-danger:hover {
     background: rgba(255, 80, 80, 0.25);
     transform: scale(1.02);
-}
-#panelSettings .btn-danger svg {
-    width: 20px;
-    height: 20px;
 }
 
 /* ---------- ПРОЧИЕ ЭЛЕМЕНТЫ ---------- */
@@ -422,6 +396,18 @@ body {
     border-top: 1px solid rgba(255,255,255,0.05);
     padding-top: 12px;
 }
+.profile-account {
+    margin: 10px 0;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.profile-account p {
+    margin: 4px 0;
+}
+.profile-account strong {
+    color: #f0e6d0;
+}
 .profile-bg-options {
     display: flex;
     gap: 10px;
@@ -445,20 +431,7 @@ body {
     background: rgba(255,215,150,0.25);
     border-color: rgba(255,215,150,0.5);
 }
-.profile-account {
-    margin: 10px 0;
-    padding: 10px 0;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.profile-account p {
-    margin: 4px 0;
-}
-.profile-account strong {
-    color: #f0e6d0;
-}
 
-/* ---------- АВТОРИЗАЦИЯ ---------- */
 .auth-form {
     display: flex;
     flex-direction: column;
@@ -565,7 +538,6 @@ body {
     display: none !important;
 }
 
-/* ---------- ИГРОВАЯ ЗОНА ---------- */
 .game-area {
     display: none;
 }
@@ -702,28 +674,28 @@ body {
     flex-wrap: wrap;
     margin: 12px 0 8px;
 }
-.btn-rollback {
-    padding: 6px 14px;
+.btn-rollback,
+.lock-toggle {
+    padding: 6px 12px;
     border-radius: 30px;
     border: 1px solid rgba(255, 215, 150, 0.2);
     background: rgba(255, 255, 255, 0.05);
     color: #f0e6d0;
-    font-size: 1.4rem;
-    cursor: pointer;
     transition: 0.3s;
     backdrop-filter: blur(5px);
-    line-height: 1;
-    opacity: 0.5;
-    pointer-events: auto;
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
+    cursor: pointer;
 }
-.btn-rollback:hover {
-    opacity: 0.8;
+.btn-rollback:hover,
+.lock-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
     transform: scale(1.05);
 }
-.btn-rollback:active {
+.btn-rollback:active,
+.lock-toggle:active {
     transform: scale(0.95);
 }
 .btn-rollback.disabled {
@@ -731,36 +703,14 @@ body {
     pointer-events: none;
     cursor: default;
 }
-.btn-rollback svg {
-    width: 24px;
-    height: 24px;
-}
-
-.lock-toggle {
-    font-size: 1.4rem;
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 215, 150, 0.2);
-    color: #f0e6d0;
-    transition: 0.3s;
-    line-height: 1;
-    padding: 6px 12px;
-    border-radius: 30px;
-    backdrop-filter: blur(5px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.lock-toggle:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.05);
-}
-.lock-toggle.locked {
-    color: #f0e6d0;
-}
+.btn-rollback svg,
 .lock-toggle svg {
     width: 24px;
     height: 24px;
+}
+.lock-toggle.active {
+    background: rgba(255, 215, 150, 0.15);
+    border-color: rgba(255, 215, 150, 0.4);
 }
 
 .bars {
