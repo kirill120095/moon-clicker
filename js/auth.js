@@ -4,7 +4,7 @@
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
 import { showToast, collectStaticDeviceData } from './utils.js';
-import { initGame, updateUI } from './game.js';
+import { initGame, updateUI, timeUpdateIntervalRef, autoSaveIntervalRef } from './game.js';
 import { setMode } from './ui.js';
 import { BASE_HP } from './config.js';
 
@@ -264,9 +264,9 @@ export async function handleLogin() {
 export async function logout() {
     // Показываем индикатор
     showToast('⏳ Выход...', 'info', 1000);
-    // Останавливаем таймеры (они будут остановлены в game.js, но мы вызовем дополнительно)
-    if (window.timeUpdateInterval) clearInterval(window.timeUpdateInterval);
-    if (window.autoSaveInterval) clearInterval(window.autoSaveInterval);
+    // Останавливаем таймеры
+    if (timeUpdateIntervalRef) clearInterval(timeUpdateIntervalRef);
+    if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
 
     await supabaseClient.auth.signOut();
     setUser(null);
