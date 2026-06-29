@@ -22,8 +22,8 @@ function setLockIcon(btn, locked) {
 
 // DOM-элементы
 let tabLogin, tabRegister, loginFields, registerFields, actionBtn, authMessageEl;
-let sidePanel, statsToggleBtn, settingsBtn, panelClose, panelTabs, panelContents, refreshDataBtn;
-let settingsModal, closeSettingsBtn, testModeCheckbox, resetProgressBtn;
+let sidePanel, panelTrigger, panelClose, panelTabs, panelContents, refreshDataBtn;
+let testModeCheckbox, resetProgressBtn;
 let confirmOverlay, confirmYes, confirmNo;
 let moonWrapper;
 
@@ -38,16 +38,13 @@ export function initUI() {
 
     // Панели управления
     sidePanel = document.getElementById('sidePanel');
-    statsToggleBtn = document.getElementById('statsToggleBtn');
-    settingsBtn = document.getElementById('settingsBtn');
+    panelTrigger = document.getElementById('panelTrigger');
     panelClose = document.getElementById('panelClose');
     panelTabs = document.querySelectorAll('.side-panel .panel-tabs button');
     panelContents = document.querySelectorAll('.side-panel .panel-content');
     refreshDataBtn = document.getElementById('refreshDataBtn');
 
     // Настройки
-    settingsModal = document.getElementById('settingsModal');
-    closeSettingsBtn = document.getElementById('closeSettingsBtn');
     testModeCheckbox = document.getElementById('testModeCheckbox');
     resetProgressBtn = document.getElementById('resetProgressBtn');
 
@@ -134,14 +131,15 @@ function initEvents() {
         moonWrapper.addEventListener('click', handleClick);
     }
 
-    // Кнопки боковой панели (Статистика/Лидеры)
-    statsToggleBtn.addEventListener('click', () => {
-        sidePanel.classList.toggle('active');
-        if (sidePanel.classList.contains('active')) {
-            updateProfileAndLeaders(true);
-        }
-    });
-    panelClose.addEventListener('click', () => sidePanel.classList.remove('active'));
+    // Триггер панели (стрелка)
+    if (panelTrigger) {
+        panelTrigger.addEventListener('click', togglePanel);
+    }
+
+    // Кнопка закрытия панели
+    if (panelClose) {
+        panelClose.addEventListener('click', () => togglePanel(false));
+    }
 
     // Кнопка ручного обновления данных 🔄
     if (refreshDataBtn) {
@@ -152,49 +150,51 @@ function initEvents() {
         });
     }
 
-    // Переключение вкладок внутри боковой панели (Лидеры / Профиль)
+    // Переключение вкладок внутри боковой панели
     panelTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             panelTabs.forEach(t => t.classList.remove('active'));
             panelContents.forEach(c => c.classList.remove('active'));
 
             tab.classList.add('active');
-            
             const tabType = tab.getAttribute('data-tab');
-            if (tabType === 'leaders' || tab.textContent.includes('🏆')) {
-                document.getElementById('panelLeaders').classList.add('active');
-            } else {
-                document.getElementById('panelProfile').classList.add('active');
+            const panelId = `panel${tabType.charAt(0).toUpperCase() + tabType.slice(1)}`;
+            const panel = document.getElementById(panelId);
+            if (panel) panel.classList.add('active');
+
+            // При переключении на вкладку "Настройки" показываем панель настроек
+            if (tabType === 'settings') {
+                // ничего особенного не делаем, просто показываем
             }
 
-            // Мягкое обновление данных при клике на вкладку без лагов UI
+            // Мягкое обновление данных при клике на вкладку
             updateProfileAndLeaders(true);
         });
     });
 
-    // Открытие/закрытие настроек
-    settingsBtn.addEventListener('click', () => {
-        settingsModal.classList.add('active');
-        const savedMode = localStorage.getItem('moonMode') || 'normal';
-        applyMoonStyle(savedMode);
-    });
-    closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
-
     // Тестовый режим
-    testModeCheckbox.addEventListener('change', (e) => {
-        setTestMode(e.target.checked);
-        localStorage.setItem('testMode', e.target.checked);
-    });
+    if (testModeCheckbox) {
+        testModeCheckbox.addEventListener('change', (e) => {
+            setTestMode(e.target.checked);
+            localStorage.setItem('testMode', e.target.checked);
+        });
+    }
 
     // Сброс прогресса
-    resetProgressBtn.addEventListener('click', () => {
-        confirmOverlay.classList.add('active');
-    });
-    confirmNo.addEventListener('click', () => confirmOverlay.classList.remove('active'));
-    confirmYes.addEventListener('click', () => {
-        confirmOverlay.classList.remove('active');
-        resetProgress();
-    });
+    if (resetProgressBtn) {
+        resetProgressBtn.addEventListener('click', () => {
+            confirmOverlay.classList.add('active');
+        });
+    }
+    if (confirmNo) {
+        confirmNo.addEventListener('click', () => confirmOverlay.classList.remove('active'));
+    }
+    if (confirmYes) {
+        confirmYes.addEventListener('click', () => {
+            confirmOverlay.classList.remove('active');
+            resetProgress();
+        });
+    }
 
     // Игровой контроль
     const rollbackBtnMain = document.getElementById('rollbackBtnMain');
@@ -220,17 +220,44 @@ function initEvents() {
         logoutBtn.addEventListener('click', logout);
     }
 
-    // Выбор фона луны в профиле (обработчики добавляются через делегирование)
+    // Выбор фона луны в профиле (обработчики через делегирование)
     document.addEventListener('click', (e) => {
         const target = e.target.closest('.profile-bg-options button');
         if (target) {
             const mode = target.getAttribute('data-bg');
             localStorage.setItem('moonMode', mode);
             applyMoonStyle(mode);
-            // Обновляем профиль, чтобы активная кнопка подсветилась
             updateProfileAndLeaders(true);
         }
     });
+}
+
+// Функция открытия/закрытия панели
+export function togglePanel(show) {
+    const isOpen = sidePanel.classList.contains('active');
+    if (show === undefined) {
+        // переключение
+        if (isOpen) {
+            sidePanel.classList.remove('active');
+            panelTrigger.classList.remove('active');
+        } else {
+            sidePanel.classList.add('active');
+            panelTrigger.classList.add('active');
+            // При открытии обновляем данные
+            if (currentUser) {
+                updateProfileAndLeaders(true);
+            }
+        }
+    } else if (show) {
+        sidePanel.classList.add('active');
+        panelTrigger.classList.add('active');
+        if (currentUser) {
+            updateProfileAndLeaders(true);
+        }
+    } else {
+        sidePanel.classList.remove('active');
+        panelTrigger.classList.remove('active');
+    }
 }
 
 export function applyMoonStyle(mode) {
