@@ -1,11 +1,11 @@
 // ============================================================
-//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД (ИСПРАВЛЕНО)
+//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
 import { showToast, collectStaticDeviceData } from './utils.js';
 import { initGame, updateUI, timeUpdateIntervalRef, autoSaveIntervalRef } from './game.js';
-import { setMode, togglePanel } from './ui.js';
+import { setMode } from './ui.js';
 import { BASE_HP } from './config.js';
 
 let authMessageEl = null;
@@ -85,18 +85,21 @@ export async function handleRegister() {
     if (!email || !nickname || !password) {
         if (authMessageEl) {
             authMessageEl.textContent = '❌ Заполните все поля';
+            authMessageEl.className = 'error';
         }
         return;
     }
     if (password.length < 6) {
         if (authMessageEl) {
             authMessageEl.textContent = '❌ Пароль минимум 6 символов';
+            authMessageEl.className = 'error';
         }
         return;
     }
 
     if (authMessageEl) {
         authMessageEl.textContent = '⏳ Регистрация...';
+        authMessageEl.className = 'error';
     }
     if (actionBtn) actionBtn.disabled = true;
 
@@ -109,6 +112,7 @@ export async function handleRegister() {
     if (error) {
         if (authMessageEl) {
             authMessageEl.textContent = `❌ ${error.message}`;
+            authMessageEl.className = 'error';
         }
         return;
     }
@@ -119,15 +123,16 @@ export async function handleRegister() {
         setPlayerData(player);
         if (authMessageEl) {
             authMessageEl.textContent = '✅ Регистрация успешна! Войдите.';
+            authMessageEl.className = 'error';
         }
         setMode('login');
         showToast('✅ Регистрация успешна!', 'success');
     }
 }
 
-// Вход (исправлено)
+// Вход
 export async function handleLogin() {
-    const loginType = document.querySelector('input[name="loginType"]:checked')?.value || 'email';
+    const loginType = document.querySelector('input[name="loginType"]:checked').value;
     let email = '';
 
     if (loginType === 'email') {
@@ -143,12 +148,14 @@ export async function handleLogin() {
     if (!email || !password) {
         if (authMessageEl) {
             authMessageEl.textContent = '❌ Заполните все поля';
+            authMessageEl.className = 'error';
         }
         return;
     }
 
     if (authMessageEl) {
         authMessageEl.textContent = '⏳ Вход...';
+        authMessageEl.className = 'error';
     }
     if (actionBtn) actionBtn.disabled = true;
 
@@ -159,6 +166,7 @@ export async function handleLogin() {
     if (error) {
         if (authMessageEl) {
             authMessageEl.textContent = `❌ ${error.message}`;
+            authMessageEl.className = 'error';
         }
         return;
     }
@@ -173,25 +181,25 @@ export async function handleLogin() {
         setTotalSecondsPlayed(player.total_seconds_played || 0);
         setCurrentLevel(player.level || 1);
         setMoonHP(player.moon_hp || BASE_HP);
-        setMaxHP(player.moon_hp || BASE_HP);
 
         if (authMessageEl) {
             authMessageEl.textContent = '✅ Вход успешен!';
+            authMessageEl.className = 'error';
         }
-
-        // Убедимся, что игра инициализируется после небольшой задержки
-        setTimeout(() => {
-            // Скрываем форму входа и показываем игру
-            const authBlock = document.getElementById('authBlock');
-            const gameArea = document.getElementById('gameArea');
-            if (authBlock) authBlock.classList.add('hidden');
-            if (gameArea) gameArea.classList.add('active');
-
-            // Вызываем инициализацию игры
-            initGame();
-            // Закрываем панель, если она открыта
-            togglePanel(false);
-        }, 300);
+        // Показываем игровую зону
+        document.getElementById('authBlock').classList.add('hidden');
+        document.getElementById('gameArea').classList.add('active');
+        // Переходим в игру (без перезагрузки)
+        initGame();
+        // Показываем панель, если была открыта
+        const sidePanel = document.getElementById('sidePanel');
+        if (sidePanel && sidePanel.classList.contains('active')) {
+            // обновим данные при входе
+            import('./profile.js').then(module => {
+                module.updateProfileAndLeaders(true);
+            });
+        }
+        showToast('✅ Добро пожаловать!', 'success');
     }
 }
 
@@ -212,14 +220,9 @@ export async function logout() {
     setCurrentLevel(1);
     setMoonHP(BASE_HP);
 
-    // Закрываем панель
-    togglePanel(false);
-
-    // Показываем форму авторизации
-    const authBlock = document.getElementById('authBlock');
-    const gameArea = document.getElementById('gameArea');
-    if (authBlock) authBlock.classList.remove('hidden');
-    if (gameArea) gameArea.classList.remove('active');
+    document.getElementById('sidePanel').classList.remove('active');
+    document.getElementById('gameArea').classList.remove('active');
+    document.getElementById('authBlock').classList.remove('hidden');
 
     setMode('login');
     updateUI();
