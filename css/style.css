@@ -142,25 +142,37 @@ body {
     top: 50%;
     transform: translateY(-50%);
     z-index: 60;
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: none;
+    border-radius: 30px 0 0 30px;
     padding: 14px 8px 14px 12px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .panel-trigger:hover {
-    color: #f0e6d0;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05) translateY(-50%);
+}
+.panel-trigger:active {
+    transform: scale(0.95) translateY(-50%);
 }
 .panel-trigger svg {
     width: 28px;
     height: 28px;
 }
+/* Открытое состояние – убираем фон */
 .panel-trigger.active {
     right: 320px;
+    background: none;
+    border: none;
     padding: 14px 12px 14px 8px;
 }
 .panel-trigger.active svg {
@@ -895,22 +907,6 @@ body {
     animation: levelUp 0.8s ease-out forwards;
 }
 
-@media (max-width: 700px) {
-    .container { padding: 30px; }
-    .moon-wrapper { width: 260px; height: 260px; }
-    .counter { font-size: 2.8rem; padding: 8px 20px; min-width: 120px; }
-    .subtitle { font-size: 2rem; letter-spacing: 4px; }
-    .side-panel { width: 280px; }
-}
-@media (max-width: 450px) {
-    .moon-wrapper { width: 200px; height: 200px; }
-    .counter { font-size: 2.2rem; padding: 6px 15px; min-width: 90px; }
-    .subtitle { font-size: 1.6rem; }
-    .container { padding: 20px; }
-    .side-panel { width: 260px; padding: 15px; }
-    .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
-}
-
 /* ---------- ФИКС ОТОБРАЖЕНИЯ ЛУНЫ И HP ---------- */
 .moon-wrapper {
     display: inline-block !important;
@@ -971,4 +967,20 @@ body {
     font-size: 0.8rem !important;
     min-width: 70px !important;
     text-align: left !important;
+}
+
+@media (max-width: 700px) {
+    .container { padding: 30px; }
+    .moon-wrapper { width: 260px; height: 260px; }
+    .counter { font-size: 2.8rem; padding: 8px 20px; min-width: 120px; }
+    .subtitle { font-size: 2rem; letter-spacing: 4px; }
+    .side-panel { width: 280px; }
+}
+@media (max-width: 450px) {
+    .moon-wrapper { width: 200px; height: 200px; }
+    .counter { font-size: 2.2rem; padding: 6px 15px; min-width: 90px; }
+    .subtitle { font-size: 1.6rem; }
+    .container { padding: 20px; }
+    .side-panel { width: 260px; padding: 15px; }
+    .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
 }
