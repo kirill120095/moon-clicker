@@ -764,10 +764,10 @@ body {
     text-align: left;
 }
 .timer-bar-container {
-    display: none;
+    display: none !important;
 }
 .timer-bar-container.active {
-    display: flex;
+    display: flex !important;
 }
 
 .logout-btn {
@@ -974,7 +974,7 @@ body {
     text-align: left !important;
 }
 
-/* ---------- ПРАВИЛО ДЛЯ СКРЫТИЯ ТАЙМЕРА НА ОБЫЧНЫХ УРОВНЯХ ---------- */
+/* ---------- ТАЙМЕР ВИДЕН ТОЛЬКО НА БОССАХ ---------- */
 .timer-bar-container {
     display: none !important;
 }
