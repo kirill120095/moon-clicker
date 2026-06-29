@@ -55,9 +55,11 @@ async function checkAuth() {
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('gameArea').classList.add('active');
 
-            // Показываем кнопку боковой панели (стрелку)
+            // Показываем кнопку боковой панели
             const panelTrigger = document.getElementById('panelTrigger');
-            if (panelTrigger) panelTrigger.style.display = 'flex';
+            if (panelTrigger) {
+                panelTrigger.classList.add('visible');
+            }
 
             // Закрываем панель и сбрасываем кнопку ПРИ ВХОДЕ
             const sidePanel = document.getElementById('sidePanel');
@@ -71,7 +73,9 @@ async function checkAuth() {
             document.getElementById('gameArea').classList.remove('active');
 
             const panelTrigger = document.getElementById('panelTrigger');
-            if (panelTrigger) panelTrigger.style.display = 'none';
+            if (panelTrigger) {
+                panelTrigger.classList.remove('visible');
+            }
 
             const sidePanel = document.getElementById('sidePanel');
             if (sidePanel) sidePanel.classList.remove('active');
