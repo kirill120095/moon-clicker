@@ -1,11 +1,11 @@
 // ============================================================
-//  УТИЛИТЫ (ИСПРАВЛЕННОЕ ФОРМАТИРОВАНИЕ ВРЕМЕНИ)
+//  УТИЛИТЫ
 // ============================================================
 
 // Форматирование времени (секунды -> "X дн X ч X мин X сек")
 export function formatTime(seconds) {
     if (seconds < 0) seconds = 0;
-    const totalSec = Math.round(seconds); // округляем до целых
+    const totalSec = Math.round(seconds);
 
     const days = Math.floor(totalSec / 86400);
     const hours = Math.floor((totalSec % 86400) / 3600);
