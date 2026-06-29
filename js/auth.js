@@ -222,8 +222,12 @@ export async function logout() {
     setCurrentLevel(1);
     setMoonHP(BASE_HP);
 
-    // Закрываем панель
-    document.getElementById('sidePanel').classList.remove('active');
+    // Закрываем панель и сбрасываем кнопку
+    const sidePanel = document.getElementById('sidePanel');
+    const panelTrigger = document.getElementById('panelTrigger');
+    if (sidePanel) sidePanel.classList.remove('active');
+    if (panelTrigger) panelTrigger.classList.remove('active');
+
     document.getElementById('gameArea').classList.remove('active');
     document.getElementById('authBlock').classList.remove('hidden');
 
