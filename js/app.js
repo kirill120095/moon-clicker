@@ -80,16 +80,20 @@ async function checkAuth() {
 
             const leftTrigger = document.getElementById('panelTrigger');
             const rightTrigger = document.getElementById('shopTrigger');
-            if (leftTrigger) leftTrigger.classList.remove('visible');
-            if (rightTrigger) rightTrigger.classList.remove('visible');
+            if (leftTrigger) {
+                leftTrigger.classList.remove('visible');
+                leftTrigger.classList.remove('active');
+            }
+            if (rightTrigger) {
+                rightTrigger.classList.remove('visible');
+                rightTrigger.classList.remove('active');
+            }
 
             const sidePanel = document.getElementById('sidePanel');
             if (sidePanel) sidePanel.classList.remove('active');
-            if (leftTrigger) leftTrigger.classList.remove('active');
 
             const shopPanel = document.getElementById('shopPanel');
             if (shopPanel) shopPanel.classList.remove('active');
-            if (rightTrigger) rightTrigger.classList.remove('active');
         }
     } catch (err) {
         console.error('Auth check failed:', err);
