@@ -24,11 +24,25 @@ export let bossTimerRunning = false;
 export let levelLocked = false;
 export let testMode = false;
 
+// Луны
+export let activeMoon = 'normal';
+export let ownedMoons = ['normal'];
+
 // ============================================================
 //  СЕТТЕРЫ
 // ============================================================
 export function setUser(user) { currentUser = user; }
-export function setPlayerData(data) { playerData = data; }
+export function setPlayerData(data) { 
+    playerData = data;
+    if (data) {
+        if (data.active_moon) activeMoon = data.active_moon;
+        if (data.owned_moons) {
+            try { ownedMoons = JSON.parse(data.owned_moons); } catch(e) { ownedMoons = ['normal']; }
+        } else if (data.owned_moons === undefined) {
+            ownedMoons = ['normal'];
+        }
+    }
+}
 export function setClickCount(value) { clickCount = value; }
 export function setTotalSecondsPlayed(value) { totalSecondsPlayed = value; }
 export function setCurrentLevel(value) { currentLevel = value; }
@@ -40,3 +54,16 @@ export function setTestMode(value) { testMode = value; }
 export function setBossTimerRunning(value) { bossTimerRunning = value; }
 export function setBossTimer(value) { bossTimer = value; }
 export function setBossTimerInterval(value) { bossTimerInterval = value; }
+
+export function setActiveMoon(moonId) {
+    activeMoon = moonId;
+    if (playerData) {
+        playerData.active_moon = moonId;
+    }
+}
+export function setOwnedMoons(moons) {
+    ownedMoons = moons;
+    if (playerData) {
+        playerData.owned_moons = JSON.stringify(moons);
+    }
+}
