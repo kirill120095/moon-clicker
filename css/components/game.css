@@ -254,3 +254,12 @@
     width: 22px;
     height: 22px;
 }
+
+/* ---------- ОСКОЛКИ ---------- */
+.shards-display {
+    color: #ffd700;
+    font-size: 1.4rem;
+    margin: 5px 0 10px;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    letter-spacing: 1px;
+}
