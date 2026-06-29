@@ -46,14 +46,14 @@ async function checkAuth() {
             setMoonHP(BASE_HP);
             setMaxHP(BASE_HP);
         }
-        // Показываем игровые кнопки
-        document.getElementById('statsToggleBtn').style.display = '';
-        document.getElementById('settingsBtn').style.display = '';
+        // Показываем игровые кнопки (добавляем класс visible)
+        document.getElementById('statsToggleBtn').classList.add('visible');
+        document.getElementById('settingsBtn').classList.add('visible');
         initGame();
     } else {
-        // Скрываем кнопки, пока не авторизованы
-        document.getElementById('statsToggleBtn').style.display = 'none';
-        document.getElementById('settingsBtn').style.display = 'none';
+        // Скрываем кнопки (удаляем класс visible)
+        document.getElementById('statsToggleBtn').classList.remove('visible');
+        document.getElementById('settingsBtn').classList.remove('visible');
         // Показываем форму входа
         document.getElementById('authBlock').classList.remove('hidden');
         document.getElementById('gameArea').classList.remove('active');
