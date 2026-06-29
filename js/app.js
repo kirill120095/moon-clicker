@@ -55,31 +55,39 @@ async function checkAuth() {
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('gameArea').classList.add('active');
 
-            // Показываем кнопку боковой панели
-            const panelTrigger = document.getElementById('panelTrigger');
-            if (panelTrigger) {
-                panelTrigger.classList.add('visible');
-            }
+            // Показываем кнопки боковых панелей
+            const leftTrigger = document.getElementById('panelTrigger');
+            const rightTrigger = document.getElementById('shopTrigger');
+            if (leftTrigger) leftTrigger.classList.add('visible');
+            if (rightTrigger) rightTrigger.classList.add('visible');
 
-            // Закрываем панель и сбрасываем кнопку ПРИ ВХОДЕ
+            // Закрываем панели и сбрасываем кнопки
             const sidePanel = document.getElementById('sidePanel');
             if (sidePanel) sidePanel.classList.remove('active');
-            if (panelTrigger) panelTrigger.classList.remove('active');
+            if (leftTrigger) leftTrigger.classList.remove('active');
+
+            const shopPanel = document.getElementById('shopPanel');
+            if (shopPanel) shopPanel.classList.remove('active');
+            if (rightTrigger) rightTrigger.classList.remove('active');
 
             initGame();
         } else {
-            // Гостевой режим – скрываем кнопку панели
+            // Гостевой режим – скрываем кнопки панелей
             document.getElementById('authBlock').classList.remove('hidden');
             document.getElementById('gameArea').classList.remove('active');
 
-            const panelTrigger = document.getElementById('panelTrigger');
-            if (panelTrigger) {
-                panelTrigger.classList.remove('visible');
-            }
+            const leftTrigger = document.getElementById('panelTrigger');
+            const rightTrigger = document.getElementById('shopTrigger');
+            if (leftTrigger) leftTrigger.classList.remove('visible');
+            if (rightTrigger) rightTrigger.classList.remove('visible');
 
             const sidePanel = document.getElementById('sidePanel');
             if (sidePanel) sidePanel.classList.remove('active');
-            if (panelTrigger) panelTrigger.classList.remove('active');
+            if (leftTrigger) leftTrigger.classList.remove('active');
+
+            const shopPanel = document.getElementById('shopPanel');
+            if (shopPanel) shopPanel.classList.remove('active');
+            if (rightTrigger) rightTrigger.classList.remove('active');
         }
     } catch (err) {
         console.error('Auth check failed:', err);
