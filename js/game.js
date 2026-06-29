@@ -1,5 +1,5 @@
 // ============================================================
-//  ИГРОВАЯ ЛОГИКА (С DEBOUNCE)
+//  ИГРОВАЯ ЛОГИКА (С DEBOUNCE) — ЛИНЕЙНОЕ УМЕНЬШЕНИЕ
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import {
@@ -51,22 +51,10 @@ export function updateUI() {
     const hpPercentValue = Math.max(0, (moonHP / maxHP) * 100);
     hpBar.style.width = Math.min(100, hpPercentValue) + '%';
 
-    // --- НОВАЯ ЛОГИКА УМЕНЬШЕНИЯ ЛУНЫ ---
-    let scale = 1;
-    if (moonHP > 0) {
-        // От 1 до 0.05 при приближении к 0 HP
-        // Чем меньше HP, тем меньше луна
-        const hpRatio = moonHP / maxHP; // от 0 до 1
-        // Используем степенную функцию для более плавного уменьшения в конце
-        // При hpRatio = 0.1 (10% HP) масштаб будет ~0.3
-        // При hpRatio = 0.01 (1% HP) масштаб будет ~0.1
-        scale = Math.pow(hpRatio, 0.6) * 0.95 + 0.05;
-        // Гарантируем, что масштаб не меньше 0.01 и не больше 1
-        scale = Math.max(0.01, Math.min(1, scale));
-    } else {
-        scale = 0; // при 0 HP луна полностью исчезает
-    }
-    
+    // --- ЛИНЕЙНОЕ УМЕНЬШЕНИЕ ЛУНЫ (ПРОПОРЦИОНАЛЬНО HP) ---
+    // Масштаб = оставшееся HP / максимальное HP
+    // 100% HP = 100% размера, 50% HP = 50% размера, 0% HP = 0% размера
+    const scale = Math.max(0, Math.min(1, moonHP / maxHP));
     if (moonInner) {
         moonInner.style.transform = `scale(${scale})`;
     }
@@ -258,7 +246,6 @@ export function initGame() {
     if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
     autoSaveIntervalRef = setInterval(saveTimeOnly, 30000);
 
-    // Безопасная инициализация сохраненного стиля луны из памяти
     const savedMode = localStorage.getItem('moonMode') || 'normal';
     applyMoonStyle(savedMode);
 
@@ -266,7 +253,6 @@ export function initGame() {
     setLevelLocked(savedLock);
     const lockToggle = document.getElementById('lockToggleMain');
     if (lockToggle) {
-        // Импортируем setLockIcon для инициализации
         import('./ui.js').then(module => {
             module.setLockIcon(lockToggle, savedLock);
         });
