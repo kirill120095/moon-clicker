@@ -33,7 +33,7 @@
     border-radius: 4px;
 }
 
-/* Левая панель */
+/* Левая панель (статистика) */
 .left-panel {
     left: 0;
     border-left: none;
@@ -44,7 +44,7 @@
     transform: translateX(0);
 }
 
-/* Правая панель */
+/* Правая панель (магазин) */
 .right-panel {
     right: 0;
     border-right: none;
@@ -94,6 +94,9 @@
 .left-trigger.active {
     left: 320px;
 }
+.left-trigger.active svg {
+    transform: rotate(180deg);
+}
 
 /* Правый триггер */
 .right-trigger {
@@ -105,19 +108,35 @@
 .right-trigger.active {
     right: 320px;
 }
+.right-trigger.active svg {
+    transform: rotate(180deg);
+}
 
 @media (max-width: 700px) {
-    .left-trigger.active { left: 280px; }
-    .right-trigger.active { right: 280px; }
-    .side-panel { width: 280px; }
+    .left-trigger.active {
+        left: 280px;
+    }
+    .right-trigger.active {
+        right: 280px;
+    }
+    .side-panel {
+        width: 280px;
+    }
 }
 @media (max-width: 450px) {
-    .left-trigger.active { left: 260px; }
-    .right-trigger.active { right: 260px; }
-    .side-panel { width: 260px; padding: 15px; }
+    .left-trigger.active {
+        left: 260px;
+    }
+    .right-trigger.active {
+        right: 260px;
+    }
+    .side-panel {
+        width: 260px;
+        padding: 15px;
+    }
 }
 
-/* ---------- ВКЛАДКИ ---------- */
+/* ---------- ВКЛАДКИ ПАНЕЛЕЙ ---------- */
 .side-panel .panel-tabs {
     display: flex;
     gap: 10px;
@@ -135,6 +154,8 @@
     transition: 0.3s;
     padding: 4px 12px;
     border-radius: 20px;
+    display: flex;
+    align-items: center;
 }
 .side-panel .panel-tabs button.active {
     background: rgba(255, 215, 150, 0.15);
@@ -155,7 +176,7 @@
     display: block;
 }
 
-/* ---------- ПРОФИЛЬ ---------- */
+/* ---------- СТИЛИ ДЛЯ ПРОФИЛЯ ---------- */
 .profile-account {
     background: rgba(255,255,255,0.03);
     padding: 12px 16px;
@@ -217,7 +238,39 @@
     border-color: rgba(255,215,150,0.2);
 }
 
-/* ---------- ЛИДЕРЫ ---------- */
+/* ---------- ЛУНЫ В ПРОФИЛЕ ---------- */
+.profile-moons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+.profile-moon-btn {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 0.85rem;
+    text-align: left;
+    white-space: nowrap;
+}
+.profile-moon-btn:hover {
+    background: rgba(255,255,255,0.06);
+}
+.profile-moon-btn.active {
+    background: rgba(255,215,150,0.15);
+    color: #f0e6d0;
+    border-color: rgba(255,215,150,0.3);
+}
+.profile-moon-btn.active span {
+    color: #4ecdc4;
+    font-weight: normal;
+}
+
+/* ---------- СТИЛИ ДЛЯ ЛИДЕРОВ ---------- */
 .leader-item {
     display: flex;
     align-items: center;
@@ -258,7 +311,7 @@
     font-size: 0.9rem;
 }
 
-/* ---------- НАСТРОЙКИ ---------- */
+/* ---------- СТИЛИ ДЛЯ НАСТРОЕК ---------- */
 .settings-row {
     display: flex;
     align-items: center;
@@ -390,29 +443,4 @@
     background: rgba(255, 80, 80, 0.1);
     color: #ff6b6b;
     cursor: not-allowed;
-}
-/* ---------- ЛУНЫ В ПРОФИЛЕ ---------- */
-.profile-moons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-}
-.profile-moon-btn {
-    padding: 6px 12px;
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.03);
-    color: rgba(255,255,255,0.6);
-    cursor: pointer;
-    transition: 0.3s;
-    font-size: 0.85rem;
-}
-.profile-moon-btn:hover {
-    background: rgba(255,255,255,0.06);
-}
-.profile-moon-btn.active {
-    background: rgba(255,215,150,0.15);
-    color: #f0e6d0;
-    border-color: rgba(255,215,150,0.3);
 }
