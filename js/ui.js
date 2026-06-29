@@ -135,10 +135,15 @@ function setMoonModeUI(mode) {
     const moonInner = document.getElementById('moonInner');
     if (mode === 'blood') {
         container.classList.add('blood-mode');
-        moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #ff4444, #cc0000)';
+        if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #ff4444, #cc0000)';
     } else {
         container.classList.remove('blood-mode');
-        moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
+        if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
     }
     localStorage.setItem('moonMode', mode);
+
+    // Подсветка активной кнопки
+    document.querySelectorAll('.bg-options button').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-bg') === mode);
+    });
 }
