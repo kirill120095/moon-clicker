@@ -1,1 +1,267 @@
+/* ============================================================
+   БОКОВАЯ ПАНЕЛЬ
+   ============================================================ */
 
+/* ---------- ТРИГГЕР ПАНЕЛИ (СТРЕЛКА) ---------- */
+.panel-trigger {
+    position: fixed !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 60 !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: none !important;
+    border-radius: 30px 0 0 30px !important;
+    padding: 14px 8px 14px 12px !important;
+    cursor: pointer !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    transition: all 0.3s ease !important;
+    backdrop-filter: blur(8px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+.panel-trigger.visible {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+.panel-trigger:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) translateY(-50%) !important;
+}
+.panel-trigger:active {
+    transform: scale(0.95) translateY(-50%) !important;
+}
+.panel-trigger svg {
+    width: 28px !important;
+    height: 28px !important;
+}
+.panel-trigger.active {
+    right: 320px !important;
+    background: none !important;
+    border: none !important;
+    padding: 14px 12px 14px 8px !important;
+}
+.panel-trigger.active svg {
+    transform: rotate(180deg) !important;
+}
+@media (max-width: 700px) {
+    .panel-trigger.active {
+        right: 280px !important;
+    }
+}
+@media (max-width: 450px) {
+    .panel-trigger.active {
+        right: 260px !important;
+    }
+}
+
+/* ---------- САМА ПАНЕЛЬ ---------- */
+.side-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 320px;
+    background: rgba(15, 20, 35, 0.95);
+    backdrop-filter: blur(12px);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.8);
+    z-index: 50;
+    padding: 20px;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+}
+.side-panel.active {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.side-panel::-webkit-scrollbar {
+    width: 4px;
+}
+.side-panel::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+}
+
+/* ---------- ВКЛАДКИ ---------- */
+.side-panel .panel-tabs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 10px;
+}
+.side-panel .panel-tabs button {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.3);
+    transition: 0.3s;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+}
+.side-panel .panel-tabs button.active {
+    background: rgba(255, 215, 150, 0.15);
+    color: #f0e6d0;
+}
+.side-panel .panel-tabs button:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ---------- КОНТЕНТ ---------- */
+.side-panel .panel-content {
+    display: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+    text-align: left;
+    flex: 1;
+}
+.side-panel .panel-content.active {
+    display: block;
+}
+
+/* ---------- ФУТЕР (кнопка обновления) ---------- */
+.side-panel .panel-footer {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    text-align: center;
+}
+.side-panel .panel-footer .panel-refresh-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.side-panel .panel-footer .panel-refresh-btn:hover {
+    color: #f0e6d0;
+    background: rgba(255,255,255,0.05);
+}
+.side-panel .panel-footer .panel-refresh-btn svg {
+    width: 22px;
+    height: 22px;
+}
+.side-panel .panel-footer .panel-refresh-btn.spinning {
+    animation: spin 0.4s linear;
+}
+
+/* ---------- ЛИДЕРЫ ---------- */
+.leader-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.leader-item .pos {
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 300;
+    min-width: 28px;
+}
+.leader-item .name {
+    flex: 1;
+    color: #f0e6d0;
+}
+.leader-item .stats {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+    text-align: right;
+}
+.leader-item .stats span {
+    display: block;
+}
+.leader-item.me {
+    background: rgba(255, 215, 150, 0.08);
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin: 4px -6px;
+}
+.no-data {
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* ---------- ПРОФИЛЬ ---------- */
+.profile-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.9rem;
+}
+.profile-row .label {
+    color: rgba(255,255,255,0.4);
+}
+.profile-row .value {
+    color: #f0e6d0;
+    font-weight: 400;
+}
+.profile-section-title {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 12px 0 6px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding-top: 12px;
+}
+.profile-bg-options {
+    display: flex;
+    gap: 10px;
+    margin: 8px 0 15px;
+}
+.profile-bg-options button {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: #f0e6d0;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.profile-bg-options button:hover {
+    background: rgba(255,215,150,0.15);
+    border-color: rgba(255,215,150,0.3);
+}
+.profile-bg-options button.active {
+    background: rgba(255,215,150,0.25);
+    border-color: rgba(255,215,150,0.5);
+}
+.profile-account {
+    margin: 10px 0;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.profile-account p {
+    margin: 4px 0;
+}
+.profile-account strong {
+    color: #f0e6d0;
+}
