@@ -18,7 +18,6 @@
 
     <!-- ---------- ИГРОВОЙ КОНТЕЙНЕР ---------- -->
     <div class="container" id="app">
-        <!-- Убраны кнопки настроек и статистики сверху -->
         <div class="subtitle">Кликни по луне</div>
 
         <!-- АВТОРИЗАЦИЯ -->
@@ -120,8 +119,12 @@
         <div class="panel-tabs">
             <button class="active" data-tab="leaders">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M6 9l4-4 4 4 4-4 4 4-4 4 4 4-4 4-4-4-4 4-4-4 4-4z" />
-                    <path d="M6 9l4 4 4-4 4 4-4 4-4-4-4 4z" />
+                    <path d="M5 3h14v4a7 7 0 0 1-14 0V3z" />
+                    <path d="M5 7a7 7 0 0 0 14 0" />
+                    <path d="M12 11v6" />
+                    <path d="M9 17h6" />
+                    <path d="M6 3v1" />
+                    <path d="M18 3v1" />
                 </svg>
             </button>
             <button data-tab="profile">
@@ -159,7 +162,6 @@
         </div>
         <div class="panel-content" id="panelSettings">
             <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Настройки</div>
-            <!-- Содержимое из модалки настроек -->
             <div class="section-title">🧪 Тестовый режим</div>
             <div class="checkbox-row">
                 <label>
@@ -186,7 +188,7 @@
         </svg>
     </button>
 
-    <!-- ---------- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ (оставляем, т.к. используется) ---------- -->
+    <!-- ---------- КАСТОМНОЕ ПОДТВЕРЖДЕНИЕ ---------- -->
     <div class="confirm-overlay" id="confirmOverlay">
         <div class="confirm-box">
             <p id="confirmMessage">Вы уверены, что хотите сбросить весь прогресс? Это действие необратимо.</p>
