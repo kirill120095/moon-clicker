@@ -196,7 +196,6 @@ export async function handleLogin() {
         if (panelTrigger) panelTrigger.classList.remove('active');
         // Переходим в игру
         initGame();
-        // Обновляем панель, если она открыта (но она закрыта)
         showToast('✅ Добро пожаловать!', 'success');
     }
 }
