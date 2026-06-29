@@ -27,7 +27,8 @@
     background-position: center !important;
     box-shadow: 0 0 60px rgba(255, 215, 150, 0.4), 0 0 120px rgba(255, 215, 150, 0.2), inset -35px -35px 90px rgba(0, 0, 0, 0.4), inset 35px 35px 90px rgba(255, 255, 255, 0.3) !important;
     transition: box-shadow 0.5s ease, transform 0.15s ease !important;
-    transform: scale(1) !important;
+    /* Убираем !important у transform, чтобы JS мог менять масштаб */
+    transform: scale(1);
     will-change: transform !important;
 }
 .bars {
