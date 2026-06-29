@@ -1,5 +1,5 @@
 // ============================================================
-//  ИГРОВАЯ ЛОГИКА (ИСПРАВЛЕННОЕ СОХРАНЕНИЕ)
+//  ИГРОВАЯ ЛОГИКА (С DEBOUNCE)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import {
@@ -111,7 +111,15 @@ function updateTimerBar() {
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
 }
 
-// --- СОХРАНЕНИЕ ПРОГРЕССА (исправлено) ---
+// --- DEBOUNCE для сохранения прогресса ---
+export function debouncedUpdateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(async () => {
+        await updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP);
+    }, 300);
+}
+
+// --- СОХРАНЕНИЕ ПРОГРЕССА ---
 export async function updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (!playerId || !currentUser) return false;
 
@@ -178,8 +186,9 @@ export async function resetProgress() {
         setLevelLocked(false);
         const lockBtn = document.getElementById('lockToggleMain');
         if (lockBtn) {
-            lockBtn.textContent = '🔓';
-            lockBtn.classList.remove('locked');
+            // Обновляем иконку замка
+            const { setLockIcon } = await import('./ui.js');
+            setLockIcon(lockBtn, false);
         }
         localStorage.setItem('levelLocked', 'false');
         updateUI();
@@ -235,8 +244,10 @@ export function initGame() {
     setLevelLocked(savedLock);
     const lockToggle = document.getElementById('lockToggleMain');
     if (lockToggle) {
-        lockToggle.textContent = savedLock ? '🔒' : '🔓';
-        lockToggle.classList.toggle('locked', savedLock);
+        // Импортируем setLockIcon для инициализации
+        import('./ui.js').then(module => {
+            module.setLockIcon(lockToggle, savedLock);
+        });
     }
 
     const savedTest = localStorage.getItem('testMode') === 'true';
@@ -283,13 +294,13 @@ export async function handleClick(e) {
         }
         updateUI();
         const now = new Date().toISOString();
-        await updateProgress(currentUser.id, clickCount, now, newLevel, moonHP);
+        await debouncedUpdateProgress(currentUser.id, clickCount, now, newLevel, moonHP);
         updateProfileAndLeaders();
         return;
     }
 
     updateUI();
     const now = new Date().toISOString();
-    await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
+    await debouncedUpdateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
     updateProfileAndLeaders();
 }
