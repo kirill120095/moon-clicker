@@ -11,7 +11,7 @@ export const BASE_HP = 100 * HP_SCALE;       // базовое HP для 1-го 
 // --- Стоимость улучшений в магазине ---
 export const UPGRADE_COSTS = {
     clickDamage: {
-        base: 50,
-        multiplier: 1.8  // 50, 90, 162, 292...
+        base: 50,        // начальная цена
+        multiplier: 1.8  // множитель цены за каждый уровень (50, 90, 162, 292...)
     }
 };
