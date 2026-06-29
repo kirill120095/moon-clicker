@@ -1,5 +1,5 @@
 // ============================================================
-//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ФИНАЛЬНАЯ ВЕРСИЯ)
+//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ОБНОВЛЕННАЯ ВЕРСИЯ)
 // ============================================================
 import { handleLogin, handleRegister, logout } from './auth.js';
 import { 
@@ -13,7 +13,7 @@ import { updateProfileAndLeaders } from './profile.js';
 
 // DOM-элементы
 let tabLogin, tabRegister, loginFields, registerFields, actionBtn, authMessageEl;
-let sidePanel, statsToggleBtn, settingsBtn, panelClose, panelTabs, panelContents;
+let sidePanel, statsToggleBtn, settingsBtn, panelClose, panelTabs, panelContents, refreshDataBtn;
 let settingsModal, closeSettingsBtn, bgOptions, testModeCheckbox, resetProgressBtn;
 let confirmOverlay, confirmYes, confirmNo;
 let moonWrapper;
@@ -34,6 +34,7 @@ export function initUI() {
     panelClose = document.getElementById('panelClose');
     panelTabs = document.querySelectorAll('.side-panel .panel-tabs button');
     panelContents = document.querySelectorAll('.side-panel .panel-content');
+    refreshDataBtn = document.getElementById('refreshDataBtn');
 
     // Настройки
     settingsModal = document.getElementById('settingsModal');
@@ -72,7 +73,7 @@ export function initUI() {
     // Навешивание событий
     initEvents();
     
-    // Принудительно восстанавливаем сохраненный режим луны из памяти
+    // Восстанавливаем сохраненный режим луны из памяти
     const savedMode = localStorage.getItem('moonMode') || 'normal';
     applyMoonStyle(savedMode);
 }
@@ -134,7 +135,19 @@ function initEvents() {
     });
     panelClose.addEventListener('click', () => sidePanel.classList.remove('active'));
 
-    // Исправленное переключение вкладок внутри боковой панели (Лидеры 🏆 / Профиль 👤)
+    // Кнопка ручного обновления данных 🔄
+    if (refreshDataBtn) {
+        refreshDataBtn.addEventListener('click', () => {
+            // Крутая анимация вращения иконки при клике
+            refreshDataBtn.style.transform = 'rotate(360deg)';
+            setTimeout(() => { refreshDataBtn.style.transform = 'rotate(0deg)'; }, 300);
+            
+            // Принудительно скачиваем свежие данные
+            updateProfileAndLeaders(true);
+        });
+    }
+
+    // Переключение вкладок внутри боковой панели (Лидеры 🏆 / Профиль 👤) + автообновление
     panelTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             panelTabs.forEach(t => t.classList.remove('active'));
@@ -142,20 +155,21 @@ function initEvents() {
 
             tab.classList.add('active');
             
-            // Проверяем data-tab или иконки/текст кнопки
             const tabType = tab.getAttribute('data-tab');
             if (tabType === 'leaders' || tab.textContent.includes('🏆')) {
                 document.getElementById('panelLeaders').classList.add('active');
             } else {
                 document.getElementById('panelProfile').classList.add('active');
             }
+
+            // Идея пользователя: обновлять данные при смене вкладок!
+            updateProfileAndLeaders(true);
         });
     });
 
     // Открытие/закрытие настроек
     settingsBtn.addEventListener('click', () => {
         settingsModal.classList.add('active');
-        // Обновляем данные аккаунта в модалке
         if (currentUser) {
             document.getElementById('accountNickname').textContent = currentUser.user_metadata?.username || 'Игрок';
             document.getElementById('accountEmail').textContent = currentUser.email || '-';
@@ -165,7 +179,7 @@ function initEvents() {
     });
     closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
 
-    // Выбор фона луны (Обычная / Кровавая)
+    // Выбор фонда луны (Обычная / Кровавая)
     bgOptions.forEach(btn => {
         btn.addEventListener('click', () => {
             const mode = btn.getAttribute('data-bg');
@@ -214,7 +228,8 @@ function initEvents() {
     }
 }
 
-// Универсальная функция применения стиля луны и подсветки кнопок
+// Универсальная функция применения стиля луны и подсветки кнопок (больше не сбрасывается)
+// Экспортируем, чтобы файл game.js тоже мог её безопасно вызывать при старте
 export function applyMoonStyle(mode) {
     const container = document.getElementById('app');
     const moonInner = document.getElementById('moonInner');
@@ -227,7 +242,6 @@ export function applyMoonStyle(mode) {
         if (moonInner) moonInner.style.backgroundImage = 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)';
     }
 
-    // Синхронизация подсветки кнопок
     const buttons = document.querySelectorAll('#bgOptions button');
     buttons.forEach(btn => {
         if (btn.getAttribute('data-bg') === mode) {
