@@ -1,5 +1,5 @@
 // ============================================================
-//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (С ИКОНКАМИ SVG)
+//  ИНТЕРФЕЙС И ОБРАБОТЧИКИ СОБЫТИЙ (ИСПРАВЛЕННЫЙ)
 // ============================================================
 import { handleLogin, handleRegister, logout } from './auth.js';
 import { 
@@ -44,7 +44,7 @@ export function initUI() {
     panelContents = document.querySelectorAll('.side-panel .panel-content');
     refreshDataBtn = document.getElementById('refreshDataBtn');
 
-    // Настройки (в панели)
+    // Настройки
     testModeCheckbox = document.getElementById('testModeCheckbox');
     resetProgressBtn = document.getElementById('resetProgressBtn');
 
@@ -85,17 +85,17 @@ export function initUI() {
 
 export function setMode(mode) {
     if (mode === 'login') {
-        tabLogin.classList.add('active');
-        tabRegister.classList.remove('active');
-        loginFields.classList.remove('hidden');
-        registerFields.classList.add('hidden');
-        actionBtn.textContent = 'Войти';
+        if (tabLogin) tabLogin.classList.add('active');
+        if (tabRegister) tabRegister.classList.remove('active');
+        if (loginFields) loginFields.classList.remove('hidden');
+        if (registerFields) registerFields.classList.add('hidden');
+        if (actionBtn) actionBtn.textContent = 'Войти';
     } else {
-        tabLogin.classList.remove('active');
-        tabRegister.classList.add('active');
-        loginFields.classList.add('hidden');
-        registerFields.classList.remove('hidden');
-        actionBtn.textContent = 'Зарегистрироваться';
+        if (tabLogin) tabLogin.classList.remove('active');
+        if (tabRegister) tabRegister.classList.add('active');
+        if (loginFields) loginFields.classList.add('hidden');
+        if (registerFields) registerFields.classList.remove('hidden');
+        if (actionBtn) actionBtn.textContent = 'Зарегистрироваться';
     }
     if (authMessageEl) authMessageEl.textContent = '';
 }
@@ -108,7 +108,7 @@ function initEvents() {
     // Кнопка действия авторизации
     if (actionBtn) {
         actionBtn.addEventListener('click', () => {
-            if (tabLogin.classList.contains('active')) {
+            if (tabLogin && tabLogin.classList.contains('active')) {
                 handleLogin();
             } else {
                 handleRegister();
@@ -166,7 +166,6 @@ function initEvents() {
             const panel = document.getElementById(panelId);
             if (panel) panel.classList.add('active');
 
-            // Мягкое обновление данных при клике на вкладку
             updateProfileAndLeaders(true);
         });
     });
@@ -182,15 +181,17 @@ function initEvents() {
     // Сброс прогресса
     if (resetProgressBtn) {
         resetProgressBtn.addEventListener('click', () => {
-            confirmOverlay.classList.add('active');
+            if (confirmOverlay) confirmOverlay.classList.add('active');
         });
     }
     if (confirmNo) {
-        confirmNo.addEventListener('click', () => confirmOverlay.classList.remove('active'));
+        confirmNo.addEventListener('click', () => {
+            if (confirmOverlay) confirmOverlay.classList.remove('active');
+        });
     }
     if (confirmYes) {
         confirmYes.addEventListener('click', () => {
-            confirmOverlay.classList.remove('active');
+            if (confirmOverlay) confirmOverlay.classList.remove('active');
             resetProgress();
         });
     }
@@ -203,7 +204,6 @@ function initEvents() {
 
     const lockToggleMain = document.getElementById('lockToggleMain');
     if (lockToggleMain) {
-        // Устанавливаем начальное состояние
         setLockIcon(lockToggleMain, levelLocked);
         lockToggleMain.addEventListener('click', () => {
             const newState = !levelLocked;
@@ -242,7 +242,6 @@ export function togglePanel(show) {
         } else {
             sidePanel.classList.add('active');
             panelTrigger.classList.add('active');
-            // При открытии обновляем данные
             if (currentUser) {
                 updateProfileAndLeaders(true);
             }
