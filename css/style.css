@@ -135,57 +135,56 @@ body {
     display: none !important;
 }
 
-/* ---------- ТРИГГЕР ПАНЕЛИ (СТРЕЛКА) ---------- */
+/* ---------- КНОПКА БОКОВОЙ ПАНЕЛИ (СТРЕЛКА) - ФИКС ---------- */
 .panel-trigger {
-    position: fixed;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 60;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-right: none;
-    border-radius: 30px 0 0 30px;
-    padding: 14px 8px 14px 12px;
-    cursor: pointer;
-    color: rgba(255, 255, 255, 0.4);
-    transition: all 0.3s ease;
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: fixed !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 60 !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: none !important;
+    border-radius: 30px 0 0 30px !important;
+    padding: 14px 8px 14px 12px !important;
+    cursor: pointer !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    transition: all 0.3s ease !important;
+    backdrop-filter: blur(8px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 .panel-trigger:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05) translateY(-50%);
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) translateY(-50%) !important;
 }
 .panel-trigger:active {
-    transform: scale(0.95) translateY(-50%);
+    transform: scale(0.95) translateY(-50%) !important;
 }
 .panel-trigger svg {
-    width: 28px;
-    height: 28px;
+    width: 28px !important;
+    height: 28px !important;
 }
-/* Открытое состояние – убираем фон */
 .panel-trigger.active {
-    right: 320px;
-    background: none;
-    border: none;
-    padding: 14px 12px 14px 8px;
+    right: 320px !important;
+    background: none !important;
+    border: none !important;
+    padding: 14px 12px 14px 8px !important;
 }
 .panel-trigger.active svg {
-    transform: rotate(180deg);
+    transform: rotate(180deg) !important;
 }
 @media (max-width: 700px) {
     .panel-trigger.active {
-        right: 280px;
+        right: 280px !important;
     }
 }
 @media (max-width: 450px) {
     .panel-trigger.active {
-        right: 260px;
+        right: 260px !important;
     }
 }
 
@@ -968,58 +967,7 @@ body {
     min-width: 70px !important;
     text-align: left !important;
 }
-/* ---------- КНОПКА БОКОВОЙ ПАНЕЛИ (СТРЕЛКА) - ФИКС ---------- */
-.panel-trigger {
-    position: fixed !important;
-    right: 0 !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    z-index: 60 !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-right: none !important;
-    border-radius: 30px 0 0 30px !important;
-    padding: 14px 8px 14px 12px !important;
-    cursor: pointer !important;
-    color: rgba(255, 255, 255, 0.4) !important;
-    transition: all 0.3s ease !important;
-    backdrop-filter: blur(8px) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-.panel-trigger:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    transform: scale(1.05) translateY(-50%) !important;
-}
-.panel-trigger:active {
-    transform: scale(0.95) translateY(-50%) !important;
-}
-.panel-trigger svg {
-    width: 28px !important;
-    height: 28px !important;
-}
-.panel-trigger.active {
-    right: 320px !important;
-    background: none !important;
-    border: none !important;
-    padding: 14px 12px 14px 8px !important;
-}
-.panel-trigger.active svg {
-    transform: rotate(180deg) !important;
-}
-@media (max-width: 700px) {
-    .panel-trigger.active {
-        right: 280px !important;
-    }
-}
-@media (max-width: 450px) {
-    .panel-trigger.active {
-        right: 260px !important;
-    }
-}
+
 @media (max-width: 700px) {
     .container { padding: 30px; }
     .moon-wrapper { width: 260px; height: 260px; }
