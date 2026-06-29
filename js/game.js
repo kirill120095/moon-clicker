@@ -134,7 +134,7 @@ export function updateShopUI() {
                         <span class="shop-item-desc">${bonusText}</span>
                     </div>
                     <div class="shop-item-right">
-                        ${owned ? (active ? '<span style="color:#4ecdc4;">✅ Активна</span>' : `<button class="shop-buy-btn select-moon-btn" data-moon-id="${id}">Выбрать</button>`) 
+                        ${owned ? (active ? '<span style="color:#4ecdc4;">Активно</span>' : `<button class="shop-buy-btn select-moon-btn" data-moon-id="${id}">Выбрать</button>`) 
                         : (moon.cost === 0 ? '<span style="color:#4ecdc4;">Доступна</span>' : 
                            `<button class="shop-buy-btn buy-moon-btn" data-moon-id="${id}" ${(playerData?.shards || 0) < moon.cost ? 'disabled' : ''}>${(playerData?.shards || 0) >= moon.cost ? 'Купить' : 'Не хватает'}</button>`)}
                     </div>
