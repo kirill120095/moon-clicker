@@ -213,7 +213,7 @@ export async function handleLogin() {
     }
 }
 
-// Выход
+// Выход — исправлен: убираем триггеры
 export async function logout() {
     showToast('⏳ Выход...', 'info', 1000);
 
