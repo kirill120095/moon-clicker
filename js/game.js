@@ -14,7 +14,6 @@ import {
 } from './state.js';
 import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
 import { updateProfileAndLeaders } from './profile.js';
-import { updateUI as updateUIView } from './ui.js';
 import { BASE_HP, BOSS_INTERVAL, BOSS_TIMER } from './config.js';
 
 // --- DOM-элементы (будут инициализированы в ui.js) ---
