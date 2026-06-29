@@ -1,5 +1,5 @@
 // ============================================================
-//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД
+//  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД (ИСПРАВЛЕН ВЫХОД)
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
@@ -203,15 +203,22 @@ export async function handleLogin() {
     }
 }
 
-// Выход
+// Выход (исправлен: игнорируем ошибку 403, просто выходим)
 export async function logout() {
     showToast('⏳ Выход...', 'info', 1000);
 
     if (timeUpdateIntervalRef) clearInterval(timeUpdateIntervalRef);
     if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
+    // удаляем возможный интервал босса, если он есть
     if (window.bossTimerInterval) clearInterval(window.bossTimerInterval);
 
-    await supabaseClient.auth.signOut();
+    try {
+        await supabaseClient.auth.signOut();
+    } catch (err) {
+        // Если ошибка 403 или любая другая, мы всё равно выходим локально
+        console.warn('Ошибка при выходе из Supabase:', err);
+        // Игнорируем, потому что мы уже очищаем локальное состояние
+    }
 
     setUser(null);
     setPlayerData(null);
