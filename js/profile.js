@@ -2,8 +2,10 @@
 //  ПРОФИЛЬ И ЛИДЕРЫ
 // ============================================================
 import { supabaseClient } from './supabase.js';
-import { currentUser, playerData } from './state.js';
-import { formatTime, getTitle } from './utils.js';
+import { currentUser, playerData, activeMoon, ownedMoons } from './state.js';
+import { formatTime, getTitle, showToast } from './utils.js';
+import { MOON_TYPES } from './config.js';
+import { selectMoon } from './game.js';
 
 let lastUpdate = 0;
 
@@ -23,14 +25,27 @@ export async function updateProfileAndLeaders(force = false) {
         const title = getTitle(data.level || 1);
         const shards = data.shards || 0;
         
-        // Среднее время между кликами = общее время / количество кликов
         let avgTime = '—';
         if (data.total_clicks > 0 && data.total_seconds_played > 0) {
             const avgSec = data.total_seconds_played / data.total_clicks;
             avgTime = formatTime(avgSec);
         }
-        
-        const savedMode = localStorage.getItem('moonMode') || 'normal';
+
+        // Генерируем список лун
+        let moonsHtml = '';
+        const moonList = ownedMoons || ['normal'];
+        moonList.forEach(moonId => {
+            const moon = MOON_TYPES[moonId];
+            if (!moon) return;
+            const isActive = (activeMoon === moonId);
+            moonsHtml += `
+                <button class="profile-moon-btn ${isActive ? 'active' : ''}" data-moon-id="${moonId}">
+                    ${moon.emoji} ${moon.name}
+                    ${isActive ? ' ✅' : ''}
+                </button>
+            `;
+        });
+
         profileContent.innerHTML = `
             <div class="profile-account">
                 <p>👤 <strong>${currentUser.user_metadata?.username || 'Игрок'}</strong></p>
@@ -44,14 +59,24 @@ export async function updateProfileAndLeaders(force = false) {
             <div class="profile-row"><span class="label">Общее время</span><span class="value">${formatTime(timePlayed)}</span></div>
             <div class="profile-row"><span class="label">Убито боссов</span><span class="value">${totalBosses}</span></div>
             <div class="profile-row"><span class="label">Ср. время между кликами</span><span class="value">${avgTime}</span></div>
-            <div class="profile-section-title">🎨 Фон луны</div>
-            <div class="profile-bg-options">
-                <button data-bg="normal" class="${savedMode === 'normal' ? 'active' : ''}">⚪ Обычная</button>
-                <button data-bg="blood" class="${savedMode === 'blood' ? 'active' : ''}">🩸 Кровавая</button>
+            <div class="profile-section-title">🌙 Активная луна</div>
+            <div class="profile-moons">
+                ${moonsHtml}
             </div>
         `;
-        document.querySelectorAll('.profile-bg-options button').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.bg === savedMode);
+
+        // Добавляем обработчики для кнопок выбора луны
+        document.querySelectorAll('.profile-moon-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const moonId = btn.dataset.moonId;
+                if (moonId === activeMoon) {
+                    showToast('⚠️ Эта луна уже активна', 'info');
+                    return;
+                }
+                await selectMoon(moonId);
+                // Обновим профиль после выбора
+                updateProfileAndLeaders(true);
+            });
         });
     }
 
