@@ -7,13 +7,10 @@ import {
     handleClick, 
     rollbackLevel, 
     resetProgress,
-    updateShardsDisplay,
-    updateShopUI,
-    buyClickDamage
+    updateShopUI
 } from './game.js';
 import { levelLocked, setLevelLocked, setTestMode, currentUser, playerData } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
-import { UPGRADE_COSTS } from './config.js';
 
 // SVG для замка (открытый / закрытый)
 const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
@@ -43,7 +40,7 @@ export function initUI() {
     // Правая панель (магазин)
     rightPanel = document.getElementById('shopPanel');
     rightTrigger = document.getElementById('shopTrigger');
-    const closeShopBtn = document.getElementById('closeShopBtn');
+    const refreshShopBtn = document.getElementById('refreshShopBtn');
     
     const panelTabs = document.querySelectorAll('.left-panel .panel-tabs button');
     const panelContents = document.querySelectorAll('.left-panel .panel-content');
@@ -126,8 +123,16 @@ export function initUI() {
         console.error('[UI] rightTrigger не найден!');
     }
 
-    if (closeShopBtn) {
-        closeShopBtn.addEventListener('click', () => toggleRightPanel(false));
+    // --- Кнопка обновления магазина ---
+    if (refreshShopBtn) {
+        refreshShopBtn.addEventListener('click', () => {
+            refreshShopBtn.classList.add('spinning');
+            setTimeout(() => { refreshShopBtn.classList.remove('spinning'); }, 400);
+            if (currentUser) {
+                updateShopUI();
+                showToast('🔄 Магазин обновлен', 'info', 1000);
+            }
+        });
     }
 
     // --- Кнопка обновления данных ---
@@ -223,7 +228,11 @@ export function initUI() {
     // --- Кнопка покупки улучшения ---
     const buyBtn = document.getElementById('buyClickDamageBtn');
     if (buyBtn) {
-        buyBtn.addEventListener('click', buyClickDamage);
+        buyBtn.addEventListener('click', () => {
+            import('./game.js').then(module => {
+                module.buyClickDamage();
+            });
+        });
     }
 
     // --- Восстанавливаем сохраненный режим луны ---
