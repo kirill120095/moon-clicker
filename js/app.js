@@ -55,20 +55,25 @@ async function checkAuth() {
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('gameArea').classList.add('active');
             
+            // Показываем кнопку боковой панели (стрелку)
+            const panelTrigger = document.getElementById('panelTrigger');
+            if (panelTrigger) panelTrigger.style.display = 'flex';
+            
             // Закрываем панель и сбрасываем кнопку ПРИ ВХОДЕ
             const sidePanel = document.getElementById('sidePanel');
-            const panelTrigger = document.getElementById('panelTrigger');
             if (sidePanel) sidePanel.classList.remove('active');
             if (panelTrigger) panelTrigger.classList.remove('active');
 
             initGame();
         } else {
-            // Гостевой режим – закрываем панель
+            // Гостевой режим – скрываем кнопку панели
             document.getElementById('authBlock').classList.remove('hidden');
             document.getElementById('gameArea').classList.remove('active');
             
-            const sidePanel = document.getElementById('sidePanel');
             const panelTrigger = document.getElementById('panelTrigger');
+            if (panelTrigger) panelTrigger.style.display = 'none';
+            
+            const sidePanel = document.getElementById('sidePanel');
             if (sidePanel) sidePanel.classList.remove('active');
             if (panelTrigger) panelTrigger.classList.remove('active');
         }
