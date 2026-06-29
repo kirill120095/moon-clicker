@@ -54,12 +54,24 @@ async function checkAuth() {
             // Скрываем авторизацию
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('gameArea').classList.add('active');
+            
+            // Убеждаемся, что панель закрыта при входе
+            const sidePanel = document.getElementById('sidePanel');
+            const panelTrigger = document.getElementById('panelTrigger');
+            if (sidePanel) sidePanel.classList.remove('active');
+            if (panelTrigger) panelTrigger.classList.remove('active');
 
             initGame();
         } else {
             // Гостевой режим
             document.getElementById('authBlock').classList.remove('hidden');
             document.getElementById('gameArea').classList.remove('active');
+            
+            // Закрываем панель
+            const sidePanel = document.getElementById('sidePanel');
+            const panelTrigger = document.getElementById('panelTrigger');
+            if (sidePanel) sidePanel.classList.remove('active');
+            if (panelTrigger) panelTrigger.classList.remove('active');
         }
     } catch (err) {
         console.error('Auth check failed:', err);
