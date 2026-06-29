@@ -1,5 +1,5 @@
 // ============================================================
-//  ПРОФИЛЬ И ЛИДЕРЫ (ОПТИМИЗИРОВАННОЕ ОБНОВЛЕНИЕ)
+//  ПРОФИЛЬ И ЛИДЕРЫ
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData } from './state.js';
@@ -36,11 +36,6 @@ export async function updateProfileAndLeaders(force = false) {
                 <p>👤 <strong>${currentUser.user_metadata?.username || 'Игрок'}</strong></p>
                 <p>📧 <strong>${currentUser.email || '-'}</strong></p>
             </div>
-            <div class="profile-section-title">🎨 Фон луны</div>
-            <div class="profile-bg-options">
-                <button data-bg="normal" class="${savedMode === 'normal' ? 'active' : ''}">⚪ Обычная</button>
-                <button data-bg="blood" class="${savedMode === 'blood' ? 'active' : ''}">🩸 Кровавая</button>
-            </div>
             <div class="profile-section-title">📊 Статистика</div>
             <div class="profile-row"><span class="label">Звание</span><span class="value" style="color:#d4af37; font-weight:bold;">${title}</span></div>
             <div class="profile-row"><span class="label">Текущий уровень</span><span class="value">${data.level || 1}</span></div>
@@ -48,6 +43,11 @@ export async function updateProfileAndLeaders(force = false) {
             <div class="profile-row"><span class="label">Общее время</span><span class="value">${formatTime(timePlayed)}</span></div>
             <div class="profile-row"><span class="label">Убито боссов</span><span class="value">${totalBosses}</span></div>
             <div class="profile-row"><span class="label">Ср. время между кликами</span><span class="value">${avgTime}</span></div>
+            <div class="profile-section-title">🎨 Фон луны</div>
+            <div class="profile-bg-options">
+                <button data-bg="normal" class="${savedMode === 'normal' ? 'active' : ''}">⚪ Обычная</button>
+                <button data-bg="blood" class="${savedMode === 'blood' ? 'active' : ''}">🩸 Кровавая</button>
+            </div>
         `;
         document.querySelectorAll('.profile-bg-options button').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.bg === savedMode);
