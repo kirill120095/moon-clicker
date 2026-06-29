@@ -213,7 +213,7 @@ export async function handleLogin() {
     }
 }
 
-// Выход — исправлен: убираем триггеры
+// Выход — исправлен: принудительно убираем триггеры
 export async function logout() {
     showToast('⏳ Выход...', 'info', 1000);
 
@@ -236,20 +236,24 @@ export async function logout() {
     setActiveMoon('normal');
     setOwnedMoons(['normal']);
 
-    // Скрываем кнопки панелей
+    // Скрываем кнопки панелей — удаляем классы visible и active
     const leftTrigger = document.getElementById('panelTrigger');
     const rightTrigger = document.getElementById('shopTrigger');
-    if (leftTrigger) leftTrigger.classList.remove('visible');
-    if (rightTrigger) rightTrigger.classList.remove('visible');
+    if (leftTrigger) {
+        leftTrigger.classList.remove('visible');
+        leftTrigger.classList.remove('active');
+    }
+    if (rightTrigger) {
+        rightTrigger.classList.remove('visible');
+        rightTrigger.classList.remove('active');
+    }
 
     // Закрываем панели
     const sidePanel = document.getElementById('sidePanel');
     if (sidePanel) sidePanel.classList.remove('active');
-    if (leftTrigger) leftTrigger.classList.remove('active');
 
     const shopPanel = document.getElementById('shopPanel');
     if (shopPanel) shopPanel.classList.remove('active');
-    if (rightTrigger) rightTrigger.classList.remove('active');
 
     document.getElementById('gameArea').classList.remove('active');
     document.getElementById('authBlock').classList.remove('hidden');
