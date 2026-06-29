@@ -9,7 +9,7 @@ import {
     setClickCount, setTotalSecondsPlayed, setCurrentLevel,
     setMoonHP, setMaxHP, setSessionStartTimestamp, setPlayerData,
     setBossTimerRunning, setBossTimer, setBossTimerInterval, 
-    setLevelLocked, setTestMode, setActiveMoon, setOwnedMoons
+    setLevelLocked, setTestMode, setActiveMoon, setOwnedMoons, addOwnedMoon
 } from './state.js';
 import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
 import { updateProfileAndLeaders } from './profile.js';
@@ -120,18 +120,23 @@ export function updateShopUI() {
         for (const [id, moon] of Object.entries(MOON_TYPES)) {
             const owned = ownedMoons.includes(id);
             const active = (activeMoon === id);
-            const canBuy = !owned && (playerData?.shards || 0) >= moon.cost && moon.cost > 0;
+            // Формируем описание бонусов
+            let bonusDesc = [];
+            if (moon.damageBonus > 0) bonusDesc.push(`урон +${Math.round(moon.damageBonus*100)}%`);
+            if (moon.shardBonus > 0) bonusDesc.push(`осколки +${Math.round(moon.shardBonus*100)}%`);
+            const bonusText = bonusDesc.length ? `Бонус: ${bonusDesc.join(', ')}` : 'Без бонусов';
+
             html += `
                 <div class="shop-item moon-item" data-moon-id="${id}">
                     <div class="shop-item-info">
                         <span class="shop-item-name">${moon.emoji} ${moon.name}</span>
                         <span class="shop-item-desc">${moon.cost === 0 ? 'Начальная' : `Цена: ${moon.cost} 💎`}</span>
-                        <span class="shop-item-desc">Бонус: урон +${Math.round(moon.damageBonus*100)}%, осколки +${Math.round(moon.shardBonus*100)}%</span>
+                        <span class="shop-item-desc">${bonusText}</span>
                     </div>
                     <div class="shop-item-right">
                         ${owned ? (active ? '<span style="color:#4ecdc4;">✅ Активна</span>' : `<button class="shop-buy-btn select-moon-btn" data-moon-id="${id}">Выбрать</button>`) 
                         : (moon.cost === 0 ? '<span style="color:#4ecdc4;">Доступна</span>' : 
-                           `<button class="shop-buy-btn buy-moon-btn" data-moon-id="${id}" ${!canBuy ? 'disabled' : ''}>${canBuy ? 'Купить' : 'Не хватает'}</button>`)}
+                           `<button class="shop-buy-btn buy-moon-btn" data-moon-id="${id}" ${(playerData?.shards || 0) < moon.cost ? 'disabled' : ''}>${(playerData?.shards || 0) >= moon.cost ? 'Купить' : 'Не хватает'}</button>`)}
                     </div>
                 </div>
             `;
@@ -172,15 +177,11 @@ export async function buyMoon(moonId) {
     }
 
     const newShards = (playerData.shards || 0) - moon.cost;
-    const newOwned = [...ownedMoons, moonId];
-    const newActive = moonId;
-
+    // Обновляем только shards в БД, луны хранятся в localStorage
     const { error } = await supabaseClient
         .from('players')
         .update({
             shards: newShards,
-            owned_moons: JSON.stringify(newOwned),
-            active_moon: newActive,
             updated_at: new Date().toISOString()
         })
         .eq('id', currentUser.id);
@@ -193,10 +194,8 @@ export async function buyMoon(moonId) {
 
     // Обновляем локальное состояние
     playerData.shards = newShards;
-    playerData.owned_moons = JSON.stringify(newOwned);
-    playerData.active_moon = newActive;
-    setOwnedMoons(newOwned);
-    setActiveMoon(newActive);
+    addOwnedMoon(moonId);
+    setActiveMoon(moonId);
 
     updateUI();
     updateShopUI();
@@ -218,21 +217,9 @@ export async function selectMoon(moonId) {
         return;
     }
 
-    const { error } = await supabaseClient
-        .from('players')
-        .update({
-            active_moon: moonId,
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', currentUser.id);
-
-    if (error) {
-        console.error('Ошибка выбора луны:', error);
-        showToast('⚠️ Ошибка при выборе', 'warning');
-        return;
-    }
-
+    // Обновляем только активную луну в localStorage
     setActiveMoon(moonId);
+
     updateUI();
     updateShopUI();
     updateProfileAndLeaders(true);
@@ -320,8 +307,6 @@ export async function resetProgress() {
                 total_clicks: 0, total_seconds_played: 0, level: 1, 
                 moon_hp: Math.round(BASE_HP), shards: 0,
                 click_damage: 1, click_damage_level: 0,
-                owned_moons: JSON.stringify(['normal']),
-                active_moon: 'normal',
                 updated_at: new Date().toISOString()
             })
             .eq('id', currentUser.id);
@@ -334,6 +319,7 @@ export async function resetProgress() {
             setCurrentLevel(1);
             setMoonHP(BASE_HP);
             setMaxHP(BASE_HP);
+            // Сбрасываем луны
             setActiveMoon('normal');
             setOwnedMoons(['normal']);
         }
@@ -438,8 +424,12 @@ export async function handleClick(e) {
 
     if (moonHP === 0) {
         if (levelLocked) {
-            setMoonHP(maxHP);
-            updateUI();
+            // Если замок включен, не даём перейти на следующий уровень
+            // Но если тестовый режим, оставляем HP 0
+            if (!testMode) {
+                setMoonHP(maxHP);
+                updateUI();
+            }
             return;
         }
         
@@ -486,4 +476,55 @@ export async function handleClick(e) {
     const now = new Date().toISOString();
     await updateProgress(currentUser.id, clickCount, now, currentLevel, moonHP);
     updateProfileAndLeaders();
+}
+
+// Экспортируем buyClickDamage
+export async function buyClickDamage() {
+    if (!currentUser || !playerData) {
+        showToast('⚠️ Войдите в аккаунт', 'warning');
+        return;
+    }
+    const level = currentLevel || 1;
+    if (level < 5) {
+        showToast('🔒 Магазин доступен с 5 уровня', 'warning');
+        return;
+    }
+    const currentLevelUpgrade = playerData.click_damage_level || 0;
+    if (currentLevelUpgrade >= 10) {
+        showToast('⚠️ Максимальный уровень улучшения', 'warning');
+        return;
+    }
+    const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
+    if ((playerData.shards || 0) < cost) {
+        showToast(`⚠️ Недостаточно осколков! Нужно ${cost}`, 'warning');
+        return;
+    }
+    
+    const newShards = (playerData.shards || 0) - cost;
+    const newLevel = currentLevelUpgrade + 1;
+    const newDamage = playerData.click_damage + 1;
+    
+    const { error } = await supabaseClient
+        .from('players')
+        .update({
+            shards: newShards,
+            click_damage: newDamage,
+            click_damage_level: newLevel,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUser.id);
+    
+    if (error) {
+        console.error('Ошибка покупки:', error);
+        showToast('⚠️ Ошибка при покупке', 'warning');
+        return;
+    }
+    
+    playerData.shards = newShards;
+    playerData.click_damage = newDamage;
+    playerData.click_damage_level = newLevel;
+    
+    updateUI();
+    updateShopUI();
+    showToast(`✅ Улучшение куплено! Урон: ${newDamage}`, 'success');
 }
