@@ -13,7 +13,6 @@ import { levelLocked, setLevelLocked, setTestMode, currentUser } from './state.j
 import { updateProfileAndLeaders } from './profile.js';
 import { showToast } from './utils.js';
 
-// SVG для замка
 const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 const lockClosedSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>`;
 
@@ -200,6 +199,9 @@ export function initUI() {
         else rightTrigger.classList.remove('active');
     }
 
+    // По умолчанию триггеры скрыты (класс visible отсутствует)
+    // Их видимость управляется через app.js при входе/выходе
+
     console.log('[UI] Инициализация завершена');
 }
 
@@ -227,7 +229,7 @@ export function setMode(mode) {
     if (authMessageEl) authMessageEl.textContent = '';
 }
 
-// Переключение левой панели (исправлено)
+// Переключение левой панели
 export function toggleLeftPanel() {
     if (!leftPanel || !leftTrigger) {
         console.error('[UI] toggleLeftPanel: элементы не найдены');
@@ -245,7 +247,7 @@ export function toggleLeftPanel() {
     console.log('[UI] Левая панель:', isOpen ? 'закрыта' : 'открыта');
 }
 
-// Переключение правой панели (исправлено)
+// Переключение правой панели
 export function toggleRightPanel() {
     if (!rightPanel || !rightTrigger) {
         console.error('[UI] toggleRightPanel: элементы не найдены');
