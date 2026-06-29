@@ -7,7 +7,7 @@ import {
     currentLevel, moonHP, maxHP, bossTimer, bossTimerInterval, bossTimerRunning,
     levelLocked, testMode,
     setClickCount, setTotalSecondsPlayed, setCurrentLevel,
-    setMoonHP, setMaxHP, setSessionStartTimestamp,
+    setMoonHP, setMaxHP, setSessionStartTimestamp, setPlayerData,
     setBossTimerRunning, setBossTimer, setBossTimerInterval, 
     setLevelLocked, setTestMode
 } from './state.js';
