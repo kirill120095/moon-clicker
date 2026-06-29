@@ -14,15 +14,12 @@ export function formatTime(seconds) {
 
     let parts = [];
 
-    // Логика: если есть дни, показываем только дни и часы (минуты и секунды опускаем)
     if (days > 0) {
         parts.push(`${days} дн`);
         if (hours > 0) parts.push(`${hours} ч`);
-        // минуты и секунды не добавляем
     } else if (hours > 0) {
         parts.push(`${hours} ч`);
         if (minutes > 0) parts.push(`${minutes} мин`);
-        // секунды не добавляем
     } else if (minutes > 0) {
         parts.push(`${minutes} мин`);
         if (secs > 0) parts.push(`${secs} сек`);
@@ -33,7 +30,7 @@ export function formatTime(seconds) {
     return parts.join(' ');
 }
 
-// HP для уровня (босс – BASE_HP * level, обычный – BASE_HP * (1+(level-1)*0.1))
+// HP для уровня
 export function getMaxHPForLevel(level, baseHP, bossInterval) {
     if (level % bossInterval === 0) {
         return baseHP * level;
@@ -56,7 +53,7 @@ export function getTitle(level) {
     return '💎 Бессмертный';
 }
 
-// --- Сбор данных об устройстве (без гео) ---
+// --- Сбор данных об устройстве ---
 export function getDeviceType() {
     const ua = navigator.userAgent;
     if (/(tablet|ipad|playbook|silk)|(android(?!.*mobile))/i.test(ua)) return 'tablet';
@@ -114,7 +111,7 @@ export function collectStaticDeviceData() {
     };
 }
 
-// --- Toast-уведомления ---
+// --- Toast-уведомления (исправлено: очищает контейнер перед добавлением) ---
 let toastContainer = null;
 
 export function initToastContainer(container) {
@@ -126,6 +123,9 @@ export function showToast(message, type = 'info', duration = 2000) {
         console.warn('Toast container not initialized');
         return;
     }
+    // Очищаем контейнер от старых тостов
+    toastContainer.innerHTML = '';
+
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.textContent = message;
@@ -141,7 +141,7 @@ export function showToast(message, type = 'info', duration = 2000) {
     }, duration);
 }
 
-// --- Звёзды (генерация) ---
+// --- Звёзды ---
 export function createStars() {
     const container = document.getElementById('stars');
     if (!container) return;
