@@ -131,7 +131,59 @@ body {
     transition: all 0.5s ease;
 }
 
+/* ---------- УБИРАЕМ СТАРЫЕ КНОПКИ СВЕРХУ ---------- */
+.top-actions {
+    display: none !important;
+}
 
+/* ---------- ТРИГГЕР ПАНЕЛИ (СТРЕЛКА) ---------- */
+.panel-trigger {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 45;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: none;
+    border-radius: 30px 0 0 30px;
+    padding: 14px 8px 14px 12px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.panel-trigger:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f0e6d0;
+}
+.panel-trigger svg {
+    width: 28px;
+    height: 28px;
+}
+.panel-trigger.active {
+    right: 320px;
+    border-radius: 0 30px 30px 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: none;
+    padding: 14px 12px 14px 8px;
+}
+.panel-trigger.active svg {
+    transform: rotate(180deg);
+}
+@media (max-width: 700px) {
+    .panel-trigger.active {
+        right: 280px;
+    }
+}
+@media (max-width: 450px) {
+    .panel-trigger.active {
+        right: 260px;
+    }
+}
 
 .side-panel {
     position: fixed;
@@ -602,21 +654,21 @@ body {
     transition: 0.3s;
     backdrop-filter: blur(5px);
     line-height: 1;
-    opacity: 1;
+    opacity: 0.5;
     pointer-events: auto;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .btn-rollback:hover {
-    background: rgba(255, 215, 150, 0.2);
+    opacity: 0.8;
     transform: scale(1.05);
 }
 .btn-rollback:active {
     transform: scale(0.95);
 }
 .btn-rollback.disabled {
-    opacity: 0.35;
+    opacity: 0.2;
     pointer-events: none;
     cursor: default;
 }
@@ -646,7 +698,7 @@ body {
     transform: scale(1.1);
 }
 .lock-toggle.locked {
-    color: #f0e6d0;
+    color: #ffd700;
 }
 .lock-toggle svg {
     width: 26px;
@@ -967,82 +1019,4 @@ body {
     .container { padding: 20px; }
     .side-panel { width: 260px; padding: 15px; }
     .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
-}
-
-/* ---------- ТРИГГЕР ПАНЕЛИ (СТРЕЛКА) ---------- */
-.panel-trigger {
-    position: fixed;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 45;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-right: none;
-    border-radius: 30px 0 0 30px;
-    padding: 14px 8px 14px 12px;
-    cursor: pointer;
-    color: rgba(255, 255, 255, 0.5);
-    transition: all 0.3s ease;
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.panel-trigger:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #f0e6d0;
-}
-.panel-trigger svg {
-    width: 28px;
-    height: 28px;
-}
-/* Когда панель открыта, стрелка должна смотреть вправо (закрыть) */
-.panel-trigger.active {
-    right: 320px; /* ширина панели */
-    border-radius: 0 30px 30px 0;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-    border-left: none;
-    padding: 14px 12px 14px 8px;
-}
-.panel-trigger.active svg {
-    transform: rotate(180deg);
-}
-/* Адаптив */
-@media (max-width: 700px) {
-    .panel-trigger.active {
-        right: 280px;
-    }
-}
-@media (max-width: 450px) {
-    .panel-trigger.active {
-        right: 260px;
-    }
-}
-
-/* ---------- УБИРАЕМ СТАРЫЕ КНОПКИ СВЕРХУ ---------- */
-.top-actions {
-    display: none !important;
-}
-
-/* ---------- КНОПКА ОТКАТА (менее яркая) ---------- */
-.btn-rollback {
-    opacity: 0.5;
-    transition: opacity 0.3s, transform 0.2s;
-}
-.btn-rollback:hover {
-    opacity: 0.8;
-    transform: scale(1.05);
-}
-.btn-rollback:active {
-    transform: scale(0.95);
-}
-.btn-rollback.disabled {
-    opacity: 0.2;
-    pointer-events: none;
-}
-
-/* ---------- ЗАМОК (открытый/закрытый) ---------- */
-.lock-toggle.locked {
-    color: #ffd700;
 }
