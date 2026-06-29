@@ -932,3 +932,26 @@ body {
     .side-panel { width: 260px; padding: 15px; }
     .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
 }
+/* Кнопка обновления в боковой панели */
+.panel-refresh-btn {
+    background: none;
+    border: none;
+    color: #f0e6d0; /* Ваш дефолтный цвет текста */
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.panel-refresh-btn:hover {
+    color: #d4af37; /* Золотистый цвет при наведении */
+}
+
+/* Анимация плавного вращения */
+.panel-refresh-btn.spinning {
+    transform: rotate(360deg);
+}
