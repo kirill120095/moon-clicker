@@ -2,7 +2,7 @@
 //  АВТОРИЗАЦИЯ, РЕГИСТРАЦИЯ, ВЫХОД
 // ============================================================
 import { supabaseClient } from './supabase.js';
-import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
+import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP, setActiveMoon, setOwnedMoons } from './state.js';
 import { showToast, collectStaticDeviceData, getMaxHPForLevel } from './utils.js';
 import { initGame, updateUI, timeUpdateIntervalRef, autoSaveIntervalRef } from './game.js';
 import { setMode } from './ui.js';
@@ -54,6 +54,8 @@ export async function createOrUpdatePlayer(userId, email) {
             current_session_start: new Date().toISOString(),
             level: 1,
             moon_hp: Math.round(BASE_HP),
+            owned_moons: JSON.stringify(['normal']),
+            active_moon: 'normal',
             ...staticData,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -182,6 +184,8 @@ export async function handleLogin() {
         setCurrentLevel(player.level || 1);
         setMoonHP(player.moon_hp || BASE_HP);
         setMaxHP(getMaxHPForLevel(player.level || 1, BASE_HP, 10));
+        if (player.active_moon) setActiveMoon(player.active_moon);
+        if (player.owned_moons) setOwnedMoons(JSON.parse(player.owned_moons));
 
         if (authMessageEl) {
             authMessageEl.textContent = '✅ Вход успешен!';
@@ -212,7 +216,7 @@ export async function handleLogin() {
     }
 }
 
-// Выход (исправлен)
+// Выход
 export async function logout() {
     showToast('⏳ Выход...', 'info', 1000);
 
@@ -232,6 +236,8 @@ export async function logout() {
     setCurrentLevel(1);
     setMoonHP(BASE_HP);
     setMaxHP(BASE_HP);
+    setActiveMoon('normal');
+    setOwnedMoons(['normal']);
 
     // Скрываем кнопки панелей
     const leftTrigger = document.getElementById('panelTrigger');
