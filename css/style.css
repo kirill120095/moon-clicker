@@ -910,3 +910,65 @@ body {
     .side-panel { width: 260px; padding: 15px; }
     .bar-label, .bar-percent { font-size: 0.7rem; min-width: 25px; }
 }
+
+/* ---------- ФИКС ОТОБРАЖЕНИЯ ЛУНЫ И HP ---------- */
+.moon-wrapper {
+    display: inline-block !important;
+    cursor: pointer !important;
+    position: relative !important;
+    margin: 15px 0 10px !important;
+    width: 340px !important;
+    height: 340px !important;
+    transition: transform 0.2s ease !important;
+}
+.moon {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50% !important;
+    position: relative !important;
+    animation: moonOrbit 30s linear infinite !important;
+}
+.moon-inner {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50% !important;
+    background-size: cover !important;
+    background-position: center !important;
+    box-shadow: 0 0 60px rgba(255, 215, 150, 0.4), 0 0 120px rgba(255, 215, 150, 0.2), inset -35px -35px 90px rgba(0, 0, 0, 0.4), inset 35px 35px 90px rgba(255, 255, 255, 0.3) !important;
+    transition: box-shadow 0.5s ease, transform 0.15s ease !important;
+    transform: scale(1) !important;
+    will-change: transform !important;
+}
+.bars {
+    margin: 10px auto 12px !important;
+    max-width: 90% !important;
+}
+.bar-container {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 6px !important;
+}
+.bar-track {
+    flex: 1 !important;
+    height: 10px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+.bar-fill {
+    height: 100% !important;
+    width: 100% !important;
+    border-radius: 10px !important;
+    transition: width 0.2s ease !important;
+    background: linear-gradient(90deg, #ff6b6b, #ffb07c) !important;
+}
+.hp-fill {
+    background: linear-gradient(90deg, #ff6b6b, #ffb07c) !important;
+}
+.bar-percent {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.8rem !important;
+    min-width: 70px !important;
+    text-align: left !important;
+}
