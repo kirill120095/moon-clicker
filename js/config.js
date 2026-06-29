@@ -7,3 +7,11 @@ export const HP_SCALE = TEST_MODE ? 0.1 : 1;
 export const BOSS_INTERVAL = 10;             // босс каждые 10 уровней
 export const BOSS_TIMER = 30;                // секунд на босса
 export const BASE_HP = 100 * HP_SCALE;       // базовое HP для 1-го уровня
+
+// --- Стоимость улучшений в магазине ---
+export const UPGRADE_COSTS = {
+    clickDamage: {
+        base: 50,
+        multiplier: 1.8  // 50, 90, 162, 292...
+    }
+};
