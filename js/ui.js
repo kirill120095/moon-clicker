@@ -11,9 +11,18 @@ import {
 import { levelLocked, setLevelLocked, setTestMode, currentUser } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
 
+// SVG для замка (открытый / закрытый)
+const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const lockClosedSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>`;
+
+function setLockIcon(btn, locked) {
+    btn.innerHTML = locked ? lockClosedSVG : lockOpenSVG;
+    btn.classList.toggle('locked', locked);
+}
+
 // DOM-элементы
 let tabLogin, tabRegister, loginFields, registerFields, actionBtn, authMessageEl;
-let sidePanel, panelTrigger, panelClose, panelTabs, panelContents, refreshDataBtn;
+let sidePanel, panelTrigger, panelTabs, panelContents, refreshDataBtn;
 let testModeCheckbox, resetProgressBtn;
 let confirmOverlay, confirmYes, confirmNo;
 let moonWrapper, lockToggleMain;
@@ -30,7 +39,6 @@ export function initUI() {
     // Панели управления
     sidePanel = document.getElementById('sidePanel');
     panelTrigger = document.getElementById('panelTrigger');
-    panelClose = document.getElementById('panelClose');
     panelTabs = document.querySelectorAll('.side-panel .panel-tabs button');
     panelContents = document.querySelectorAll('.side-panel .panel-content');
     refreshDataBtn = document.getElementById('refreshDataBtn');
@@ -122,14 +130,9 @@ function initEvents() {
         moonWrapper.addEventListener('click', handleClick);
     }
 
-    // Триггер панели (стрелка)
+    // Триггер панели (стрелка) – открывает/закрывает
     if (panelTrigger) {
         panelTrigger.addEventListener('click', togglePanel);
-    }
-
-    // Кнопка закрытия панели (крестик)
-    if (panelClose) {
-        panelClose.addEventListener('click', () => togglePanel(false));
     }
 
     // Кнопка обновления данных (внизу панели)
@@ -196,20 +199,13 @@ function initEvents() {
 
     // Замок – инициализация и обработчик
     if (lockToggleMain) {
-        // Устанавливаем начальное состояние (иконка уже в HTML, просто добавляем класс)
-        if (levelLocked) {
-            lockToggleMain.classList.add('locked');
-        }
+        // Устанавливаем начальную иконку (открытый замок по умолчанию)
+        setLockIcon(lockToggleMain, levelLocked);
         lockToggleMain.addEventListener('click', () => {
             const newState = !levelLocked;
             setLevelLocked(newState);
             localStorage.setItem('levelLocked', newState);
-            // Переключаем класс locked
-            if (newState) {
-                lockToggleMain.classList.add('locked');
-            } else {
-                lockToggleMain.classList.remove('locked');
-            }
+            setLockIcon(lockToggleMain, newState);
         });
     }
 
