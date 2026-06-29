@@ -41,7 +41,10 @@ export function initGameElements(elements) {
 
 export function updateUI() {
     if (!counterEl) return;
-    counterEl.textContent = clickCount;
+    // Теперь счетчик показывает осколки, а не клики
+    const shards = playerData?.shards || 0;
+    counterEl.textContent = `💎 ${shards}`;
+    
     levelTitle.textContent = `Уровень ${currentLevel}`;
 
     const currentHP = Math.round(moonHP);
@@ -76,33 +79,12 @@ export function updateUI() {
 
     updateTimeDisplay();
     
-    // --- Обновляем отображение осколков ---
-    updateShardsDisplay();
-    // --- Обновляем магазин ---
+    // Обновляем магазин
     updateShopUI();
 }
 
 export function updateTimeDisplay() {
     if (totalTimeDisplay) totalTimeDisplay.textContent = formatTime(totalSecondsPlayed);
-}
-
-// --- Отображение осколков ---
-export function updateShardsDisplay() {
-    const shardsEl = document.getElementById('shardsCount');
-    if (shardsEl && playerData) {
-        shardsEl.textContent = playerData.shards || 0;
-    }
-}
-
-// --- Расчёт награды за победу ---
-function calculateShardReward(level, isBoss) {
-    let shards = Math.floor(level / 10) + 1;
-    if (isBoss) {
-        shards = Math.floor(level / 10) * 10 * 5;
-    }
-    // Применяем множитель (пока 1, в будущем можно добавить)
-    const multiplier = playerData?.shard_multiplier || 1;
-    return Math.floor(shards * multiplier);
 }
 
 // --- Обновление магазина ---
@@ -201,7 +183,7 @@ export async function buyClickDamage() {
     playerData.click_damage = newDamage;
     playerData.click_damage_level = newLevel;
     
-    updateShardsDisplay();
+    updateUI();
     updateShopUI();
     showToast(`✅ Улучшение куплено! Урон: ${newDamage}`, 'success');
 }
@@ -394,7 +376,6 @@ export function initGame() {
     if (testCheckbox) testCheckbox.checked = savedTest;
 
     updateProfileAndLeaders();
-    updateShardsDisplay();
     updateShopUI();
 }
 
@@ -431,7 +412,13 @@ export async function handleClick(e) {
         
         // --- ПОБЕДА! Рассчитываем награду ---
         const isBoss = isBossLevel(currentLevel, BOSS_INTERVAL);
-        const shardReward = calculateShardReward(currentLevel, isBoss);
+        let shardReward = Math.floor(currentLevel / 10) + 1;
+        if (isBoss) {
+            shardReward = Math.floor(currentLevel / 10) * 10 * 5;
+        }
+        const multiplier = playerData?.shard_multiplier || 1;
+        shardReward = Math.floor(shardReward * multiplier);
+        
         const currentShards = (playerData?.shards || 0) + shardReward;
         
         // Показываем уведомление о награде
@@ -449,7 +436,7 @@ export async function handleClick(e) {
         if (!updateError && playerData) {
             playerData.shards = currentShards;
         }
-        updateShardsDisplay();
+        updateUI();
         updateShopUI();
         
         // --- ПЕРЕХОД НА СЛЕДУЮЩИЙ УРОВЕНЬ ---
@@ -467,7 +454,6 @@ export async function handleClick(e) {
         const now = new Date().toISOString();
         await updateProgress(currentUser.id, clickCount, now, newLevel, moonHP);
         updateProfileAndLeaders();
-        updateShardsDisplay();
         updateShopUI();
         return;
     }
