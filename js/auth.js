@@ -190,10 +190,10 @@ export async function handleLogin() {
         document.getElementById('authBlock').classList.add('hidden');
         document.getElementById('gameArea').classList.add('active');
 
-        // Показываем кнопку боковой панели
+        // Показываем кнопку боковой панели (добавляем класс visible)
         const panelTrigger = document.getElementById('panelTrigger');
         if (panelTrigger) {
-            panelTrigger.style.display = 'flex';
+            panelTrigger.classList.add('visible');
         }
 
         // Закрываем панель при входе
@@ -227,10 +227,10 @@ export async function logout() {
     setCurrentLevel(1);
     setMoonHP(BASE_HP);
 
-    // Скрываем кнопку панели
+    // Скрываем кнопку панели (убираем класс visible)
     const panelTrigger = document.getElementById('panelTrigger');
     if (panelTrigger) {
-        panelTrigger.style.display = 'none';
+        panelTrigger.classList.remove('visible');
     }
 
     // Закрываем панель
