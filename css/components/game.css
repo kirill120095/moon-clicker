@@ -14,11 +14,20 @@
     color: #f0e6d0;
     font-weight: 300;
     letter-spacing: 2px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     text-shadow: 0 0 20px rgba(255, 215, 150, 0.1);
 }
 .container.blood-mode .level-title {
     color: #ff6b6b;
+}
+
+/* ---------- ОСКОЛКИ ---------- */
+.shards-display {
+    color: #ffd700;
+    font-size: 1.4rem;
+    margin: 5px 0 10px;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    letter-spacing: 1px;
 }
 
 /* ---------- ЛУНА ---------- */
@@ -26,7 +35,7 @@
     display: inline-block;
     cursor: pointer;
     position: relative;
-    margin: 15px 0 10px;
+    margin: 10px 0 10px;
     width: 340px;
     height: 340px;
     transition: transform 0.2s ease;
@@ -93,6 +102,10 @@
 }
 .container.blood-mode .click-effect {
     background: radial-gradient(circle, rgba(255, 0, 0, 0.8), transparent 70%);
+}
+@keyframes flash {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
 }
 
 /* ---------- СЧЁТЧИК ---------- */
@@ -253,13 +266,4 @@
 .logout-btn svg {
     width: 22px;
     height: 22px;
-}
-
-/* ---------- ОСКОЛКИ ---------- */
-.shards-display {
-    color: #ffd700;
-    font-size: 1.4rem;
-    margin: 5px 0 10px;
-    text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
-    letter-spacing: 1px;
 }
