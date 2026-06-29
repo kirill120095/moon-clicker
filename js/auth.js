@@ -3,7 +3,7 @@
 // ============================================================
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
-import { showToast, collectStaticDeviceData } from './utils.js';
+import { showToast, collectStaticDeviceData, getMaxHPForLevel } from './utils.js';
 import { initGame, updateUI, timeUpdateIntervalRef, autoSaveIntervalRef } from './game.js';
 import { setMode } from './ui.js';
 import { BASE_HP } from './config.js';
