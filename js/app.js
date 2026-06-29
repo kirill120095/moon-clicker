@@ -10,12 +10,14 @@ import { loadPlayerData, initAuthElements, createOrUpdatePlayer } from './auth.j
 import { BASE_HP } from './config.js';
 import { getMaxHPForLevel } from './utils.js';
 
+// Инициализация
 const toastContainer = document.getElementById('toastContainer');
 initToastContainer(toastContainer);
 createStars();
 initAuthElements();
 initUI();
 
+// Проверка авторизации
 async function checkAuth() {
     try {
         const { data: { session }, error } = await supabaseClient.auth.getSession();
@@ -39,7 +41,7 @@ async function checkAuth() {
                 setMaxHP(getMaxHPForLevel(player.level || 1, BASE_HP, 10));
             }
 
-            // Скрываем auth и показываем игру сразу
+            // Скрываем авторизацию сразу
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('gameArea').classList.add('active');
             document.getElementById('statsToggleBtn').classList.add('visible');
@@ -47,15 +49,15 @@ async function checkAuth() {
 
             initGame();
         } else {
-            // Guest mode
+            // Гостевой режим
             document.getElementById('authBlock').classList.remove('hidden');
             document.getElementById('gameArea').classList.remove('active');
             document.getElementById('statsToggleBtn').classList.remove('visible');
             document.getElementById('settingsBtn').classList.remove('visible');
         }
     } catch (err) {
-        console.error('Auth error:', err);
-        showToast('Проблема с подключением к серверу', 'warning');
+        console.error('Auth check failed:', err);
+        showToast('Проблема с подключением', 'warning');
     }
 }
 
