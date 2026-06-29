@@ -54,8 +54,6 @@ export async function createOrUpdatePlayer(userId, email) {
             current_session_start: new Date().toISOString(),
             level: 1,
             moon_hp: Math.round(BASE_HP),
-            owned_moons: JSON.stringify(['normal']),
-            active_moon: 'normal',
             ...staticData,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -184,8 +182,7 @@ export async function handleLogin() {
         setCurrentLevel(player.level || 1);
         setMoonHP(player.moon_hp || BASE_HP);
         setMaxHP(getMaxHPForLevel(player.level || 1, BASE_HP, 10));
-        if (player.active_moon) setActiveMoon(player.active_moon);
-        if (player.owned_moons) setOwnedMoons(JSON.parse(player.owned_moons));
+        // Луны загружаются в setPlayerData через localStorage
 
         if (authMessageEl) {
             authMessageEl.textContent = '✅ Вход успешен!';
