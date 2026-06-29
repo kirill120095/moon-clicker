@@ -8,11 +8,13 @@ import { initGame, updateUI } from './game.js';
 import { setMode } from './ui.js';
 import { BASE_HP } from './config.js';
 
-// DOM-элементы (устанавливаются при инициализации)
+// DOM-элементы
 let authMessageEl = null;
+let actionBtn = null;
 
 export function initAuthElements() {
     authMessageEl = document.getElementById('authMessage');
+    actionBtn = document.getElementById('actionBtn');
 }
 
 // --- Вспомогательные функции для работы с БД (создание/загрузка игрока) ---
@@ -115,6 +117,7 @@ export async function handleRegister() {
         authMessageEl.textContent = '⏳ Регистрация...';
         authMessageEl.className = 'error';
     }
+    if (actionBtn) actionBtn.disabled = true;
 
     const { data, error } = await supabaseClient.auth.signUp({
         email,
@@ -123,6 +126,8 @@ export async function handleRegister() {
             data: { username: nickname }
         }
     });
+
+    if (actionBtn) actionBtn.disabled = false;
 
     if (error) {
         if (authMessageEl) {
@@ -138,10 +143,22 @@ export async function handleRegister() {
         const player = await createOrUpdatePlayer(data.user.id, data.user.email);
         setPlayerData(player);
         if (authMessageEl) {
-            authMessageEl.textContent = '✅ Регистрация успешна!';
+            authMessageEl.textContent = '✅ Регистрация успешна! Теперь войдите.';
             authMessageEl.className = 'error';
         }
-        setTimeout(initGame, 1500);
+        // Автоматически переключаем на вход
+        setMode('login');
+        // Очищаем поля
+        document.getElementById('regEmailInput').value = '';
+        document.getElementById('regNicknameInput').value = '';
+        document.getElementById('regPasswordInput').value = '';
+        // Показываем форму входа
+        document.getElementById('loginFields').classList.remove('hidden');
+        document.getElementById('registerFields').classList.add('hidden');
+        document.getElementById('tabLogin').classList.add('active');
+        document.getElementById('tabRegister').classList.remove('active');
+        document.getElementById('actionBtn').textContent = 'Войти';
+        showToast('✅ Регистрация успешна! Теперь войдите.', 'success');
     }
 }
 
@@ -198,8 +215,11 @@ export async function handleLogin() {
         authMessageEl.textContent = '⏳ Вход...';
         authMessageEl.className = 'error';
     }
+    if (actionBtn) actionBtn.disabled = true;
 
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (actionBtn) actionBtn.disabled = false;
 
     if (error) {
         if (authMessageEl) {
@@ -219,7 +239,6 @@ export async function handleLogin() {
             setTotalSecondsPlayed(player.total_seconds_played || 0);
             setCurrentLevel(player.level || 1);
             setMoonHP(player.moon_hp || BASE_HP);
-            // maxHP будет рассчитан в game.js
         } else {
             // если нет записи – создадим
             const newPlayer = await createOrUpdatePlayer(data.user.id, data.user.email);
@@ -233,13 +252,22 @@ export async function handleLogin() {
             authMessageEl.textContent = '✅ Вход успешен!';
             authMessageEl.className = 'error';
         }
-        setTimeout(initGame, 1500);
+        // Показываем кнопки
+        document.getElementById('statsToggleBtn').style.display = '';
+        document.getElementById('settingsBtn').style.display = '';
+        // Переходим в игру
+        setTimeout(initGame, 300);
     }
 }
 
 // --- Выход ---
 export async function logout() {
-    // Останавливаем таймеры и интервалы (они будут остановлены в game.js)
+    // Показываем индикатор
+    showToast('⏳ Выход...', 'info', 1000);
+    // Останавливаем таймеры (они будут остановлены в game.js, но мы вызовем дополнительно)
+    if (window.timeUpdateInterval) clearInterval(window.timeUpdateInterval);
+    if (window.autoSaveInterval) clearInterval(window.autoSaveInterval);
+
     await supabaseClient.auth.signOut();
     setUser(null);
     setPlayerData(null);
@@ -256,7 +284,10 @@ export async function logout() {
     const gameArea = document.getElementById('gameArea');
     if (authBlock) authBlock.classList.remove('hidden');
     if (gameArea) gameArea.classList.remove('active');
-    showToast('👋 Вы вышли из аккаунта', 'info');
+    // Скрываем кнопки
+    document.getElementById('statsToggleBtn').style.display = 'none';
+    document.getElementById('settingsBtn').style.display = 'none';
     // Обновим UI
     updateUI();
+    showToast('👋 Вы вышли из аккаунта', 'info');
 }
