@@ -15,7 +15,7 @@ export async function updateProfileAndLeaders(force = false) {
     const profileContent = document.getElementById('profileContent');
     const leadersList = document.getElementById('leadersList');
 
-    // Профиль
+    // --- Профиль ---
     if (playerData && profileContent) {
         const data = playerData;
         const totalBosses = Math.floor((data.level || 1) / 10);
@@ -29,7 +29,18 @@ export async function updateProfileAndLeaders(force = false) {
                 avgTime = ((last - first) / (data.total_clicks - 1) / 1000).toFixed(1) + ' сек';
             }
         }
+        const savedMode = localStorage.getItem('moonMode') || 'normal';
         profileContent.innerHTML = `
+            <div class="profile-account">
+                <p>👤 <strong>${currentUser.user_metadata?.username || 'Игрок'}</strong></p>
+                <p>📧 <strong>${currentUser.email || '-'}</strong></p>
+            </div>
+            <div class="profile-section-title">🎨 Фон луны</div>
+            <div class="profile-bg-options">
+                <button data-bg="normal" class="${savedMode === 'normal' ? 'active' : ''}">⚪ Обычная</button>
+                <button data-bg="blood" class="${savedMode === 'blood' ? 'active' : ''}">🩸 Кровавая</button>
+            </div>
+            <div class="profile-section-title">📊 Статистика</div>
             <div class="profile-row"><span class="label">Звание</span><span class="value" style="color:#d4af37; font-weight:bold;">${title}</span></div>
             <div class="profile-row"><span class="label">Текущий уровень</span><span class="value">${data.level || 1}</span></div>
             <div class="profile-row"><span class="label">Всего кликов</span><span class="value">${data.total_clicks || 0}</span></div>
@@ -37,9 +48,13 @@ export async function updateProfileAndLeaders(force = false) {
             <div class="profile-row"><span class="label">Убито боссов</span><span class="value">${totalBosses}</span></div>
             <div class="profile-row"><span class="label">Ср. время между кликами</span><span class="value">${avgTime}</span></div>
         `;
+        // Подсвечиваем активную кнопку фона
+        document.querySelectorAll('.profile-bg-options button').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.bg === savedMode);
+        });
     }
 
-    // Таблица лидеров
+    // --- Лидеры ---
     if (leadersList) {
         const { data: leaders, error } = await supabaseClient
             .from('players')
