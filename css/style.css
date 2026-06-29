@@ -156,6 +156,10 @@ body {
     color: rgba(255, 255, 255, 0.7);
     transform: scale(1.1);
 }
+.top-actions button svg {
+    width: 28px;
+    height: 28px;
+}
 
 .side-panel {
     position: fixed;
@@ -202,6 +206,10 @@ body {
     color: rgba(255, 255, 255, 0.7);
     transform: rotate(90deg);
 }
+.side-panel .panel-close svg {
+    width: 22px;
+    height: 22px;
+}
 .side-panel .panel-tabs {
     display: flex;
     gap: 10px;
@@ -219,6 +227,12 @@ body {
     transition: 0.3s;
     padding: 4px 12px;
     border-radius: 20px;
+    display: flex;
+    align-items: center;
+}
+.side-panel .panel-tabs button svg {
+    width: 28px;
+    height: 28px;
 }
 .side-panel .panel-tabs button.active {
     background: rgba(255, 215, 150, 0.15);
@@ -240,6 +254,12 @@ body {
     cursor: pointer;
     transition: transform 0.3s ease;
     padding: 0;
+    display: flex;
+    align-items: center;
+}
+.side-panel .panel-actions .panel-refresh-btn svg {
+    width: 32px;
+    height: 32px;
 }
 .side-panel .panel-actions .panel-refresh-btn:hover {
     color: #d4af37;
@@ -612,6 +632,9 @@ body {
     line-height: 1;
     opacity: 1;
     pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .btn-rollback:hover {
     background: rgba(255, 215, 150, 0.2);
@@ -625,6 +648,11 @@ body {
     pointer-events: none;
     cursor: default;
 }
+.btn-rollback svg {
+    width: 24px;
+    height: 24px;
+}
+
 .lock-toggle {
     font-size: 1.4rem;
     cursor: pointer;
@@ -637,6 +665,9 @@ body {
     border-radius: 30px;
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .lock-toggle:hover {
     color: rgba(255, 255, 255, 0.7);
@@ -644,6 +675,10 @@ body {
 }
 .lock-toggle.locked {
     color: #f0e6d0;
+}
+.lock-toggle svg {
+    width: 26px;
+    height: 26px;
 }
 
 .bars {
@@ -710,6 +745,9 @@ body {
     font-size: 1rem;
     transition: all 0.3s;
     backdrop-filter: blur(5px);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 .logout-btn:hover {
     background: rgba(255, 255, 255, 0.08);
@@ -719,6 +757,10 @@ body {
 }
 .logout-btn:active {
     transform: scale(0.95);
+}
+.logout-btn svg {
+    width: 22px;
+    height: 22px;
 }
 
 .modal-overlay {
@@ -783,7 +825,10 @@ body {
     cursor: pointer;
 }
 .modal .btn-danger {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     width: 100%;
     padding: 14px;
     margin: 15px 0 8px;
@@ -799,6 +844,10 @@ body {
 .modal .btn-danger:hover {
     background: rgba(255, 80, 80, 0.25);
     transform: scale(1.02);
+}
+.modal .btn-danger svg {
+    width: 20px;
+    height: 20px;
 }
 .modal .close-btn {
     display: block;
