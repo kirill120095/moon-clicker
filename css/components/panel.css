@@ -33,7 +33,7 @@
     border-radius: 4px;
 }
 
-/* Левая панель (статистика) */
+/* Левая панель */
 .left-panel {
     left: 0;
     border-left: none;
@@ -44,7 +44,7 @@
     transform: translateX(0);
 }
 
-/* Правая панель (магазин) */
+/* Правая панель */
 .right-panel {
     right: 0;
     border-right: none;
@@ -94,9 +94,6 @@
 .left-trigger.active {
     left: 320px;
 }
-.left-trigger.active svg {
-    transform: rotate(180deg);
-}
 
 /* Правый триггер */
 .right-trigger {
@@ -108,35 +105,19 @@
 .right-trigger.active {
     right: 320px;
 }
-.right-trigger.active svg {
-    transform: rotate(180deg);
-}
 
 @media (max-width: 700px) {
-    .left-trigger.active {
-        left: 280px;
-    }
-    .right-trigger.active {
-        right: 280px;
-    }
-    .side-panel {
-        width: 280px;
-    }
+    .left-trigger.active { left: 280px; }
+    .right-trigger.active { right: 280px; }
+    .side-panel { width: 280px; }
 }
 @media (max-width: 450px) {
-    .left-trigger.active {
-        left: 260px;
-    }
-    .right-trigger.active {
-        right: 260px;
-    }
-    .side-panel {
-        width: 260px;
-        padding: 15px;
-    }
+    .left-trigger.active { left: 260px; }
+    .right-trigger.active { right: 260px; }
+    .side-panel { width: 260px; padding: 15px; }
 }
 
-/* ---------- ВКЛАДКИ ПАНЕЛЕЙ ---------- */
+/* ---------- ВКЛАДКИ ---------- */
 .side-panel .panel-tabs {
     display: flex;
     gap: 10px;
@@ -154,8 +135,6 @@
     transition: 0.3s;
     padding: 4px 12px;
     border-radius: 20px;
-    display: flex;
-    align-items: center;
 }
 .side-panel .panel-tabs button.active {
     background: rgba(255, 215, 150, 0.15);
@@ -176,7 +155,7 @@
     display: block;
 }
 
-/* ---------- СТИЛИ ДЛЯ ПРОФИЛЯ ---------- */
+/* ---------- ПРОФИЛЬ ---------- */
 .profile-account {
     background: rgba(255,255,255,0.03);
     padding: 12px 16px;
@@ -238,7 +217,7 @@
     border-color: rgba(255,215,150,0.2);
 }
 
-/* ---------- СТИЛИ ДЛЯ ЛИДЕРОВ ---------- */
+/* ---------- ЛИДЕРЫ ---------- */
 .leader-item {
     display: flex;
     align-items: center;
@@ -279,7 +258,7 @@
     font-size: 0.9rem;
 }
 
-/* ---------- СТИЛИ ДЛЯ НАСТРОЕК ---------- */
+/* ---------- НАСТРОЙКИ ---------- */
 .settings-row {
     display: flex;
     align-items: center;
