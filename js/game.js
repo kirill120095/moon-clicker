@@ -13,7 +13,7 @@ import {
 } from './state.js';
 import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
 import { updateProfileAndLeaders } from './profile.js';
-import { BASE_HP, BOSS_INTERVAL, BOSS_TIMER } from './config.js';
+import { BASE_HP, BOSS_INTERVAL, BOSS_TIMER, UPGRADE_COSTS } from './config.js';
 import { applyMoonStyle } from './ui.js';
 
 let moonWrapper, moonInner, clickEffect, counterEl, levelTitle, hpBar, hpPercent,
@@ -78,6 +78,8 @@ export function updateUI() {
     
     // --- Обновляем отображение осколков ---
     updateShardsDisplay();
+    // --- Обновляем магазин ---
+    updateShopUI();
 }
 
 export function updateTimeDisplay() {
@@ -101,6 +103,107 @@ function calculateShardReward(level, isBoss) {
     // Применяем множитель (пока 1, в будущем можно добавить)
     const multiplier = playerData?.shard_multiplier || 1;
     return Math.floor(shards * multiplier);
+}
+
+// --- Обновление магазина ---
+export function updateShopUI() {
+    const shopLockMessage = document.getElementById('shopLockMessage');
+    const buyBtn = document.getElementById('buyClickDamageBtn');
+    const priceEl = document.getElementById('clickDamagePrice');
+    const levelEl = document.getElementById('clickDamageLevel');
+    
+    if (!buyBtn || !priceEl || !levelEl) return;
+    
+    const level = currentLevel || 1;
+    const isUnlocked = level >= 5;
+    
+    // Обновляем сообщение о разблокировке
+    if (shopLockMessage) {
+        if (isUnlocked) {
+            shopLockMessage.textContent = '✅ Магазин доступен';
+            shopLockMessage.style.color = 'rgba(80, 255, 150, 0.5)';
+        } else {
+            shopLockMessage.textContent = `🔒 Доступно с 5 уровня (сейчас ${level})`;
+            shopLockMessage.style.color = 'rgba(255, 255, 255, 0.3)';
+        }
+    }
+    
+    // Стоимость следующего улучшения
+    const currentLevelUpgrade = playerData?.click_damage_level || 0;
+    const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
+    const currentDamage = playerData?.click_damage || 1;
+    const nextDamage = currentDamage + 1;
+    
+    priceEl.textContent = `${cost} 💎`;
+    levelEl.textContent = `Ур. ${currentLevelUpgrade} (${currentDamage}→${nextDamage})`;
+    
+    // Доступность кнопки
+    const hasEnoughShards = (playerData?.shards || 0) >= cost;
+    buyBtn.disabled = !isUnlocked || !hasEnoughShards || currentLevelUpgrade >= 10;
+    buyBtn.textContent = currentLevelUpgrade >= 10 ? 'MAX' : 'Купить';
+    
+    if (!isUnlocked) {
+        buyBtn.classList.add('locked');
+    } else {
+        buyBtn.classList.remove('locked');
+    }
+}
+
+// --- Покупка улучшения ---
+export async function buyClickDamage() {
+    if (!currentUser || !playerData) {
+        showToast('⚠️ Войдите в аккаунт', 'warning');
+        return;
+    }
+    
+    const level = currentLevel || 1;
+    if (level < 5) {
+        showToast('🔒 Магазин доступен с 5 уровня', 'warning');
+        return;
+    }
+    
+    const currentLevelUpgrade = playerData.click_damage_level || 0;
+    if (currentLevelUpgrade >= 10) {
+        showToast('⚠️ Максимальный уровень улучшения', 'warning');
+        return;
+    }
+    
+    const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
+    
+    if ((playerData.shards || 0) < cost) {
+        showToast(`⚠️ Недостаточно осколков! Нужно ${cost}`, 'warning');
+        return;
+    }
+    
+    // Списываем осколки и повышаем уровень
+    const newShards = (playerData.shards || 0) - cost;
+    const newLevel = currentLevelUpgrade + 1;
+    const newDamage = playerData.click_damage + 1;
+    
+    const { error } = await supabaseClient
+        .from('players')
+        .update({
+            shards: newShards,
+            click_damage: newDamage,
+            click_damage_level: newLevel,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUser.id);
+    
+    if (error) {
+        console.error('Ошибка покупки:', error);
+        showToast('⚠️ Ошибка при покупке', 'warning');
+        return;
+    }
+    
+    // Обновляем локальные данные
+    playerData.shards = newShards;
+    playerData.click_damage = newDamage;
+    playerData.click_damage_level = newLevel;
+    
+    updateShardsDisplay();
+    updateShopUI();
+    showToast(`✅ Улучшение куплено! Урон: ${newDamage}`, 'success');
 }
 
 function startBossTimer() {
@@ -182,39 +285,6 @@ export async function updateProgress(playerId, newTotal, clickTimestamp, newLeve
     }
 }
 
-// --- СОХРАНЕНИЕ ОСКОЛКОВ И УЛУЧШЕНИЙ ---
-export async function updatePlayerStats(playerId, shards, clickDamage, clickDamageLevel) {
-    if (!playerId || !currentUser) return false;
-
-    const updateData = {
-        shards: shards,
-        click_damage: clickDamage,
-        click_damage_level: clickDamageLevel,
-        updated_at: new Date().toISOString()
-    };
-
-    try {
-        const { error } = await supabaseClient
-            .from('players')
-            .update(updateData)
-            .eq('id', playerId);
-
-        if (error) throw error;
-
-        if (playerData) {
-            playerData.shards = shards;
-            playerData.click_damage = clickDamage;
-            playerData.click_damage_level = clickDamageLevel;
-        }
-        updateShardsDisplay();
-        return true;
-    } catch (err) {
-        console.error('Ошибка сохранения статистики:', err);
-        showToast('⚠️ Ошибка сохранения', 'warning');
-        return false;
-    }
-}
-
 export async function saveTimeOnly() {
     if (!currentUser) return;
     try {
@@ -264,7 +334,6 @@ export async function resetProgress() {
         localStorage.setItem('levelLocked', 'false');
         updateUI();
         showToast('✅ Прогресс сброшен!', 'success');
-        document.getElementById('settingsModal')?.classList.remove('active');
         updateProfileAndLeaders();
     } catch (err) {
         console.error(err);
@@ -326,6 +395,7 @@ export function initGame() {
 
     updateProfileAndLeaders();
     updateShardsDisplay();
+    updateShopUI();
 }
 
 export async function handleClick(e) {
@@ -368,7 +438,19 @@ export async function handleClick(e) {
         showToast(`💎 +${shardReward} лунных осколков!`, 'success', 2000);
         
         // Сохраняем осколки
-        await updatePlayerStats(currentUser.id, currentShards, playerData?.click_damage || 1, playerData?.click_damage_level || 0);
+        const { error: updateError } = await supabaseClient
+            .from('players')
+            .update({
+                shards: currentShards,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentUser.id);
+        
+        if (!updateError && playerData) {
+            playerData.shards = currentShards;
+        }
+        updateShardsDisplay();
+        updateShopUI();
         
         // --- ПЕРЕХОД НА СЛЕДУЮЩИЙ УРОВЕНЬ ---
         const newLevel = currentLevel + 1;
@@ -386,6 +468,7 @@ export async function handleClick(e) {
         await updateProgress(currentUser.id, clickCount, now, newLevel, moonHP);
         updateProfileAndLeaders();
         updateShardsDisplay();
+        updateShopUI();
         return;
     }
 
