@@ -44,7 +44,7 @@ export function initUI() {
     panelContents = document.querySelectorAll('.side-panel .panel-content');
     refreshDataBtn = document.getElementById('refreshDataBtn');
 
-    // Настройки
+    // Настройки (в панели)
     testModeCheckbox = document.getElementById('testModeCheckbox');
     resetProgressBtn = document.getElementById('resetProgressBtn');
 
@@ -102,26 +102,30 @@ export function setMode(mode) {
 
 function initEvents() {
     // Вкладки авторизации
-    tabLogin.addEventListener('click', () => setMode('login'));
-    tabRegister.addEventListener('click', () => setMode('register'));
+    if (tabLogin) tabLogin.addEventListener('click', () => setMode('login'));
+    if (tabRegister) tabRegister.addEventListener('click', () => setMode('register'));
 
     // Кнопка действия авторизации
-    actionBtn.addEventListener('click', () => {
-        if (tabLogin.classList.contains('active')) {
-            handleLogin();
-        } else {
-            handleRegister();
-        }
-    });
+    if (actionBtn) {
+        actionBtn.addEventListener('click', () => {
+            if (tabLogin.classList.contains('active')) {
+                handleLogin();
+            } else {
+                handleRegister();
+            }
+        });
+    }
 
     // Радиокнопки типа входа
     document.querySelectorAll('input[name="loginType"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             const input = document.getElementById('loginInput');
-            if (e.target.value === 'email') {
-                input.placeholder = 'Email вашего аккаунта';
-            } else {
-                input.placeholder = 'Ваш игровой логин';
+            if (input) {
+                if (e.target.value === 'email') {
+                    input.placeholder = 'Email вашего аккаунта';
+                } else {
+                    input.placeholder = 'Ваш игровой логин';
+                }
             }
         });
     });
@@ -141,7 +145,7 @@ function initEvents() {
         panelClose.addEventListener('click', () => togglePanel(false));
     }
 
-    // Кнопка ручного обновления данных 🔄
+    // Кнопка ручного обновления данных
     if (refreshDataBtn) {
         refreshDataBtn.addEventListener('click', () => {
             refreshDataBtn.classList.add('spinning');
@@ -161,11 +165,6 @@ function initEvents() {
             const panelId = `panel${tabType.charAt(0).toUpperCase() + tabType.slice(1)}`;
             const panel = document.getElementById(panelId);
             if (panel) panel.classList.add('active');
-
-            // При переключении на вкладку "Настройки" показываем панель настроек
-            if (tabType === 'settings') {
-                // ничего особенного не делаем, просто показываем
-            }
 
             // Мягкое обновление данных при клике на вкладку
             updateProfileAndLeaders(true);
