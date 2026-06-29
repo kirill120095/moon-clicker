@@ -6,7 +6,7 @@ import { initToastContainer, createStars } from './utils.js';
 import { initUI } from './ui.js';
 import { initGame } from './game.js';
 import { currentUser, setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP } from './state.js';
-import { loadPlayerData } from './auth.js';
+import { loadPlayerData, initAuthElements } from './auth.js';
 import { BASE_HP } from './config.js';
 import { getMaxHPForLevel } from './utils.js';
 
@@ -16,6 +16,9 @@ initToastContainer(toastContainer);
 
 // Генерация звёзд
 createStars();
+
+// Инициализация элементов авторизации
+initAuthElements();
 
 // Инициализация UI (привязка обработчиков)
 initUI();
@@ -43,8 +46,14 @@ async function checkAuth() {
             setMoonHP(BASE_HP);
             setMaxHP(BASE_HP);
         }
+        // Показываем игровые кнопки
+        document.getElementById('statsToggleBtn').style.display = '';
+        document.getElementById('settingsBtn').style.display = '';
         initGame();
     } else {
+        // Скрываем кнопки, пока не авторизованы
+        document.getElementById('statsToggleBtn').style.display = 'none';
+        document.getElementById('settingsBtn').style.display = 'none';
         // Показываем форму входа
         document.getElementById('authBlock').classList.remove('hidden');
         document.getElementById('gameArea').classList.remove('active');
