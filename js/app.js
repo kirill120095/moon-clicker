@@ -55,7 +55,7 @@ async function checkAuth() {
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('gameArea').classList.add('active');
             
-            // Убеждаемся, что панель закрыта при входе
+            // Закрываем панель и сбрасываем кнопку ПРИ ВХОДЕ
             const sidePanel = document.getElementById('sidePanel');
             const panelTrigger = document.getElementById('panelTrigger');
             if (sidePanel) sidePanel.classList.remove('active');
@@ -63,11 +63,10 @@ async function checkAuth() {
 
             initGame();
         } else {
-            // Гостевой режим
+            // Гостевой режим – закрываем панель
             document.getElementById('authBlock').classList.remove('hidden');
             document.getElementById('gameArea').classList.remove('active');
             
-            // Закрываем панель
             const sidePanel = document.getElementById('sidePanel');
             const panelTrigger = document.getElementById('panelTrigger');
             if (sidePanel) sidePanel.classList.remove('active');
