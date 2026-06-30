@@ -1,7 +1,7 @@
 // ============================================================
 //  ГЛОБАЛЬНОЕ СОСТОЯНИЕ
 // ============================================================
-import { BASE_HP, BOSS_TIMER, MOON_TYPES, MOON_SLOT_UNLOCK, ACHIEVEMENTS, QUESTS, MAX_SLOTS } from './config.js';
+import { BASE_HP, BOSS_TIMER, MOON_TYPES, ACHIEVEMENTS, QUESTS, MAX_SLOTS } from './config.js';
 import { supabaseClient } from './supabase.js';
 import { showToast } from './utils.js';
 
@@ -135,7 +135,6 @@ export function getMoonLevel(moonId) {
 
 // --- Слоты ---
 export function updateMaxSlots() {
-    // Максимум 3 слота
     const maxPossible = Math.min(slotLevel, MAX_SLOTS);
     maxSlots = maxPossible;
     if (activeMoons.length > maxSlots) {
