@@ -48,13 +48,11 @@ export async function updateProfileAndLeaders(force = false) {
             const isInActiveSlots = activeMoons.includes(moonId);
             const canToggle = isInActiveSlots ? activeMoons.length > 1 : activeMoons.length < maxSlots;
 
-            // бонусы
             let bonusDesc = [];
             if (moon.damageBonus > 0) bonusDesc.push(`урон +${Math.round(moon.damageBonus*100)}%`);
             if (moon.shardBonus > 0) bonusDesc.push(`осколки +${Math.round(moon.shardBonus*100)}%`);
             const bonusText = bonusDesc.length ? `(${bonusDesc.join(', ')})` : '';
 
-            // прокачка
             const canUpgrade = level >= 10 && moonLevel < 10;
             const upgradeCost = canUpgrade ? getMoonUpgradeCost(moonId, moonLevel) : 0;
 
@@ -117,7 +115,6 @@ export async function updateProfileAndLeaders(force = false) {
             `;
         }
 
-        // Собираем всё в профиль
         profileContent.innerHTML = `
             <div class="profile-account">
                 <p>👤 <strong>${currentUser.user_metadata?.username || 'Игрок'}</strong></p>
@@ -149,7 +146,6 @@ export async function updateProfileAndLeaders(force = false) {
             </div>
         `;
 
-        // --- Обработчики кнопок (переключение, выбор, прокачка) ---
         document.querySelectorAll('.profile-toggle-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const moonId = btn.dataset.moon;
