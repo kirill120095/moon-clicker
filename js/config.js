@@ -13,6 +13,10 @@ export const UPGRADE_COSTS = {
     clickDamage: {
         base: 50,
         multiplier: 1.8
+    },
+    moonSlots: {
+        base: 500,          // начальная цена за дополнительный слот
+        multiplier: 2.5     // множитель цены за каждый следующий слот
     }
 };
 
@@ -104,13 +108,17 @@ export const MOON_TYPES = {
     }
 };
 
-// --- Стоимость прокачки уровня луны ---
-export const MOON_UPGRADE_COSTS = {
-    base: 100,            // начальная цена для 1-го уровня
-    multiplier: 1.5       // каждый следующий уровень дороже в 1.5 раза
-};
+// --- Индивидуальная стоимость прокачки уровня луны (зависит от начальной цены) ---
+export function getMoonUpgradeCost(moonId, currentLevel) {
+    const moon = MOON_TYPES[moonId];
+    if (!moon) return 100;
+    // Базовая стоимость = 10% от начальной цены луны (минимум 100)
+    const baseCost = Math.max(100, moon.cost * 0.1);
+    // Стоимость растёт с каждым уровнем
+    return Math.floor(baseCost * Math.pow(1.5, currentLevel - 1));
+}
 
-// --- Открытие слотов для активации нескольких лун ---
+// --- Открытие слотов для активации нескольких лун (уровни) ---
 export const MOON_SLOT_UNLOCK = {
     1: 1,    // 1 слот с 1 уровня
     2: 5,    // 2 слота с 5 уровня
@@ -118,6 +126,10 @@ export const MOON_SLOT_UNLOCK = {
     4: 30,   // 4 слота с 30 уровня
     5: 50    // 5 слотов с 50 уровня
 };
+
+// --- Стоимость покупки дополнительного слота (если слота не хватает по уровням) ---
+// В данной версии мы не используем покупку слотов за осколки, только через уровни.
+// Но если вы хотите добавить такую возможность, раскомментируйте и используйте.
 
 // --- Комбо-бонусы (синергия) ---
 export const SYNERGY_BONUSES = {
@@ -143,7 +155,37 @@ export const SYNERGY_BONUSES = {
         name: 'Баланс',
         damageBonus: 0.05,
         shardBonus: 0.05,
-        description: '+5% урона, +5% осколков (если активна обычная луна)'
+        description: '+5% урона, +5% осколков'
+    },
+    'blood+ice': {
+        name: 'Кровавый лёд',
+        damageBonus: 0.15,
+        shardBonus: 0.1,
+        description: '+15% урона, +10% осколков'
+    },
+    'fire+shadow': {
+        name: 'Теневой огонь',
+        damageBonus: 0.2,
+        shardBonus: 0.1,
+        description: '+20% урона, +10% осколков'
+    },
+    'gold+electric': {
+        name: 'Золотая молния',
+        damageBonus: 0.1,
+        shardBonus: 0.25,
+        description: '+10% урона, +25% осколков'
+    },
+    'ice+shadow': {
+        name: 'Ледяная тень',
+        damageBonus: 0.05,
+        shardBonus: 0.2,
+        description: '+5% урона, +20% осколков'
+    },
+    'fire+electric': {
+        name: 'Грозовой пожар',
+        damageBonus: 0.2,
+        shardBonus: 0.15,
+        description: '+20% урона, +15% осколков'
     }
 };
 
@@ -180,6 +222,30 @@ export const ACHIEVEMENTS = {
         check: (state) => state.bossKills >= 10,
         reward: 2000,
         achieved: false
+    },
+    clickMaster: {
+        id: 'clickMaster',
+        name: 'Мастер кликов',
+        description: 'Сделайте 10 000 кликов',
+        check: (state) => state.clickCount >= 10000,
+        reward: 3000,
+        achieved: false
+    },
+    moonUpgrader: {
+        id: 'moonUpgrader',
+        name: 'Улучшатель лун',
+        description: 'Прокачайте любую луну до 5 уровня',
+        check: (state) => Object.values(state.moonLevels || {}).some(lvl => lvl >= 5),
+        reward: 1500,
+        achieved: false
+    },
+    maxMoon: {
+        id: 'maxMoon',
+        name: 'Максимальная луна',
+        description: 'Прокачайте любую луну до 10 уровня',
+        check: (state) => Object.values(state.moonLevels || {}).some(lvl => lvl >= 10),
+        reward: 5000,
+        achieved: false
     }
 };
 
@@ -211,5 +277,41 @@ export const QUESTS = {
         target: 100,
         reward: 100,
         type: 'shard'
+    },
+    click500: {
+        id: 'click500',
+        name: '500 кликов',
+        description: 'Сделайте 500 кликов',
+        progress: 0,
+        target: 500,
+        reward: 150,
+        type: 'click'
+    },
+    killBoss3: {
+        id: 'killBoss3',
+        name: 'Убить 3 боссов',
+        description: 'Убейте 3 боссов',
+        progress: 0,
+        target: 3,
+        reward: 500,
+        type: 'bossKill'
+    },
+    shard500: {
+        id: 'shard500',
+        name: 'Соберите 500 осколков',
+        description: 'Накопите 500 осколков',
+        progress: 0,
+        target: 500,
+        reward: 300,
+        type: 'shard'
+    },
+    level5: {
+        id: 'level5',
+        name: 'Достигните 5 уровня',
+        description: 'Достигните 5 уровня',
+        progress: 0,
+        target: 5,
+        reward: 100,
+        type: 'level'
     }
 };
