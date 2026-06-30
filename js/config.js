@@ -20,6 +20,9 @@ export const UPGRADE_COSTS = {
     }
 };
 
+// --- Максимальное количество слотов ---
+export const MAX_SLOTS = 3;
+
 // --- Типы лун (с уровнями открытия) ---
 export const MOON_TYPES = {
     normal: {
@@ -112,27 +115,19 @@ export const MOON_TYPES = {
 export function getMoonUpgradeCost(moonId, currentLevel) {
     const moon = MOON_TYPES[moonId];
     if (!moon) return 100;
-    // Базовая стоимость = 10% от начальной цены луны (минимум 100)
     const baseCost = Math.max(100, moon.cost * 0.1);
-    // Стоимость растёт с каждым уровнем
     return Math.floor(baseCost * Math.pow(1.5, currentLevel - 1));
 }
 
-// --- Открытие слотов для активации нескольких лун (уровни) ---
-export const MOON_SLOT_UNLOCK = {
-    1: 1,    // 1 слот с 1 уровня
-    2: 5,    // 2 слота с 5 уровня
-    3: 15,   // 3 слота с 15 уровня
-    4: 30,   // 4 слота с 30 уровня
-    5: 50    // 5 слотов с 50 уровня
-};
+// --- Стоимость покупки дополнительного слота ---
+export function getSlotUpgradeCost(slotIndex) {
+    // slotIndex: 0 -> 1 слот, 1 -> 2 слота, 2 -> 3 слота
+    return Math.floor(UPGRADE_COSTS.moonSlots.base * Math.pow(UPGRADE_COSTS.moonSlots.multiplier, slotIndex));
+}
 
-// --- Стоимость покупки дополнительного слота (если слота не хватает по уровням) ---
-// В данной версии мы не используем покупку слотов за осколки, только через уровни.
-// Но если вы хотите добавить такую возможность, раскомментируйте и используйте.
-
-// --- Комбо-бонусы (синергия) ---
+// --- Комбо-бонусы (синергия) для всех комбинаций из 3 лун ---
 export const SYNERGY_BONUSES = {
+    // Базовые комбинации из 2 лун
     'blood+fire': {
         name: 'Адское пламя',
         damageBonus: 0.3,
@@ -186,6 +181,97 @@ export const SYNERGY_BONUSES = {
         damageBonus: 0.2,
         shardBonus: 0.15,
         description: '+20% урона, +15% осколков'
+    },
+    // Комбинации из 3 лун
+    'blood+fire+ice': {
+        name: 'Адский лёд',
+        damageBonus: 0.4,
+        shardBonus: 0.15,
+        description: '+40% урона, +15% осколков'
+    },
+    'blood+fire+shadow': {
+        name: 'Теневой ад',
+        damageBonus: 0.45,
+        shardBonus: 0.1,
+        description: '+45% урона, +10% осколков'
+    },
+    'blood+fire+electric': {
+        name: 'Грозовая кровь',
+        damageBonus: 0.4,
+        shardBonus: 0.2,
+        description: '+40% урона, +20% осколков'
+    },
+    'blood+ice+electric': {
+        name: 'Кровавая буря',
+        damageBonus: 0.2,
+        shardBonus: 0.5,
+        description: '+20% урона, +50% осколков'
+    },
+    'blood+ice+shadow': {
+        name: 'Кровавая тень',
+        damageBonus: 0.25,
+        shardBonus: 0.3,
+        description: '+25% урона, +30% осколков'
+    },
+    'blood+shadow+gold': {
+        name: 'Кровавый капитал',
+        damageBonus: 0.3,
+        shardBonus: 0.3,
+        description: '+30% урона, +30% осколков'
+    },
+    'blood+gold+electric': {
+        name: 'Золотая кровь',
+        damageBonus: 0.3,
+        shardBonus: 0.35,
+        description: '+30% урона, +35% осколков'
+    },
+    'fire+ice+shadow': {
+        name: 'Огненная тень',
+        damageBonus: 0.3,
+        shardBonus: 0.25,
+        description: '+30% урона, +25% осколков'
+    },
+    'fire+ice+electric': {
+        name: 'Ледяной гром',
+        damageBonus: 0.25,
+        shardBonus: 0.45,
+        description: '+25% урона, +45% осколков'
+    },
+    'fire+shadow+gold': {
+        name: 'Огненный капитал',
+        damageBonus: 0.35,
+        shardBonus: 0.25,
+        description: '+35% урона, +25% осколков'
+    },
+    'fire+gold+electric': {
+        name: 'Золотой гром',
+        damageBonus: 0.3,
+        shardBonus: 0.3,
+        description: '+30% урона, +30% осколков'
+    },
+    'ice+shadow+gold': {
+        name: 'Теневой лёд',
+        damageBonus: 0.15,
+        shardBonus: 0.4,
+        description: '+15% урона, +40% осколков'
+    },
+    'ice+gold+electric': {
+        name: 'Золотая стужа',
+        damageBonus: 0.15,
+        shardBonus: 0.5,
+        description: '+15% урона, +50% осколков'
+    },
+    'shadow+gold+electric': {
+        name: 'Теневая молния',
+        damageBonus: 0.2,
+        shardBonus: 0.4,
+        description: '+20% урона, +40% осколков'
+    },
+    'blood+fire+gold': {
+        name: 'Адское золото',
+        damageBonus: 0.5,
+        shardBonus: 0.2,
+        description: '+50% урона, +20% осколков'
     }
 };
 
@@ -245,6 +331,14 @@ export const ACHIEVEMENTS = {
         description: 'Прокачайте любую луну до 10 уровня',
         check: (state) => Object.values(state.moonLevels || {}).some(lvl => lvl >= 10),
         reward: 5000,
+        achieved: false
+    },
+    slotMaster: {
+        id: 'slotMaster',
+        name: 'Мастер слотов',
+        description: 'Откройте 3 слота для лун',
+        check: (state) => state.maxSlots >= 3,
+        reward: 1000,
         achieved: false
     }
 };
@@ -313,5 +407,14 @@ export const QUESTS = {
         target: 5,
         reward: 100,
         type: 'level'
+    },
+    slotUpgrade: {
+        id: 'slotUpgrade',
+        name: 'Откройте 2 слота',
+        description: 'Откройте второй слот для лун',
+        progress: 0,
+        target: 1,
+        reward: 300,
+        type: 'slot'
     }
 };
