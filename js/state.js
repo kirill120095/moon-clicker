@@ -1,7 +1,7 @@
 // ============================================================
 //  ГЛОБАЛЬНОЕ СОСТОЯНИЕ
 // ============================================================
-import { BASE_HP, BOSS_TIMER, MOON_TYPES, MOON_SLOT_UNLOCK, ACHIEVEMENTS, QUESTS } from './config.js';
+import { BASE_HP, BOSS_TIMER, MOON_TYPES, MOON_SLOT_UNLOCK, ACHIEVEMENTS, QUESTS, MAX_SLOTS } from './config.js';
 import { supabaseClient } from './supabase.js';
 import { showToast } from './utils.js';
 
@@ -15,6 +15,7 @@ export let moonHP = BASE_HP;
 export let maxHP = BASE_HP;
 export let sessionStartTimestamp = null;
 export let bossKills = 0;
+export let slotLevel = 1; // 1 = 1 слот, 2 = 2 слота, 3 = 3 слота
 
 // Таймеры
 export let timeUpdateInterval = null;
@@ -39,7 +40,6 @@ export let quests = {};
 
 // Слоты
 export let maxSlots = 1;
-export let purchasedSlots = 0;
 
 // ============================================================
 //  СЕТТЕРЫ
@@ -53,6 +53,11 @@ export function setPlayerData(data) {
         initQuests();
         const savedKills = localStorage.getItem(`bossKills_${currentUser?.id}`);
         if (savedKills) setBossKills(parseInt(savedKills) || 0);
+        const savedSlotLevel = localStorage.getItem(`slotLevel_${currentUser?.id}`);
+        if (savedSlotLevel) {
+            slotLevel = parseInt(savedSlotLevel) || 1;
+            updateMaxSlots();
+        }
     }
 }
 export function setClickCount(value) {
@@ -80,6 +85,15 @@ export function setBossKills(value) {
         localStorage.setItem(`bossKills_${currentUser.id}`, String(value));
     }
     if (bossKills >= 10) unlockAchievement('bossSlayer');
+}
+export function setSlotLevel(value) {
+    slotLevel = Math.min(value, MAX_SLOTS);
+    if (currentUser) {
+        localStorage.setItem(`slotLevel_${currentUser.id}`, String(slotLevel));
+    }
+    updateMaxSlots();
+    if (maxSlots >= 3) unlockAchievement('slotMaster');
+    updateQuestProgress('slot', 1);
 }
 
 // --- Луны ---
@@ -121,13 +135,9 @@ export function getMoonLevel(moonId) {
 
 // --- Слоты ---
 export function updateMaxSlots() {
-    let max = 1;
-    for (const [slot, level] of Object.entries(MOON_SLOT_UNLOCK)) {
-        if (currentLevel >= level) {
-            max = Math.max(max, parseInt(slot));
-        }
-    }
-    maxSlots = max;
+    // Максимум 3 слота
+    const maxPossible = Math.min(slotLevel, MAX_SLOTS);
+    maxSlots = maxPossible;
     if (activeMoons.length > maxSlots) {
         activeMoons = activeMoons.slice(0, maxSlots);
         saveMoonData();
@@ -189,7 +199,7 @@ export function unlockAchievement(id) {
 }
 export function checkAllAchievements() {
     for (const [id, ach] of Object.entries(ACHIEVEMENTS)) {
-        if (!achievements[id] && ach.check({ ownedMoons, currentLevel, bossKills, clickCount, moonLevels })) {
+        if (!achievements[id] && ach.check({ ownedMoons, currentLevel, bossKills, clickCount, moonLevels, maxSlots })) {
             unlockAchievement(id);
         }
     }
