@@ -20,6 +20,7 @@ import {
 } from './state.js';
 import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
 import { updateProfileAndLeaders } from './profile.js';
+import { updateQuestAndAchievementUI } from './ui.js';
 import {
     BASE_HP, BOSS_INTERVAL, BOSS_TIMER, UPGRADE_COSTS, MAX_SLOTS,
     MOON_TYPES, getMoonUpgradeCost, getSlotUpgradeCost, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS
@@ -106,14 +107,8 @@ export function recalcMoonBonuses() {
         const moon = MOON_TYPES[id];
         if (moon) {
             const level = getMoonLevel(id);
-            // Для обычной луны: +5% урона за уровень (начиная с 1 уровня)
-            let levelMultiplier = 1 + (level - 1) * 0.05;
-            if (id === 'normal') {
-                // Обычная луна даёт +5% урона за уровень
-                levelMultiplier = 1 + (level - 1) * 0.05;
-            } else {
-                levelMultiplier = 1 + (level - 1) * 0.05;
-            }
+            // Каждый уровень даёт +5% к базовому бонусу
+            const levelMultiplier = 1 + (level - 1) * 0.05;
             totalDamageBonus += (moon.damageBonus || 0) * levelMultiplier;
             totalShardBonus += (moon.shardBonus || 0) * levelMultiplier;
         }
@@ -169,11 +164,11 @@ export function updateShopUI() {
         const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
         const currentDamage = playerData?.click_damage || 1;
         const nextDamage = currentDamage + 1;
-        const currentTotalBonus = `${currentDamage} урона (всего)`;
-        const nextTotalBonus = `${nextDamage} урона (всего)`;
-        priceEl.textContent = `${cost} 💎`;
+        // В тестовом режиме цена 0
+        const displayCost = testMode ? 0 : cost;
+        priceEl.textContent = `${displayCost} 💎`;
         levelEl.innerHTML = `Ур. ${currentLevelUpgrade}: ${currentDamage} → ${nextDamage}`;
-        const hasEnoughShards = (playerData?.shards || 0) >= cost;
+        const hasEnoughShards = testMode || (playerData?.shards || 0) >= cost;
         buyBtn.disabled = !isUnlocked || !hasEnoughShards || currentLevelUpgrade >= 10;
         buyBtn.textContent = currentLevelUpgrade >= 10 ? 'MAX' : 'Купить';
         buyBtn.classList.toggle('locked', !isUnlocked);
@@ -187,9 +182,10 @@ export function updateShopUI() {
         const currentSlots = maxSlots;
         const canUpgrade = currentSlots < MAX_SLOTS;
         const cost = canUpgrade ? getSlotUpgradeCost(currentSlots) : 0;
-        slotPriceEl.textContent = canUpgrade ? `${cost} 💎` : 'MAX';
+        const displayCost = testMode ? 0 : cost;
+        slotPriceEl.textContent = canUpgrade ? `${displayCost} 💎` : 'MAX';
         slotLevelEl.textContent = `Слотов: ${currentSlots}/${MAX_SLOTS}`;
-        const hasEnoughShards = (playerData?.shards || 0) >= cost;
+        const hasEnoughShards = testMode || (playerData?.shards || 0) >= cost;
         slotBuyBtn.disabled = !canUpgrade || !hasEnoughShards;
         slotBuyBtn.textContent = canUpgrade ? 'Купить' : 'MAX';
     }
@@ -201,25 +197,28 @@ export function updateShopUI() {
         for (const [id, moon] of Object.entries(MOON_TYPES)) {
             const owned = ownedMoons.includes(id);
             const active = (activeMoon === id);
-            const canBuy = !owned && (playerData?.shards || 0) >= moon.cost && moon.cost > 0 && currentLevel >= (moon.unlockLevel || 1);
+            const canBuy = !owned && (testMode || (playerData?.shards || 0) >= moon.cost) && moon.cost > 0 && currentLevel >= (moon.unlockLevel || 1);
             const isLockedByLevel = currentLevel < (moon.unlockLevel || 1);
 
             const level = owned ? getMoonLevel(id) : 0;
-            const levelBonus = (id === 'normal') ? `${Math.round((level - 1) * 5)}%` : `${Math.round((level - 1) * 5)}%`;
             let bonusDesc = [];
-            if (moon.damageBonus > 0) bonusDesc.push(`урон +${Math.round(moon.damageBonus*100)}%`);
-            if (moon.shardBonus > 0) bonusDesc.push(`осколки +${Math.round(moon.shardBonus*100)}%`);
-            if (id === 'normal' && level > 1) bonusDesc.push(`+${Math.round((level - 1) * 5)}% урона (уровень)`);
+            const damageBonusWithLevel = (moon.damageBonus || 0) * (1 + (level - 1) * 0.05);
+            const shardBonusWithLevel = (moon.shardBonus || 0) * (1 + (level - 1) * 0.05);
+            if (damageBonusWithLevel > 0) bonusDesc.push(`урон +${Math.round(damageBonusWithLevel*100)}%`);
+            if (shardBonusWithLevel > 0) bonusDesc.push(`осколки +${Math.round(shardBonusWithLevel*100)}%`);
             const bonusText = bonusDesc.length ? `Бонус: ${bonusDesc.join(', ')}` : 'Без бонусов';
 
             const upgradeCost = owned ? getMoonUpgradeCost(id, level) : 0;
-            const canUpgrade = owned && currentLevel >= 10 && level < 10 && (playerData?.shards || 0) >= upgradeCost;
+            const displayUpgradeCost = testMode ? 0 : upgradeCost;
+            const canUpgrade = owned && currentLevel >= 10 && level < 10 && (testMode || (playerData?.shards || 0) >= upgradeCost);
+
+            const displayCost = testMode ? 0 : moon.cost;
 
             html += `
                 <div class="shop-item moon-item" data-moon-id="${id}">
                     <div class="shop-item-info">
                         <span class="shop-item-name">${moon.emoji} ${moon.name}</span>
-                        <span class="shop-item-desc">${moon.cost === 0 ? 'Начальная' : `Цена: ${moon.cost} 💎`}</span>
+                        <span class="shop-item-desc">${moon.cost === 0 ? 'Начальная' : `Цена: ${displayCost} 💎`}</span>
                         <span class="shop-item-desc">${bonusText}</span>
                         ${owned ? `<span class="shop-item-desc">Уровень: ${level} / 10</span>` : ''}
                         ${isLockedByLevel ? `<span class="shop-item-desc" style="color: #ff6b6b;">Открывается с ${moon.unlockLevel} уровня</span>` : ''}
@@ -229,7 +228,7 @@ export function updateShopUI() {
                         : (moon.cost === 0 ? '<span style="color:#4ecdc4;">Доступна</span>' :
                            (isLockedByLevel ? `<span style="color:#ff6b6b;">🔒</span>` :
                            `<button class="shop-buy-btn buy-moon-btn" data-moon-id="${id}" ${!canBuy ? 'disabled' : ''}>${canBuy ? 'Купить' : 'Не хватает'}</button>`))}
-                        ${owned && level < 10 ? `<button class="shop-buy-btn upgrade-moon-btn" data-moon-id="${id}" ${!canUpgrade ? 'disabled' : ''}>${canUpgrade ? `Улучшить (${upgradeCost} 💎)` : 'MAX'}</button>` : ''}
+                        ${owned && level < 10 ? `<button class="shop-buy-btn upgrade-moon-btn" data-moon-id="${id}" ${!canUpgrade ? 'disabled' : ''}>${canUpgrade ? `Улучшить (${displayUpgradeCost} 💎)` : 'MAX'}</button>` : ''}
                     </div>
                 </div>
             `;
@@ -267,29 +266,35 @@ export async function buySlot() {
         showToast('⚠️ Все слоты уже открыты', 'warning');
         return;
     }
-    const cost = getSlotUpgradeCost(maxSlots);
-    if ((playerData.shards || 0) < cost) {
-        showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
-        return;
+
+    // В тестовом режиме - бесплатно
+    if (!testMode) {
+        const cost = getSlotUpgradeCost(maxSlots);
+        if ((playerData.shards || 0) < cost) {
+            showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
+            return;
+        }
+        const newShards = playerData.shards - cost;
+        const { error } = await supabaseClient
+            .from('players')
+            .update({ shards: newShards })
+            .eq('id', currentUser.id);
+        if (error) {
+            showToast('⚠️ Ошибка покупки слота', 'warning');
+            return;
+        }
+        playerData.shards = newShards;
     }
 
-    const newShards = playerData.shards - cost;
-    const { error } = await supabaseClient
-        .from('players')
-        .update({ shards: newShards })
-        .eq('id', currentUser.id);
-    if (error) {
-        showToast('⚠️ Ошибка покупки слота', 'warning');
-        return;
-    }
-    playerData.shards = newShards;
     setSlotLevel(maxSlots + 1);
     updateUI();
     updateShopUI();
     updateProfileAndLeaders(true);
+    updateQuestAndAchievementUI();
     showToast(`✅ Открыт ${maxSlots} слот!`, 'success');
 }
 
+// --- Покупка луны ---
 export async function buyMoon(moonId) {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -305,36 +310,40 @@ export async function buyMoon(moonId) {
         showToast(`🔒 Доступна с ${moon.unlockLevel} уровня`, 'warning');
         return;
     }
-    if ((playerData.shards || 0) < moon.cost) {
-        showToast(`⚠️ Недостаточно осколков! Нужно ${moon.cost}`, 'warning');
-        return;
+
+    // В тестовом режиме - бесплатно
+    if (!testMode) {
+        if ((playerData.shards || 0) < moon.cost) {
+            showToast(`⚠️ Недостаточно осколков! Нужно ${moon.cost}`, 'warning');
+            return;
+        }
+        const newShards = (playerData.shards || 0) - moon.cost;
+        const { error } = await supabaseClient
+            .from('players')
+            .update({
+                shards: newShards,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentUser.id);
+        if (error) {
+            console.error('Ошибка покупки луны:', error);
+            showToast('⚠️ Ошибка при покупке', 'warning');
+            return;
+        }
+        playerData.shards = newShards;
     }
 
-    const newShards = (playerData.shards || 0) - moon.cost;
-    const { error } = await supabaseClient
-        .from('players')
-        .update({
-            shards: newShards,
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', currentUser.id);
-
-    if (error) {
-        console.error('Ошибка покупки луны:', error);
-        showToast('⚠️ Ошибка при покупке', 'warning');
-        return;
-    }
-
-    playerData.shards = newShards;
     addOwnedMoon(moonId);
     setActiveMoon(moonId);
 
     updateUI();
     updateShopUI();
     updateProfileAndLeaders(true);
+    updateQuestAndAchievementUI();
     showToast(`✅ Куплена луна "${moon.name}"!`, 'success');
 }
 
+// --- Выбор активной луны ---
 export async function selectMoon(moonId) {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -356,6 +365,7 @@ export async function selectMoon(moonId) {
     showToast(`✅ Активна луна "${MOON_TYPES[moonId].name}"`, 'success');
 }
 
+// --- Прокачка луны ---
 export async function upgradeMoon(moonId) {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -374,21 +384,26 @@ export async function upgradeMoon(moonId) {
         showToast('⚠️ Максимальный уровень луны (10)', 'warning');
         return;
     }
-    const cost = getMoonUpgradeCost(moonId, currentLevelMoon);
-    if ((playerData.shards || 0) < cost) {
-        showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
-        return;
+
+    // В тестовом режиме - бесплатно
+    if (!testMode) {
+        const cost = getMoonUpgradeCost(moonId, currentLevelMoon);
+        if ((playerData.shards || 0) < cost) {
+            showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
+            return;
+        }
+        const newShards = playerData.shards - cost;
+        const { error } = await supabaseClient
+            .from('players')
+            .update({ shards: newShards })
+            .eq('id', currentUser.id);
+        if (error) {
+            showToast('⚠️ Ошибка прокачки', 'warning');
+            return;
+        }
+        playerData.shards = newShards;
     }
-    const newShards = playerData.shards - cost;
-    const { error } = await supabaseClient
-        .from('players')
-        .update({ shards: newShards })
-        .eq('id', currentUser.id);
-    if (error) {
-        showToast('⚠️ Ошибка прокачки', 'warning');
-        return;
-    }
-    playerData.shards = newShards;
+
     setMoonLevel(moonId, currentLevelMoon + 1);
     updateUI();
     updateShopUI();
@@ -396,6 +411,7 @@ export async function upgradeMoon(moonId) {
     showToast(`✅ Луна "${MOON_TYPES[moonId].name}" улучшена до ${currentLevelMoon + 1} уровня!`, 'success');
 }
 
+// --- Переключение активных лун (добавление/удаление из слотов) ---
 export function toggleMoon(moonId) {
     if (!ownedMoons.includes(moonId)) {
         showToast('⚠️ У вас нет этой луны', 'warning');
@@ -536,6 +552,7 @@ export async function resetProgress() {
         updateUI();
         showToast('✅ Прогресс сброшен!', 'success');
         updateProfileAndLeaders();
+        updateQuestAndAchievementUI();
     } catch (err) {
         console.error(err);
         showToast('⚠️ Ошибка сброса прогресса', 'warning');
@@ -599,6 +616,7 @@ export function initGame() {
 
     updateProfileAndLeaders();
     updateShopUI();
+    updateQuestAndAchievementUI();
 }
 
 export async function handleClick(e) {
@@ -674,6 +692,7 @@ export async function handleClick(e) {
         await updateProgress(currentUser.id, clickCount, now, newLevel, moonHP);
         updateProfileAndLeaders();
         updateShopUI();
+        updateQuestAndAchievementUI();
         return;
     }
 
@@ -683,6 +702,7 @@ export async function handleClick(e) {
     updateProfileAndLeaders();
 }
 
+// --- Покупка улучшения клика ---
 export async function buyClickDamage() {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -698,37 +718,51 @@ export async function buyClickDamage() {
         showToast('⚠️ Максимальный уровень улучшения', 'warning');
         return;
     }
-    const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
-    if ((playerData.shards || 0) < cost) {
-        showToast(`⚠️ Недостаточно осколков! Нужно ${cost}`, 'warning');
-        return;
+
+    // В тестовом режиме - бесплатно
+    if (!testMode) {
+        const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
+        if ((playerData.shards || 0) < cost) {
+            showToast(`⚠️ Недостаточно осколков! Нужно ${cost}`, 'warning');
+            return;
+        }
+        const newShards = (playerData.shards || 0) - cost;
+        const { error } = await supabaseClient
+            .from('players')
+            .update({
+                shards: newShards,
+                click_damage: playerData.click_damage + 1,
+                click_damage_level: currentLevelUpgrade + 1,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentUser.id);
+        if (error) {
+            console.error('Ошибка покупки:', error);
+            showToast('⚠️ Ошибка при покупке', 'warning');
+            return;
+        }
+        playerData.shards = newShards;
+    } else {
+        // В тестовом режиме обновляем только уровень
+        const { error } = await supabaseClient
+            .from('players')
+            .update({
+                click_damage: playerData.click_damage + 1,
+                click_damage_level: currentLevelUpgrade + 1,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentUser.id);
+        if (error) {
+            console.error('Ошибка покупки:', error);
+            showToast('⚠️ Ошибка при покупке', 'warning');
+            return;
+        }
     }
 
-    const newShards = (playerData.shards || 0) - cost;
-    const newLevel = currentLevelUpgrade + 1;
-    const newDamage = playerData.click_damage + 1;
-
-    const { error } = await supabaseClient
-        .from('players')
-        .update({
-            shards: newShards,
-            click_damage: newDamage,
-            click_damage_level: newLevel,
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', currentUser.id);
-
-    if (error) {
-        console.error('Ошибка покупки:', error);
-        showToast('⚠️ Ошибка при покупке', 'warning');
-        return;
-    }
-
-    playerData.shards = newShards;
-    playerData.click_damage = newDamage;
-    playerData.click_damage_level = newLevel;
+    playerData.click_damage = (playerData.click_damage || 1) + 1;
+    playerData.click_damage_level = currentLevelUpgrade + 1;
 
     updateUI();
     updateShopUI();
-    showToast(`✅ Улучшение куплено! Урон: ${newDamage}`, 'success');
+    showToast(`✅ Улучшение куплено! Урон: ${playerData.click_damage}`, 'success');
 }
