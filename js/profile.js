@@ -2,10 +2,10 @@
 //  ПРОФИЛЬ И ЛИДЕРЫ
 // ============================================================
 import { supabaseClient } from './supabase.js';
-import { currentUser, playerData, activeMoon, activeMoons, ownedMoons, bossKills, quests, achievements, maxSlots, getMoonLevel } from './state.js';
+import { currentUser, playerData, activeMoon, activeMoons, ownedMoons, bossKills, maxSlots, getMoonLevel } from './state.js';
 import { formatTime, getTitle, showToast } from './utils.js';
-import { MOON_TYPES, getMoonUpgradeCost, ACHIEVEMENTS, QUESTS } from './config.js';
-import { selectMoon, upgradeMoon, toggleMoon } from './game.js';
+import { MOON_TYPES } from './config.js';
+import { selectMoon, toggleMoon } from './game.js';
 
 let lastUpdate = 0;
 
@@ -37,14 +37,16 @@ export async function updateProfileAndLeaders(force = false) {
             avgTime = formatTime(avgSec);
         }
 
-        // --- Список лун с переключателями (только выбор, без прокачки) ---
+        // --- Список лун с переключателями (можно выбирать несколько) ---
         let moonsHtml = '';
         const moonList = ownedMoons || ['normal'];
         moonList.forEach(moonId => {
             const moon = MOON_TYPES[moonId];
             if (!moon) return;
             const moonLevel = getMoonLevel(moonId);
-            const isActive = (activeMoon === moonId);
+            const isActive = activeMoon === moonId;
+            const isInActiveSlots = activeMoons.includes(moonId);
+            const canToggle = isInActiveSlots ? activeMoons.length > 1 : activeMoons.length < maxSlots;
 
             // Расчёт бонусов с учётом уровня
             let bonusDesc = [];
@@ -62,12 +64,17 @@ export async function updateProfileAndLeaders(force = false) {
                     <div class="profile-moon-info">
                         <span class="profile-moon-name ${isActive ? 'active' : ''}">
                             ${moon.emoji} ${moon.name} ${bonusText}
-                            ${isActive ? ' ✅ Активна' : ''}
+                            ${isActive ? ' ⭐ Активна' : ''}
                         </span>
                         <span class="profile-moon-level">Ур. ${moonLevel}</span>
                         <div class="profile-moon-actions">
+                            ${maxSlots > 1 ? `
+                                <button class="profile-toggle-btn ${isInActiveSlots ? 'active' : ''}" data-moon="${moonId}" ${!canToggle ? 'disabled' : ''}>
+                                    ${isInActiveSlots ? 'Деактивировать' : 'Активировать'}
+                                </button>
+                            ` : ''}
                             <button class="profile-select-btn ${isActive ? 'active' : ''}" data-moon="${moonId}" ${isActive ? 'disabled' : ''}>
-                                ${isActive ? 'Активна' : 'Выбрать'}
+                                ${isActive ? 'Главная' : 'Сделать главной'}
                             </button>
                         </div>
                     </div>
@@ -89,42 +96,6 @@ export async function updateProfileAndLeaders(force = false) {
             synergiesHtml = '<div class="no-data">Нет активных синергий</div>';
         } else {
             synergiesHtml = '<div class="no-data">Активируйте несколько лун для синергии</div>';
-        }
-
-        // --- Квесты ---
-        let questsHtml = '';
-        if (quests) {
-            for (const [id, q] of Object.entries(quests)) {
-                const progress = q.progress || 0;
-                const target = q.target || 100;
-                const percent = Math.min(100, Math.round((progress / target) * 100));
-                questsHtml += `
-                    <div class="quest-item ${q.completed ? 'completed' : ''}">
-                        <span class="quest-name">${q.name}</span>
-                        <span class="quest-desc">${q.description}</span>
-                        <div class="quest-bar">
-                            <div class="quest-fill" style="width: ${percent}%;"></div>
-                        </div>
-                        <span class="quest-progress">${progress}/${target}</span>
-                        ${q.completed ? '<span class="quest-done">✅ Выполнено</span>' : ''}
-                        <span class="quest-reward">+${q.reward} 💎</span>
-                    </div>
-                `;
-            }
-        }
-
-        // --- Ачивки ---
-        let achievementsHtml = '';
-        for (const [id, ach] of Object.entries(ACHIEVEMENTS)) {
-            const achieved = achievements[id] || false;
-            achievementsHtml += `
-                <div class="achievement-item ${achieved ? 'achieved' : ''}">
-                    <span class="ach-name">${ach.name}</span>
-                    <span class="ach-desc">${ach.description}</span>
-                    <span class="ach-status">${achieved ? '✅' : '🔒'}</span>
-                    <span class="ach-reward">+${ach.reward} 💎</span>
-                </div>
-            `;
         }
 
         profileContent.innerHTML = `
@@ -151,17 +122,16 @@ export async function updateProfileAndLeaders(force = false) {
             <div class="synergies-list">
                 ${synergiesHtml}
             </div>
-
-            <div class="profile-section-title">📋 Квесты</div>
-            <div class="quests-list">
-                ${questsHtml || 'Нет активных квестов'}
-            </div>
-
-            <div class="profile-section-title">🏆 Достижения</div>
-            <div class="achievements-list">
-                ${achievementsHtml || 'Нет достижений'}
-            </div>
         `;
+
+        // Обработчики для кнопок
+        document.querySelectorAll('.profile-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const moonId = btn.dataset.moon;
+                toggleMoon(moonId);
+                updateProfileAndLeaders(true);
+            });
+        });
 
         document.querySelectorAll('.profile-select-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
