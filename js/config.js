@@ -15,8 +15,8 @@ export const UPGRADE_COSTS = {
         multiplier: 1.8
     },
     moonSlots: {
-        base: 500,          // начальная цена за дополнительный слот
-        multiplier: 2.5     // множитель цены за каждый следующий слот
+        base: 5000,          // начальная цена за дополнительный слот
+        multiplier: 3.0      // множитель цены за каждый следующий слот
     }
 };
 
@@ -121,11 +121,11 @@ export function getMoonUpgradeCost(moonId, currentLevel) {
 
 // --- Стоимость покупки дополнительного слота ---
 export function getSlotUpgradeCost(slotIndex) {
-    // slotIndex: 0 -> 1 слот, 1 -> 2 слота, 2 -> 3 слота
-    return Math.floor(UPGRADE_COSTS.moonSlots.base * Math.pow(UPGRADE_COSTS.moonSlots.multiplier, slotIndex));
+    // slotIndex: 1 -> 1 слот, 2 -> 2 слота
+    return Math.floor(UPGRADE_COSTS.moonSlots.base * Math.pow(UPGRADE_COSTS.moonSlots.multiplier, slotIndex - 1));
 }
 
-// --- Комбо-бонусы (синергия) для всех комбинаций из 3 лун ---
+// --- Комбо-бонусы (синергия) ---
 export const SYNERGY_BONUSES = {
     // Базовые комбинации из 2 лун
     'blood+fire': {
