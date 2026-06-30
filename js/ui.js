@@ -17,7 +17,7 @@ import {
 import { levelLocked, setLevelLocked, setTestMode, currentUser, activeMoon } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
 import { showToast } from './utils.js';
-import { MOON_TYPES, ACHIEVEMENTS, QUESTS } from './config.js';
+import { MOON_TYPES } from './config.js';
 
 const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 const lockClosedSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>`;
@@ -31,7 +31,6 @@ export function setLockIcon(btn, locked) {
 let leftPanel, leftTrigger, rightPanel, rightTrigger;
 
 export function initUI() {
-    // Авторизация
     const tabLogin = document.getElementById('tabLogin');
     const tabRegister = document.getElementById('tabRegister');
     const loginFields = document.getElementById('loginFields');
@@ -39,13 +38,11 @@ export function initUI() {
     const actionBtn = document.getElementById('actionBtn');
     const authMessageEl = document.getElementById('authMessage');
 
-    // Панели
     leftPanel = document.getElementById('sidePanel');
     leftTrigger = document.getElementById('panelTrigger');
     rightPanel = document.getElementById('shopPanel');
     rightTrigger = document.getElementById('shopTrigger');
 
-    // Вкладки правой панели (магазин, квесты, ачивки)
     const shopTabs = document.querySelectorAll('.shop-panel .panel-tabs button');
     const shopContents = {
         shop: document.getElementById('shopContent'),
@@ -65,7 +62,6 @@ export function initUI() {
     const rollbackBtnMain = document.getElementById('rollbackBtnMain');
     const lockToggleMain = document.getElementById('lockToggleMain');
 
-    // Инициализация игровых элементов
     initGameElements({
         moonWrapper,
         moonInner: document.getElementById('moonInner'),
@@ -82,7 +78,6 @@ export function initUI() {
         lockToggleMain
     });
 
-    // --- Вкладки авторизации ---
     tabLogin.addEventListener('click', () => setMode('login'));
     tabRegister.addEventListener('click', () => setMode('register'));
 
@@ -91,7 +86,6 @@ export function initUI() {
         else handleRegister();
     });
 
-    // Радиокнопки
     document.querySelectorAll('input[name="loginType"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             const input = document.getElementById('loginInput');
@@ -99,10 +93,8 @@ export function initUI() {
         });
     });
 
-    // Клик по луне
     if (moonWrapper) moonWrapper.addEventListener('click', handleClick);
 
-    // Триггеры панелей
     if (leftTrigger) {
         leftTrigger.addEventListener('click', toggleLeftPanel);
         console.log('[UI] leftTrigger найден');
@@ -113,7 +105,6 @@ export function initUI() {
         console.log('[UI] rightTrigger найден');
     } else console.error('[UI] rightTrigger не найден!');
 
-    // Обновление данных
     if (refreshDataBtn) {
         refreshDataBtn.addEventListener('click', () => {
             refreshDataBtn.classList.add('spinning');
@@ -122,7 +113,6 @@ export function initUI() {
         });
     }
 
-    // Вкладки левой панели
     panelTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             panelTabs.forEach(t => t.classList.remove('active'));
@@ -140,22 +130,18 @@ export function initUI() {
         });
     });
 
-    // Вкладки правой панели (магазин, квесты, ачивки)
     shopTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             shopTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             const tabType = tab.getAttribute('data-shop-tab');
-            // скрываем все контенты
             Object.values(shopContents).forEach(el => { if (el) el.classList.remove('active'); });
-            // показываем нужный
             if (tabType === 'shop' && shopContents.shop) shopContents.shop.classList.add('active');
             else if (tabType === 'quests' && shopContents.quests) shopContents.quests.classList.add('active');
             else if (tabType === 'achievements' && shopContents.achievements) shopContents.achievements.classList.add('active');
         });
     });
 
-    // Тестовый режим
     if (testModeCheckbox) {
         testModeCheckbox.addEventListener('change', (e) => {
             setTestMode(e.target.checked);
@@ -163,7 +149,6 @@ export function initUI() {
         });
     }
 
-    // Сброс прогресса
     if (resetProgressBtn) {
         resetProgressBtn.addEventListener('click', () => confirmOverlay.classList.add('active'));
     }
@@ -177,10 +162,8 @@ export function initUI() {
         });
     }
 
-    // Откат уровня
     if (rollbackBtnMain) rollbackBtnMain.addEventListener('click', rollbackLevel);
 
-    // Замок
     if (lockToggleMain) {
         setLockIcon(lockToggleMain, levelLocked);
         lockToggleMain.addEventListener('click', () => {
@@ -191,11 +174,9 @@ export function initUI() {
         });
     }
 
-    // Выход
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
 
-    // Кнопка покупки улучшения клика
     const buyBtn = document.getElementById('buyClickDamageBtn');
     if (buyBtn) {
         buyBtn.addEventListener('click', () => {
@@ -203,10 +184,8 @@ export function initUI() {
         });
     }
 
-    // Применить стиль начальной луны
     applyMoonStyle(activeMoon || 'normal');
 
-    // Синхронизация состояния триггеров при загрузке
     if (leftPanel && leftTrigger) {
         if (leftPanel.classList.contains('active')) leftTrigger.classList.add('active');
         else leftTrigger.classList.remove('active');
@@ -243,7 +222,6 @@ export function setMode(mode) {
     if (authMessageEl) authMessageEl.textContent = '';
 }
 
-// Переключение левой панели
 export function toggleLeftPanel() {
     if (!leftPanel || !leftTrigger) {
         console.error('[UI] toggleLeftPanel: элементы не найдены');
@@ -261,7 +239,6 @@ export function toggleLeftPanel() {
     console.log('[UI] Левая панель:', isOpen ? 'закрыта' : 'открыта');
 }
 
-// Переключение правой панели
 export function toggleRightPanel() {
     if (!rightPanel || !rightTrigger) {
         console.error('[UI] toggleRightPanel: элементы не найдены');
@@ -279,7 +256,6 @@ export function toggleRightPanel() {
     console.log('[UI] Правая панель:', isOpen ? 'закрыта' : 'открыта');
 }
 
-// Применение стиля луны
 export function applyMoonStyle(moonId) {
     const moonInner = document.getElementById('moonInner');
     const container = document.getElementById('app');
