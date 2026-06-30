@@ -2,7 +2,7 @@
 //  ПРОФИЛЬ И ЛИДЕРЫ
 // ============================================================
 import { supabaseClient } from './supabase.js';
-import { currentUser, playerData, activeMoon, activeMoons, ownedMoons, bossKills, quests, achievements, maxSlots, getMoonLevel, currentLevel } from './state.js';
+import { currentUser, playerData, activeMoon, activeMoons, ownedMoons, bossKills, quests, achievements, maxSlots, getMoonLevel } from './state.js';
 import { formatTime, getTitle, showToast } from './utils.js';
 import { MOON_TYPES, getMoonUpgradeCost, ACHIEVEMENTS, QUESTS } from './config.js';
 import { selectMoon, upgradeMoon, toggleMoon } from './game.js';
@@ -29,7 +29,8 @@ export async function updateProfileAndLeaders(force = false) {
         const timePlayed = data.total_seconds_played || 0;
         const title = getTitle(data.level || 1);
         const shards = data.shards || 0;
-        const level = currentLevel || data.level || 1;
+        // Используем data.level вместо currentLevel
+        const level = data.level || 1;
 
         let avgTime = '—';
         if (data.total_clicks > 0 && data.total_seconds_played > 0) {
