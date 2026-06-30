@@ -12,7 +12,8 @@ import {
     selectMoon,
     buyClickDamage,
     upgradeMoon,
-    toggleMoon
+    toggleMoon,
+    buySlot
 } from './game.js';
 import { levelLocked, setLevelLocked, setTestMode, currentUser, activeMoon } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
@@ -105,6 +106,12 @@ export function initUI() {
         console.log('[UI] rightTrigger найден');
     } else console.error('[UI] rightTrigger не найден!');
 
+    // Убираем кнопку обновления в правой панели
+    const refreshShopBtn = document.getElementById('refreshShopBtn');
+    if (refreshShopBtn) {
+        refreshShopBtn.style.display = 'none';
+    }
+
     if (refreshDataBtn) {
         refreshDataBtn.addEventListener('click', () => {
             refreshDataBtn.classList.add('spinning');
@@ -181,6 +188,14 @@ export function initUI() {
     if (buyBtn) {
         buyBtn.addEventListener('click', () => {
             buyClickDamage();
+        });
+    }
+
+    // Кнопка покупки слота
+    const slotBuyBtn = document.getElementById('buySlotBtn');
+    if (slotBuyBtn) {
+        slotBuyBtn.addEventListener('click', () => {
+            buySlot();
         });
     }
 
