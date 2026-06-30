@@ -179,6 +179,23 @@
                 <div style="color: rgba(255,255,255,0.3); font-size:0.8rem; margin-top:10px; text-align:center;">
                     <span id="shopLockMessage">🔒 Доступно с 5 уровня</span>
                 </div>
+
+                <!-- Улучшение слотов -->
+                <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                    <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">🔓 Слоты для лун (макс. 3)</div>
+                    <div class="shop-item" id="upgradeSlots">
+                        <div class="shop-item-info">
+                            <span class="shop-item-name">🔓 Дополнительный слот</span>
+                            <span class="shop-item-desc">Позволяет активировать больше лун одновременно</span>
+                        </div>
+                        <div class="shop-item-right">
+                            <span class="shop-item-price" id="slotPrice">500 💎</span>
+                            <span class="shop-item-level" id="slotLevel">Слотов: 1/3</span>
+                            <button class="shop-buy-btn" id="buySlotBtn">Купить</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Луны -->
                 <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
                     <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">🌙 Луны</div>
@@ -195,18 +212,8 @@
 
         <!-- Контент: Достижения -->
         <div class="panel-content" id="achievementsContent">
-            <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">🏅 Достижения (вечные)</div>
+            <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">🏅 Достижения</div>
             <div id="achievementsList"></div>
-        </div>
-
-        <div class="panel-footer">
-            <button class="panel-refresh-btn" id="refreshShopBtn" title="Обновить магазин">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="23 4 23 10 17 10" />
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                </svg>
-                Обновить
-            </button>
         </div>
     </div>
 
