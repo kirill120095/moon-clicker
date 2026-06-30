@@ -4,7 +4,7 @@
 import { supabaseClient } from './supabase.js';
 import { currentUser, playerData, activeMoon, activeMoons, ownedMoons, moonLevels, bossKills, quests, achievements, maxSlots, getMoonLevel } from './state.js';
 import { formatTime, getTitle, showToast } from './utils.js';
-import { MOON_TYPES, MOON_UPGRADE_COSTS, ACHIEVEMENTS, QUESTS } from './config.js';
+import { MOON_TYPES, getMoonUpgradeCost, ACHIEVEMENTS, QUESTS } from './config.js';
 import { selectMoon, upgradeMoon, toggleMoon } from './game.js';
 
 let lastUpdate = 0;
@@ -55,7 +55,7 @@ export async function updateProfileAndLeaders(force = false) {
 
             // прокачка
             const canUpgrade = currentLevel >= 10 && level < 10;
-            const upgradeCost = canUpgrade ? Math.floor(MOON_UPGRADE_COSTS.base * Math.pow(MOON_UPGRADE_COSTS.multiplier, level - 1)) : 0;
+            const upgradeCost = canUpgrade ? getMoonUpgradeCost(moonId, level) : 0;
 
             moonsHtml += `
                 <div class="profile-moon-item">
