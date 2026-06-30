@@ -152,11 +152,15 @@
         </svg>
     </button>
 
-    <!-- ---------- ПРАВАЯ ПАНЕЛЬ (Магазин) ---------- -->
-    <div class="side-panel right-panel" id="shopPanel">
+    <!-- ---------- ПРАВАЯ ПАНЕЛЬ (Магазин, квесты, ачивки) ---------- -->
+    <div class="side-panel right-panel shop-panel" id="shopPanel">
         <div class="panel-tabs">
-            <button class="active" data-shop-tab="main">🛒</button>
+            <button class="active" data-shop-tab="shop">🛒</button>
+            <button data-shop-tab="quests">📋</button>
+            <button data-shop-tab="achievements">🏅</button>
         </div>
+
+        <!-- Контент: Магазин -->
         <div class="panel-content active" id="shopContent">
             <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Магазин</div>
             <div id="shopItems">
@@ -181,6 +185,28 @@
                     <div id="moonShopItems"></div>
                 </div>
             </div>
+        </div>
+
+        <!-- Контент: Квесты -->
+        <div class="panel-content" id="questsContent">
+            <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">📋 Квесты (обновляются каждый час)</div>
+            <div id="questsList"></div>
+        </div>
+
+        <!-- Контент: Достижения -->
+        <div class="panel-content" id="achievementsContent">
+            <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">🏅 Достижения (вечные)</div>
+            <div id="achievementsList"></div>
+        </div>
+
+        <div class="panel-footer">
+            <button class="panel-refresh-btn" id="refreshShopBtn" title="Обновить магазин">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10" />
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+                Обновить
+            </button>
         </div>
     </div>
 
