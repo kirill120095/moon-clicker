@@ -22,7 +22,7 @@ import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js
 import { updateProfileAndLeaders } from './profile.js';
 import {
     BASE_HP, BOSS_INTERVAL, BOSS_TIMER, UPGRADE_COSTS,
-    MOON_TYPES, MOON_UPGRADE_COSTS, SYNERGY_BONUSES, ACHIEVEMENTS
+    MOON_TYPES, getMoonUpgradeCost, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS
 } from './config.js';
 import { applyMoonStyle } from './ui.js';
 
@@ -161,8 +161,11 @@ export function updateShopUI() {
         const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
         const currentDamage = playerData?.click_damage || 1;
         const nextDamage = currentDamage + 1;
+        // Показываем общий бонус после улучшения
+        const currentTotalBonus = `+${(currentDamage - 1)} урона`;
+        const nextTotalBonus = `+${(nextDamage - 1)} урона`;
         priceEl.textContent = `${cost} 💎`;
-        levelEl.textContent = `Ур. ${currentLevelUpgrade} (${currentDamage}→${nextDamage})`;
+        levelEl.innerHTML = `Ур. ${currentLevelUpgrade} (${currentTotalBonus} → ${nextTotalBonus})`;
         const hasEnoughShards = (playerData?.shards || 0) >= cost;
         buyBtn.disabled = !isUnlocked || !hasEnoughShards || currentLevelUpgrade >= 10;
         buyBtn.textContent = currentLevelUpgrade >= 10 ? 'MAX' : 'Купить';
@@ -187,7 +190,7 @@ export function updateShopUI() {
 
             // Уровень луны (если owned)
             const level = owned ? getMoonLevel(id) : 0;
-            const upgradeCost = owned ? Math.floor(MOON_UPGRADE_COSTS.base * Math.pow(MOON_UPGRADE_COSTS.multiplier, level - 1)) : 0;
+            const upgradeCost = owned ? getMoonUpgradeCost(id, level) : 0;
             const canUpgrade = owned && currentLevel >= 10 && level < 10 && (playerData?.shards || 0) >= upgradeCost;
 
             html += `
@@ -200,7 +203,7 @@ export function updateShopUI() {
                         ${isLockedByLevel ? `<span class="shop-item-desc" style="color: #ff6b6b;">Открывается с ${moon.unlockLevel} уровня</span>` : ''}
                     </div>
                     <div class="shop-item-right">
-                        ${owned ? (active ? '<span style="color:#4ecdc4;">✅ Активна</span>' : `<button class="shop-buy-btn select-moon-btn" data-moon-id="${id}">Выбрать</button>`)
+                        ${owned ? (active ? '<span style="color:#4ecdc4;">Активна</span>' : `<button class="shop-buy-btn select-moon-btn" data-moon-id="${id}">Выбрать</button>`)
                         : (moon.cost === 0 ? '<span style="color:#4ecdc4;">Доступна</span>' :
                            (isLockedByLevel ? `<span style="color:#ff6b6b;">🔒</span>` :
                            `<button class="shop-buy-btn buy-moon-btn" data-moon-id="${id}" ${!canBuy ? 'disabled' : ''}>${canBuy ? 'Купить' : 'Не хватает'}</button>`))}
@@ -301,7 +304,7 @@ export async function selectMoon(moonId) {
     showToast(`✅ Активна луна "${MOON_TYPES[moonId].name}"`, 'success');
 }
 
-// --- Прокачка луны ---
+// --- Прокачка луны (с индивидуальной стоимостью) ---
 export async function upgradeMoon(moonId) {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -320,7 +323,7 @@ export async function upgradeMoon(moonId) {
         showToast('⚠️ Максимальный уровень луны (10)', 'warning');
         return;
     }
-    const cost = Math.floor(MOON_UPGRADE_COSTS.base * Math.pow(MOON_UPGRADE_COSTS.multiplier, currentLevelMoon - 1));
+    const cost = getMoonUpgradeCost(moonId, currentLevelMoon);
     if ((playerData.shards || 0) < cost) {
         showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
         return;
