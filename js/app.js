@@ -4,8 +4,8 @@
 import { supabaseClient } from './supabase.js';
 import { initToastContainer, createStars, showToast } from './utils.js';
 import { initUI } from './ui.js';
-import { initGame, restoreFallbackSave } from './game.js';
-import { setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP, setActiveMoon, setOwnedMoons } from './state.js';
+import { initGame } from './game.js';
+import { setUser, setPlayerData, setClickCount, setTotalSecondsPlayed, setCurrentLevel, setMoonHP, setMaxHP, setActiveMoon, setOwnedMoons, setBossKills, initQuests, resetQuests } from './state.js';
 import { loadPlayerData, initAuthElements, createOrUpdatePlayer } from './auth.js';
 import { BASE_HP } from './config.js';
 import { getMaxHPForLevel } from './utils.js';
@@ -37,9 +37,6 @@ async function checkAuth() {
             const user = session.user;
             setUser(user);
 
-            // Восстанавливаем fallback сохранение, если есть
-            await restoreFallbackSave(user.id);
-
             let player = await loadPlayerData(user.id);
             if (!player) {
                 player = await createOrUpdatePlayer(user.id, user.email);
@@ -52,8 +49,11 @@ async function checkAuth() {
                 setCurrentLevel(player.level || 1);
                 setMoonHP(player.moon_hp || BASE_HP);
                 setMaxHP(getMaxHPForLevel(player.level || 1, BASE_HP, 10));
-                if (player.active_moon) setActiveMoon(player.active_moon);
-                if (player.owned_moons) setOwnedMoons(JSON.parse(player.owned_moons));
+                // bossKills загружается из localStorage через loadPlayerData? нет, нужно отдельно
+                // загружаем из localStorage
+                const savedKills = localStorage.getItem(`bossKills_${user.id}`);
+                if (savedKills) setBossKills(parseInt(savedKills) || 0);
+                // ачивки и квесты инициализируются внутри setPlayerData
             }
 
             // Скрываем авторизацию
@@ -76,6 +76,15 @@ async function checkAuth() {
             if (rightTrigger) rightTrigger.classList.remove('active');
 
             initGame();
+
+            // Запускаем периодический сброс квестов (каждый час)
+            setInterval(() => {
+                if (currentUser) {
+                    resetQuests();
+                    showToast('🔄 Квесты обновлены!', 'info');
+                }
+            }, 3600000); // 1 час
+
         } else {
             // Гостевой режим – скрываем кнопки панелей
             document.getElementById('authBlock').classList.remove('hidden');
