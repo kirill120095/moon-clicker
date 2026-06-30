@@ -39,7 +39,7 @@ export let quests = {};
 
 // Слоты
 export let maxSlots = 1;
-export let purchasedSlots = 0; // количество купленных дополнительных слотов (не используется в этой версии)
+export let purchasedSlots = 0;
 
 // ============================================================
 //  СЕТТЕРЫ
@@ -48,27 +48,22 @@ export function setUser(user) { currentUser = user; }
 export function setPlayerData(data) {
     playerData = data;
     if (data) {
-        // загружаем данные из localStorage
         loadMoonData();
         loadAchievements();
         initQuests();
-        // если есть сохранённый bossKills
         const savedKills = localStorage.getItem(`bossKills_${currentUser?.id}`);
         if (savedKills) setBossKills(parseInt(savedKills) || 0);
     }
 }
 export function setClickCount(value) {
     clickCount = value;
-    // проверяем ачивку кликов
     if (clickCount >= 10000) unlockAchievement('clickMaster');
 }
 export function setTotalSecondsPlayed(value) { totalSecondsPlayed = value; }
 export function setCurrentLevel(value) {
     currentLevel = value;
     updateMaxSlots();
-    // проверяем ачивку уровня
     if (currentLevel >= 20) unlockAchievement('level20');
-    // обновляем прогресс квеста на уровень
     updateQuestProgress('level', 1);
 }
 export function setMoonHP(value) { moonHP = value; }
@@ -81,11 +76,9 @@ export function setBossTimer(value) { bossTimer = value; }
 export function setBossTimerInterval(value) { bossTimerInterval = value; }
 export function setBossKills(value) {
     bossKills = value;
-    // сохраняем в localStorage
     if (currentUser) {
         localStorage.setItem(`bossKills_${currentUser.id}`, String(value));
     }
-    // проверяем ачивку
     if (bossKills >= 10) unlockAchievement('bossSlayer');
 }
 
@@ -112,7 +105,6 @@ export function addOwnedMoon(moonId) {
     if (!ownedMoons.includes(moonId)) {
         ownedMoons.push(moonId);
         saveMoonData();
-        // проверяем ачивки
         if (ownedMoons.length > 1) unlockAchievement('firstMoon');
         if (ownedMoons.length >= Object.keys(MOON_TYPES).length) unlockAchievement('moonCollector');
     }
@@ -120,7 +112,6 @@ export function addOwnedMoon(moonId) {
 export function setMoonLevel(moonId, level) {
     moonLevels[moonId] = level;
     saveMoonData();
-    // проверяем ачивки прокачки
     if (level >= 5) unlockAchievement('moonUpgrader');
     if (level >= 10) unlockAchievement('maxMoon');
 }
@@ -150,7 +141,6 @@ export function loadAchievements() {
     if (saved) {
         try {
             achievements = JSON.parse(saved);
-            // проверяем, все ли ачивки есть в объекте (если добавили новые)
             let needSave = false;
             for (const key of Object.keys(ACHIEVEMENTS)) {
                 if (!(key in achievements)) {
@@ -173,7 +163,6 @@ export function loadAchievements() {
         }
         saveAchievements();
     }
-    // повторно проверим ачивки, которые могли быть выполнены
     checkAllAchievements();
 }
 export function saveAchievements() {
@@ -199,7 +188,6 @@ export function unlockAchievement(id) {
     }
 }
 export function checkAllAchievements() {
-    // Проверяем все ачивки, которые могут быть уже выполнены
     for (const [id, ach] of Object.entries(ACHIEVEMENTS)) {
         if (!achievements[id] && ach.check({ ownedMoons, currentLevel, bossKills, clickCount, moonLevels })) {
             unlockAchievement(id);
@@ -213,7 +201,6 @@ export function initQuests() {
     if (saved) {
         try {
             quests = JSON.parse(saved);
-            // обновляем структуру, если добавились новые квесты
             let needSave = false;
             for (const [id, q] of Object.entries(QUESTS)) {
                 if (!quests[id]) {
@@ -250,7 +237,6 @@ export function updateQuestProgress(type, amount = 1) {
             q.progress += amount;
             if (q.progress >= q.target) {
                 q.completed = true;
-                // награда
                 if (playerData) {
                     playerData.shards = (playerData.shards || 0) + q.reward;
                     supabaseClient
