@@ -31,7 +31,7 @@ export const MOON_TYPES = {
         emoji: '🌙',
         cost: 0,
         unlockLevel: 1,
-        damageBonus: 0,
+        damageBonus: 0.05,      // 5% базовый бонус
         shardBonus: 0,
         gradient: 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)',
         shadow: '0 0 60px rgba(255,215,150,0.4), 0 0 120px rgba(255,215,150,0.2), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,255,255,0.3)',
@@ -43,7 +43,7 @@ export const MOON_TYPES = {
         emoji: '🩸',
         cost: 1000,
         unlockLevel: 5,
-        damageBonus: 0.2,
+        damageBonus: 0.25,      // 25% базовый бонус
         shardBonus: 0,
         gradient: 'radial-gradient(circle at 30% 30%, #8b0000, #4a0000)',
         shadow: '0 0 60px rgba(255,0,0,0.6), 0 0 120px rgba(255,0,0,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,0,0,0.2)',
@@ -56,7 +56,7 @@ export const MOON_TYPES = {
         cost: 20000,
         unlockLevel: 10,
         damageBonus: 0,
-        shardBonus: 0.3,
+        shardBonus: 0.35,       // 35% базовый бонус к осколкам
         gradient: 'radial-gradient(circle at 30% 30%, #b3e5fc, #4fc3f7)',
         shadow: '0 0 60px rgba(79,195,247,0.6), 0 0 120px rgba(79,195,247,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(79,195,247,0.2)',
         accentColor: '#4fc3f7'
@@ -67,8 +67,8 @@ export const MOON_TYPES = {
         emoji: '🌑',
         cost: 400000,
         unlockLevel: 20,
-        damageBonus: 0.1,
-        shardBonus: 0.15,
+        damageBonus: 0.15,      // 15% базовый бонус
+        shardBonus: 0.15,       // 15% базовый бонус к осколкам
         gradient: 'radial-gradient(circle at 30% 30%, #6a1b9a, #2a0a3a)',
         shadow: '0 0 60px rgba(106,27,154,0.6), 0 0 120px rgba(106,27,154,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(106,27,154,0.2)',
         accentColor: '#6a1b9a'
@@ -79,8 +79,8 @@ export const MOON_TYPES = {
         emoji: '🧈',
         cost: 8000000,
         unlockLevel: 30,
-        damageBonus: 0.15,
-        shardBonus: 0.2,
+        damageBonus: 0.2,       // 20% базовый бонус
+        shardBonus: 0.25,       // 25% базовый бонус к осколкам
         gradient: 'radial-gradient(circle at 30% 30%, #fff9c4, #ffd700)',
         shadow: '0 0 60px rgba(255,215,0,0.6), 0 0 120px rgba(255,215,0,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,215,0,0.2)',
         accentColor: '#ffd700'
@@ -91,7 +91,7 @@ export const MOON_TYPES = {
         emoji: '🔥',
         cost: 16000000,
         unlockLevel: 15,
-        damageBonus: 0.25,
+        damageBonus: 0.3,       // 30% базовый бонус
         shardBonus: 0,
         gradient: 'radial-gradient(circle at 30% 30%, #ff6f00, #bf360c)',
         shadow: '0 0 60px rgba(255,100,0,0.6), 0 0 120px rgba(255,100,0,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,100,0,0.2)',
@@ -103,8 +103,8 @@ export const MOON_TYPES = {
         emoji: '⚡',
         cost: 32000000,
         unlockLevel: 25,
-        damageBonus: 0.1,
-        shardBonus: 0.1,
+        damageBonus: 0.15,      // 15% базовый бонус
+        shardBonus: 0.15,       // 15% базовый бонус к осколкам
         gradient: 'radial-gradient(circle at 30% 30%, #fff176, #fdd835)',
         shadow: '0 0 60px rgba(255,235,59,0.6), 0 0 120px rgba(255,235,59,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,235,59,0.2)',
         accentColor: '#fdd835'
@@ -130,21 +130,21 @@ export const SYNERGY_BONUSES = {
     // Базовые комбинации из 2 лун
     'blood+fire': {
         name: 'Адское пламя',
-        damageBonus: 0.3,
+        damageBonus: 0.35,
         shardBonus: 0,
-        description: '+30% урона'
+        description: '+35% урона'
     },
     'ice+electric': {
         name: 'Ледяная буря',
         damageBonus: 0,
-        shardBonus: 0.4,
-        description: '+40% осколков'
+        shardBonus: 0.45,
+        description: '+45% осколков'
     },
     'shadow+gold': {
         name: 'Теневой капитал',
-        damageBonus: 0.1,
-        shardBonus: 0.2,
-        description: '+10% урона, +20% осколков'
+        damageBonus: 0.15,
+        shardBonus: 0.25,
+        description: '+15% урона, +25% осколков'
     },
     'normal+any': {
         name: 'Баланс',
@@ -154,124 +154,124 @@ export const SYNERGY_BONUSES = {
     },
     'blood+ice': {
         name: 'Кровавый лёд',
-        damageBonus: 0.15,
-        shardBonus: 0.1,
-        description: '+15% урона, +10% осколков'
-    },
-    'fire+shadow': {
-        name: 'Теневой огонь',
-        damageBonus: 0.2,
-        shardBonus: 0.1,
-        description: '+20% урона, +10% осколков'
-    },
-    'gold+electric': {
-        name: 'Золотая молния',
-        damageBonus: 0.1,
-        shardBonus: 0.25,
-        description: '+10% урона, +25% осколков'
-    },
-    'ice+shadow': {
-        name: 'Ледяная тень',
-        damageBonus: 0.05,
-        shardBonus: 0.2,
-        description: '+5% урона, +20% осколков'
-    },
-    'fire+electric': {
-        name: 'Грозовой пожар',
         damageBonus: 0.2,
         shardBonus: 0.15,
         description: '+20% урона, +15% осколков'
     },
+    'fire+shadow': {
+        name: 'Теневой огонь',
+        damageBonus: 0.25,
+        shardBonus: 0.1,
+        description: '+25% урона, +10% осколков'
+    },
+    'gold+electric': {
+        name: 'Золотая молния',
+        damageBonus: 0.15,
+        shardBonus: 0.3,
+        description: '+15% урона, +30% осколков'
+    },
+    'ice+shadow': {
+        name: 'Ледяная тень',
+        damageBonus: 0.05,
+        shardBonus: 0.25,
+        description: '+5% урона, +25% осколков'
+    },
+    'fire+electric': {
+        name: 'Грозовой пожар',
+        damageBonus: 0.25,
+        shardBonus: 0.2,
+        description: '+25% урона, +20% осколков'
+    },
     // Комбинации из 3 лун
     'blood+fire+ice': {
         name: 'Адский лёд',
-        damageBonus: 0.4,
-        shardBonus: 0.15,
-        description: '+40% урона, +15% осколков'
+        damageBonus: 0.45,
+        shardBonus: 0.2,
+        description: '+45% урона, +20% осколков'
     },
     'blood+fire+shadow': {
         name: 'Теневой ад',
-        damageBonus: 0.45,
-        shardBonus: 0.1,
-        description: '+45% урона, +10% осколков'
+        damageBonus: 0.5,
+        shardBonus: 0.15,
+        description: '+50% урона, +15% осколков'
     },
     'blood+fire+electric': {
         name: 'Грозовая кровь',
-        damageBonus: 0.4,
-        shardBonus: 0.2,
-        description: '+40% урона, +20% осколков'
+        damageBonus: 0.45,
+        shardBonus: 0.25,
+        description: '+45% урона, +25% осколков'
     },
     'blood+ice+electric': {
         name: 'Кровавая буря',
-        damageBonus: 0.2,
-        shardBonus: 0.5,
-        description: '+20% урона, +50% осколков'
+        damageBonus: 0.25,
+        shardBonus: 0.55,
+        description: '+25% урона, +55% осколков'
     },
     'blood+ice+shadow': {
         name: 'Кровавая тень',
-        damageBonus: 0.25,
-        shardBonus: 0.3,
-        description: '+25% урона, +30% осколков'
-    },
-    'blood+shadow+gold': {
-        name: 'Кровавый капитал',
-        damageBonus: 0.3,
-        shardBonus: 0.3,
-        description: '+30% урона, +30% осколков'
-    },
-    'blood+gold+electric': {
-        name: 'Золотая кровь',
         damageBonus: 0.3,
         shardBonus: 0.35,
         description: '+30% урона, +35% осколков'
     },
+    'blood+shadow+gold': {
+        name: 'Кровавый капитал',
+        damageBonus: 0.35,
+        shardBonus: 0.35,
+        description: '+35% урона, +35% осколков'
+    },
+    'blood+gold+electric': {
+        name: 'Золотая кровь',
+        damageBonus: 0.35,
+        shardBonus: 0.4,
+        description: '+35% урона, +40% осколков'
+    },
     'fire+ice+shadow': {
         name: 'Огненная тень',
-        damageBonus: 0.3,
-        shardBonus: 0.25,
-        description: '+30% урона, +25% осколков'
+        damageBonus: 0.35,
+        shardBonus: 0.3,
+        description: '+35% урона, +30% осколков'
     },
     'fire+ice+electric': {
         name: 'Ледяной гром',
+        damageBonus: 0.3,
+        shardBonus: 0.5,
+        description: '+30% урона, +50% осколков'
+    },
+    'fire+shadow+gold': {
+        name: 'Огненный капитал',
+        damageBonus: 0.4,
+        shardBonus: 0.3,
+        description: '+40% урона, +30% осколков'
+    },
+    'fire+gold+electric': {
+        name: 'Золотой гром',
+        damageBonus: 0.35,
+        shardBonus: 0.35,
+        description: '+35% урона, +35% осколков'
+    },
+    'ice+shadow+gold': {
+        name: 'Теневой лёд',
+        damageBonus: 0.2,
+        shardBonus: 0.45,
+        description: '+20% урона, +45% осколков'
+    },
+    'ice+gold+electric': {
+        name: 'Золотая стужа',
+        damageBonus: 0.2,
+        shardBonus: 0.55,
+        description: '+20% урона, +55% осколков'
+    },
+    'shadow+gold+electric': {
+        name: 'Теневая молния',
         damageBonus: 0.25,
         shardBonus: 0.45,
         description: '+25% урона, +45% осколков'
     },
-    'fire+shadow+gold': {
-        name: 'Огненный капитал',
-        damageBonus: 0.35,
-        shardBonus: 0.25,
-        description: '+35% урона, +25% осколков'
-    },
-    'fire+gold+electric': {
-        name: 'Золотой гром',
-        damageBonus: 0.3,
-        shardBonus: 0.3,
-        description: '+30% урона, +30% осколков'
-    },
-    'ice+shadow+gold': {
-        name: 'Теневой лёд',
-        damageBonus: 0.15,
-        shardBonus: 0.4,
-        description: '+15% урона, +40% осколков'
-    },
-    'ice+gold+electric': {
-        name: 'Золотая стужа',
-        damageBonus: 0.15,
-        shardBonus: 0.5,
-        description: '+15% урона, +50% осколков'
-    },
-    'shadow+gold+electric': {
-        name: 'Теневая молния',
-        damageBonus: 0.2,
-        shardBonus: 0.4,
-        description: '+20% урона, +40% осколков'
-    },
     'blood+fire+gold': {
         name: 'Адское золото',
-        damageBonus: 0.5,
-        shardBonus: 0.2,
-        description: '+50% урона, +20% осколков'
+        damageBonus: 0.55,
+        shardBonus: 0.25,
+        description: '+55% урона, +25% осколков'
     }
 };
 
