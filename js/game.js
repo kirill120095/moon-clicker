@@ -69,12 +69,10 @@ export function updateUI() {
         hpBar.style.width = Math.min(100, hpPercentValue) + '%';
     }
 
-    // Уменьшение луны
     const hpRatio = Math.max(0, Math.min(1, moonHP / maxHP));
     const scale = Math.pow(hpRatio, 0.4) * 0.95 + 0.05;
     if (moonInner) moonInner.style.transform = `scale(${scale})`;
 
-    // Таймер босса
     if (isBossLevel(currentLevel, BOSS_INTERVAL) && moonHP > 0) {
         if (!bossTimerRunning) startBossTimer();
         if (timerBarContainer) timerBarContainer.classList.add('active');
@@ -92,32 +90,25 @@ export function updateUI() {
 
     updateTimeDisplay();
     updateShopUI();
-
-    // --- Расчёт бонусов от активных лун ---
     recalcMoonBonuses();
-
-    // Применить стиль активной луны (главной)
     applyMoonStyle(activeMoon);
 }
 
-// Пересчёт бонусов от нескольких лун
 export function recalcMoonBonuses() {
     totalDamageBonus = 0;
     totalShardBonus = 0;
     const activeIds = activeMoons;
 
-    // Бонусы от каждой активной луны с учётом уровня
     activeIds.forEach(id => {
         const moon = MOON_TYPES[id];
         if (moon) {
             const level = getMoonLevel(id);
-            const levelMultiplier = 1 + (level - 1) * 0.05; // 5% за уровень
+            const levelMultiplier = 1 + (level - 1) * 0.05;
             totalDamageBonus += (moon.damageBonus || 0) * levelMultiplier;
             totalShardBonus += (moon.shardBonus || 0) * levelMultiplier;
         }
     });
 
-    // Комбо-бонусы
     const comboKeys = Object.keys(SYNERGY_BONUSES);
     comboKeys.forEach(key => {
         const moons = key.split('+');
@@ -128,13 +119,11 @@ export function recalcMoonBonuses() {
         }
     });
 
-    // Дополнительный бонус, если активна обычная луна и есть другие
     if (activeIds.includes('normal') && activeIds.length > 1) {
         totalDamageBonus += 0.05;
         totalShardBonus += 0.05;
     }
 
-    // Сохраняем в глобальные переменные для использования в handleClick
     window._totalDamageBonus = totalDamageBonus;
     window._totalShardBonus = totalShardBonus;
 }
@@ -143,9 +132,7 @@ export function updateTimeDisplay() {
     if (totalTimeDisplay) totalTimeDisplay.textContent = formatTime(totalSecondsPlayed);
 }
 
-// --- Обновление магазина ---
 export function updateShopUI() {
-    // Обновление улучшения клика
     const shopLockMessage = document.getElementById('shopLockMessage');
     const buyBtn = document.getElementById('buyClickDamageBtn');
     const priceEl = document.getElementById('clickDamagePrice');
@@ -161,7 +148,6 @@ export function updateShopUI() {
         const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
         const currentDamage = playerData?.click_damage || 1;
         const nextDamage = currentDamage + 1;
-        // Показываем общий бонус после улучшения
         const currentTotalBonus = `+${(currentDamage - 1)} урона`;
         const nextTotalBonus = `+${(nextDamage - 1)} урона`;
         priceEl.textContent = `${cost} 💎`;
@@ -172,7 +158,6 @@ export function updateShopUI() {
         buyBtn.classList.toggle('locked', !isUnlocked);
     }
 
-    // Обновление магазина лун и прокачки
     const moonShopContainer = document.getElementById('moonShopItems');
     if (moonShopContainer) {
         let html = '';
@@ -182,13 +167,11 @@ export function updateShopUI() {
             const canBuy = !owned && (playerData?.shards || 0) >= moon.cost && moon.cost > 0 && currentLevel >= (moon.unlockLevel || 1);
             const isLockedByLevel = currentLevel < (moon.unlockLevel || 1);
 
-            // Бонусы
             let bonusDesc = [];
             if (moon.damageBonus > 0) bonusDesc.push(`урон +${Math.round(moon.damageBonus*100)}%`);
             if (moon.shardBonus > 0) bonusDesc.push(`осколки +${Math.round(moon.shardBonus*100)}%`);
             const bonusText = bonusDesc.length ? `Бонус: ${bonusDesc.join(', ')}` : 'Без бонусов';
 
-            // Уровень луны (если owned)
             const level = owned ? getMoonLevel(id) : 0;
             const upgradeCost = owned ? getMoonUpgradeCost(id, level) : 0;
             const canUpgrade = owned && currentLevel >= 10 && level < 10 && (playerData?.shards || 0) >= upgradeCost;
@@ -214,7 +197,6 @@ export function updateShopUI() {
         }
         moonShopContainer.innerHTML = html;
 
-        // Обработчики
         document.querySelectorAll('.buy-moon-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const moonId = btn.dataset.moonId;
@@ -236,7 +218,6 @@ export function updateShopUI() {
     }
 }
 
-// --- Покупка луны ---
 export async function buyMoon(moonId) {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -282,7 +263,6 @@ export async function buyMoon(moonId) {
     showToast(`✅ Куплена луна "${moon.name}"!`, 'success');
 }
 
-// --- Выбор активной луны ---
 export async function selectMoon(moonId) {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -304,7 +284,6 @@ export async function selectMoon(moonId) {
     showToast(`✅ Активна луна "${MOON_TYPES[moonId].name}"`, 'success');
 }
 
-// --- Прокачка луны (с индивидуальной стоимостью) ---
 export async function upgradeMoon(moonId) {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -345,7 +324,6 @@ export async function upgradeMoon(moonId) {
     showToast(`✅ Луна "${MOON_TYPES[moonId].name}" улучшена до ${currentLevelMoon + 1} уровня!`, 'success');
 }
 
-// --- Переключение активных лун (добавление/удаление из слотов) ---
 export function toggleMoon(moonId) {
     if (!ownedMoons.includes(moonId)) {
         showToast('⚠️ У вас нет этой луны', 'warning');
@@ -373,7 +351,6 @@ export function toggleMoon(moonId) {
     updateProfileAndLeaders(true);
 }
 
-// --- Таймер босса ---
 function startBossTimer() {
     if (bossTimerRunning) return;
     if (bossTimerInterval) clearInterval(bossTimerInterval);
@@ -412,7 +389,6 @@ function updateTimerBar() {
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
 }
 
-// --- Сохранение прогресса ---
 export async function updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (!playerId || !currentUser) return false;
     const updateData = {
@@ -470,7 +446,6 @@ export async function resetProgress() {
             setOwnedMoons(['normal']);
             setMoonLevel('normal', 1);
             setBossKills(0);
-            // сброс квестов и ачивок
             resetQuests();
             achievements = {};
             saveAchievements();
@@ -515,7 +490,6 @@ export function initGame() {
     if (moonHP > newMax) setMoonHP(newMax);
     if (moonHP < 0) setMoonHP(0);
 
-    // загружаем дополнительные данные
     loadMoonData();
     loadAchievements();
     initQuests();
@@ -532,7 +506,6 @@ export function initGame() {
     if (autoSaveIntervalRef) clearInterval(autoSaveIntervalRef);
     autoSaveIntervalRef = setInterval(saveTimeOnly, 30000);
 
-    // Применить стиль активной луны
     applyMoonStyle(activeMoon);
 
     const savedLock = localStorage.getItem('levelLocked') === 'true';
@@ -556,13 +529,11 @@ export function initGame() {
 export async function handleClick(e) {
     if (!currentUser || moonHP <= 0) return;
 
-    // Урон с учётом бонусов от активных лун и комбо
     const baseDamage = playerData?.click_damage || 1;
     const bonus = window._totalDamageBonus || 0;
     const damage = baseDamage * (1 + bonus);
 
     setClickCount(clickCount + 1);
-    // обновляем прогресс квеста на клики
     updateQuestProgress('click');
 
     if (testMode) {
@@ -598,7 +569,6 @@ export async function handleClick(e) {
             setBossKills(bossKills + 1);
             updateQuestProgress('bossKill');
         }
-        // Бонус осколков от лун
         const shardBonus = window._totalShardBonus || 0;
         shardReward = Math.floor(shardReward * (1 + shardBonus));
 
@@ -638,7 +608,6 @@ export async function handleClick(e) {
     updateProfileAndLeaders();
 }
 
-// Экспортируем buyClickDamage
 export async function buyClickDamage() {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
