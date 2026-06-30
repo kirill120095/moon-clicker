@@ -17,7 +17,7 @@ import {
 import { levelLocked, setLevelLocked, setTestMode, currentUser, activeMoon } from './state.js';
 import { updateProfileAndLeaders } from './profile.js';
 import { showToast } from './utils.js';
-import { MOON_TYPES } from './config.js';
+import { MOON_TYPES, ACHIEVEMENTS, QUESTS } from './config.js';
 
 const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 const lockClosedSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>`;
@@ -44,6 +44,14 @@ export function initUI() {
     leftTrigger = document.getElementById('panelTrigger');
     rightPanel = document.getElementById('shopPanel');
     rightTrigger = document.getElementById('shopTrigger');
+
+    // Вкладки правой панели (магазин, квесты, ачивки)
+    const shopTabs = document.querySelectorAll('.shop-panel .panel-tabs button');
+    const shopContents = {
+        shop: document.getElementById('shopContent'),
+        quests: document.getElementById('questsContent'),
+        achievements: document.getElementById('achievementsContent')
+    };
 
     const panelTabs = document.querySelectorAll('.left-panel .panel-tabs button');
     const panelContents = document.querySelectorAll('.left-panel .panel-content');
@@ -114,7 +122,7 @@ export function initUI() {
         });
     }
 
-    // Вкладки панели
+    // Вкладки левой панели
     panelTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             panelTabs.forEach(t => t.classList.remove('active'));
@@ -129,6 +137,21 @@ export function initUI() {
                 if (testModeCheckbox) testModeCheckbox.checked = savedTest;
             }
             updateProfileAndLeaders(true);
+        });
+    });
+
+    // Вкладки правой панели (магазин, квесты, ачивки)
+    shopTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            shopTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const tabType = tab.getAttribute('data-shop-tab');
+            // скрываем все контенты
+            Object.values(shopContents).forEach(el => { if (el) el.classList.remove('active'); });
+            // показываем нужный
+            if (tabType === 'shop' && shopContents.shop) shopContents.shop.classList.add('active');
+            else if (tabType === 'quests' && shopContents.quests) shopContents.quests.classList.add('active');
+            else if (tabType === 'achievements' && shopContents.achievements) shopContents.achievements.classList.add('active');
         });
     });
 
