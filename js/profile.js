@@ -17,8 +17,13 @@ export async function updateProfileAndLeaders(force = false) {
     const profileContent = document.getElementById('profileContent');
     const leadersList = document.getElementById('leadersList');
 
+    if (!profileContent || !leadersList) {
+        console.warn('Profile elements not found');
+        return;
+    }
+
     // --- Профиль ---
-    if (playerData && profileContent) {
+    if (playerData) {
         const data = playerData;
         const totalBosses = Math.floor((data.level || 1) / 10);
         const timePlayed = data.total_seconds_played || 0;
@@ -167,7 +172,7 @@ export async function updateProfileAndLeaders(force = false) {
     }
 
     // --- Лидеры ---
-    if (leadersList) {
+    try {
         const { data: leaders, error } = await supabaseClient
             .from('players')
             .select('username, level, total_clicks, total_seconds_played')
@@ -175,8 +180,14 @@ export async function updateProfileAndLeaders(force = false) {
             .order('total_clicks', { ascending: false })
             .limit(10);
 
-        if (error || !leaders) {
+        if (error) {
+            console.error('Leaders error:', error);
             leadersList.innerHTML = '<div class="no-data">Ошибка загрузки</div>';
+            return;
+        }
+
+        if (!leaders || leaders.length === 0) {
+            leadersList.innerHTML = '<div class="no-data">Нет данных</div>';
             return;
         }
 
@@ -195,5 +206,8 @@ export async function updateProfileAndLeaders(force = false) {
             `;
         });
         leadersList.innerHTML = html;
+    } catch (err) {
+        console.error('Leaders fetch error:', err);
+        leadersList.innerHTML = '<div class="no-data">Ошибка загрузки</div>';
     }
 }
