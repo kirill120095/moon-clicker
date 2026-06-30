@@ -34,7 +34,7 @@ export let activeMoons = ['normal'];
 export let ownedMoons = ['normal'];
 export let moonLevels = { normal: 1 };
 
-// Достижения и квесты
+// Достижения и квесты (используются только для правой панели)
 export let achievements = {};
 export let quests = {};
 
