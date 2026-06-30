@@ -2,7 +2,7 @@
 //  ПРОФИЛЬ И ЛИДЕРЫ
 // ============================================================
 import { supabaseClient } from './supabase.js';
-import { currentUser, playerData, activeMoon, activeMoons, ownedMoons, moonLevels, bossKills, quests, achievements, maxSlots, getMoonLevel } from './state.js';
+import { currentUser, playerData, activeMoon, activeMoons, ownedMoons, bossKills, quests, achievements, maxSlots, getMoonLevel, currentLevel } from './state.js';
 import { formatTime, getTitle, showToast } from './utils.js';
 import { MOON_TYPES, getMoonUpgradeCost, ACHIEVEMENTS, QUESTS } from './config.js';
 import { selectMoon, upgradeMoon, toggleMoon } from './game.js';
@@ -29,6 +29,7 @@ export async function updateProfileAndLeaders(force = false) {
         const timePlayed = data.total_seconds_played || 0;
         const title = getTitle(data.level || 1);
         const shards = data.shards || 0;
+        const level = currentLevel || data.level || 1;
 
         let avgTime = '—';
         if (data.total_clicks > 0 && data.total_seconds_played > 0) {
@@ -42,7 +43,7 @@ export async function updateProfileAndLeaders(force = false) {
         moonList.forEach(moonId => {
             const moon = MOON_TYPES[moonId];
             if (!moon) return;
-            const level = getMoonLevel(moonId);
+            const moonLevel = getMoonLevel(moonId);
             const isActive = (activeMoon === moonId);
             const isInActiveSlots = activeMoons.includes(moonId);
             const canToggle = isInActiveSlots ? activeMoons.length > 1 : activeMoons.length < maxSlots;
@@ -54,8 +55,8 @@ export async function updateProfileAndLeaders(force = false) {
             const bonusText = bonusDesc.length ? `(${bonusDesc.join(', ')})` : '';
 
             // прокачка
-            const canUpgrade = currentLevel >= 10 && level < 10;
-            const upgradeCost = canUpgrade ? getMoonUpgradeCost(moonId, level) : 0;
+            const canUpgrade = level >= 10 && moonLevel < 10;
+            const upgradeCost = canUpgrade ? getMoonUpgradeCost(moonId, moonLevel) : 0;
 
             moonsHtml += `
                 <div class="profile-moon-item">
@@ -64,7 +65,7 @@ export async function updateProfileAndLeaders(force = false) {
                             ${moon.emoji} ${moon.name} ${bonusText}
                             ${isActive ? ' ⭐' : ''}
                         </span>
-                        <span class="profile-moon-level">Ур. ${level}</span>
+                        <span class="profile-moon-level">Ур. ${moonLevel}</span>
                         <div class="profile-moon-actions">
                             <button class="profile-toggle-btn ${isInActiveSlots ? 'active' : ''}" data-moon="${moonId}" ${!canToggle ? 'disabled' : ''}>
                                 ${isInActiveSlots ? '✅' : '⬜'}
@@ -73,7 +74,7 @@ export async function updateProfileAndLeaders(force = false) {
                                 ${isActive ? 'Активна' : 'Выбрать'}
                             </button>
                             ${canUpgrade ? `<button class="profile-upgrade-btn" data-moon="${moonId}" data-cost="${upgradeCost}">Улучшить (${upgradeCost} 💎)</button>` : ''}
-                            ${level >= 10 ? '<span style="color:#ffd700;">MAX</span>' : ''}
+                            ${moonLevel >= 10 ? '<span style="color:#ffd700;">MAX</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -124,7 +125,7 @@ export async function updateProfileAndLeaders(force = false) {
             </div>
             <div class="profile-section-title">📊 Статистика</div>
             <div class="profile-row"><span class="label">Звание</span><span class="value" style="color:#d4af37; font-weight:bold;">${title}</span></div>
-            <div class="profile-row"><span class="label">Текущий уровень</span><span class="value">${data.level || 1}</span></div>
+            <div class="profile-row"><span class="label">Текущий уровень</span><span class="value">${level}</span></div>
             <div class="profile-row"><span class="label">Всего кликов</span><span class="value">${data.total_clicks || 0}</span></div>
             <div class="profile-row"><span class="label">Лунных осколков</span><span class="value" style="color:#ffd700;">${shards} 💎</span></div>
             <div class="profile-row"><span class="label">Общее время</span><span class="value">${formatTime(timePlayed)}</span></div>
