@@ -2,6 +2,8 @@
 //  ГЛОБАЛЬНОЕ СОСТОЯНИЕ
 // ============================================================
 import { BASE_HP, BOSS_TIMER, MOON_TYPES, MOON_SLOT_UNLOCK, ACHIEVEMENTS, QUESTS } from './config.js';
+import { supabaseClient } from './supabase.js';
+import { showToast } from './utils.js';
 
 // Основные переменные
 export let currentUser = null;
@@ -12,7 +14,7 @@ export let currentLevel = 1;
 export let moonHP = BASE_HP;
 export let maxHP = BASE_HP;
 export let sessionStartTimestamp = null;
-export let bossKills = 0;          // для ачивок
+export let bossKills = 0;
 
 // Таймеры
 export let timeUpdateInterval = null;
@@ -26,15 +28,13 @@ export let levelLocked = false;
 export let testMode = false;
 
 // Луны (активные и владение)
-export let activeMoon = 'normal';           // основной активный (для совместимости)
-export let activeMoons = ['normal'];        // массив активных лун (несколько слотов)
+export let activeMoon = 'normal';
+export let activeMoons = ['normal'];
 export let ownedMoons = ['normal'];
-export let moonLevels = { normal: 1 };      // уровень прокачки каждой луны (1 - базовый)
+export let moonLevels = { normal: 1 };
 
-// Достижения
+// Достижения и квесты
 export let achievements = {};
-
-// Квесты
 export let quests = {};
 
 // Слоты
@@ -47,14 +47,16 @@ export function setUser(user) { currentUser = user; }
 export function setPlayerData(data) {
     playerData = data;
     if (data) {
-        // загрузка из localStorage уже обработана в инициализации
+        // загружаем данные из localStorage
+        loadMoonData();
+        loadAchievements();
+        initQuests();
     }
 }
 export function setClickCount(value) { clickCount = value; }
 export function setTotalSecondsPlayed(value) { totalSecondsPlayed = value; }
 export function setCurrentLevel(value) {
     currentLevel = value;
-    // обновляем максимальное количество слотов
     updateMaxSlots();
 }
 export function setMoonHP(value) { moonHP = value; }
@@ -65,12 +67,15 @@ export function setTestMode(value) { testMode = value; }
 export function setBossTimerRunning(value) { bossTimerRunning = value; }
 export function setBossTimer(value) { bossTimer = value; }
 export function setBossTimerInterval(value) { bossTimerInterval = value; }
-export function setBossKills(value) { bossKills = value; }
+export function setBossKills(value) {
+    bossKills = value;
+    // проверяем ачивку
+    if (bossKills >= 10) unlockAchievement('bossSlayer');
+}
 
 // --- Луны ---
 export function setActiveMoon(moonId) {
     activeMoon = moonId;
-    // также добавляем в activeMoons если ещё не было (для совместимости)
     if (!activeMoons.includes(moonId)) {
         activeMoons.push(moonId);
     }
@@ -79,7 +84,7 @@ export function setActiveMoon(moonId) {
 export function setActiveMoons(moons) {
     activeMoons = moons;
     if (moons.length > 0) {
-        activeMoon = moons[0]; // первый как основной
+        activeMoon = moons[0];
     }
     saveMoonData();
 }
@@ -91,6 +96,9 @@ export function addOwnedMoon(moonId) {
     if (!ownedMoons.includes(moonId)) {
         ownedMoons.push(moonId);
         saveMoonData();
+        // проверяем ачивки
+        if (ownedMoons.length > 1) unlockAchievement('firstMoon');
+        if (ownedMoons.length >= Object.keys(MOON_TYPES).length) unlockAchievement('moonCollector');
     }
 }
 export function setMoonLevel(moonId, level) {
@@ -110,23 +118,21 @@ export function updateMaxSlots() {
         }
     }
     maxSlots = max;
-    // обрезаем активные луны, если их больше слотов
     if (activeMoons.length > maxSlots) {
         activeMoons = activeMoons.slice(0, maxSlots);
+        saveMoonData();
     }
     return maxSlots;
 }
 
 // --- Достижения ---
 export function loadAchievements() {
-    // загружаем из localStorage (или из БД)
     const saved = localStorage.getItem(`ach_${currentUser?.id}`);
     if (saved) {
         try {
             achievements = JSON.parse(saved);
-        } catch(e) {}
+        } catch(e) { achievements = {}; }
     } else {
-        // инициализируем
         achievements = {};
         for (const key of Object.keys(ACHIEVEMENTS)) {
             achievements[key] = false;
@@ -142,13 +148,10 @@ export function unlockAchievement(id) {
     if (!achievements[id]) {
         achievements[id] = true;
         saveAchievements();
-        // даём награду
         const ach = ACHIEVEMENTS[id];
         if (ach && ach.reward) {
-            // добавляем осколки
             if (playerData) {
                 playerData.shards = (playerData.shards || 0) + ach.reward;
-                // сохраняем в БД (можно сразу)
                 supabaseClient
                     .from('players')
                     .update({ shards: playerData.shards })
@@ -162,25 +165,30 @@ export function unlockAchievement(id) {
 
 // --- Квесты ---
 export function initQuests() {
-    // загружаем квесты из localStorage
     const saved = localStorage.getItem(`quests_${currentUser?.id}`);
     if (saved) {
         try {
             quests = JSON.parse(saved);
-        } catch(e) {}
+            // обновляем структуру, если добавились новые квесты
+            let needSave = false;
+            for (const [id, q] of Object.entries(QUESTS)) {
+                if (!quests[id]) {
+                    quests[id] = { progress: 0, completed: false, ...q };
+                    needSave = true;
+                }
+            }
+            if (needSave) saveQuests();
+        } catch(e) {
+            resetQuests();
+        }
     } else {
-        // инициализируем новыми квестами
         resetQuests();
     }
 }
 export function resetQuests() {
     const newQuests = {};
     for (const [id, q] of Object.entries(QUESTS)) {
-        newQuests[id] = {
-            progress: 0,
-            completed: false,
-            ...q
-        };
+        newQuests[id] = { progress: 0, completed: false, ...q };
     }
     quests = newQuests;
     saveQuests();
@@ -190,6 +198,7 @@ export function saveQuests() {
     localStorage.setItem(`quests_${currentUser.id}`, JSON.stringify(quests));
 }
 export function updateQuestProgress(type, amount = 1) {
+    if (!quests) return;
     for (const [id, q] of Object.entries(quests)) {
         if (q.completed) continue;
         if (q.type === type) {
@@ -212,7 +221,7 @@ export function updateQuestProgress(type, amount = 1) {
     }
 }
 
-// --- Сохранение данных о лунах ---
+// --- Сохранение и загрузка данных о лунах ---
 export function saveMoonData() {
     if (!currentUser) return;
     const key = `moon_data_${currentUser.id}`;
@@ -236,14 +245,12 @@ export function loadMoonData() {
             ownedMoons = data.ownedMoons || ['normal'];
             moonLevels = data.moonLevels || { normal: 1 };
         } catch(e) {
-            // ошибка, устанавливаем по умолчанию
             activeMoon = 'normal';
             activeMoons = ['normal'];
             ownedMoons = ['normal'];
             moonLevels = { normal: 1 };
         }
     } else {
-        // инициализация
         activeMoon = 'normal';
         activeMoons = ['normal'];
         ownedMoons = ['normal'];
