@@ -29,7 +29,6 @@ export async function updateProfileAndLeaders(force = false) {
         const timePlayed = data.total_seconds_played || 0;
         const title = getTitle(data.level || 1);
         const shards = data.shards || 0;
-        // Используем data.level вместо currentLevel
         const level = data.level || 1;
 
         let avgTime = '—';
@@ -38,7 +37,7 @@ export async function updateProfileAndLeaders(force = false) {
             avgTime = formatTime(avgSec);
         }
 
-        // --- Список лун с переключателями и прокачкой ---
+        // --- Список лун с переключателями (только выбор, без прокачки) ---
         let moonsHtml = '';
         const moonList = ownedMoons || ['normal'];
         moonList.forEach(moonId => {
@@ -46,39 +45,51 @@ export async function updateProfileAndLeaders(force = false) {
             if (!moon) return;
             const moonLevel = getMoonLevel(moonId);
             const isActive = (activeMoon === moonId);
-            const isInActiveSlots = activeMoons.includes(moonId);
-            const canToggle = isInActiveSlots ? activeMoons.length > 1 : activeMoons.length < maxSlots;
 
+            // Расчёт бонусов с учётом уровня
             let bonusDesc = [];
-            if (moon.damageBonus > 0) bonusDesc.push(`урон +${Math.round(moon.damageBonus*100)}%`);
-            if (moon.shardBonus > 0) bonusDesc.push(`осколки +${Math.round(moon.shardBonus*100)}%`);
-            const bonusText = bonusDesc.length ? `(${bonusDesc.join(', ')})` : '';
-
-            const canUpgrade = level >= 10 && moonLevel < 10;
-            const upgradeCost = canUpgrade ? getMoonUpgradeCost(moonId, moonLevel) : 0;
+            let damageBonus = (moon.damageBonus || 0) * (1 + (moonLevel - 1) * 0.05);
+            let shardBonus = (moon.shardBonus || 0) * (1 + (moonLevel - 1) * 0.05);
+            if (moonId === 'normal' && moonLevel > 1) {
+                damageBonus += (moonLevel - 1) * 0.05;
+            }
+            if (damageBonus > 0) bonusDesc.push(`урон +${Math.round(damageBonus*100)}%`);
+            if (shardBonus > 0) bonusDesc.push(`осколки +${Math.round(shardBonus*100)}%`);
+            const bonusText = bonusDesc.length ? `(${bonusDesc.join(', ')})` : '(Без бонусов)';
 
             moonsHtml += `
-                <div class="profile-moon-item">
+                <div class="profile-moon-item ${isActive ? 'active' : ''}">
                     <div class="profile-moon-info">
                         <span class="profile-moon-name ${isActive ? 'active' : ''}">
                             ${moon.emoji} ${moon.name} ${bonusText}
-                            ${isActive ? ' ⭐' : ''}
+                            ${isActive ? ' ✅ Активна' : ''}
                         </span>
                         <span class="profile-moon-level">Ур. ${moonLevel}</span>
                         <div class="profile-moon-actions">
-                            <button class="profile-toggle-btn ${isInActiveSlots ? 'active' : ''}" data-moon="${moonId}" ${!canToggle ? 'disabled' : ''}>
-                                ${isInActiveSlots ? '✅' : '⬜'}
-                            </button>
                             <button class="profile-select-btn ${isActive ? 'active' : ''}" data-moon="${moonId}" ${isActive ? 'disabled' : ''}>
                                 ${isActive ? 'Активна' : 'Выбрать'}
                             </button>
-                            ${canUpgrade ? `<button class="profile-upgrade-btn" data-moon="${moonId}" data-cost="${upgradeCost}">Улучшить (${upgradeCost} 💎)</button>` : ''}
-                            ${moonLevel >= 10 ? '<span style="color:#ffd700;">MAX</span>' : ''}
                         </div>
                     </div>
                 </div>
             `;
         });
+
+        // --- Активные синергии ---
+        let synergiesHtml = '';
+        const activeSynergies = window._activeSynergies || [];
+        if (activeSynergies.length > 0) {
+            synergiesHtml = activeSynergies.map(s => `
+                <div class="synergy-item">
+                    <span class="synergy-name">🔥 ${s.name}</span>
+                    <span class="synergy-desc">${s.description}</span>
+                </div>
+            `).join('');
+        } else if (activeMoons.length > 1) {
+            synergiesHtml = '<div class="no-data">Нет активных синергий</div>';
+        } else {
+            synergiesHtml = '<div class="no-data">Активируйте несколько лун для синергии</div>';
+        }
 
         // --- Квесты ---
         let questsHtml = '';
@@ -136,6 +147,11 @@ export async function updateProfileAndLeaders(force = false) {
                 ${moonsHtml}
             </div>
 
+            <div class="profile-section-title">🔥 Активные синергии</div>
+            <div class="synergies-list">
+                ${synergiesHtml}
+            </div>
+
             <div class="profile-section-title">📋 Квесты</div>
             <div class="quests-list">
                 ${questsHtml || 'Нет активных квестов'}
@@ -147,23 +163,10 @@ export async function updateProfileAndLeaders(force = false) {
             </div>
         `;
 
-        document.querySelectorAll('.profile-toggle-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const moonId = btn.dataset.moon;
-                toggleMoon(moonId);
-            });
-        });
         document.querySelectorAll('.profile-select-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const moonId = btn.dataset.moon;
                 await selectMoon(moonId);
-                updateProfileAndLeaders(true);
-            });
-        });
-        document.querySelectorAll('.profile-upgrade-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const moonId = btn.dataset.moon;
-                await upgradeMoon(moonId);
                 updateProfileAndLeaders(true);
             });
         });
