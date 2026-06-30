@@ -9,10 +9,10 @@ import {
     bossKills, maxSlots,
     setClickCount, setTotalSecondsPlayed, setCurrentLevel,
     setMoonHP, setMaxHP, setSessionStartTimestamp, setPlayerData,
-    setBossTimerRunning, setBossTimer, setBossTimerInterval, 
+    setBossTimerRunning, setBossTimer, setBossTimerInterval,
     setLevelLocked, setTestMode, setActiveMoon, setActiveMoons,
     setOwnedMoons, addOwnedMoon, setMoonLevel, getMoonLevel,
-    setBossKills, updateMaxSlots,
+    setBossKills, updateMaxSlots, setSlotLevel,
     achievements, unlockAchievement,
     quests, updateQuestProgress, initQuests, resetQuests,
     loadAchievements, saveAchievements,
@@ -21,8 +21,8 @@ import {
 import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
 import { updateProfileAndLeaders } from './profile.js';
 import {
-    BASE_HP, BOSS_INTERVAL, BOSS_TIMER, UPGRADE_COSTS,
-    MOON_TYPES, getMoonUpgradeCost, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS
+    BASE_HP, BOSS_INTERVAL, BOSS_TIMER, UPGRADE_COSTS, MAX_SLOTS,
+    MOON_TYPES, getMoonUpgradeCost, getSlotUpgradeCost, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS
 } from './config.js';
 import { applyMoonStyle } from './ui.js';
 
@@ -36,6 +36,7 @@ let saveTimeout = null;
 // Глобальные бонусы
 let totalDamageBonus = 0;
 let totalShardBonus = 0;
+let activeSynergies = [];
 
 export function initGameElements(elements) {
     moonWrapper = elements.moonWrapper;
@@ -57,7 +58,7 @@ export function updateUI() {
     if (!counterEl) return;
     const shards = playerData?.shards || 0;
     counterEl.textContent = `💎 ${shards}`;
-    
+
     levelTitle.textContent = `Уровень ${currentLevel}`;
 
     const currentHP = Math.round(moonHP);
@@ -97,35 +98,54 @@ export function updateUI() {
 export function recalcMoonBonuses() {
     totalDamageBonus = 0;
     totalShardBonus = 0;
+    activeSynergies = [];
     const activeIds = activeMoons;
 
+    // Бонусы от каждой активной луны с учётом уровня
     activeIds.forEach(id => {
         const moon = MOON_TYPES[id];
         if (moon) {
             const level = getMoonLevel(id);
-            const levelMultiplier = 1 + (level - 1) * 0.05;
+            // Для обычной луны: +5% урона за уровень (начиная с 1 уровня)
+            let levelMultiplier = 1 + (level - 1) * 0.05;
+            if (id === 'normal') {
+                // Обычная луна даёт +5% урона за уровень
+                levelMultiplier = 1 + (level - 1) * 0.05;
+            } else {
+                levelMultiplier = 1 + (level - 1) * 0.05;
+            }
             totalDamageBonus += (moon.damageBonus || 0) * levelMultiplier;
             totalShardBonus += (moon.shardBonus || 0) * levelMultiplier;
         }
     });
 
+    // Проверяем все комбинации синергий
+    const sortedActive = [...activeIds].sort();
     const comboKeys = Object.keys(SYNERGY_BONUSES);
     comboKeys.forEach(key => {
-        const moons = key.split('+');
-        if (moons.every(m => activeIds.includes(m))) {
+        const moons = key.split('+').sort();
+        // Проверяем, все ли луны из комбинации присутствуют в активных
+        if (moons.every(m => sortedActive.includes(m))) {
             const bonus = SYNERGY_BONUSES[key];
             totalDamageBonus += bonus.damageBonus || 0;
             totalShardBonus += bonus.shardBonus || 0;
+            activeSynergies.push({
+                name: bonus.name,
+                description: bonus.description,
+                key: key
+            });
         }
     });
 
-    if (activeIds.includes('normal') && activeIds.length > 1) {
+    // Дополнительный бонус, если активна обычная луна и есть другие
+    if (sortedActive.includes('normal') && sortedActive.length > 1) {
         totalDamageBonus += 0.05;
         totalShardBonus += 0.05;
     }
 
     window._totalDamageBonus = totalDamageBonus;
     window._totalShardBonus = totalShardBonus;
+    window._activeSynergies = activeSynergies;
 }
 
 export function updateTimeDisplay() {
@@ -133,6 +153,7 @@ export function updateTimeDisplay() {
 }
 
 export function updateShopUI() {
+    // Улучшение клика
     const shopLockMessage = document.getElementById('shopLockMessage');
     const buyBtn = document.getElementById('buyClickDamageBtn');
     const priceEl = document.getElementById('clickDamagePrice');
@@ -148,16 +169,32 @@ export function updateShopUI() {
         const cost = Math.floor(UPGRADE_COSTS.clickDamage.base * Math.pow(UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade));
         const currentDamage = playerData?.click_damage || 1;
         const nextDamage = currentDamage + 1;
-        const currentTotalBonus = `+${(currentDamage - 1)} урона`;
-        const nextTotalBonus = `+${(nextDamage - 1)} урона`;
+        const currentTotalBonus = `${currentDamage} урона (всего)`;
+        const nextTotalBonus = `${nextDamage} урона (всего)`;
         priceEl.textContent = `${cost} 💎`;
-        levelEl.innerHTML = `Ур. ${currentLevelUpgrade} (${currentTotalBonus} → ${nextTotalBonus})`;
+        levelEl.innerHTML = `Ур. ${currentLevelUpgrade}: ${currentDamage} → ${nextDamage}`;
         const hasEnoughShards = (playerData?.shards || 0) >= cost;
         buyBtn.disabled = !isUnlocked || !hasEnoughShards || currentLevelUpgrade >= 10;
         buyBtn.textContent = currentLevelUpgrade >= 10 ? 'MAX' : 'Купить';
         buyBtn.classList.toggle('locked', !isUnlocked);
     }
 
+    // Улучшение слотов
+    const slotBuyBtn = document.getElementById('buySlotBtn');
+    const slotPriceEl = document.getElementById('slotPrice');
+    const slotLevelEl = document.getElementById('slotLevel');
+    if (slotBuyBtn && slotPriceEl && slotLevelEl) {
+        const currentSlots = maxSlots;
+        const canUpgrade = currentSlots < MAX_SLOTS;
+        const cost = canUpgrade ? getSlotUpgradeCost(currentSlots) : 0;
+        slotPriceEl.textContent = canUpgrade ? `${cost} 💎` : 'MAX';
+        slotLevelEl.textContent = `Слотов: ${currentSlots}/${MAX_SLOTS}`;
+        const hasEnoughShards = (playerData?.shards || 0) >= cost;
+        slotBuyBtn.disabled = !canUpgrade || !hasEnoughShards;
+        slotBuyBtn.textContent = canUpgrade ? 'Купить' : 'MAX';
+    }
+
+    // Обновление магазина лун
     const moonShopContainer = document.getElementById('moonShopItems');
     if (moonShopContainer) {
         let html = '';
@@ -167,12 +204,14 @@ export function updateShopUI() {
             const canBuy = !owned && (playerData?.shards || 0) >= moon.cost && moon.cost > 0 && currentLevel >= (moon.unlockLevel || 1);
             const isLockedByLevel = currentLevel < (moon.unlockLevel || 1);
 
+            const level = owned ? getMoonLevel(id) : 0;
+            const levelBonus = (id === 'normal') ? `${Math.round((level - 1) * 5)}%` : `${Math.round((level - 1) * 5)}%`;
             let bonusDesc = [];
             if (moon.damageBonus > 0) bonusDesc.push(`урон +${Math.round(moon.damageBonus*100)}%`);
             if (moon.shardBonus > 0) bonusDesc.push(`осколки +${Math.round(moon.shardBonus*100)}%`);
+            if (id === 'normal' && level > 1) bonusDesc.push(`+${Math.round((level - 1) * 5)}% урона (уровень)`);
             const bonusText = bonusDesc.length ? `Бонус: ${bonusDesc.join(', ')}` : 'Без бонусов';
 
-            const level = owned ? getMoonLevel(id) : 0;
             const upgradeCost = owned ? getMoonUpgradeCost(id, level) : 0;
             const canUpgrade = owned && currentLevel >= 10 && level < 10 && (playerData?.shards || 0) >= upgradeCost;
 
@@ -216,6 +255,39 @@ export function updateShopUI() {
             });
         });
     }
+}
+
+// --- Покупка слота ---
+export async function buySlot() {
+    if (!currentUser || !playerData) {
+        showToast('⚠️ Войдите в аккаунт', 'warning');
+        return;
+    }
+    if (maxSlots >= MAX_SLOTS) {
+        showToast('⚠️ Все слоты уже открыты', 'warning');
+        return;
+    }
+    const cost = getSlotUpgradeCost(maxSlots);
+    if ((playerData.shards || 0) < cost) {
+        showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
+        return;
+    }
+
+    const newShards = playerData.shards - cost;
+    const { error } = await supabaseClient
+        .from('players')
+        .update({ shards: newShards })
+        .eq('id', currentUser.id);
+    if (error) {
+        showToast('⚠️ Ошибка покупки слота', 'warning');
+        return;
+    }
+    playerData.shards = newShards;
+    setSlotLevel(maxSlots + 1);
+    updateUI();
+    updateShopUI();
+    updateProfileAndLeaders(true);
+    showToast(`✅ Открыт ${maxSlots} слот!`, 'success');
 }
 
 export async function buyMoon(moonId) {
@@ -351,6 +423,7 @@ export function toggleMoon(moonId) {
     updateProfileAndLeaders(true);
 }
 
+// --- Таймер босса ---
 function startBossTimer() {
     if (bossTimerRunning) return;
     if (bossTimerInterval) clearInterval(bossTimerInterval);
@@ -389,6 +462,7 @@ function updateTimerBar() {
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
 }
 
+// --- Сохранение ---
 export async function updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (!playerId || !currentUser) return false;
     const updateData = {
@@ -446,6 +520,7 @@ export async function resetProgress() {
             setOwnedMoons(['normal']);
             setMoonLevel('normal', 1);
             setBossKills(0);
+            setSlotLevel(1);
             resetQuests();
             achievements = {};
             saveAchievements();
