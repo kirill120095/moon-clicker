@@ -5,101 +5,37 @@ import { supabaseClient } from './supabase.js';
 import {
     currentUser, playerData, clickCount, totalSecondsPlayed,
     currentLevel, moonHP, maxHP, bossTimer, bossTimerInterval, bossTimerRunning,
-    levelLocked, testMode, activeMoon, ownedMoons,
+    levelLocked, testMode, activeMoon, activeMoons, ownedMoons, moonLevels,
+    bossKills, maxSlots,
     setClickCount, setTotalSecondsPlayed, setCurrentLevel,
     setMoonHP, setMaxHP, setSessionStartTimestamp, setPlayerData,
     setBossTimerRunning, setBossTimer, setBossTimerInterval, 
-    setLevelLocked, setTestMode, setActiveMoon, setOwnedMoons, addOwnedMoon
-} from './state.js';
-import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
-import { updateProfileAndLeaders } from './profile.js';
-import { BASE_HP, BOSS_INTERVAL, BOSS_TIMER, UPGRADE_COSTS, MOON_TYPES } from './config.js';
-import { applyMoonStyle } from './ui.js';
-import {
-    // ... старые импорты
-    bossKills, setBossKills,
-    activeMoons, setActiveMoons,
-    moonLevels, getMoonLevel, setMoonLevel,
-    maxSlots, updateMaxSlots,
+    setLevelLocked, setTestMode, setActiveMoon, setActiveMoons,
+    setOwnedMoons, addOwnedMoon, setMoonLevel, getMoonLevel,
+    setBossKills, updateMaxSlots,
     achievements, unlockAchievement,
     quests, updateQuestProgress, initQuests, resetQuests,
     loadAchievements, saveAchievements,
     loadMoonData, saveMoonData
 } from './state.js';
-import { MOON_TYPES, MOON_UPGRADE_COSTS, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS } from './config.js';
+import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js';
+import { updateProfileAndLeaders } from './profile.js';
+import {
+    BASE_HP, BOSS_INTERVAL, BOSS_TIMER, UPGRADE_COSTS,
+    MOON_TYPES, MOON_UPGRADE_COSTS, SYNERGY_BONUSES, ACHIEVEMENTS
+} from './config.js';
+import { applyMoonStyle } from './ui.js';
+
 let moonWrapper, moonInner, clickEffect, counterEl, levelTitle, hpBar, hpPercent,
     timerBarContainer, timerBar, timerPercent, totalTimeDisplay, rollbackBtnMain, lockToggleMain;
 
 export let timeUpdateIntervalRef = null;
 export let autoSaveIntervalRef = null;
 let saveTimeout = null;
-let pendingSave = null; // для fallback сохранения
 
-// Функция сохранения с retry и fallback в localStorage
-async function saveWithRetry(updateData, retries = 3, delay = 1000) {
-    if (!currentUser) return false;
-    try {
-        const { error } = await supabaseClient
-            .from('players')
-            .update(updateData)
-            .eq('id', currentUser.id);
-        if (error) throw error;
-        // Если сохранилось в БД, удаляем fallback
-        localStorage.removeItem(`fallback_save_${currentUser.id}`);
-        return true;
-    } catch (err) {
-        console.warn('Ошибка сохранения в Supabase, попытка', retries, err);
-        if (retries > 0) {
-            // Ждём и повторяем
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return saveWithRetry(updateData, retries - 1, delay * 1.5);
-        } else {
-            // Сохраняем в localStorage как fallback
-            console.error('Сохранение в Supabase не удалось, сохраняем в localStorage');
-            const fallbackKey = `fallback_save_${currentUser.id}`;
-            const fallbackData = {
-                ...updateData,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(fallbackKey, JSON.stringify(fallbackData));
-            showToast('⚠️ Проблема с соединением, прогресс сохранён локально', 'warning', 3000);
-            return false;
-        }
-    }
-}
-
-// Функция восстановления fallback-сохранения при входе
-export async function restoreFallbackSave(userId) {
-    const fallbackKey = `fallback_save_${userId}`;
-    const saved = localStorage.getItem(fallbackKey);
-    if (!saved) return false;
-    try {
-        const data = JSON.parse(saved);
-        // Пытаемся отправить в БД
-        const { error } = await supabaseClient
-            .from('players')
-            .update({
-                total_clicks: data.total_clicks,
-                last_click_at: data.last_click_at,
-                total_seconds_played: data.total_seconds_played,
-                level: data.level,
-                moon_hp: data.moon_hp,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', userId);
-        if (!error) {
-            localStorage.removeItem(fallbackKey);
-            showToast('✅ Локальный прогресс восстановлен', 'success', 2000);
-            return true;
-        } else {
-            console.warn('Не удалось восстановить fallback сохранение', error);
-            return false;
-        }
-    } catch (e) {
-        console.warn('Ошибка восстановления fallback', e);
-        return false;
-    }
-}
+// Глобальные бонусы
+let totalDamageBonus = 0;
+let totalShardBonus = 0;
 
 export function initGameElements(elements) {
     moonWrapper = elements.moonWrapper;
@@ -157,8 +93,50 @@ export function updateUI() {
     updateTimeDisplay();
     updateShopUI();
 
-    // Применить стиль активной луны
+    // --- Расчёт бонусов от активных лун ---
+    recalcMoonBonuses();
+
+    // Применить стиль активной луны (главной)
     applyMoonStyle(activeMoon);
+}
+
+// Пересчёт бонусов от нескольких лун
+export function recalcMoonBonuses() {
+    totalDamageBonus = 0;
+    totalShardBonus = 0;
+    const activeIds = activeMoons;
+
+    // Бонусы от каждой активной луны с учётом уровня
+    activeIds.forEach(id => {
+        const moon = MOON_TYPES[id];
+        if (moon) {
+            const level = getMoonLevel(id);
+            const levelMultiplier = 1 + (level - 1) * 0.05; // 5% за уровень
+            totalDamageBonus += (moon.damageBonus || 0) * levelMultiplier;
+            totalShardBonus += (moon.shardBonus || 0) * levelMultiplier;
+        }
+    });
+
+    // Комбо-бонусы
+    const comboKeys = Object.keys(SYNERGY_BONUSES);
+    comboKeys.forEach(key => {
+        const moons = key.split('+');
+        if (moons.every(m => activeIds.includes(m))) {
+            const bonus = SYNERGY_BONUSES[key];
+            totalDamageBonus += bonus.damageBonus || 0;
+            totalShardBonus += bonus.shardBonus || 0;
+        }
+    });
+
+    // Дополнительный бонус, если активна обычная луна и есть другие
+    if (activeIds.includes('normal') && activeIds.length > 1) {
+        totalDamageBonus += 0.05;
+        totalShardBonus += 0.05;
+    }
+
+    // Сохраняем в глобальные переменные для использования в handleClick
+    window._totalDamageBonus = totalDamageBonus;
+    window._totalShardBonus = totalShardBonus;
 }
 
 export function updateTimeDisplay() {
@@ -191,18 +169,26 @@ export function updateShopUI() {
         buyBtn.classList.toggle('locked', !isUnlocked);
     }
 
-    // Обновление магазина лун
+    // Обновление магазина лун и прокачки
     const moonShopContainer = document.getElementById('moonShopItems');
     if (moonShopContainer) {
         let html = '';
         for (const [id, moon] of Object.entries(MOON_TYPES)) {
             const owned = ownedMoons.includes(id);
             const active = (activeMoon === id);
-            // Формируем описание бонусов
+            const canBuy = !owned && (playerData?.shards || 0) >= moon.cost && moon.cost > 0 && currentLevel >= (moon.unlockLevel || 1);
+            const isLockedByLevel = currentLevel < (moon.unlockLevel || 1);
+
+            // Бонусы
             let bonusDesc = [];
             if (moon.damageBonus > 0) bonusDesc.push(`урон +${Math.round(moon.damageBonus*100)}%`);
             if (moon.shardBonus > 0) bonusDesc.push(`осколки +${Math.round(moon.shardBonus*100)}%`);
             const bonusText = bonusDesc.length ? `Бонус: ${bonusDesc.join(', ')}` : 'Без бонусов';
+
+            // Уровень луны (если owned)
+            const level = owned ? getMoonLevel(id) : 0;
+            const upgradeCost = owned ? Math.floor(MOON_UPGRADE_COSTS.base * Math.pow(MOON_UPGRADE_COSTS.multiplier, level - 1)) : 0;
+            const canUpgrade = owned && currentLevel >= 10 && level < 10 && (playerData?.shards || 0) >= upgradeCost;
 
             html += `
                 <div class="shop-item moon-item" data-moon-id="${id}">
@@ -210,18 +196,22 @@ export function updateShopUI() {
                         <span class="shop-item-name">${moon.emoji} ${moon.name}</span>
                         <span class="shop-item-desc">${moon.cost === 0 ? 'Начальная' : `Цена: ${moon.cost} 💎`}</span>
                         <span class="shop-item-desc">${bonusText}</span>
+                        ${owned ? `<span class="shop-item-desc">Уровень: ${level} / 10</span>` : ''}
+                        ${isLockedByLevel ? `<span class="shop-item-desc" style="color: #ff6b6b;">Открывается с ${moon.unlockLevel} уровня</span>` : ''}
                     </div>
                     <div class="shop-item-right">
-                        ${owned ? (active ? '<span style="color:#4ecdc4;">Активно</span>' : `<button class="shop-buy-btn select-moon-btn" data-moon-id="${id}">Выбрать</button>`) 
-                        : (moon.cost === 0 ? '<span style="color:#4ecdc4;">Доступна</span>' : 
-                           `<button class="shop-buy-btn buy-moon-btn" data-moon-id="${id}" ${(playerData?.shards || 0) < moon.cost ? 'disabled' : ''}>${(playerData?.shards || 0) >= moon.cost ? 'Купить' : 'Не хватает'}</button>`)}
+                        ${owned ? (active ? '<span style="color:#4ecdc4;">✅ Активна</span>' : `<button class="shop-buy-btn select-moon-btn" data-moon-id="${id}">Выбрать</button>`)
+                        : (moon.cost === 0 ? '<span style="color:#4ecdc4;">Доступна</span>' :
+                           (isLockedByLevel ? `<span style="color:#ff6b6b;">🔒</span>` :
+                           `<button class="shop-buy-btn buy-moon-btn" data-moon-id="${id}" ${!canBuy ? 'disabled' : ''}>${canBuy ? 'Купить' : 'Не хватает'}</button>`))}
+                        ${owned && level < 10 ? `<button class="shop-buy-btn upgrade-moon-btn" data-moon-id="${id}" ${!canUpgrade ? 'disabled' : ''}>${canUpgrade ? `Улучшить (${upgradeCost} 💎)` : 'MAX'}</button>` : ''}
                     </div>
                 </div>
             `;
         }
         moonShopContainer.innerHTML = html;
 
-        // Добавляем обработчики для кнопок покупки и выбора
+        // Обработчики
         document.querySelectorAll('.buy-moon-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const moonId = btn.dataset.moonId;
@@ -234,10 +224,16 @@ export function updateShopUI() {
                 selectMoon(moonId);
             });
         });
+        document.querySelectorAll('.upgrade-moon-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const moonId = btn.dataset.moonId;
+                upgradeMoon(moonId);
+            });
+        });
     }
 }
 
-// --- Покупка и выбор луны ---
+// --- Покупка луны ---
 export async function buyMoon(moonId) {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -249,24 +245,31 @@ export async function buyMoon(moonId) {
         showToast('⚠️ У вас уже есть эта луна', 'warning');
         return;
     }
+    if (currentLevel < (moon.unlockLevel || 1)) {
+        showToast(`🔒 Доступна с ${moon.unlockLevel} уровня`, 'warning');
+        return;
+    }
     if ((playerData.shards || 0) < moon.cost) {
         showToast(`⚠️ Недостаточно осколков! Нужно ${moon.cost}`, 'warning');
         return;
     }
 
     const newShards = (playerData.shards || 0) - moon.cost;
-    // Обновляем только shards в БД, луны хранятся в localStorage
-    const updateData = {
-        shards: newShards,
-        updated_at: new Date().toISOString()
-    };
-    const success = await saveWithRetry(updateData);
-    if (!success) {
-        // Если сохранение не удалось, всё равно обновляем локально
-        playerData.shards = newShards;
+    const { error } = await supabaseClient
+        .from('players')
+        .update({
+            shards: newShards,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUser.id);
+
+    if (error) {
+        console.error('Ошибка покупки луны:', error);
+        showToast('⚠️ Ошибка при покупке', 'warning');
+        return;
     }
 
-    // Обновляем локальное состояние
+    playerData.shards = newShards;
     addOwnedMoon(moonId);
     setActiveMoon(moonId);
 
@@ -276,6 +279,7 @@ export async function buyMoon(moonId) {
     showToast(`✅ Куплена луна "${moon.name}"!`, 'success');
 }
 
+// --- Выбор активной луны ---
 export async function selectMoon(moonId) {
     if (!currentUser || !playerData) {
         showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -290,13 +294,80 @@ export async function selectMoon(moonId) {
         return;
     }
 
-    // Обновляем только активную луну в localStorage
     setActiveMoon(moonId);
-
     updateUI();
     updateShopUI();
     updateProfileAndLeaders(true);
     showToast(`✅ Активна луна "${MOON_TYPES[moonId].name}"`, 'success');
+}
+
+// --- Прокачка луны ---
+export async function upgradeMoon(moonId) {
+    if (!currentUser || !playerData) {
+        showToast('⚠️ Войдите в аккаунт', 'warning');
+        return;
+    }
+    if (!ownedMoons.includes(moonId)) {
+        showToast('⚠️ У вас нет этой луны', 'warning');
+        return;
+    }
+    if (currentLevel < 10) {
+        showToast('🔒 Прокачка лун доступна с 10 уровня', 'warning');
+        return;
+    }
+    const currentLevelMoon = getMoonLevel(moonId);
+    if (currentLevelMoon >= 10) {
+        showToast('⚠️ Максимальный уровень луны (10)', 'warning');
+        return;
+    }
+    const cost = Math.floor(MOON_UPGRADE_COSTS.base * Math.pow(MOON_UPGRADE_COSTS.multiplier, currentLevelMoon - 1));
+    if ((playerData.shards || 0) < cost) {
+        showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
+        return;
+    }
+    const newShards = playerData.shards - cost;
+    const { error } = await supabaseClient
+        .from('players')
+        .update({ shards: newShards })
+        .eq('id', currentUser.id);
+    if (error) {
+        showToast('⚠️ Ошибка прокачки', 'warning');
+        return;
+    }
+    playerData.shards = newShards;
+    setMoonLevel(moonId, currentLevelMoon + 1);
+    updateUI();
+    updateShopUI();
+    updateProfileAndLeaders(true);
+    showToast(`✅ Луна "${MOON_TYPES[moonId].name}" улучшена до ${currentLevelMoon + 1} уровня!`, 'success');
+}
+
+// --- Переключение активных лун (добавление/удаление из слотов) ---
+export function toggleMoon(moonId) {
+    if (!ownedMoons.includes(moonId)) {
+        showToast('⚠️ У вас нет этой луны', 'warning');
+        return;
+    }
+    const index = activeMoons.indexOf(moonId);
+    if (index !== -1) {
+        if (activeMoons.length > 1) {
+            activeMoons.splice(index, 1);
+        } else {
+            showToast('⚠️ Нельзя деактивировать последнюю луну', 'warning');
+            return;
+        }
+    } else {
+        if (activeMoons.length < maxSlots) {
+            activeMoons.push(moonId);
+        } else {
+            showToast(`⚠️ Достигнут лимит активных лун (макс. ${maxSlots})`, 'warning');
+            return;
+        }
+    }
+    setActiveMoons(activeMoons);
+    updateUI();
+    updateShopUI();
+    updateProfileAndLeaders(true);
 }
 
 // --- Таймер босса ---
@@ -338,7 +409,7 @@ function updateTimerBar() {
     if (timerPercent) timerPercent.textContent = `${Math.ceil(bossTimer)}с`;
 }
 
-// --- Сохранение ---
+// --- Сохранение прогресса ---
 export async function updateProgress(playerId, newTotal, clickTimestamp, newLevel, newMoonHP) {
     if (!playerId || !currentUser) return false;
     const updateData = {
@@ -349,57 +420,57 @@ export async function updateProgress(playerId, newTotal, clickTimestamp, newLeve
         moon_hp: Math.round(newMoonHP),
         updated_at: new Date().toISOString()
     };
-    const success = await saveWithRetry(updateData);
-    if (success && playerData) {
-        Object.assign(playerData, updateData);
-    } else if (!success) {
-        // fallback уже сохранён в localStorage
-        // но мы всё равно обновляем локальные данные
+    try {
+        const { error } = await supabaseClient.from('players').update(updateData).eq('id', playerId);
+        if (error) throw error;
         if (playerData) Object.assign(playerData, updateData);
+        return true;
+    } catch (err) {
+        console.error('Ошибка сохранения:', err);
+        showToast('⚠️ Ошибка сохранения прогресса', 'warning');
+        return false;
     }
-    return success;
 }
 
 export async function saveTimeOnly() {
     if (!currentUser) return;
-    const updateData = {
-        total_seconds_played: totalSecondsPlayed,
-        updated_at: new Date().toISOString()
-    };
-    await saveWithRetry(updateData);
+    try {
+        await supabaseClient.from('players')
+            .update({ total_seconds_played: totalSecondsPlayed, updated_at: new Date().toISOString() })
+            .eq('id', currentUser.id);
+    } catch (e) {
+        console.error('Ошибка сохранения времени:', e);
+    }
 }
 
 export async function resetProgress() {
     if (!currentUser) return;
     try {
-        const updateData = { 
-            total_clicks: 0, total_seconds_played: 0, level: 1, 
-            moon_hp: Math.round(BASE_HP), shards: 0,
-            click_damage: 1, click_damage_level: 0,
-            updated_at: new Date().toISOString()
-        };
-        const success = await saveWithRetry(updateData);
-        if (!success) {
-            // fallback сохранён, но мы обновляем локально
-        }
-        // Обновляем локальные данные
-        setClickCount(0);
-        setTotalSecondsPlayed(0);
-        setCurrentLevel(1);
-        setMoonHP(BASE_HP);
-        setMaxHP(BASE_HP);
-        setActiveMoon('normal');
-        setOwnedMoons(['normal']);
-        if (playerData) {
-            Object.assign(playerData, {
-                total_clicks: 0,
-                total_seconds_played: 0,
-                level: 1,
-                moon_hp: Math.round(BASE_HP),
-                shards: 0,
-                click_damage: 1,
-                click_damage_level: 0
-            });
+        const { error } = await supabaseClient.from('players')
+            .update({
+                total_clicks: 0, total_seconds_played: 0, level: 1,
+                moon_hp: Math.round(BASE_HP), shards: 0,
+                click_damage: 1, click_damage_level: 0,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentUser.id);
+        if (error) throw error;
+        const { data: freshData } = await supabaseClient.from('players').select('*').eq('id', currentUser.id).single();
+        if (freshData) {
+            setPlayerData(freshData);
+            setClickCount(0);
+            setTotalSecondsPlayed(0);
+            setCurrentLevel(1);
+            setMoonHP(BASE_HP);
+            setMaxHP(BASE_HP);
+            setActiveMoon('normal');
+            setOwnedMoons(['normal']);
+            setMoonLevel('normal', 1);
+            setBossKills(0);
+            // сброс квестов и ачивок
+            resetQuests();
+            achievements = {};
+            saveAchievements();
         }
         clearBossTimer();
         setLevelLocked(false);
@@ -436,15 +507,15 @@ export function initGame() {
     document.getElementById('authBlock').classList.add('hidden');
     document.getElementById('gameArea').classList.add('active');
 
-    // Восстанавливаем fallback сохранение, если есть
-    if (currentUser) {
-        restoreFallbackSave(currentUser.id);
-    }
-
     const newMax = getMaxHPForLevel(currentLevel, BASE_HP, BOSS_INTERVAL);
     setMaxHP(newMax);
     if (moonHP > newMax) setMoonHP(newMax);
     if (moonHP < 0) setMoonHP(0);
+
+    // загружаем дополнительные данные
+    loadMoonData();
+    loadAchievements();
+    initQuests();
 
     updateUI();
     setSessionStartTimestamp(Date.now());
@@ -482,12 +553,15 @@ export function initGame() {
 export async function handleClick(e) {
     if (!currentUser || moonHP <= 0) return;
 
-    // Урон с учетом бонуса от луны
+    // Урон с учётом бонусов от активных лун и комбо
     const baseDamage = playerData?.click_damage || 1;
-    const moonBonus = MOON_TYPES[activeMoon]?.damageBonus || 0;
-    const damage = baseDamage * (1 + moonBonus);
+    const bonus = window._totalDamageBonus || 0;
+    const damage = baseDamage * (1 + bonus);
 
     setClickCount(clickCount + 1);
+    // обновляем прогресс квеста на клики
+    updateQuestProgress('click');
+
     if (testMode) {
         setMoonHP(0);
     } else {
@@ -507,39 +581,36 @@ export async function handleClick(e) {
 
     if (moonHP === 0) {
         if (levelLocked) {
-            // Если замок включен, не даём перейти на следующий уровень
-            // Но если тестовый режим, оставляем HP 0
             if (!testMode) {
                 setMoonHP(maxHP);
                 updateUI();
             }
             return;
         }
-        
+
         const isBoss = isBossLevel(currentLevel, BOSS_INTERVAL);
-        // Пересчет наград
-        let shardReward = Math.floor(currentLevel / 5) + 1; // обычный уровень
+        let shardReward = Math.floor(currentLevel / 5) + 1;
         if (isBoss) {
-            shardReward = Math.floor(currentLevel / 10) * 3 + 5; // босс
+            shardReward = Math.floor(currentLevel / 10) * 3 + 5;
+            setBossKills(bossKills + 1);
+            updateQuestProgress('bossKill');
         }
-        // Применяем бонус от луны на осколки
-        const shardBonus = MOON_TYPES[activeMoon]?.shardBonus || 0;
+        // Бонус осколков от лун
+        const shardBonus = window._totalShardBonus || 0;
         shardReward = Math.floor(shardReward * (1 + shardBonus));
 
         const currentShards = (playerData?.shards || 0) + shardReward;
-        
+        updateQuestProgress('shard', shardReward);
+
         showToast(`💎 +${shardReward} лунных осколков!`, 'success', 2000);
-        
-        // Сохраняем осколки с retry
-        const updateData = {
-            shards: currentShards,
-            updated_at: new Date().toISOString()
-        };
-        await saveWithRetry(updateData);
+
+        await supabaseClient.from('players')
+            .update({ shards: currentShards, updated_at: new Date().toISOString() })
+            .eq('id', currentUser.id);
         if (playerData) playerData.shards = currentShards;
         updateUI();
         updateShopUI();
-        
+
         const newLevel = currentLevel + 1;
         setCurrentLevel(newLevel);
         const newMax = getMaxHPForLevel(newLevel, BASE_HP, BOSS_INTERVAL);
@@ -585,29 +656,31 @@ export async function buyClickDamage() {
         showToast(`⚠️ Недостаточно осколков! Нужно ${cost}`, 'warning');
         return;
     }
-    
+
     const newShards = (playerData.shards || 0) - cost;
     const newLevel = currentLevelUpgrade + 1;
     const newDamage = playerData.click_damage + 1;
-    
-    const updateData = {
-        shards: newShards,
-        click_damage: newDamage,
-        click_damage_level: newLevel,
-        updated_at: new Date().toISOString()
-    };
-    const success = await saveWithRetry(updateData);
-    if (!success) {
-        // fallback сохранён, обновляем локально
-        playerData.shards = newShards;
-        playerData.click_damage = newDamage;
-        playerData.click_damage_level = newLevel;
-    } else {
-        playerData.shards = newShards;
-        playerData.click_damage = newDamage;
-        playerData.click_damage_level = newLevel;
+
+    const { error } = await supabaseClient
+        .from('players')
+        .update({
+            shards: newShards,
+            click_damage: newDamage,
+            click_damage_level: newLevel,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUser.id);
+
+    if (error) {
+        console.error('Ошибка покупки:', error);
+        showToast('⚠️ Ошибка при покупке', 'warning');
+        return;
     }
-    
+
+    playerData.shards = newShards;
+    playerData.click_damage = newDamage;
+    playerData.click_damage_level = newLevel;
+
     updateUI();
     updateShopUI();
     showToast(`✅ Улучшение куплено! Урон: ${newDamage}`, 'success');
