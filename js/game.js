@@ -15,7 +15,18 @@ import { showToast, formatTime, getMaxHPForLevel, isBossLevel } from './utils.js
 import { updateProfileAndLeaders } from './profile.js';
 import { BASE_HP, BOSS_INTERVAL, BOSS_TIMER, UPGRADE_COSTS, MOON_TYPES } from './config.js';
 import { applyMoonStyle } from './ui.js';
-
+import {
+    // ... старые импорты
+    bossKills, setBossKills,
+    activeMoons, setActiveMoons,
+    moonLevels, getMoonLevel, setMoonLevel,
+    maxSlots, updateMaxSlots,
+    achievements, unlockAchievement,
+    quests, updateQuestProgress, initQuests, resetQuests,
+    loadAchievements, saveAchievements,
+    loadMoonData, saveMoonData
+} from './state.js';
+import { MOON_TYPES, MOON_UPGRADE_COSTS, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS } from './config.js';
 let moonWrapper, moonInner, clickEffect, counterEl, levelTitle, hpBar, hpPercent,
     timerBarContainer, timerBar, timerPercent, totalTimeDisplay, rollbackBtnMain, lockToggleMain;
 
