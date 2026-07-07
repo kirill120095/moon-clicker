@@ -3,11 +3,9 @@
 // ============================================================
 import { appState, state } from '../../core/state.js';
 import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES } from '../../core/constants.js';
-import { getMaxHPForLevel, isBossLevel } from '../../core/config.js';
+import { getMaxHPForLevel, isBossLevel, getMoonUpgradeCost, getSlotUpgradeCost } from '../../core/config.js';
 import { db } from '../../network/supabase.js';
-import { showToast, updateUI } from '../ui/renderer.js';
-import { updateShopUI } from '../ui/renderer.js';
-import { updateProfileAndLeaders } from '../ui/renderer.js';
+import { showToast, updateUI, updateShopUI, updateProfileAndLeaders, updateQuestAndAchievementUI, setLockIcon } from '../ui/renderer.js';
 import { throttle } from '../../utils/security.js';
 import { CombatSystem } from './combat.js';
 import { RewardSystem } from './rewards.js';
@@ -53,6 +51,9 @@ export class GameEngine {
         // Проверяем босса
         this._checkBoss();
         
+        // Пересчитываем бонусы лун
+        this.recalcMoonBonuses();
+        
         // Обновляем UI
         updateUI();
         updateShopUI();
@@ -65,7 +66,7 @@ export class GameEngine {
     //  ОБРАБОТКА КЛИКА
     // ============================================================
     
-    handleClick = throttle(async () => {
+    handleClick = throttle(async (e) => {
         if (this.isProcessing) return;
         if (!state.user) {
             showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -85,7 +86,7 @@ export class GameEngine {
         } finally {
             this.isProcessing = false;
         }
-    }, CONSTANTS.UI.CLICK_COOLDOWN || 50);
+    }, 50);
 
     async _processClick() {
         // Расчет урона
@@ -174,6 +175,9 @@ export class GameEngine {
         
         // Проверка босса
         this._checkBoss();
+        
+        // Пересчет бонусов
+        this.recalcMoonBonuses();
     }
 
     // ============================================================
@@ -336,6 +340,325 @@ export class GameEngine {
     _onStateChange() {
         // Обновляем UI при изменении состояния
         updateUI();
+        this.recalcMoonBonuses();
+    }
+
+    // ============================================================
+    //  МЕТОДЫ МАГАЗИНА
+    // ============================================================
+
+    async buyClickDamage() {
+        if (!state.user) {
+            showToast('⚠️ Войдите в аккаунт', 'warning');
+            return;
+        }
+        const level = state.currentLevel || 1;
+        if (level < 5) {
+            showToast('🔒 Магазин доступен с 5 уровня', 'warning');
+            return;
+        }
+        const currentLevelUpgrade = state.playerData?.click_damage_level || 0;
+        if (currentLevelUpgrade >= CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL) {
+            showToast('⚠️ Максимальный уровень улучшения', 'warning');
+            return;
+        }
+
+        const cost = Math.floor(
+            CONSTANTS.UPGRADE_COSTS.clickDamage.base *
+            Math.pow(CONSTANTS.UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade)
+        );
+
+        if (!state.testMode) {
+            if ((state.playerData?.shards || 0) < cost) {
+                showToast(`⚠️ Недостаточно осколков! Нужно ${cost}`, 'warning');
+                return;
+            }
+        }
+
+        const newDamage = (state.playerData?.click_damage || 1) + 1;
+        const newLevel = (state.playerData?.click_damage_level || 0) + 1;
+        const newShards = state.testMode ? (state.playerData?.shards || 0) : (state.playerData?.shards || 0) - cost;
+
+        try {
+            await db.updatePlayer(state.user.id, {
+                click_damage: newDamage,
+                click_damage_level: newLevel,
+                shards: newShards,
+                updated_at: new Date().toISOString()
+            });
+
+            appState.set('playerData', {
+                ...state.playerData,
+                click_damage: newDamage,
+                click_damage_level: newLevel,
+                shards: newShards
+            });
+
+            updateUI();
+            updateShopUI();
+            showToast(`✅ Улучшение куплено! Урон: ${newDamage}`, 'success');
+        } catch (error) {
+            console.error('[Game] Ошибка покупки улучшения:', error);
+            showToast('⚠️ Ошибка при покупке', 'warning');
+        }
+    }
+
+    async buySlot() {
+        if (!state.user) {
+            showToast('⚠️ Войдите в аккаунт', 'warning');
+            return;
+        }
+        if (state.maxSlots >= CONSTANTS.MAX_SLOTS) {
+            showToast('⚠️ Все слоты уже открыты', 'warning');
+            return;
+        }
+
+        const cost = getSlotUpgradeCost(state.maxSlots);
+
+        if (!state.testMode) {
+            if ((state.playerData?.shards || 0) < cost) {
+                showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
+                return;
+            }
+        }
+
+        const newSlotLevel = state.maxSlots + 1;
+        const newShards = state.testMode ? (state.playerData?.shards || 0) : (state.playerData?.shards || 0) - cost;
+
+        try {
+            await db.updatePlayer(state.user.id, {
+                shards: newShards,
+                updated_at: new Date().toISOString()
+            });
+
+            appState.setSlotLevel(newSlotLevel);
+            appState.set('playerData', { ...state.playerData, shards: newShards });
+
+            updateUI();
+            updateShopUI();
+            updateProfileAndLeaders();
+            showToast(`✅ Открыт ${state.maxSlots} слот!`, 'success');
+        } catch (error) {
+            console.error('[Game] Ошибка покупки слота:', error);
+            showToast('⚠️ Ошибка при покупке', 'warning');
+        }
+    }
+
+    async buyMoon(moonId) {
+        if (!state.user) {
+            showToast('⚠️ Войдите в аккаунт', 'warning');
+            return;
+        }
+        const moon = MOON_TYPES[moonId];
+        if (!moon) return;
+        if (state.ownedMoons.includes(moonId)) {
+            showToast('⚠️ У вас уже есть эта луна', 'warning');
+            return;
+        }
+        if (state.currentLevel < (moon.unlockLevel || 1)) {
+            showToast(`🔒 Доступна с ${moon.unlockLevel} уровня`, 'warning');
+            return;
+        }
+
+        if (!state.testMode) {
+            if ((state.playerData?.shards || 0) < moon.cost) {
+                showToast(`⚠️ Недостаточно осколков! Нужно ${moon.cost}`, 'warning');
+                return;
+            }
+        }
+
+        const newShards = state.testMode ? (state.playerData?.shards || 0) : (state.playerData?.shards || 0) - moon.cost;
+
+        try {
+            await db.updatePlayer(state.user.id, {
+                shards: newShards,
+                updated_at: new Date().toISOString()
+            });
+
+            appState.addOwnedMoon(moonId);
+            appState.setActiveMoon(moonId);
+            appState.set('playerData', { ...state.playerData, shards: newShards });
+
+            updateUI();
+            updateShopUI();
+            updateProfileAndLeaders();
+            this.recalcMoonBonuses();
+            showToast(`✅ Куплена луна "${moon.name}"!`, 'success');
+        } catch (error) {
+            console.error('[Game] Ошибка покупки луны:', error);
+            showToast('⚠️ Ошибка при покупке', 'warning');
+        }
+    }
+
+    async selectMoon(moonId) {
+        if (!state.user) {
+            showToast('⚠️ Войдите в аккаунт', 'warning');
+            return;
+        }
+        if (!state.ownedMoons.includes(moonId)) {
+            showToast('⚠️ У вас нет этой луны', 'warning');
+            return;
+        }
+        if (state.activeMoon === moonId) {
+            showToast('⚠️ Эта луна уже активна', 'info');
+            return;
+        }
+
+        appState.setActiveMoon(moonId);
+        updateUI();
+        updateShopUI();
+        updateProfileAndLeaders();
+        this.recalcMoonBonuses();
+        showToast(`✅ Активна луна "${MOON_TYPES[moonId].name}"`, 'success');
+    }
+
+    async upgradeMoon(moonId) {
+        if (!state.user) {
+            showToast('⚠️ Войдите в аккаунт', 'warning');
+            return;
+        }
+        if (!state.ownedMoons.includes(moonId)) {
+            showToast('⚠️ У вас нет этой луны', 'warning');
+            return;
+        }
+        if (state.currentLevel < 10) {
+            showToast('🔒 Прокачка лун доступна с 10 уровня', 'warning');
+            return;
+        }
+
+        const currentLevelMoon = appState.getMoonLevel(moonId);
+        if (currentLevelMoon >= CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
+            showToast('⚠️ Максимальный уровень луны (10)', 'warning');
+            return;
+        }
+
+        const cost = getMoonUpgradeCost(moonId, currentLevelMoon);
+
+        if (!state.testMode) {
+            if ((state.playerData?.shards || 0) < cost) {
+                showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
+                return;
+            }
+        }
+
+        const newShards = state.testMode ? (state.playerData?.shards || 0) : (state.playerData?.shards || 0) - cost;
+
+        try {
+            await db.updatePlayer(state.user.id, {
+                shards: newShards,
+                updated_at: new Date().toISOString()
+            });
+
+            appState.setMoonLevel(moonId, currentLevelMoon + 1);
+            appState.set('playerData', { ...state.playerData, shards: newShards });
+
+            updateUI();
+            updateShopUI();
+            updateProfileAndLeaders();
+            this.recalcMoonBonuses();
+            showToast(`✅ Луна "${MOON_TYPES[moonId].name}" улучшена до ${currentLevelMoon + 1} уровня!`, 'success');
+        } catch (error) {
+            console.error('[Game] Ошибка прокачки луны:', error);
+            showToast('⚠️ Ошибка при прокачке', 'warning');
+        }
+    }
+
+    async resetProgress() {
+        if (!state.user) return;
+
+        try {
+            // Сброс в БД
+            await db.updatePlayer(state.user.id, {
+                total_clicks: 0,
+                total_seconds_played: 0,
+                level: 1,
+                moon_hp: Math.round(CONSTANTS.BASE_HP),
+                shards: 0,
+                click_damage: 1,
+                click_damage_level: 0,
+                updated_at: new Date().toISOString()
+            });
+
+            // Сброс локального состояния
+            appState.set('clickCount', 0);
+            appState.set('totalSecondsPlayed', 0);
+            appState.set('currentLevel', 1);
+            appState.set('moonHP', CONSTANTS.BASE_HP);
+            appState.set('maxHP', CONSTANTS.BASE_HP);
+            appState.set('activeMoon', 'normal');
+            appState.set('activeMoons', ['normal']);
+            appState.set('ownedMoons', ['normal']);
+            appState.set('moonLevels', { normal: 1 });
+            appState.setBossKills(0);
+            appState.setSlotLevel(1);
+            appState.clearAchievements();
+            appState.resetQuests();
+
+            // Очистка localStorage
+            if (state.user) {
+                const userId = state.user.id;
+                ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel', 'levelLocked', 'testMode']
+                    .forEach(key => localStorage.removeItem(`${key}_${userId}`));
+            }
+
+            // Обновляем данные игрока
+            const freshData = await db.getPlayer(state.user.id, false);
+            appState.loadPlayerData(freshData);
+
+            // Сброс UI
+            appState.set('levelLocked', false);
+            const lockBtn = document.getElementById('lockToggleMain');
+            if (lockBtn) {
+                setLockIcon(lockBtn, false);
+            }
+
+            // Очистка босс-таймера
+            this.combat.clearBossTimer();
+            
+            // Очистка интервалов
+            if (state.timeUpdateInterval) {
+                clearInterval(state.timeUpdateInterval);
+                appState.set('timeUpdateInterval', null);
+            }
+            if (state.autoSaveInterval) {
+                clearInterval(state.autoSaveInterval);
+                appState.set('autoSaveInterval', null);
+            }
+
+            // Пересчет бонусов
+            this.recalcMoonBonuses();
+
+            // Обновление UI
+            updateUI();
+            updateShopUI();
+            updateProfileAndLeaders();
+            updateQuestAndAchievementUI();
+            showToast('✅ Прогресс сброшен!', 'success');
+
+        } catch (error) {
+            console.error('[Game] Ошибка сброса прогресса:', error);
+            showToast('⚠️ Ошибка сброса прогресса', 'warning');
+        }
+    }
+
+    async rollbackLevel() {
+        if (state.currentLevel <= 1) {
+            showToast('⚠️ Вы уже на 1 уровне', 'info');
+            return;
+        }
+
+        const newLevel = state.currentLevel - 1;
+        appState.setCurrentLevel(newLevel);
+        const newMax = getMaxHPForLevel(newLevel, CONSTANTS.BASE_HP, CONSTANTS.BOSS_INTERVAL);
+        appState.set('maxHP', newMax);
+        appState.set('moonHP', newMax);
+
+        this.combat.clearBossTimer();
+        await this._saveProgress();
+        
+        updateUI();
+        updateProfileAndLeaders();
+        showToast(`↩️ Откат до ${newLevel} уровня`, 'info');
     }
 
     // ============================================================
