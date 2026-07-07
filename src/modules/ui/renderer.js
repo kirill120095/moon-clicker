@@ -3,6 +3,7 @@
 // ============================================================
 import { state, appState } from '../../core/state.js';
 import { CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS } from '../../core/constants.js';
+import { getMaxHPForLevel, getTitle } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
 import { uiScheduler } from '../../utils/performance.js';
 
@@ -73,36 +74,6 @@ export function formatTime(seconds) {
 }
 
 // ============================================================
-//  ПОЛУЧЕНИЕ ТИТУЛА
-// ============================================================
-export function getTitle(level) {
-    if (level < 10) return '🌱 Новичок';
-    if (level < 20) return '🚀 Исследователь';
-    if (level < 50) return '⚡ Мастер';
-    if (level < 100) return '🌟 Легенда';
-    if (level < 200) return '👑 Герой';
-    if (level < 500) return '🔥 Мифический';
-    return '💎 Бессмертный';
-}
-
-// ============================================================
-//  ПОЛУЧЕНИЕ MAX HP ДЛЯ УРОВНЯ
-// ============================================================
-export function getMaxHPForLevel(level, baseHP, bossInterval) {
-    if (level % bossInterval === 0) {
-        return baseHP * level;
-    }
-    return baseHP * (1 + (level - 1) * 0.1);
-}
-
-// ============================================================
-//  ПРОВЕРКА НА БОССА
-// ============================================================
-export function isBossLevel(level, bossInterval) {
-    return level % bossInterval === 0;
-}
-
-// ============================================================
 //  SET LOCK ICON
 // ============================================================
 const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
@@ -145,16 +116,16 @@ function _updateHPBar() {
     const hpBar = document.getElementById('hpBar');
     const hpPercent = document.getElementById('hpPercent');
     const moonInner = document.getElementById('moonInner');
-    
+
     if (hpBar) {
         const percent = Math.max(0, (state.moonHP / state.maxHP) * 100);
         hpBar.style.width = Math.min(100, percent) + '%';
     }
-    
+
     if (hpPercent) {
         hpPercent.textContent = `${Math.round(state.moonHP)}/${Math.round(state.maxHP)}`;
     }
-    
+
     if (moonInner) {
         const ratio = Math.max(0, Math.min(1, state.moonHP / state.maxHP));
         const scale = Math.pow(ratio, 0.4) * 0.95 + 0.05;
@@ -166,7 +137,7 @@ function _updateTimerBar() {
     const container = document.getElementById('timerBarContainer');
     const bar = document.getElementById('timerBar');
     const percent = document.getElementById('timerPercent');
-    
+
     if (!container || !bar || !percent) return;
 
     const isBoss = state.currentLevel % CONSTANTS.BOSS_INTERVAL === 0;
@@ -235,12 +206,12 @@ function _updateClickDamageShop() {
     const priceEl = document.getElementById('clickDamagePrice');
     const levelEl = document.getElementById('clickDamageLevel');
     const lockMsg = document.getElementById('shopLockMessage');
-    
+
     if (!buyBtn || !priceEl || !levelEl) return;
 
     const level = state.currentLevel || 1;
     const isUnlocked = level >= 5;
-    
+
     if (lockMsg) {
         lockMsg.textContent = isUnlocked ? '✅ Магазин доступен' : `🔒 Доступно с 5 уровня (сейчас ${level})`;
         lockMsg.style.color = isUnlocked ? 'rgba(80, 255, 150, 0.5)' : 'rgba(255, 255, 255, 0.3)';
@@ -254,10 +225,10 @@ function _updateClickDamageShop() {
     const currentDamage = state.playerData?.click_damage || 1;
     const nextDamage = currentDamage + 1;
     const displayCost = state.testMode ? 0 : cost;
-    
+
     priceEl.textContent = `${displayCost} 💎`;
     levelEl.innerHTML = `Ур. ${currentLevelUpgrade}: ${currentDamage} → ${nextDamage}`;
-    
+
     const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
     buyBtn.disabled = !isUnlocked || !hasEnoughShards || currentLevelUpgrade >= 10;
     buyBtn.textContent = currentLevelUpgrade >= 10 ? 'MAX' : 'Купить';
@@ -268,7 +239,7 @@ function _updateSlotShop() {
     const buyBtn = document.getElementById('buySlotBtn');
     const priceEl = document.getElementById('slotPrice');
     const levelEl = document.getElementById('slotLevel');
-    
+
     if (!buyBtn || !priceEl || !levelEl) return;
 
     const currentSlots = state.maxSlots;
@@ -278,10 +249,10 @@ function _updateSlotShop() {
         Math.pow(CONSTANTS.UPGRADE_COSTS.moonSlots.multiplier, currentSlots - 1)
     ) : 0;
     const displayCost = state.testMode ? 0 : cost;
-    
+
     priceEl.textContent = canUpgrade ? `${displayCost} 💎` : 'MAX';
     levelEl.textContent = `Слотов: ${currentSlots}/${CONSTANTS.MAX_SLOTS}`;
-    
+
     const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
     buyBtn.disabled = !canUpgrade || !hasEnoughShards;
     buyBtn.textContent = canUpgrade ? 'Купить' : 'MAX';
@@ -296,14 +267,14 @@ function _updateMoonShop() {
         const owned = state.ownedMoons.includes(id);
         const active = (state.activeMoon === id);
         const isLockedByLevel = state.currentLevel < (moon.unlockLevel || 1);
-        const canBuy = !owned && !isLockedByLevel && 
-            (state.testMode || (state.playerData?.shards || 0) >= moon.cost) && 
+        const canBuy = !owned && !isLockedByLevel &&
+            (state.testMode || (state.playerData?.shards || 0) >= moon.cost) &&
             moon.cost > 0;
 
         const level = owned ? (state.moonLevels[id] || 1) : 0;
         const damageBonus = (moon.damageBonus || 0) * (1 + (level - 1) * 0.05);
         const shardBonus = (moon.shardBonus || 0) * (1 + (level - 1) * 0.05);
-        
+
         let bonusDesc = [];
         if (damageBonus > 0) bonusDesc.push(`урон +${Math.round(damageBonus * 100)}%`);
         if (shardBonus > 0) bonusDesc.push(`осколки +${Math.round(shardBonus * 100)}%`);
@@ -311,7 +282,7 @@ function _updateMoonShop() {
 
         const upgradeCost = owned ? Math.floor(Math.max(100, moon.cost * 0.1) * Math.pow(1.5, level - 1)) : 0;
         const displayUpgradeCost = state.testMode ? 0 : upgradeCost;
-        const canUpgrade = owned && state.currentLevel >= 10 && level < 10 && 
+        const canUpgrade = owned && state.currentLevel >= 10 && level < 10 &&
             (state.testMode || (state.playerData?.shards || 0) >= upgradeCost);
 
         const displayCost = state.testMode ? 0 : moon.cost;
@@ -326,12 +297,12 @@ function _updateMoonShop() {
                     ${isLockedByLevel ? `<span class="shop-item-desc" style="color: #ff6b6b;">Открывается с ${moon.unlockLevel} уровня</span>` : ''}
                 </div>
                 <div class="shop-item-right">
-                    ${owned ? (active ? '<span style="color:#4ecdc4;">Активна</span>' : 
+                    ${owned ? (active ? '<span style="color:#4ecdc4;">Активна</span>' :
                         `<button class="shop-buy-btn select-moon-btn" data-moon-id="${id}">Выбрать</button>`)
                     : (moon.cost === 0 ? '<span style="color:#4ecdc4;">Доступна</span>' :
                         (isLockedByLevel ? `<span style="color:#ff6b6b;">🔒</span>` :
                         `<button class="shop-buy-btn buy-moon-btn" data-moon-id="${id}" ${!canBuy ? 'disabled' : ''}>${canBuy ? 'Купить' : 'Не хватает'}</button>`))}
-                    ${owned && level < 10 ? 
+                    ${owned && level < 10 ?
                         `<button class="shop-buy-btn upgrade-moon-btn" data-moon-id="${id}" ${!canUpgrade ? 'disabled' : ''}>
                             ${canUpgrade ? `Улучшить (${displayUpgradeCost} 💎)` : 'MAX'}
                         </button>` : ''}
@@ -358,7 +329,6 @@ function _updateProfile() {
 
     const data = state.playerData;
     const title = getTitle(data.level || 1);
-    const timePlayed = data.total_seconds_played || 0;
 
     profileContent.innerHTML = `
         <div class="profile-account">
@@ -410,14 +380,14 @@ async function _updateLeaders() {
 }
 
 // ============================================================
-//  ЗВЕЗДЫ (обертка над созданием звезд)
+//  ЗВЕЗДЫ
 // ============================================================
 export function createStars(count = 300) {
     const container = document.getElementById('stars');
     if (!container) return;
 
     const fragment = document.createDocumentFragment();
-    
+
     for (let i = 0; i < count; i++) {
         const star = document.createElement('div');
         star.className = 'star';
@@ -430,7 +400,7 @@ export function createStars(count = 300) {
         star.style.animationDelay = Math.random() * 5 + 's';
         fragment.appendChild(star);
     }
-    
+
     container.appendChild(fragment);
 }
 
@@ -448,7 +418,7 @@ export function updateQuestUI() {
         const progress = q.progress || 0;
         const target = q.target || 100;
         const percent = Math.min(100, Math.round((progress / target) * 100));
-        
+
         html += `
             <div class="quest-item ${q.completed ? 'completed' : ''}">
                 <span class="quest-name">${escapeHTML(q.name)}</span>
