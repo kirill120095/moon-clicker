@@ -2,10 +2,11 @@
 //  ОБРАБОТЧИКИ СОБЫТИЙ UI
 // ============================================================
 import { gameEngine } from '../game/game.js';
-import { handleLogin, handleRegister, handleLogout, checkAuth } from '../auth/auth.js';
+import { handleLogin, handleRegister, handleLogout } from '../auth/auth.js';
 import { appState, state } from '../../core/state.js';
-import { showToast } from './renderer.js';
-import { setLockIcon } from './renderer.js';
+import { showToast, setLockIcon, updateUI, updateShopUI, updateProfileAndLeaders, updateQuestAndAchievementUI } from './renderer.js';
+import { escapeHTML } from '../../utils/security.js';
+import { getMaxHPForLevel } from '../../core/config.js';
 import { CONSTANTS } from '../../core/constants.js';
 
 // ============================================================
@@ -14,19 +15,19 @@ import { CONSTANTS } from '../../core/constants.js';
 export function initEvents() {
     // Авторизация
     _initAuthEvents();
-    
+
     // Игра
     _initGameEvents();
-    
+
     // Панели
     _initPanelEvents();
-    
+
     // Настройки
     _initSettingsEvents();
-    
+
     // Магазин
     _initShopEvents();
-    
+
     console.log('[Events] Инициализация завершена');
 }
 
@@ -48,7 +49,7 @@ function _initAuthEvents() {
     // Кнопка действия
     actionBtn?.addEventListener('click', async () => {
         const isLogin = tabLogin?.classList.contains('active');
-        
+
         if (isLogin) {
             const email = document.getElementById('loginInput')?.value;
             const password = document.getElementById('passwordInput')?.value;
@@ -110,12 +111,12 @@ function _setAuthMode(mode) {
 function _onAuthSuccess() {
     document.getElementById('authBlock')?.classList.add('hidden');
     document.getElementById('gameArea')?.classList.add('active');
-    
+
     // Показываем кнопки панелей
     document.querySelectorAll('.panel-trigger').forEach(el => {
         el.classList.add('visible');
     });
-    
+
     // Инициализируем игру
     gameEngine.init();
     showToast('✅ Добро пожаловать!', 'success');
@@ -124,17 +125,17 @@ function _onAuthSuccess() {
 function _onAuthLogout() {
     document.getElementById('gameArea')?.classList.remove('active');
     document.getElementById('authBlock')?.classList.remove('hidden');
-    
+
     // Скрываем кнопки панелей
     document.querySelectorAll('.panel-trigger').forEach(el => {
         el.classList.remove('visible', 'active');
     });
-    
+
     // Закрываем панели
     document.querySelectorAll('.side-panel').forEach(el => {
         el.classList.remove('active');
     });
-    
+
     gameEngine.destroy();
     showToast('👋 Вы вышли из аккаунта', 'success');
 }
@@ -155,13 +156,13 @@ function _initGameEvents() {
     // Откат уровня
     rollbackBtn?.addEventListener('click', async () => {
         if (state.currentLevel <= 1) return;
-        
+
         const newLevel = state.currentLevel - 1;
         appState.setCurrentLevel(newLevel);
         const newMax = getMaxHPForLevel(newLevel, CONSTANTS.BASE_HP, CONSTANTS.BOSS_INTERVAL);
         appState.set('maxHP', newMax);
         appState.set('moonHP', newMax);
-        
+
         await gameEngine._saveProgress();
         updateUI();
         updateProfileAndLeaders();
@@ -297,60 +298,7 @@ function _initShopEvents() {
 }
 
 // ============================================================
-//  ОБНОВЛЕНИЕ КВЕСТОВ И ДОСТИЖЕНИЙ
+//  ОБНОВЛЕНИЕ КВЕСТОВ И ДОСТИЖЕНИЙ (экспортируемые функции)
 // ============================================================
-export function updateQuestAndAchievementUI() {
-    updateQuestUI();
-    updateAchievementUI();
-}
-
-function updateQuestUI() {
-    const container = document.getElementById('questsList');
-    if (!container) return;
-
-    const quests = state.quests || {};
-    let html = '';
-
-    for (const [id, q] of Object.entries(quests)) {
-        const progress = q.progress || 0;
-        const target = q.target || 100;
-        const percent = Math.min(100, Math.round((progress / target) * 100));
-        
-        html += `
-            <div class="quest-item ${q.completed ? 'completed' : ''}">
-                <span class="quest-name">${escapeHTML(q.name)}</span>
-                <span class="quest-desc">${escapeHTML(q.description)}</span>
-                <div class="quest-bar">
-                    <div class="quest-fill" style="width: ${percent}%;"></div>
-                </div>
-                <span class="quest-progress">${progress}/${target}</span>
-                ${q.completed ? '<span class="quest-done">✅ Выполнено</span>' : ''}
-                <span class="quest-reward">+${q.reward} 💎</span>
-            </div>
-        `;
-    }
-
-    container.innerHTML = html || 'Нет активных квестов';
-}
-
-function updateAchievementUI() {
-    const container = document.getElementById('achievementsList');
-    if (!container) return;
-
-    const achievements = state.achievements || {};
-    let html = '';
-
-    for (const [id, ach] of Object.entries(CONSTANTS.ACHIEVEMENTS || {})) {
-        const achieved = achievements[id] || false;
-        html += `
-            <div class="achievement-item ${achieved ? 'achieved' : ''}">
-                <span class="ach-name">${escapeHTML(ach.name)}</span>
-                <span class="ach-desc">${escapeHTML(ach.description)}</span>
-                <span class="ach-status">${achieved ? '✅' : '🔒'}</span>
-                <span class="ach-reward">+${ach.reward} 💎</span>
-            </div>
-        `;
-    }
-
-    container.innerHTML = html || 'Нет достижений';
-}
+// Функции updateQuestUI, updateAchievementUI, updateQuestAndAchievementUI
+// теперь импортируются из renderer.js, поэтому здесь они не нужны.
