@@ -1,9 +1,8 @@
 // ============================================================
 //  РЕНДЕРИНГ UI
 // ============================================================
-import { state } from '../../core/state.js';
-import { CONSTANTS, MOON_TYPES } from '../../core/constants.js';
-import { getTitle, getMaxHPForLevel } from '../../core/config.js';
+import { state, appState } from '../../core/state.js';
+import { CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS } from '../../core/constants.js';
 import { escapeHTML } from '../../utils/security.js';
 import { uiScheduler } from '../../utils/performance.js';
 
@@ -22,7 +21,6 @@ export function showToast(message, type = 'info', duration = 2000) {
         return;
     }
 
-    // Очищаем контейнер
     toastContainer.innerHTML = '';
 
     const toast = document.createElement('div');
@@ -42,6 +40,78 @@ export function showToast(message, type = 'info', duration = 2000) {
             }
         }, 300);
     }, duration);
+}
+
+// ============================================================
+//  ФОРМАТИРОВАНИЕ ВРЕМЕНИ
+// ============================================================
+export function formatTime(seconds) {
+    if (seconds < 0) seconds = 0;
+    const totalSec = Math.round(seconds);
+
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const minutes = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+
+    let parts = [];
+
+    if (days > 0) {
+        parts.push(`${days}д`);
+        if (hours > 0) parts.push(`${hours}ч`);
+    } else if (hours > 0) {
+        parts.push(`${hours}ч`);
+        if (minutes > 0) parts.push(`${minutes}м`);
+    } else if (minutes > 0) {
+        parts.push(`${minutes}м`);
+        if (secs > 0) parts.push(`${secs}с`);
+    } else {
+        parts.push(`${secs}с`);
+    }
+
+    return parts.join(' ') || '0с';
+}
+
+// ============================================================
+//  ПОЛУЧЕНИЕ ТИТУЛА
+// ============================================================
+export function getTitle(level) {
+    if (level < 10) return '🌱 Новичок';
+    if (level < 20) return '🚀 Исследователь';
+    if (level < 50) return '⚡ Мастер';
+    if (level < 100) return '🌟 Легенда';
+    if (level < 200) return '👑 Герой';
+    if (level < 500) return '🔥 Мифический';
+    return '💎 Бессмертный';
+}
+
+// ============================================================
+//  ПОЛУЧЕНИЕ MAX HP ДЛЯ УРОВНЯ
+// ============================================================
+export function getMaxHPForLevel(level, baseHP, bossInterval) {
+    if (level % bossInterval === 0) {
+        return baseHP * level;
+    }
+    return baseHP * (1 + (level - 1) * 0.1);
+}
+
+// ============================================================
+//  ПРОВЕРКА НА БОССА
+// ============================================================
+export function isBossLevel(level, bossInterval) {
+    return level % bossInterval === 0;
+}
+
+// ============================================================
+//  SET LOCK ICON
+// ============================================================
+const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const lockClosedSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>`;
+
+export function setLockIcon(btn, locked) {
+    if (!btn) return;
+    btn.innerHTML = locked ? lockClosedSVG : lockOpenSVG;
+    btn.classList.toggle('locked', locked);
 }
 
 // ============================================================
@@ -135,7 +205,6 @@ function _updateMoonStyle() {
     moonInner.style.backgroundImage = moon.gradient;
     moonInner.style.boxShadow = moon.shadow;
 
-    // Обновляем тему контейнера
     container.classList.remove(
         'moon-theme-normal', 'moon-theme-blood', 'moon-theme-ice',
         'moon-theme-shadow', 'moon-theme-gold', 'moon-theme-fire',
@@ -231,7 +300,7 @@ function _updateMoonShop() {
             (state.testMode || (state.playerData?.shards || 0) >= moon.cost) && 
             moon.cost > 0;
 
-        const level = owned ? appState.getMoonLevel(id) : 0;
+        const level = owned ? (state.moonLevels[id] || 1) : 0;
         const damageBonus = (moon.damageBonus || 0) * (1 + (level - 1) * 0.05);
         const shardBonus = (moon.shardBonus || 0) * (1 + (level - 1) * 0.05);
         
@@ -306,6 +375,120 @@ function _updateProfile() {
     `;
 }
 
-function _updateLeaders() {
-    // Лидеры обновляются через отдельный вызов
+async function _updateLeaders() {
+    const leadersList = document.getElementById('leadersList');
+    if (!leadersList) return;
+
+    try {
+        const { db } = await import('../../network/supabase.js');
+        const leaders = await db.getLeaders(CONSTANTS.LIMITS.MAX_LEADERS || 10);
+
+        if (!leaders || leaders.length === 0) {
+            leadersList.innerHTML = '<div class="no-data">Нет данных</div>';
+            return;
+        }
+
+        let html = '';
+        leaders.forEach((p, i) => {
+            const isMe = p.username === state.playerData?.username;
+            html += `
+                <div class="leader-item ${isMe ? 'me' : ''}">
+                    <span class="pos">#${i + 1}</span>
+                    <span class="name">${escapeHTML(p.username || 'Аноним')}</span>
+                    <span class="stats">
+                        <span>Ур. ${p.level || 0}</span>
+                        <span style="font-size:0.7rem;">кликов: ${p.total_clicks || 0}</span>
+                    </span>
+                </div>
+            `;
+        });
+        leadersList.innerHTML = html;
+    } catch (error) {
+        console.error('[UI] Leaders error:', error);
+        leadersList.innerHTML = '<div class="no-data">Ошибка загрузки</div>';
+    }
+}
+
+// ============================================================
+//  ЗВЕЗДЫ (обертка над созданием звезд)
+// ============================================================
+export function createStars(count = 300) {
+    const container = document.getElementById('stars');
+    if (!container) return;
+
+    const fragment = document.createDocumentFragment();
+    
+    for (let i = 0; i < count; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        const size = Math.random() * 3 + 1;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
+        star.style.animationDelay = Math.random() * 5 + 's';
+        fragment.appendChild(star);
+    }
+    
+    container.appendChild(fragment);
+}
+
+// ============================================================
+//  КВЕСТЫ И ДОСТИЖЕНИЯ
+// ============================================================
+export function updateQuestUI() {
+    const container = document.getElementById('questsList');
+    if (!container) return;
+
+    const quests = state.quests || {};
+    let html = '';
+
+    for (const [id, q] of Object.entries(quests)) {
+        const progress = q.progress || 0;
+        const target = q.target || 100;
+        const percent = Math.min(100, Math.round((progress / target) * 100));
+        
+        html += `
+            <div class="quest-item ${q.completed ? 'completed' : ''}">
+                <span class="quest-name">${escapeHTML(q.name)}</span>
+                <span class="quest-desc">${escapeHTML(q.description)}</span>
+                <div class="quest-bar">
+                    <div class="quest-fill" style="width: ${percent}%;"></div>
+                </div>
+                <span class="quest-progress">${progress}/${target}</span>
+                ${q.completed ? '<span class="quest-done">✅ Выполнено</span>' : ''}
+                <span class="quest-reward">+${q.reward} 💎</span>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html || 'Нет активных квестов';
+}
+
+export function updateAchievementUI() {
+    const container = document.getElementById('achievementsList');
+    if (!container) return;
+
+    const achievements = state.achievements || {};
+    let html = '';
+
+    for (const [id, ach] of Object.entries(ACHIEVEMENTS || {})) {
+        const achieved = achievements[id] || false;
+        html += `
+            <div class="achievement-item ${achieved ? 'achieved' : ''}">
+                <span class="ach-name">${escapeHTML(ach.name)}</span>
+                <span class="ach-desc">${escapeHTML(ach.description)}</span>
+                <span class="ach-status">${achieved ? '✅' : '🔒'}</span>
+                <span class="ach-reward">+${ach.reward} 💎</span>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html || 'Нет достижений';
+}
+
+export function updateQuestAndAchievementUI() {
+    updateQuestUI();
+    updateAchievementUI();
 }
