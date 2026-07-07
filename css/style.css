@@ -1,5 +1,6 @@
 /* ============================================================
    ГЛАВНЫЙ ФАЙЛ СТИЛЕЙ
+   Импортирует все остальные CSS-файлы
    ============================================================ */
 
 /* ---------- БАЗА ---------- */
@@ -23,8 +24,9 @@
 @import url('fixes.css');
 
 /* ============================================================
-   ТЕМЫ ЛУН
+   ТЕМЫ ЛУН (глобальные стили для свечения UI)
    ============================================================ */
+
 .container {
     transition: box-shadow 0.5s ease, border-color 0.5s ease;
 }
@@ -60,6 +62,18 @@
     --moon-border: #ffd70044;
     --moon-text: #ffd700;
 }
+.moon-theme-fire {
+    --moon-accent: #ff6f00;
+    --moon-glow: 0 0 30px #ff6f0033, 0 0 60px #ff6f0022;
+    --moon-border: #ff6f0044;
+    --moon-text: #ff6f00;
+}
+.moon-theme-electric {
+    --moon-accent: #fdd835;
+    --moon-glow: 0 0 30px #fdd83533, 0 0 60px #fdd83522;
+    --moon-border: #fdd83544;
+    --moon-text: #fdd835;
+}
 
 /* Применяем к контейнеру */
 .container.moon-theme-normal {
@@ -82,6 +96,14 @@
     box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px #ffd70033;
     border-color: #ffd70044;
 }
+.container.moon-theme-fire {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px #ff6f0033;
+    border-color: #ff6f0044;
+}
+.container.moon-theme-electric {
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px #fdd83533;
+    border-color: #fdd83544;
+}
 
 /* Свечение для заголовка и уровня */
 .moon-theme-blood .subtitle,
@@ -100,6 +122,14 @@
 .moon-theme-gold .level-title {
     text-shadow: 0 0 30px rgba(255,215,0,0.3);
 }
+.moon-theme-fire .subtitle,
+.moon-theme-fire .level-title {
+    text-shadow: 0 0 30px rgba(255,100,0,0.3);
+}
+.moon-theme-electric .subtitle,
+.moon-theme-electric .level-title {
+    text-shadow: 0 0 30px rgba(255,235,59,0.3);
+}
 
 /* Счетчик осколков */
 .moon-theme-blood .counter {
@@ -117,6 +147,14 @@
 .moon-theme-gold .counter {
     border-color: rgba(255,215,0,0.3);
     text-shadow: 0 0 40px rgba(255,215,0,0.2);
+}
+.moon-theme-fire .counter {
+    border-color: rgba(255,100,0,0.3);
+    text-shadow: 0 0 40px rgba(255,100,0,0.2);
+}
+.moon-theme-electric .counter {
+    border-color: rgba(255,235,59,0.3);
+    text-shadow: 0 0 40px rgba(255,235,59,0.2);
 }
 
 /* Кнопки и элементы управления */
@@ -176,6 +214,34 @@
     color: #ffd700;
 }
 
+.moon-theme-fire .btn-rollback,
+.moon-theme-fire .lock-toggle {
+    border-color: rgba(255,100,0,0.3);
+}
+.moon-theme-fire .btn-rollback:hover,
+.moon-theme-fire .lock-toggle:hover {
+    background: rgba(255,100,0,0.15);
+}
+.moon-theme-fire .lock-toggle.locked {
+    background: rgba(255,100,0,0.25);
+    border-color: #ff6f00;
+    color: #ff6f00;
+}
+
+.moon-theme-electric .btn-rollback,
+.moon-theme-electric .lock-toggle {
+    border-color: rgba(255,235,59,0.3);
+}
+.moon-theme-electric .btn-rollback:hover,
+.moon-theme-electric .lock-toggle:hover {
+    background: rgba(255,235,59,0.15);
+}
+.moon-theme-electric .lock-toggle.locked {
+    background: rgba(255,235,59,0.25);
+    border-color: #fdd835;
+    color: #fdd835;
+}
+
 /* Кнопка выхода */
 .moon-theme-blood .logout-btn {
     border-color: rgba(255,0,0,0.2);
@@ -205,6 +271,20 @@
     background: rgba(255,215,0,0.1);
     border-color: rgba(255,215,0,0.4);
 }
+.moon-theme-fire .logout-btn {
+    border-color: rgba(255,100,0,0.2);
+}
+.moon-theme-fire .logout-btn:hover {
+    background: rgba(255,100,0,0.1);
+    border-color: rgba(255,100,0,0.4);
+}
+.moon-theme-electric .logout-btn {
+    border-color: rgba(255,235,59,0.2);
+}
+.moon-theme-electric .logout-btn:hover {
+    background: rgba(255,235,59,0.1);
+    border-color: rgba(255,235,59,0.4);
+}
 
 /* Прогресс-бары */
 .moon-theme-blood .bar-fill.hp-fill {
@@ -231,6 +311,18 @@
 .moon-theme-gold .bar-fill.boss-fill {
     background: linear-gradient(90deg, #f57f17, #ffd700) !important;
 }
+.moon-theme-fire .bar-fill.hp-fill {
+    background: linear-gradient(90deg, #ff6f00, #ffab00) !important;
+}
+.moon-theme-fire .bar-fill.boss-fill {
+    background: linear-gradient(90deg, #bf360c, #ff6f00) !important;
+}
+.moon-theme-electric .bar-fill.hp-fill {
+    background: linear-gradient(90deg, #fdd835, #fff176) !important;
+}
+.moon-theme-electric .bar-fill.boss-fill {
+    background: linear-gradient(90deg, #f9a825, #fdd835) !important;
+}
 
 /* Панели (боковые) */
 .moon-theme-blood .side-panel {
@@ -244,6 +336,12 @@
 }
 .moon-theme-gold .side-panel {
     border-color: rgba(255,215,0,0.15);
+}
+.moon-theme-fire .side-panel {
+    border-color: rgba(255,100,0,0.15);
+}
+.moon-theme-electric .side-panel {
+    border-color: rgba(255,235,59,0.15);
 }
 
 /* Активные вкладки в панелях */
@@ -263,80 +361,11 @@
     background: rgba(255,215,0,0.15);
     color: #ffd700;
 }
-/* Стили для квестов и достижений */
-.quest-item, .achievement-item {
-    background: rgba(255,255,255,0.03);
-    padding: 8px 12px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    border: 1px solid rgba(255,255,255,0.05);
+.moon-theme-fire .side-panel .panel-tabs button.active {
+    background: rgba(255,100,0,0.15);
+    color: #ff6f00;
 }
-.quest-item.completed {
-    border-color: rgba(80,255,150,0.3);
-}
-.quest-name, .ach-name {
-    color: #f0e6d0;
-    font-weight: 500;
-}
-.quest-desc, .ach-desc {
-    color: rgba(255,255,255,0.4);
-    font-size: 0.8rem;
-}
-.quest-bar {
-    height: 6px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 4px;
-    margin: 4px 0;
-}
-.quest-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4ecdc4, #44a08d);
-    border-radius: 4px;
-    transition: width 0.5s;
-}
-.quest-progress, .quest-reward, .ach-reward {
-    color: rgba(255,255,255,0.3);
-    font-size: 0.7rem;
-}
-.quest-done {
-    color: #69db7c;
-}
-.achievement-item.achieved {
-    border-color: rgba(255,215,0,0.3);
-    background: rgba(255,215,0,0.05);
-}
-.profile-moon-item {
-    background: rgba(255,255,255,0.03);
-    padding: 8px 12px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-}
-.profile-moon-name {
-    font-size: 0.95rem;
-}
-.profile-moon-name.active {
-    color: #ffd700;
-}
-.profile-moon-actions button {
-    margin: 2px 4px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    border: none;
-    background: rgba(255,255,255,0.05);
-    color: rgba(255,255,255,0.6);
-    cursor: pointer;
-    font-size: 0.75rem;
-}
-.profile-moon-actions button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-.profile-moon-actions button.active {
-    background: rgba(255,215,0,0.15);
-    color: #ffd700;
-}
-.profile-moon-level {
-    color: rgba(255,255,255,0.3);
-    font-size: 0.7rem;
-    margin-left: 8px;
+.moon-theme-electric .side-panel .panel-tabs button.active {
+    background: rgba(255,235,59,0.15);
+    color: #fdd835;
 }
