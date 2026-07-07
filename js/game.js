@@ -13,7 +13,7 @@ import {
     setLevelLocked, setTestMode, setActiveMoon, setActiveMoons,
     setOwnedMoons, addOwnedMoon, setMoonLevel, getMoonLevel,
     setBossKills, updateMaxSlots, setSlotLevel,
-    achievements, unlockAchievement,
+    achievements, unlockAchievement, clearAchievements,
     quests, updateQuestProgress, initQuests, resetQuests,
     loadAchievements, saveAchievements,
     loadMoonData, saveMoonData
@@ -100,7 +100,11 @@ export function recalcMoonBonuses() {
     totalDamageBonus = 0;
     totalShardBonus = 0;
     activeSynergies = [];
-    const activeIds = activeMoons;
+    
+    // Проверяем, что активные луны не превышают количество открытых слотов
+    // и что у игрока действительно есть слоты
+    const effectiveActiveMoons = activeMoons.slice(0, maxSlots);
+    const activeIds = effectiveActiveMoons;
 
     // Бонусы от каждой активной луны с учётом уровня
     activeIds.forEach(id => {
@@ -114,28 +118,30 @@ export function recalcMoonBonuses() {
         }
     });
 
-    // Проверяем все комбинации синергий
-    const sortedActive = [...activeIds].sort();
-    const comboKeys = Object.keys(SYNERGY_BONUSES);
-    comboKeys.forEach(key => {
-        const moons = key.split('+').sort();
-        // Проверяем, все ли луны из комбинации присутствуют в активных
-        if (moons.every(m => sortedActive.includes(m))) {
-            const bonus = SYNERGY_BONUSES[key];
-            totalDamageBonus += bonus.damageBonus || 0;
-            totalShardBonus += bonus.shardBonus || 0;
-            activeSynergies.push({
-                name: bonus.name,
-                description: bonus.description,
-                key: key
-            });
-        }
-    });
+    // Проверяем все комбинации синергий ТОЛЬКО если активных лун больше 1
+    if (activeIds.length > 1) {
+        const sortedActive = [...activeIds].sort();
+        const comboKeys = Object.keys(SYNERGY_BONUSES);
+        comboKeys.forEach(key => {
+            const moons = key.split('+').sort();
+            // Проверяем, все ли луны из комбинации присутствуют в активных
+            if (moons.every(m => sortedActive.includes(m))) {
+                const bonus = SYNERGY_BONUSES[key];
+                totalDamageBonus += bonus.damageBonus || 0;
+                totalShardBonus += bonus.shardBonus || 0;
+                activeSynergies.push({
+                    name: bonus.name,
+                    description: bonus.description,
+                    key: key
+                });
+            }
+        });
 
-    // Дополнительный бонус, если активна обычная луна и есть другие
-    if (sortedActive.includes('normal') && sortedActive.length > 1) {
-        totalDamageBonus += 0.05;
-        totalShardBonus += 0.05;
+        // Дополнительный бонус, если активна обычная луна и есть другие
+        if (sortedActive.includes('normal') && sortedActive.length > 1) {
+            totalDamageBonus += 0.05;
+            totalShardBonus += 0.05;
+        }
     }
 
     window._totalDamageBonus = totalDamageBonus;
@@ -524,6 +530,8 @@ export async function resetProgress() {
             })
             .eq('id', currentUser.id);
         if (error) throw error;
+        
+        // Получаем свежие данные
         const { data: freshData } = await supabaseClient.from('players').select('*').eq('id', currentUser.id).single();
         if (freshData) {
             setPlayerData(freshData);
@@ -538,8 +546,8 @@ export async function resetProgress() {
             setBossKills(0);
             setSlotLevel(1);
             resetQuests();
-            achievements = {};
-            saveAchievements();
+            // Очищаем достижения через специальную функцию
+            clearAchievements();
         }
         clearBossTimer();
         setLevelLocked(false);
@@ -554,7 +562,7 @@ export async function resetProgress() {
         updateProfileAndLeaders();
         updateQuestAndAchievementUI();
     } catch (err) {
-        console.error(err);
+        console.error('Ошибка сброса прогресса:', err);
         showToast('⚠️ Ошибка сброса прогресса', 'warning');
     }
 }
