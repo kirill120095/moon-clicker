@@ -1,0 +1,41 @@
+/* ============================================================
+   ОСНОВНОЙ КОНТЕЙНЕР
+   ============================================================ */
+.container {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 40px 50px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 80px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    max-width: 700px;
+    width: 100%;
+    transition: all 0.5s ease;
+}
+.container.blood-mode {
+    box-shadow: 0 0 60px rgba(255, 0, 0, 0.2), 0 20px 60px rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 0, 0, 0.2);
+}
+.container.blood-mode .subtitle {
+    color: #ff6b6b;
+    text-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+}
+
+/* ---------- ЗАГОЛОВОК ---------- */
+.subtitle {
+    font-size: 2.8rem;
+    color: #f0e6d0;
+    font-weight: 300;
+    letter-spacing: 8px;
+    text-shadow: 0 0 30px rgba(255, 215, 150, 0.15);
+    margin-bottom: 20px;
+    transition: all 0.5s ease;
+}
+
+/* ---------- СТАРЫЕ КНОПКИ ---------- */
+.top-actions {
+    display: none !important;
+}

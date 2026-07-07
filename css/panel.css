@@ -1,0 +1,530 @@
+/* ============================================================
+   БОКОВЫЕ ПАНЕЛИ (ЛЕВАЯ И ПРАВАЯ)
+   ============================================================ */
+
+/* ---------- ОБЩИЕ СТИЛИ ДЛЯ ПАНЕЛЕЙ ---------- */
+.side-panel {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 320px;
+    background: rgba(15, 20, 35, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    z-index: 50;
+    padding: 20px;
+    overflow-y: auto;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+}
+.side-panel.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.side-panel::-webkit-scrollbar {
+    width: 4px;
+}
+.side-panel::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+}
+
+/* Левая панель (статистика) */
+.left-panel {
+    left: 0;
+    border-left: none;
+    border-radius: 0 30px 30px 0;
+    transform: translateX(-100%);
+}
+.left-panel.active {
+    transform: translateX(0);
+}
+
+/* Правая панель (магазин, квесты, ачивки) */
+.right-panel {
+    right: 0;
+    border-right: none;
+    border-radius: 30px 0 0 30px;
+    transform: translateX(100%);
+}
+.right-panel.active {
+    transform: translateX(0);
+}
+
+/* ---------- ТРИГГЕРЫ ПАНЕЛЕЙ ---------- */
+.panel-trigger {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 60;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 14px 8px 14px 12px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Скрыты по умолчанию */
+    display: none;
+}
+/* Показываем только когда есть класс visible */
+.panel-trigger.visible {
+    display: flex;
+}
+.panel-trigger:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+}
+.panel-trigger svg {
+    width: 28px;
+    height: 28px;
+}
+.panel-trigger.active svg {
+    transform: rotate(180deg);
+}
+
+/* Левый триггер */
+.left-trigger {
+    left: 0;
+    border-left: none;
+    border-radius: 0 30px 30px 0;
+    padding: 14px 12px 14px 8px;
+}
+.left-trigger.active {
+    left: 320px;
+}
+.left-trigger.active svg {
+    transform: rotate(180deg);
+}
+
+/* Правый триггер */
+.right-trigger {
+    right: 0;
+    border-right: none;
+    border-radius: 30px 0 0 30px;
+    padding: 14px 8px 14px 12px;
+}
+.right-trigger.active {
+    right: 320px;
+}
+.right-trigger.active svg {
+    transform: rotate(180deg);
+}
+
+@media (max-width: 700px) {
+    .left-trigger.active {
+        left: 280px;
+    }
+    .right-trigger.active {
+        right: 280px;
+    }
+    .side-panel {
+        width: 280px;
+    }
+}
+@media (max-width: 450px) {
+    .left-trigger.active {
+        left: 260px;
+    }
+    .right-trigger.active {
+        right: 260px;
+    }
+    .side-panel {
+        width: 260px;
+        padding: 15px;
+    }
+}
+
+/* ---------- ВКЛАДКИ ПАНЕЛЕЙ ---------- */
+.side-panel .panel-tabs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 10px;
+}
+.side-panel .panel-tabs button {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.3);
+    transition: 0.3s;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+}
+.side-panel .panel-tabs button.active {
+    background: rgba(255, 215, 150, 0.15);
+    color: #f0e6d0;
+}
+.side-panel .panel-tabs button:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.side-panel .panel-content {
+    display: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+    text-align: left;
+    flex: 1;
+}
+.side-panel .panel-content.active {
+    display: block;
+}
+
+/* ---------- СТИЛИ ДЛЯ ПРОФИЛЯ ---------- */
+.profile-account {
+    background: rgba(255,255,255,0.03);
+    padding: 12px 16px;
+    border-radius: 16px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.profile-account p {
+    margin: 4px 0;
+    color: rgba(255,255,255,0.7);
+}
+.profile-account strong {
+    color: #f0e6d0;
+}
+.profile-section-title {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 15px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.profile-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.profile-row .label {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.9rem;
+}
+.profile-row .value {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.9rem;
+}
+.profile-bg-options {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+.profile-bg-options button {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 0.85rem;
+}
+.profile-bg-options button:hover {
+    background: rgba(255,255,255,0.06);
+}
+.profile-bg-options button.active {
+    background: rgba(255,215,150,0.15);
+    color: #f0e6d0;
+    border-color: rgba(255,215,150,0.2);
+}
+
+/* ---------- ЛУНЫ В ПРОФИЛЕ ---------- */
+.profile-moons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+.profile-moon-btn {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 0.85rem;
+    text-align: left;
+    white-space: nowrap;
+}
+.profile-moon-btn:hover {
+    background: rgba(255,255,255,0.06);
+}
+.profile-moon-btn.active {
+    background: rgba(255,215,150,0.15);
+    color: #f0e6d0;
+    border-color: rgba(255,215,150,0.3);
+}
+.profile-moon-btn.active span {
+    color: #4ecdc4;
+    font-weight: normal;
+}
+
+/* ---------- СТИЛИ ДЛЯ ЛИДЕРОВ ---------- */
+.leader-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.02);
+    transition: 0.2s;
+}
+.leader-item:hover {
+    background: rgba(255,255,255,0.04);
+}
+.leader-item.me {
+    background: rgba(255,215,150,0.08);
+    border: 1px solid rgba(255,215,150,0.1);
+}
+.leader-item .pos {
+    color: rgba(255,255,255,0.3);
+    font-size: 0.8rem;
+    min-width: 30px;
+}
+.leader-item .name {
+    color: #f0e6d0;
+    flex: 1;
+    font-size: 0.95rem;
+}
+.leader-item .stats {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.8rem;
+    display: flex;
+    gap: 10px;
+}
+.no-data {
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    padding: 20px 0;
+    font-size: 0.9rem;
+}
+
+/* ---------- СТИЛИ ДЛЯ НАСТРОЕК ---------- */
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.6);
+}
+.settings-row input[type="checkbox"] {
+    margin-left: auto;
+    accent-color: #f0e6d0;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+.btn-danger {
+    width: 100%;
+    padding: 12px;
+    border-radius: 30px;
+    border: 1px solid rgba(255,80,80,0.2);
+    background: rgba(255,80,80,0.1);
+    color: #ff6b6b;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.3s;
+    text-align: center;
+}
+.btn-danger:hover {
+    background: rgba(255,80,80,0.2);
+    transform: scale(1.02);
+}
+
+/* ---------- ФУТЕР ПАНЕЛЕЙ ---------- */
+.side-panel .panel-footer {
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    text-align: center;
+}
+.side-panel .panel-footer .panel-refresh-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.side-panel .panel-footer .panel-refresh-btn:hover {
+    color: #f0e6d0;
+    background: rgba(255,255,255,0.05);
+}
+.side-panel .panel-footer .panel-refresh-btn svg {
+    width: 22px;
+    height: 22px;
+}
+.side-panel .panel-footer .panel-refresh-btn.spinning {
+    animation: spin 0.4s linear;
+}
+
+/* ---------- МАГАЗИН ---------- */
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: 0.3s;
+}
+.shop-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.shop-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.shop-item-name {
+    color: #f0e6d0;
+    font-size: 1rem;
+    font-weight: 500;
+}
+.shop-item-desc {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+}
+.shop-item-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+.shop-item-price {
+    color: #ffd700;
+    font-size: 0.9rem;
+}
+.shop-item-level {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.7rem;
+}
+.shop-buy-btn {
+    padding: 4px 16px;
+    border-radius: 20px;
+    border: none;
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.shop-buy-btn:hover:not(:disabled) {
+    background: rgba(255, 215, 0, 0.25);
+    transform: scale(1.05);
+}
+.shop-buy-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+.shop-buy-btn.locked {
+    background: rgba(255, 80, 80, 0.1);
+    color: #ff6b6b;
+    cursor: not-allowed;
+}
+
+/* ---------- КВЕСТЫ И АЧИВКИ ---------- */
+.quest-item, .achievement-item {
+    background: rgba(255,255,255,0.03);
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.quest-item.completed {
+    border-color: rgba(80,255,150,0.3);
+}
+.quest-name, .ach-name {
+    color: #f0e6d0;
+    font-weight: 500;
+}
+.quest-desc, .ach-desc {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.8rem;
+}
+.quest-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    margin: 4px 0;
+}
+.quest-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ecdc4, #44a08d);
+    border-radius: 4px;
+    transition: width 0.5s;
+}
+.quest-progress, .quest-reward, .ach-reward {
+    color: rgba(255,255,255,0.3);
+    font-size: 0.7rem;
+}
+.quest-done {
+    color: #69db7c;
+}
+.achievement-item.achieved {
+    border-color: rgba(255,215,0,0.3);
+    background: rgba(255,215,0,0.05);
+}
+.profile-moon-item {
+    background: rgba(255,255,255,0.03);
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+.profile-moon-name {
+    font-size: 0.95rem;
+}
+.profile-moon-name.active {
+    color: #ffd700;
+}
+.profile-moon-actions button {
+    margin: 2px 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+.profile-moon-actions button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+.profile-moon-actions button.active {
+    background: rgba(255,215,0,0.15);
+    color: #ffd700;
+}
+.profile-moon-level {
+    color: rgba(255,255,255,0.3);
+    font-size: 0.7rem;
+    margin-left: 8px;
+}
