@@ -300,3 +300,12 @@ export function loadMoonData() {
     }
     updateMaxSlots();
 }
+
+// --- Очистка состояния (для сброса прогресса) ---
+export function clearAchievements() {
+    achievements = {};
+    for (const key of Object.keys(ACHIEVEMENTS)) {
+        achievements[key] = false;
+    }
+    saveAchievements();
+}
