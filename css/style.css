@@ -1,32 +1,30 @@
 /* ============================================================
    ГЛАВНЫЙ ФАЙЛ СТИЛЕЙ
-   Импортирует все остальные CSS-файлы
    ============================================================ */
 
 /* ---------- БАЗА ---------- */
-@import url('base/reset.css');
-@import url('base/variables.css');
+@import url('reset.css');
+@import url('variables.css');
 
 /* ---------- КОМПОНЕНТЫ ---------- */
-@import url('components/galaxy.css');
-@import url('components/auth.css');
-@import url('components/game.css');
-@import url('components/panel.css');
-@import url('components/modal.css');
-@import url('components/toast.css');
+@import url('galaxy.css');
+@import url('auth.css');
+@import url('game.css');
+@import url('panel.css');
+@import url('modal.css');
+@import url('toast.css');
 
 /* ---------- МАКЕТ ---------- */
-@import url('layout/container.css');
-@import url('layout/responsive.css');
+@import url('container.css');
+@import url('responsive.css');
 
 /* ---------- УТИЛИТЫ ---------- */
-@import url('utils/animations.css');
-@import url('utils/fixes.css');
+@import url('animations.css');
+@import url('fixes.css');
 
 /* ============================================================
-   ТЕМЫ ЛУН (глобальные стили для свечения UI)
+   ТЕМЫ ЛУН
    ============================================================ */
-
 .container {
     transition: box-shadow 0.5s ease, border-color 0.5s ease;
 }
