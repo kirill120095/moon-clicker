@@ -1,13 +1,12 @@
 // ============================================================
 //  КОНФИГУРАЦИЯ
 // ============================================================
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './constants.js';
+import { CONSTANTS, MOON_TYPES } from './constants.js';
 
 export const CONFIG = {
-    // Supabase
     supabase: {
-        url: SUPABASE_URL,
-        anonKey: SUPABASE_ANON_KEY,
+        url: 'https://zllnsmztaakdwjpnijsk.supabase.co',
+        anonKey: 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt',
         options: {
             auth: {
                 persistSession: false,
@@ -17,34 +16,28 @@ export const CONFIG = {
             }
         }
     },
-    
-    // Игровые настройки
     game: {
         testMode: false,
         hpScale: 1,
-        bossInterval: 10,
-        bossTimer: 30,
-        baseHP: 100,
-        maxSlots: 3,
+        bossInterval: CONSTANTS.BOSS_INTERVAL,
+        bossTimer: CONSTANTS.BOSS_TIMER,
+        baseHP: CONSTANTS.BASE_HP,
+        maxSlots: CONSTANTS.MAX_SLOTS,
         maxClickDamageLevel: 10,
         maxMoonLevel: 10,
         minPasswordLength: 6,
-        saveInterval: 30000,
-        questResetInterval: 3600000,
-        uiUpdateInterval: 16,
+        saveInterval: CONSTANTS.INTERVALS.SAVE_TIME,
+        questResetInterval: CONSTANTS.INTERVALS.QUEST_RESET,
+        uiUpdateInterval: CONSTANTS.INTERVALS.UI_UPDATE,
     },
-    
-    // UI настройки
     ui: {
-        toastDuration: 2000,
-        maxStars: 300,
-        maxLeaders: 10,
+        toastDuration: CONSTANTS.INTERVALS.TOAST_DURATION,
+        maxStars: CONSTANTS.LIMITS.MAX_STARS,
+        maxLeaders: CONSTANTS.LIMITS.MAX_LEADERS,
         animationDuration: 300,
         levelUpDuration: 800,
         clickCooldown: 50,
     },
-    
-    // API эндпоинты
     endpoints: {
         players: 'players',
         profiles: 'profiles',
@@ -52,12 +45,7 @@ export const CONFIG = {
     }
 };
 
-// ============================================================
-//  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ КОНФИГУРАЦИИ
-// ============================================================
-
 export function getMoonUpgradeCost(moonId, currentLevel) {
-    const { MOON_TYPES } = await import('./constants.js');
     const moon = MOON_TYPES[moonId];
     if (!moon) return 100;
     const baseCost = Math.max(100, moon.cost * 0.1);
@@ -65,9 +53,8 @@ export function getMoonUpgradeCost(moonId, currentLevel) {
 }
 
 export function getSlotUpgradeCost(slotIndex) {
-    const { CONSTANTS } = await import('./constants.js');
     return Math.floor(
-        CONSTANTS.UPGRADE_COSTS.moonSlots.base * 
+        CONSTANTS.UPGRADE_COSTS.moonSlots.base *
         Math.pow(CONSTANTS.UPGRADE_COSTS.moonSlots.multiplier, slotIndex - 1)
     );
 }
