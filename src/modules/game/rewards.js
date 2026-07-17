@@ -1,8 +1,8 @@
 // ============================================================
 //  СИСТЕМА НАГРАД
 // ============================================================
-import { appState, state } from '../../core/state.js';
-import { CONSTANTS, ACHIEVEMENTS, QUESTS } from '../../core/constants.js';
+import { appState, state } from './state.js';
+import { CONSTANTS, ACHIEVEMENTS, QUESTS } from './constants.js';
 
 export class RewardSystem {
     constructor() {
@@ -10,10 +10,6 @@ export class RewardSystem {
         this._xpMultiplier = 1;
     }
 
-    // ============================================================
-    //  РАСЧЕТ НАГРАД
-    // ============================================================
-    
     calculateShardReward(level, isBoss, shardBonus = 0) {
         let baseReward;
         
@@ -35,17 +31,12 @@ export class RewardSystem {
         return Math.floor(baseXP * this._xpMultiplier);
     }
 
-    // ============================================================
-    //  ВЫДАЧА НАГРАД
-    // ============================================================
-    
     async grantShards(amount) {
         if (!state.playerData) return false;
         
         const newShards = (state.playerData.shards || 0) + amount;
         appState.set('playerData', { ...state.playerData, shards: newShards });
         
-        // Обновляем квесты
         appState.updateQuestProgress('shard', amount);
         
         return true;
@@ -56,15 +47,11 @@ export class RewardSystem {
         if (!ach) return false;
         
         if (state.achievements[id]) {
-            return false; // Уже получено
+            return false;
         }
         
+        // Награда выдается внутри unlockAchievement в state.js
         appState.unlockAchievement(id);
-        
-        // Награда за достижение
-        if (ach.reward) {
-            await this.grantShards(ach.reward);
-        }
         
         return true;
     }
@@ -81,10 +68,6 @@ export class RewardSystem {
         return true;
     }
 
-    // ============================================================
-    //  БОНУСЫ
-    // ============================================================
-    
     setShardMultiplier(multiplier) {
         this._shardMultiplier = Math.max(1, multiplier);
     }
@@ -93,10 +76,6 @@ export class RewardSystem {
         this._xpMultiplier = Math.max(1, multiplier);
     }
 
-    // ============================================================
-    //  ПРОВЕРКА ДОСТИЖЕНИЙ
-    // ============================================================
-    
     checkAllAchievements() {
         const currentState = {
             ownedMoons: state.ownedMoons,
@@ -114,10 +93,6 @@ export class RewardSystem {
         }
     }
 
-    // ============================================================
-    //  ЕЖЕЧАСОВОЙ СБРОС КВЕСТОВ
-    // ============================================================
-    
     resetDailyQuests() {
         appState.resetQuests();
         return Object.keys(QUESTS).length;
