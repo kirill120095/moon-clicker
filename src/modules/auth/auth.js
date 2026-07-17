@@ -3,14 +3,14 @@
 // ============================================================
 import { appState, state } from '../../core/state.js';
 import { db, handleDatabaseError } from '../network/supabase.js';
-import { validators, schemas, validateForm } from './validation.js';
+import { authSchemas, validateForm, isEmail } from './validation.js';
 import { escapeHTML, throttle, RateLimiter } from '../../utils/security.js';
 import { showToast } from '../ui/renderer.js';
 
 const loginLimiter = new RateLimiter({ limit: 5, window: 60000 });
 const registerLimiter = new RateLimiter({ limit: 3, window: 60000 });
 
-export async function handleLogin(email, password) {
+export async function handleLogin(identifier, password) {
     const ip = 'client';
     const loginCheck = loginLimiter.check(ip);
     if (!loginCheck.allowed) {
@@ -18,8 +18,8 @@ export async function handleLogin(email, password) {
         return { success: false, error: 'Rate limit exceeded' };
     }
 
-    const formData = { email, password };
-    const validation = validateForm(formData, schemas.login);
+    const formData = { identifier, password };
+    const validation = validateForm(formData, authSchemas.login);
     if (!validation.valid) {
         const error = Object.values(validation.errors)[0];
         showToast(`⚠️ ${error}`, 'warning');
@@ -27,8 +27,20 @@ export async function handleLogin(email, password) {
     }
 
     try {
+        let email = validation.data.identifier;
+
+        // Если ввели логин, ищем email в базе
+        if (!isEmail(email)) {
+            const player = await db.getPlayerByUsername(validation.data.identifier);
+            if (!player) {
+                showToast('⚠️ Пользователь не найден', 'warning');
+                return { success: false, error: 'User not found' };
+            }
+            email = player.email;
+        }
+
         const { user, session } = await db.signIn(
-            validation.data.email,
+            email,
             validation.data.password
         );
         
@@ -56,7 +68,7 @@ export async function handleRegister(email, nickname, password) {
     }
 
     const formData = { email, nickname, password };
-    const validation = validateForm(formData, schemas.register);
+    const validation = validateForm(formData, authSchemas.register);
     if (!validation.valid) {
         const error = Object.values(validation.errors)[0];
         showToast(`⚠️ ${error}`, 'warning');
