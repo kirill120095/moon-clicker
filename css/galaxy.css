@@ -71,16 +71,6 @@
     box-shadow: 0 0 50px rgba(100, 180, 255, 0.2);
 }
 
-@keyframes orbit1 {
-    0% { transform: rotate(0deg) translateX(200px) rotate(0deg); }
-    100% { transform: rotate(360deg) translateX(200px) rotate(-360deg); }
-}
-
-@keyframes orbit2 {
-    0% { transform: rotate(0deg) translateX(-180px) rotate(0deg); }
-    100% { transform: rotate(360deg) translateX(-180px) rotate(-360deg); }
-}
-
 @media (max-width: 600px) {
     .planet-1 { width: 40px; height: 40px; }
     .planet-2 { width: 30px; height: 30px; }
