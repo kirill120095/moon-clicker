@@ -68,10 +68,9 @@
     color: rgba(255, 255, 255, 0.4);
     transition: all 0.3s ease;
     backdrop-filter: blur(8px);
-    display: flex;
     align-items: center;
     justify-content: center;
-    /* Скрыты по умолчанию */
+    /* Скрыты по умолчанию — показываем только через .visible */
     display: none;
 }
 /* Показываем только когда есть класс visible */
