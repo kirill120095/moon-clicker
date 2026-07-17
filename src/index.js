@@ -4,8 +4,8 @@
 import { appState, state } from './core/state.js';
 import { checkAuth } from './modules/auth/auth.js';
 import { gameEngine } from './modules/game/game.js';
-import { initEvents, updateQuestAndAchievementUI } from './modules/ui/events.js';
-import { initToastContainer, showToast, updateUI, updateShopUI, updateProfileAndLeaders } from './modules/ui/renderer.js';
+import { initEvents } from './modules/ui/events.js';
+import { initToastContainer, showToast, updateUI, updateShopUI, updateProfileAndLeaders, updateQuestAndAchievementUI } from './modules/ui/renderer.js';
 import { createStars } from './utils/performance.js';
 
 // ============================================================
