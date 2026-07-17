@@ -1,39 +1,24 @@
 // ============================================================
 //  ОБРАБОТЧИКИ СОБЫТИЙ UI
 // ============================================================
-import { gameEngine } from '../game/game.js';
-import { handleLogin, handleRegister, handleLogout } from '../auth/auth.js';
-import { appState, state } from '../../core/state.js';
+import { gameEngine } from './game.js';
+import { handleLogin, handleRegister, handleLogout } from './auth.js';
+import { appState, state } from './state.js';
 import { showToast, setLockIcon, updateUI, updateShopUI, updateProfileAndLeaders, updateQuestAndAchievementUI } from './renderer.js';
-import { escapeHTML } from '../../utils/security.js';
-import { getMaxHPForLevel } from '../../core/config.js';
-import { CONSTANTS } from '../../core/constants.js';
+import { escapeHTML } from './security.js';
+import { getMaxHPForLevel } from './config.js';
+import { CONSTANTS } from './constants.js';
 
-// ============================================================
-//  ИНИЦИАЛИЗАЦИЯ СОБЫТИЙ
-// ============================================================
 export function initEvents() {
-    // Авторизация
     _initAuthEvents();
-
-    // Игра
     _initGameEvents();
-
-    // Панели
     _initPanelEvents();
-
-    // Настройки
     _initSettingsEvents();
-
-    // Магазин
     _initShopEvents();
 
     console.log('[Events] Инициализация завершена');
 }
 
-// ============================================================
-//  АВТОРИЗАЦИЯ
-// ============================================================
 function _initAuthEvents() {
     const tabLogin = document.getElementById('tabLogin');
     const tabRegister = document.getElementById('tabRegister');
@@ -42,11 +27,9 @@ function _initAuthEvents() {
     const actionBtn = document.getElementById('actionBtn');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // Переключение вкладок
     tabLogin?.addEventListener('click', () => _setAuthMode('login'));
     tabRegister?.addEventListener('click', () => _setAuthMode('register'));
 
-    // Кнопка действия
     actionBtn?.addEventListener('click', async () => {
         const isLogin = tabLogin?.classList.contains('active');
 
@@ -68,13 +51,11 @@ function _initAuthEvents() {
         }
     });
 
-    // Выход
     logoutBtn?.addEventListener('click', async () => {
         await handleLogout();
         _onAuthLogout();
     });
 
-    // Enter для полей ввода
     document.querySelectorAll('.auth-form input').forEach(input => {
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -112,12 +93,10 @@ function _onAuthSuccess() {
     document.getElementById('authBlock')?.classList.add('hidden');
     document.getElementById('gameArea')?.classList.add('active');
 
-    // Показываем кнопки панелей
     document.querySelectorAll('.panel-trigger').forEach(el => {
         el.classList.add('visible');
     });
 
-    // Инициализируем игру
     gameEngine.init();
     showToast('✅ Добро пожаловать!', 'success');
 }
@@ -126,12 +105,10 @@ function _onAuthLogout() {
     document.getElementById('gameArea')?.classList.remove('active');
     document.getElementById('authBlock')?.classList.remove('hidden');
 
-    // Скрываем кнопки панелей
     document.querySelectorAll('.panel-trigger').forEach(el => {
         el.classList.remove('visible', 'active');
     });
 
-    // Закрываем панели
     document.querySelectorAll('.side-panel').forEach(el => {
         el.classList.remove('active');
     });
@@ -140,36 +117,19 @@ function _onAuthLogout() {
     showToast('👋 Вы вышли из аккаунта', 'success');
 }
 
-// ============================================================
-//  ИГРА
-// ============================================================
 function _initGameEvents() {
     const moonWrapper = document.getElementById('moonWrapper');
     const rollbackBtn = document.getElementById('rollbackBtnMain');
     const lockToggle = document.getElementById('lockToggleMain');
 
-    // Клик по луне
     moonWrapper?.addEventListener('click', (e) => {
         gameEngine.handleClick(e);
     });
 
-    // Откат уровня
     rollbackBtn?.addEventListener('click', async () => {
-        if (state.currentLevel <= 1) return;
-
-        const newLevel = state.currentLevel - 1;
-        appState.setCurrentLevel(newLevel);
-        const newMax = getMaxHPForLevel(newLevel, CONSTANTS.BASE_HP, CONSTANTS.BOSS_INTERVAL);
-        appState.set('maxHP', newMax);
-        appState.set('moonHP', newMax);
-
-        await gameEngine._saveProgress();
-        updateUI();
-        updateProfileAndLeaders();
-        showToast(`↩️ Откат до ${newLevel} уровня`, 'info');
+        await gameEngine.rollbackLevel();
     });
 
-    // Замок уровня
     lockToggle?.addEventListener('click', () => {
         const newState = !state.levelLocked;
         appState.set('levelLocked', newState);
@@ -178,11 +138,13 @@ function _initGameEvents() {
         }
         setLockIcon(lockToggle, newState);
     });
+    
+    // Инициализируем иконку замка при старте
+    if (lockToggle) {
+        setLockIcon(lockToggle, state.levelLocked);
+    }
 }
 
-// ============================================================
-//  ПАНЕЛИ
-// ============================================================
 function _initPanelEvents() {
     const leftTrigger = document.getElementById('panelTrigger');
     const leftPanel = document.getElementById('sidePanel');
@@ -205,7 +167,6 @@ function _initPanelEvents() {
         }
     });
 
-    // Вкладки левой панели
     document.querySelectorAll('.left-panel .panel-tabs button').forEach(tab => {
         tab?.addEventListener('click', () => {
             document.querySelectorAll('.left-panel .panel-tabs button').forEach(t => t.classList.remove('active'));
@@ -218,7 +179,6 @@ function _initPanelEvents() {
         });
     });
 
-    // Вкладки правой панели
     document.querySelectorAll('.shop-panel .panel-tabs button').forEach(tab => {
         tab?.addEventListener('click', () => {
             document.querySelectorAll('.shop-panel .panel-tabs button').forEach(t => t.classList.remove('active'));
@@ -231,9 +191,6 @@ function _initPanelEvents() {
     });
 }
 
-// ============================================================
-//  НАСТРОЙКИ
-// ============================================================
 function _initSettingsEvents() {
     const testModeCheckbox = document.getElementById('testModeCheckbox');
     const resetBtn = document.getElementById('resetProgressBtn');
@@ -241,7 +198,6 @@ function _initSettingsEvents() {
     const confirmYes = document.getElementById('confirmYes');
     const confirmNo = document.getElementById('confirmNo');
 
-    // Тестовый режим
     testModeCheckbox?.addEventListener('change', (e) => {
         appState.set('testMode', e.target.checked);
         if (state.user) {
@@ -250,7 +206,6 @@ function _initSettingsEvents() {
         showToast(e.target.checked ? '🧪 Тестовый режим включен' : '🧪 Тестовый режим выключен', 'info');
     });
 
-    // Сброс прогресса
     resetBtn?.addEventListener('click', () => {
         confirmOverlay?.classList.add('active');
     });
@@ -265,21 +220,15 @@ function _initSettingsEvents() {
     });
 }
 
-// ============================================================
-//  МАГАЗИН
-// ============================================================
 function _initShopEvents() {
-    // Покупка улучшения клика
     document.getElementById('buyClickDamageBtn')?.addEventListener('click', async () => {
         await gameEngine.buyClickDamage();
     });
 
-    // Покупка слота
     document.getElementById('buySlotBtn')?.addEventListener('click', async () => {
         await gameEngine.buySlot();
     });
 
-    // Делегирование для динамических кнопок в магазине лун
     document.getElementById('moonShopItems')?.addEventListener('click', async (e) => {
         const target = e.target.closest('button');
         if (!target) return;
@@ -296,9 +245,3 @@ function _initShopEvents() {
         }
     });
 }
-
-// ============================================================
-//  ОБНОВЛЕНИЕ КВЕСТОВ И ДОСТИЖЕНИЙ (экспортируемые функции)
-// ============================================================
-// Функции updateQuestUI, updateAchievementUI, updateQuestAndAchievementUI
-// теперь импортируются из renderer.js, поэтому здесь они не нужны.
