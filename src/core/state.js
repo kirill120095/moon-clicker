@@ -153,7 +153,6 @@ class State {
         this._proxy.achievements = newAchievements;
         this._saveAchievements();
         
-        // Награда за достижение
         if (ach.reward && this._state.playerData) {
             const newShards = (this._state.playerData.shards || 0) + ach.reward;
             this._proxy.playerData = { ...this._state.playerData, shards: newShards };
