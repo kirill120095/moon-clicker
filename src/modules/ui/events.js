@@ -34,9 +34,9 @@ function _initAuthEvents() {
         const isLogin = tabLogin?.classList.contains('active');
 
         if (isLogin) {
-            const email = document.getElementById('loginInput')?.value;
+            const identifier = document.getElementById('loginInput')?.value;
             const password = document.getElementById('passwordInput')?.value;
-            const result = await handleLogin(email, password);
+            const result = await handleLogin(identifier, password);
             if (result.success) {
                 _onAuthSuccess();
             }
@@ -219,18 +219,7 @@ function _initSettingsEvents() {
     });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-    function _initShopEvents() {
+function _initShopEvents() {
     document.getElementById('buyClickDamageBtn')?.addEventListener('click', async () => {
         await gameEngine.buyClickDamage();
     });
