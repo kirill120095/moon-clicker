@@ -1,7 +1,7 @@
 // ============================================================
 //  SUPABASE КЛИЕНТ С РЕТРИ И КЭШИРОВАНИЕМ
 // ============================================================
-import { CONFIG } from './config.js';
+import { CONFIG } from '../../core/config.js';
 
 if (typeof window.supabase === 'undefined') {
     throw new Error('Supabase library not loaded');
