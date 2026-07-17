@@ -1,12 +1,12 @@
 // ============================================================
 //  ТОЧКА ВХОДА
 // ============================================================
-import { appState, state } from './state.js';
-import { checkAuth } from './auth.js';
-import { gameEngine } from './game.js';
-import { initEvents, updateQuestAndAchievementUI } from './events.js';
-import { initToastContainer, showToast, updateUI, updateShopUI, updateProfileAndLeaders } from './renderer.js';
-import { createStars } from './performance.js';
+import { appState, state } from './core/state.js';
+import { checkAuth } from './modules/auth/auth.js';
+import { gameEngine } from './modules/game/game.js';
+import { initEvents, updateQuestAndAchievementUI } from './modules/ui/events.js';
+import { initToastContainer, showToast, updateUI, updateShopUI, updateProfileAndLeaders } from './modules/ui/renderer.js';
+import { createStars } from './utils/performance.js';
 
 // ============================================================
 //  ИНИЦИАЛИЗАЦИЯ
@@ -15,19 +15,14 @@ async function init() {
     console.log('[App] Инициализация...');
 
     try {
-        // Инициализируем Toast
         const toastContainer = document.getElementById('toastContainer');
         if (toastContainer) {
             initToastContainer(toastContainer);
         }
 
-        // Создаем звезды
         createStars();
-
-        // Инициализируем события
         initEvents();
 
-        // Проверяем авторизацию
         const authResult = await checkAuth();
         
         if (authResult.success) {
