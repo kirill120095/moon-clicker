@@ -1,12 +1,12 @@
 // ============================================================
 //  РЕНДЕРИНГ UI
 // ============================================================
-import { state, appState } from './state.js';
-import { CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS } from './constants.js';
-import { getMaxHPForLevel, getTitle } from './config.js';
-import { escapeHTML } from './security.js';
-import { uiScheduler } from './performance.js';
-import { db } from './supabase.js';
+import { state, appState } from '../../core/state.js';
+import { CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS } from '../../core/constants.js';
+import { getMaxHPForLevel, getTitle } from '../../core/config.js';
+import { escapeHTML } from '../../utils/security.js';
+import { uiScheduler } from '../../utils/performance.js';
+import { db } from '../network/supabase.js';
 
 let toastContainer = null;
 
