@@ -1,18 +1,15 @@
 // ============================================================
 //  ОСНОВНАЯ ИГРОВАЯ ЛОГИКА
 // ============================================================
-import { appState, state } from '../../core/state.js';
-import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES } from '../../core/constants.js';
-import { getMaxHPForLevel, isBossLevel, getMoonUpgradeCost, getSlotUpgradeCost } from '../../core/config.js';
-import { db } from '../../network/supabase.js';
-import { showToast, updateUI, updateShopUI, updateProfileAndLeaders, updateQuestAndAchievementUI, setLockIcon } from '../ui/renderer.js';
-import { throttle } from '../../utils/security.js';
+import { appState, state } from './state.js';
+import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES } from './constants.js';
+import { getMaxHPForLevel, isBossLevel, getMoonUpgradeCost, getSlotUpgradeCost } from './config.js';
+import { db } from './supabase.js';
+import { showToast, updateUI, updateShopUI, updateProfileAndLeaders, updateQuestAndAchievementUI, setLockIcon } from './renderer.js';
+import { throttle } from './security.js';
 import { CombatSystem } from './combat.js';
 import { RewardSystem } from './rewards.js';
 
-// ============================================================
-//  КЛАСС ИГРОВОГО ДВИЖКА
-// ============================================================
 export class GameEngine {
     constructor() {
         this.combat = new CombatSystem();
@@ -21,17 +18,12 @@ export class GameEngine {
         this._lastSave = 0;
         this._saveInterval = CONSTANTS.INTERVALS.SAVE_TIME;
         
-        // Подписка на изменения состояния
         this._unsubscribe = appState.subscribeMany(
             ['currentLevel', 'moonHP', 'maxHP', 'activeMoons', 'maxSlots'],
             () => this._onStateChange()
         );
     }
 
-    // ============================================================
-    //  ИНИЦИАЛИЗАЦИЯ
-    // ============================================================
-    
     init() {
         const level = state.currentLevel;
         const newMax = getMaxHPForLevel(level, CONSTANTS.BASE_HP, CONSTANTS.BOSS_INTERVAL);
@@ -44,17 +36,11 @@ export class GameEngine {
             appState.set('moonHP', 0);
         }
 
-        // Запускаем таймеры
         this._startTimeTracking();
         this._startAutoSave();
-        
-        // Проверяем босса
         this._checkBoss();
-        
-        // Пересчитываем бонусы лун
         this.recalcMoonBonuses();
         
-        // Обновляем UI
         updateUI();
         updateShopUI();
         updateProfileAndLeaders();
@@ -62,10 +48,6 @@ export class GameEngine {
         console.log('[Game] Инициализация завершена');
     }
 
-    // ============================================================
-    //  ОБРАБОТКА КЛИКА
-    // ============================================================
-    
     handleClick = throttle(async (e) => {
         if (this.isProcessing) return;
         if (!state.user) {
@@ -89,16 +71,15 @@ export class GameEngine {
     }, 50);
 
     async _processClick() {
-        // Расчет урона
         const baseDamage = state.playerData?.click_damage || 1;
         const bonus = window._totalDamageBonus || 0;
-        const damage = baseDamage * (1 + bonus);
+        const { damage, isCrit } = this.combat.calculateDamage(baseDamage, {
+            moonDamageBonus: bonus,
+            critChance: 0.05
+        });
 
-        // Обновление счетчиков
-        appState.set('clickCount', state.clickCount + 1);
-        appState.updateQuestProgress('click');
+        appState.incrementClickCount();
 
-        // Нанесение урона
         if (state.testMode) {
             appState.set('moonHP', 0);
         } else {
@@ -106,35 +87,30 @@ export class GameEngine {
             appState.set('moonHP', newHP);
         }
 
-        // Визуальный эффект клика
         this._applyClickEffect();
+        
+        if (isCrit) {
+            showToast('💥 Критический удар!', 'success', 800);
+        }
 
-        // Проверка на убийство
         if (state.moonHP === 0) {
             await this._onMoonDefeated();
             return;
         }
 
-        // Сохранение прогресса
         await this._saveProgress();
         updateUI();
         updateProfileAndLeaders();
     }
 
-    // ============================================================
-    //  ОБРАБОТКА УБИЙСТВА ЛУНЫ
-    // ============================================================
-    
     async _onMoonDefeated() {
         if (state.levelLocked) {
-            if (!state.testMode) {
-                appState.set('moonHP', state.maxHP);
-                updateUI();
-            }
+            appState.set('moonHP', state.maxHP);
+            updateUI();
+            showToast('🔒 Уровень зафиксирован', 'info');
             return;
         }
 
-        // Расчет награды
         const isBoss = isBossLevel(state.currentLevel, CONSTANTS.BOSS_INTERVAL);
         const reward = this.rewards.calculateShardReward(
             state.currentLevel,
@@ -142,11 +118,9 @@ export class GameEngine {
             window._totalShardBonus || 0
         );
 
-        // Начисление осколков
         const currentShards = (state.playerData?.shards || 0) + reward;
         appState.set('playerData', { ...state.playerData, shards: currentShards });
         
-        // Обновление квестов
         appState.updateQuestProgress('shard', reward);
         
         if (isBoss) {
@@ -156,56 +130,46 @@ export class GameEngine {
 
         showToast(`💎 +${reward} лунных осколков!`, 'success', 2000);
 
-        // Повышение уровня
-        const newLevel = state.currentLevel + 1;
-        appState.setCurrentLevel(newLevel);
+        appState.incrementLevel();
         
+        const newLevel = state.currentLevel;
         const newMax = getMaxHPForLevel(newLevel, CONSTANTS.BASE_HP, CONSTANTS.BOSS_INTERVAL);
         appState.set('maxHP', newMax);
         appState.set('moonHP', newMax);
 
-        // Анимация повышения уровня
         this._applyLevelUpEffect();
 
-        // Сохранение
         await this._saveProgress();
         updateUI();
         updateShopUI();
         updateProfileAndLeaders();
         
-        // Проверка босса
         this._checkBoss();
-        
-        // Пересчет бонусов
         this.recalcMoonBonuses();
     }
 
-    // ============================================================
-    //  БОСС-СИСТЕМА
-    // ============================================================
-    
     _checkBoss() {
         if (isBossLevel(state.currentLevel, CONSTANTS.BOSS_INTERVAL) && state.moonHP > 0) {
-            this.combat.startBossTimer();
+            this.combat.startBossTimer(() => this._onBossTimeout());
         } else {
             this.combat.clearBossTimer();
         }
     }
-
-    // ============================================================
-    //  РАСЧЕТ БОНУСОВ ЛУН
-    // ============================================================
     
+    _onBossTimeout() {
+        appState.set('moonHP', state.maxHP);
+        updateUI();
+        showToast('⏱️ Время вышло! Босс восстановил здоровье', 'warning');
+    }
+
     recalcMoonBonuses() {
         let totalDamageBonus = 0;
         let totalShardBonus = 0;
         const activeSynergies = [];
 
-        // Получаем активные луны с учетом слотов
         const effectiveActiveMoons = state.activeMoons.slice(0, state.maxSlots);
         const activeIds = effectiveActiveMoons;
 
-        // Бонусы от каждой активной луны
         activeIds.forEach(id => {
             const moon = MOON_TYPES[id];
             if (moon) {
@@ -216,7 +180,6 @@ export class GameEngine {
             }
         });
 
-        // Синергии (только если > 1 активной луны и открыто > 1 слота)
         if (activeIds.length > 1 && state.maxSlots > 1) {
             const sortedActive = [...activeIds].sort();
             
@@ -233,14 +196,12 @@ export class GameEngine {
                 }
             }
 
-            // Бонус для обычной луны
             if (sortedActive.includes('normal') && sortedActive.length > 1) {
                 totalDamageBonus += 0.05;
                 totalShardBonus += 0.05;
             }
         }
 
-        // Сохраняем в глобальные переменные
         window._totalDamageBonus = totalDamageBonus;
         window._totalShardBonus = totalShardBonus;
         window._activeSynergies = activeSynergies;
@@ -248,13 +209,9 @@ export class GameEngine {
         return { totalDamageBonus, totalShardBonus, activeSynergies };
     }
 
-    // ============================================================
-    //  СОХРАНЕНИЕ ПРОГРЕССА
-    // ============================================================
-    
     async _saveProgress() {
         const now = Date.now();
-        if (now - this._lastSave < 1000) return; // Не чаще раза в секунду
+        if (now - this._lastSave < 1000) return;
         
         const user = state.user;
         if (!user) return;
@@ -274,10 +231,6 @@ export class GameEngine {
         }
     }
 
-    // ============================================================
-    //  ТАЙМЕРЫ
-    // ============================================================
-    
     _startTimeTracking() {
         if (state.timeUpdateInterval) {
             clearInterval(state.timeUpdateInterval);
@@ -302,10 +255,6 @@ export class GameEngine {
         appState.set('autoSaveInterval', interval);
     }
 
-    // ============================================================
-    //  ВИЗУАЛЬНЫЕ ЭФФЕКТЫ
-    // ============================================================
-    
     _applyClickEffect() {
         const effect = document.getElementById('clickEffect');
         if (effect) {
@@ -333,19 +282,10 @@ export class GameEngine {
         }
     }
 
-    // ============================================================
-    //  ОБРАБОТЧИКИ СОБЫТИЙ
-    // ============================================================
-    
     _onStateChange() {
-        // Обновляем UI при изменении состояния
         updateUI();
         this.recalcMoonBonuses();
     }
-
-    // ============================================================
-    //  МЕТОДЫ МАГАЗИНА
-    // ============================================================
 
     async buyClickDamage() {
         if (!state.user) {
@@ -567,7 +507,6 @@ export class GameEngine {
         if (!state.user) return;
 
         try {
-            // Сброс в БД
             await db.updatePlayer(state.user.id, {
                 total_clicks: 0,
                 total_seconds_played: 0,
@@ -579,7 +518,6 @@ export class GameEngine {
                 updated_at: new Date().toISOString()
             });
 
-            // Сброс локального состояния
             appState.set('clickCount', 0);
             appState.set('totalSecondsPlayed', 0);
             appState.set('currentLevel', 1);
@@ -594,28 +532,23 @@ export class GameEngine {
             appState.clearAchievements();
             appState.resetQuests();
 
-            // Очистка localStorage
             if (state.user) {
                 const userId = state.user.id;
                 ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel', 'levelLocked', 'testMode']
                     .forEach(key => localStorage.removeItem(`${key}_${userId}`));
             }
 
-            // Обновляем данные игрока
             const freshData = await db.getPlayer(state.user.id, false);
             appState.loadPlayerData(freshData);
 
-            // Сброс UI
             appState.set('levelLocked', false);
             const lockBtn = document.getElementById('lockToggleMain');
             if (lockBtn) {
                 setLockIcon(lockBtn, false);
             }
 
-            // Очистка босс-таймера
             this.combat.clearBossTimer();
             
-            // Очистка интервалов
             if (state.timeUpdateInterval) {
                 clearInterval(state.timeUpdateInterval);
                 appState.set('timeUpdateInterval', null);
@@ -625,10 +558,8 @@ export class GameEngine {
                 appState.set('autoSaveInterval', null);
             }
 
-            // Пересчет бонусов
             this.recalcMoonBonuses();
 
-            // Обновление UI
             updateUI();
             updateShopUI();
             updateProfileAndLeaders();
@@ -661,10 +592,6 @@ export class GameEngine {
         showToast(`↩️ Откат до ${newLevel} уровня`, 'info');
     }
 
-    // ============================================================
-    //  ОЧИСТКА
-    // ============================================================
-    
     destroy() {
         if (this._unsubscribe) {
             this._unsubscribe();
@@ -686,7 +613,4 @@ export class GameEngine {
     }
 }
 
-// ============================================================
-//  ЭКСПОРТ ЕДИНСТВЕННОГО ЭКЗЕМПЛЯРА
-// ============================================================
 export const gameEngine = new GameEngine();
