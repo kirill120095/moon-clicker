@@ -1,11 +1,11 @@
 // ============================================================
 //  АВТОРИЗАЦИЯ
 // ============================================================
-import { appState, state } from './state.js';
-import { db, handleDatabaseError } from './supabase.js';
+import { appState, state } from '../../core/state.js';
+import { db, handleDatabaseError } from '../network/supabase.js';
 import { validators, schemas, validateForm } from './validation.js';
-import { escapeHTML, throttle, RateLimiter } from './security.js';
-import { showToast } from './renderer.js';
+import { escapeHTML, throttle, RateLimiter } from '../../utils/security.js';
+import { showToast } from '../ui/renderer.js';
 
 const loginLimiter = new RateLimiter({ limit: 5, window: 60000 });
 const registerLimiter = new RateLimiter({ limit: 3, window: 60000 });
