@@ -4,7 +4,6 @@
 import { CONSTANTS, MOON_TYPES } from './constants.js';
 
 export const CONFIG = {
-    // Supabase
     supabase: {
         url: 'https://zllnsmztaakdwjpnijsk.supabase.co',
         anonKey: 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt',
@@ -18,7 +17,6 @@ export const CONFIG = {
         }
     },
 
-    // Игровые настройки
     game: {
         testMode: false,
         hpScale: 1,
@@ -34,7 +32,6 @@ export const CONFIG = {
         uiUpdateInterval: CONSTANTS.INTERVALS.UI_UPDATE,
     },
 
-    // UI настройки
     ui: {
         toastDuration: CONSTANTS.INTERVALS.TOAST_DURATION,
         maxStars: CONSTANTS.LIMITS.MAX_STARS,
@@ -44,17 +41,12 @@ export const CONFIG = {
         clickCooldown: 50,
     },
 
-    // API эндпоинты
     endpoints: {
         players: 'players',
         profiles: 'profiles',
         stats: 'stats',
     }
 };
-
-// ============================================================
-//  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ============================================================
 
 export function getMoonUpgradeCost(moonId, currentLevel) {
     const moon = MOON_TYPES[moonId];
