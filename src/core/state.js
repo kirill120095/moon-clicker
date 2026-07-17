@@ -6,7 +6,6 @@ import { getMaxHPForLevel } from './config.js';
 
 class State {
     constructor() {
-        // Начальное состояние
         this._state = {
             user: null,
             playerData: null,
@@ -35,10 +34,8 @@ class State {
             isProcessing: false,
         };
         
-        // Подписчики
         this._observers = new Map();
         
-        // Прокси для реактивности
         this._proxy = new Proxy(this._state, {
             set: (target, key, value) => {
                 const oldValue = target[key];
@@ -52,17 +49,11 @@ class State {
         });
     }
 
-    // ============================================================
-    //  УПРАВЛЕНИЕ ПОДПИСКАМИ
-    // ============================================================
-    
     subscribe(key, callback) {
         if (!this._observers.has(key)) {
             this._observers.set(key, new Set());
         }
         this._observers.get(key).add(callback);
-        
-        // Возвращаем функцию для отписки
         return () => {
             const callbacks = this._observers.get(key);
             if (callbacks) {
@@ -92,10 +83,6 @@ class State {
         }
     }
 
-    // ============================================================
-    //  ДОСТУП К СОСТОЯНИЮ
-    // ============================================================
-    
     get state() {
         return this._proxy;
     }
@@ -109,10 +96,6 @@ class State {
         return this;
     }
 
-    // ============================================================
-    //  МЕТОДЫ ДЛЯ РАБОТЫ С ЛУНАМИ
-    // ============================================================
-    
     setActiveMoon(moonId) {
         if (!this._state.ownedMoons.includes(moonId)) {
             console.warn(`Луна ${moonId} не принадлежит игроку`);
@@ -128,7 +111,8 @@ class State {
     setActiveMoons(moons) {
         const limitedMoons = moons.slice(0, this._state.maxSlots);
         this._proxy.activeMoons = limitedMoons;
-        if (limitedMoons.length > 0) {
+        // Не меняем activeMoon, если текущая осталась в списке
+        if (limitedMoons.length > 0 && !limitedMoons.includes(this._state.activeMoon)) {
             this._proxy.activeMoon = limitedMoons[0];
         }
         this._saveMoonData();
@@ -158,10 +142,6 @@ class State {
         return this._state.moonLevels[moonId] || 1;
     }
 
-    // ============================================================
-    //  РАБОТА С ДОСТИЖЕНИЯМИ
-    // ============================================================
-    
     unlockAchievement(id) {
         if (this._state.achievements[id]) return;
         
@@ -173,7 +153,7 @@ class State {
         this._proxy.achievements = newAchievements;
         this._saveAchievements();
         
-        // Награда
+        // Награда за достижение
         if (ach.reward && this._state.playerData) {
             const newShards = (this._state.playerData.shards || 0) + ach.reward;
             this._proxy.playerData = { ...this._state.playerData, shards: newShards };
@@ -191,10 +171,6 @@ class State {
         }
     }
 
-    // ============================================================
-    //  РАБОТА С КВЕСТАМИ
-    // ============================================================
-    
     initQuests() {
         const saved = localStorage.getItem(`quests_${this._state.user?.id}`);
         if (saved) {
@@ -246,10 +222,6 @@ class State {
         }
     }
 
-    // ============================================================
-    //  СОХРАНЕНИЕ В LOCALSTORAGE
-    // ============================================================
-    
     _saveMoonData() {
         if (!this._state.user) return;
         const key = `moon_data_${this._state.user.id}`;
@@ -278,7 +250,6 @@ class State {
                 // Игнорируем
             }
         }
-        // Значения по умолчанию уже установлены
     }
 
     _saveAchievements() {
@@ -298,7 +269,6 @@ class State {
                 // Игнорируем
             }
         }
-        // Инициализируем достижения
         const newAchievements = {};
         for (const key of Object.keys(ACHIEVEMENTS)) {
             newAchievements[key] = false;
@@ -312,19 +282,13 @@ class State {
         localStorage.setItem(`quests_${this._state.user.id}`, JSON.stringify(this._state.quests));
     }
 
-    // ============================================================
-    //  ОЧИСТКА СОСТОЯНИЯ
-    // ============================================================
-    
     clearAll() {
-        // Очищаем все данные пользователя
         if (this._state.user) {
             const userId = this._state.user.id;
             ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel', 'levelLocked', 'testMode']
                 .forEach(key => localStorage.removeItem(`${key}_${userId}`));
         }
         
-        // Сбрасываем состояние
         this._proxy.user = null;
         this._proxy.playerData = null;
         this._proxy.clickCount = 0;
@@ -345,7 +309,6 @@ class State {
         this._proxy.bossTimerRunning = false;
         this._proxy.isProcessing = false;
         
-        // Очищаем интервалы
         if (this._state.bossTimerInterval) {
             clearInterval(this._state.bossTimerInterval);
             this._proxy.bossTimerInterval = null;
@@ -360,10 +323,6 @@ class State {
         }
     }
 
-    // ============================================================
-    //  ЗАГРУЗКА ДАННЫХ ИГРОКА
-    // ============================================================
-    
     loadPlayerData(data) {
         if (!data) return;
         
@@ -378,27 +337,21 @@ class State {
             CONSTANTS.BOSS_INTERVAL
         );
         
-        // Загружаем сохраненные данные
         this._loadMoonData();
         this._loadAchievements();
         this.initQuests();
         
-        // Загружаем босс-киллы
         const savedKills = localStorage.getItem(`bossKills_${this._state.user?.id}`);
         if (savedKills) {
             this._proxy.bossKills = parseInt(savedKills) || 0;
         }
         
-        // Загружаем уровень слотов
         const savedSlotLevel = localStorage.getItem(`slotLevel_${this._state.user?.id}`);
         if (savedSlotLevel) {
             this._proxy.slotLevel = parseInt(savedSlotLevel) || 1;
         }
         
-        // Обновляем максимальное количество слотов
         this._updateMaxSlots();
-        
-        // Проверяем достижения
         this._checkAchievements();
     }
 
@@ -412,14 +365,9 @@ class State {
         return maxPossible;
     }
 
-    // ============================================================
-    //  ДОПОЛНИТЕЛЬНЫЕ СЕТТЕРЫ
-    // ============================================================
-    
     setUser(user) {
         this._proxy.user = user;
         if (user) {
-            // Загружаем сохраненные настройки
             const savedLock = localStorage.getItem(`levelLocked_${user.id}`) === 'true';
             this._proxy.levelLocked = savedLock;
             
@@ -443,6 +391,7 @@ class State {
             localStorage.setItem(`slotLevel_${this._state.user.id}`, String(newLevel));
         }
         this._updateMaxSlots();
+        this.updateQuestProgress('slot', newLevel);
         this._checkAchievements();
     }
 
@@ -450,19 +399,27 @@ class State {
         this._proxy.currentLevel = value;
         this._updateMaxSlots();
         this._checkAchievements();
+        // НЕ вызываем updateQuestProgress здесь, чтобы избежать прогресса при загрузке
+    }
+
+    incrementLevel() {
+        const newLevel = this._state.currentLevel + 1;
+        this.setCurrentLevel(newLevel);
         this.updateQuestProgress('level', 1);
     }
 
     setClickCount(value) {
         this._proxy.clickCount = value;
         this._checkAchievements();
-        this.updateQuestProgress('click');
+        // НЕ вызываем updateQuestProgress здесь
     }
 
-    // ============================================================
-    //  ОЧИСТКА ДОСТИЖЕНИЙ (ДЛЯ СБРОСА)
-    // ============================================================
-    
+    incrementClickCount() {
+        this._proxy.clickCount = this._state.clickCount + 1;
+        this.updateQuestProgress('click');
+        this._checkAchievements();
+    }
+
     clearAchievements() {
         const newAchievements = {};
         for (const key of Object.keys(ACHIEVEMENTS)) {
@@ -473,14 +430,7 @@ class State {
     }
 }
 
-// ============================================================
-//  ЭКСПОРТ ЕДИНСТВЕННОГО ЭКЗЕМПЛЯРА
-// ============================================================
 export const appState = new State();
-
-// ============================================================
-//  ХЕЛПЕРЫ ДЛЯ УДОБНОГО ИСПОЛЬЗОВАНИЯ
-// ============================================================
 export const state = appState.state;
 export const getState = (key) => appState.get(key);
 export const setState = (key, value) => appState.set(key, value);
