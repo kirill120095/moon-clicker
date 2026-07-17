@@ -1,12 +1,12 @@
 // ============================================================
 //  ОСНОВНАЯ ИГРОВАЯ ЛОГИКА
 // ============================================================
-import { appState, state } from './state.js';
-import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES } from './constants.js';
-import { getMaxHPForLevel, isBossLevel, getMoonUpgradeCost, getSlotUpgradeCost } from './config.js';
-import { db } from './supabase.js';
-import { showToast, updateUI, updateShopUI, updateProfileAndLeaders, updateQuestAndAchievementUI, setLockIcon } from './renderer.js';
-import { throttle } from './security.js';
+import { appState, state } from '../../core/state.js';
+import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES } from '../../core/constants.js';
+import { getMaxHPForLevel, isBossLevel, getMoonUpgradeCost, getSlotUpgradeCost } from '../../core/config.js';
+import { db } from '../network/supabase.js';
+import { showToast, updateUI, updateShopUI, updateProfileAndLeaders, updateQuestAndAchievementUI, setLockIcon } from '../ui/renderer.js';
+import { throttle } from '../../utils/security.js';
 import { CombatSystem } from './combat.js';
 import { RewardSystem } from './rewards.js';
 
