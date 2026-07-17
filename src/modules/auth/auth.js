@@ -1,30 +1,23 @@
 // ============================================================
 //  АВТОРИЗАЦИЯ
 // ============================================================
-import { appState, state } from '../../core/state.js';
-import { db, handleDatabaseError } from '../../network/supabase.js';
-import { validators, schemas, validateForm } from '../../utils/validation.js';
-import { escapeHTML, throttle, RateLimiter } from '../../utils/security.js';
-import { showToast } from '../ui/renderer.js';
+import { appState, state } from './state.js';
+import { db, handleDatabaseError } from './supabase.js';
+import { validators, schemas, validateForm } from './validation.js';
+import { escapeHTML, throttle, RateLimiter } from './security.js';
+import { showToast } from './renderer.js';
 
-// Rate limiter для защиты от брутфорса
 const loginLimiter = new RateLimiter({ limit: 5, window: 60000 });
 const registerLimiter = new RateLimiter({ limit: 3, window: 60000 });
 
-// ============================================================
-//  ОСНОВНЫЕ ФУНКЦИИ
-// ============================================================
-
 export async function handleLogin(email, password) {
-    // Проверка rate limit
-    const ip = 'client'; // В реальном приложении - IP клиента
+    const ip = 'client';
     const loginCheck = loginLimiter.check(ip);
     if (!loginCheck.allowed) {
         showToast('⚠️ Слишком много попыток входа. Подождите.', 'warning');
         return { success: false, error: 'Rate limit exceeded' };
     }
 
-    // Валидация
     const formData = { email, password };
     const validation = validateForm(formData, schemas.login);
     if (!validation.valid) {
@@ -39,10 +32,8 @@ export async function handleLogin(email, password) {
             validation.data.password
         );
         
-        // Сохраняем пользователя
         appState.setUser(user);
         
-        // Загружаем данные игрока
         const player = await db.getPlayer(user.id);
         appState.loadPlayerData(player);
         
@@ -57,7 +48,6 @@ export async function handleLogin(email, password) {
 }
 
 export async function handleRegister(email, nickname, password) {
-    // Проверка rate limit
     const ip = 'client';
     const registerCheck = registerLimiter.check(ip);
     if (!registerCheck.allowed) {
@@ -65,7 +55,6 @@ export async function handleRegister(email, nickname, password) {
         return { success: false, error: 'Rate limit exceeded' };
     }
 
-    // Валидация
     const formData = { email, nickname, password };
     const validation = validateForm(formData, schemas.register);
     if (!validation.valid) {
@@ -86,7 +75,6 @@ export async function handleRegister(email, nickname, password) {
             return { success: false, error: 'Registration failed' };
         }
         
-        // Создаем запись игрока
         const playerData = {
             id: user.id,
             email: user.email,
@@ -104,7 +92,6 @@ export async function handleRegister(email, nickname, password) {
         
         const player = await db.createPlayer(playerData);
         
-        // Сохраняем пользователя
         appState.setUser(user);
         appState.loadPlayerData(player);
         
@@ -152,9 +139,6 @@ export async function checkAuth() {
     }
 }
 
-// ============================================================
-//  ОБНОВЛЕНИЕ ПРОФИЛЯ
-// ============================================================
 export async function updateProfile(updates) {
     const user = state.user;
     if (!user) {
@@ -174,9 +158,6 @@ export async function updateProfile(updates) {
     }
 }
 
-// ============================================================
-//  ПОЛУЧЕНИЕ ЛИДЕРОВ
-// ============================================================
 export async function getLeaders(limit = 10) {
     try {
         const leaders = await db.getLeaders(limit);
