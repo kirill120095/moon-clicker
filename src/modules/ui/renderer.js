@@ -1,15 +1,13 @@
 // ============================================================
 //  РЕНДЕРИНГ UI
 // ============================================================
-import { state, appState } from '../../core/state.js';
-import { CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS } from '../../core/constants.js';
-import { getMaxHPForLevel, getTitle } from '../../core/config.js';
-import { escapeHTML } from '../../utils/security.js';
-import { uiScheduler } from '../../utils/performance.js';
+import { state, appState } from './state.js';
+import { CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS } from './constants.js';
+import { getMaxHPForLevel, getTitle } from './config.js';
+import { escapeHTML } from './security.js';
+import { uiScheduler } from './performance.js';
+import { db } from './supabase.js';
 
-// ============================================================
-//  TOAST СИСТЕМА
-// ============================================================
 let toastContainer = null;
 
 export function initToastContainer(container) {
@@ -43,9 +41,6 @@ export function showToast(message, type = 'info', duration = 2000) {
     }, duration);
 }
 
-// ============================================================
-//  ФОРМАТИРОВАНИЕ ВРЕМЕНИ
-// ============================================================
 export function formatTime(seconds) {
     if (seconds < 0) seconds = 0;
     const totalSec = Math.round(seconds);
@@ -73,9 +68,6 @@ export function formatTime(seconds) {
     return parts.join(' ') || '0с';
 }
 
-// ============================================================
-//  SET LOCK ICON
-// ============================================================
 const lockOpenSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 const lockClosedSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor"/></svg>`;
 
@@ -85,9 +77,6 @@ export function setLockIcon(btn, locked) {
     btn.classList.toggle('locked', locked);
 }
 
-// ============================================================
-//  ОСНОВНОЙ РЕНДЕРИНГ
-// ============================================================
 export function updateUI() {
     uiScheduler.schedule(() => {
         _updateCounter();
@@ -190,9 +179,6 @@ function _updateMoonStyle() {
     }
 }
 
-// ============================================================
-//  МАГАЗИН
-// ============================================================
 export function updateShopUI() {
     uiScheduler.schedule(() => {
         _updateClickDamageShop();
@@ -313,9 +299,6 @@ function _updateMoonShop() {
     container.innerHTML = html;
 }
 
-// ============================================================
-//  ПРОФИЛЬ И ЛИДЕРЫ
-// ============================================================
 export function updateProfileAndLeaders() {
     uiScheduler.schedule(() => {
         _updateProfile();
@@ -350,7 +333,6 @@ async function _updateLeaders() {
     if (!leadersList) return;
 
     try {
-        const { db } = await import('../../network/supabase.js');
         const leaders = await db.getLeaders(CONSTANTS.LIMITS.MAX_LEADERS || 10);
 
         if (!leaders || leaders.length === 0) {
@@ -379,9 +361,6 @@ async function _updateLeaders() {
     }
 }
 
-// ============================================================
-//  ЗВЕЗДЫ
-// ============================================================
 export function createStars(count = 300) {
     const container = document.getElementById('stars');
     if (!container) return;
@@ -404,9 +383,6 @@ export function createStars(count = 300) {
     container.appendChild(fragment);
 }
 
-// ============================================================
-//  КВЕСТЫ И ДОСТИЖЕНИЯ
-// ============================================================
 export function updateQuestUI() {
     const container = document.getElementById('questsList');
     if (!container) return;
