@@ -236,13 +236,28 @@ export const authValidators = {
         } else {
             return validators.nickname(trimmed);
         }
+    },
+
+    // Новый валидатор: только длина, без проверки сложности (для входа)
+    loginPassword(value) {
+        if (!value || typeof value !== 'string') {
+            return { valid: false, error: 'Пароль обязателен' };
+        }
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return { valid: false, error: 'Пароль не может быть пустым' };
+        }
+        if (trimmed.length < 6) {
+            return { valid: false, error: 'Пароль должен содержать минимум 6 символов' };
+        }
+        return { valid: true, value: trimmed };
     }
 };
 
 export const authSchemas = {
     login: {
         identifier: [authValidators.loginIdentifier],
-        password: [authValidators.password]
+        password: [authValidators.loginPassword]
     },
     register: {
         email: [authValidators.email],
