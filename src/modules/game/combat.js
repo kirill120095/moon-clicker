@@ -1,9 +1,9 @@
 // ============================================================
 //  БОЕВАЯ СИСТЕМА
 // ============================================================
-import { appState, state } from './state.js';
-import { CONSTANTS } from './constants.js';
-import { updateUI } from './renderer.js';
+import { appState, state } from '../../core/state.js';
+import { CONSTANTS } from '../../core/constants.js';
+import { updateUI } from '../ui/renderer.js';
 
 export class CombatSystem {
     constructor() {
