@@ -1,27 +1,22 @@
 // ============================================================
 //  SUPABASE КЛИЕНТ С РЕТРИ И КЭШИРОВАНИЕМ
 // ============================================================
-import { CONFIG } from '../core/config.js';
+import { CONFIG } from './config.js';
 
-// Проверяем загрузку библиотеки
 if (typeof window.supabase === 'undefined') {
     throw new Error('Supabase library not loaded');
 }
 
-// Создаем клиент
 export const supabaseClient = window.supabase.createClient(
     CONFIG.supabase.url,
     CONFIG.supabase.anonKey,
     CONFIG.supabase.options
 );
 
-// ============================================================
-//  КЭШ
-// ============================================================
 class Cache {
     constructor() {
         this._cache = new Map();
-        this._ttl = 5000; // 5 секунд
+        this._ttl = 5000;
     }
 
     get(key) {
@@ -52,9 +47,6 @@ class Cache {
 
 export const cache = new Cache();
 
-// ============================================================
-//  RETRY ЛОГИКА
-// ============================================================
 export async function fetchWithRetry(fn, maxRetries = 3, delay = 1000) {
     let lastError;
     for (let i = 0; i < maxRetries; i++) {
@@ -63,7 +55,6 @@ export async function fetchWithRetry(fn, maxRetries = 3, delay = 1000) {
         } catch (error) {
             lastError = error;
             if (i === maxRetries - 1) break;
-            // Экспоненциальная задержка с джиттером
             const jitter = Math.random() * 200;
             await new Promise(r => setTimeout(r, delay * Math.pow(2, i) + jitter));
         }
@@ -71,11 +62,7 @@ export async function fetchWithRetry(fn, maxRetries = 3, delay = 1000) {
     throw lastError;
 }
 
-// ============================================================
-//  ОБЕРТКИ ДЛЯ ЗАПРОСОВ
-// ============================================================
 export const db = {
-    // Получить игрока
     async getPlayer(userId, useCache = true) {
         const cacheKey = `player_${userId}`;
         if (useCache) {
@@ -100,7 +87,6 @@ export const db = {
         return result;
     },
 
-    // Обновить игрока
     async updatePlayer(userId, updates) {
         cache.invalidate(`player_${userId}`);
         
@@ -120,7 +106,6 @@ export const db = {
         return result;
     },
 
-    // Создать игрока
     async createPlayer(data) {
         const result = await fetchWithRetry(async () => {
             const { data: created, error } = await supabaseClient
@@ -137,7 +122,6 @@ export const db = {
         return result;
     },
 
-    // Получить лидеров
     async getLeaders(limit = 10) {
         const cacheKey = 'leaders';
         const cached = cache.get(cacheKey);
@@ -159,7 +143,6 @@ export const db = {
         return result;
     },
 
-    // Авторизация
     async signIn(email, password) {
         const { data, error } = await supabaseClient.auth.signInWithPassword({
             email,
@@ -192,9 +175,6 @@ export const db = {
     }
 };
 
-// ============================================================
-//  ОБРАБОТЧИКИ ОШИБОК
-// ============================================================
 export class DatabaseError extends Error {
     constructor(message, code, details) {
         super(message);
