@@ -1,8 +1,8 @@
 // ============================================================
 //  СИСТЕМА НАГРАД
 // ============================================================
-import { appState, state } from './state.js';
-import { CONSTANTS, ACHIEVEMENTS, QUESTS } from './constants.js';
+import { appState, state } from '../../core/state.js';
+import { CONSTANTS, ACHIEVEMENTS, QUESTS } from '../../core/constants.js';
 
 export class RewardSystem {
     constructor() {
