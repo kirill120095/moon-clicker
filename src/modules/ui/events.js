@@ -1,13 +1,13 @@
 // ============================================================
 //  ОБРАБОТЧИКИ СОБЫТИЙ UI
 // ============================================================
-import { gameEngine } from './game.js';
-import { handleLogin, handleRegister, handleLogout } from './auth.js';
-import { appState, state } from './state.js';
+import { gameEngine } from '../game/game.js';
+import { handleLogin, handleRegister, handleLogout } from '../auth/auth.js';
+import { appState, state } from '../../core/state.js';
 import { showToast, setLockIcon, updateUI, updateShopUI, updateProfileAndLeaders, updateQuestAndAchievementUI } from './renderer.js';
-import { escapeHTML } from './security.js';
-import { getMaxHPForLevel } from './config.js';
-import { CONSTANTS } from './constants.js';
+import { escapeHTML } from '../../utils/security.js';
+import { getMaxHPForLevel } from '../../core/config.js';
+import { CONSTANTS } from '../../core/constants.js';
 
 export function initEvents() {
     _initAuthEvents();
@@ -139,7 +139,6 @@ function _initGameEvents() {
         setLockIcon(lockToggle, newState);
     });
     
-    // Инициализируем иконку замка при старте
     if (lockToggle) {
         setLockIcon(lockToggle, state.levelLocked);
     }
@@ -220,7 +219,18 @@ function _initSettingsEvents() {
     });
 }
 
-function _initShopEvents() {
+
+
+
+
+
+
+
+
+
+
+
+    function _initShopEvents() {
     document.getElementById('buyClickDamageBtn')?.addEventListener('click', async () => {
         await gameEngine.buyClickDamage();
     });
