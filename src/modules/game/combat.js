@@ -1,25 +1,23 @@
 // ============================================================
 //  БОЕВАЯ СИСТЕМА
 // ============================================================
-import { appState, state } from '../../core/state.js';
-import { CONSTANTS } from '../../core/constants.js';
-import { updateUI } from '../ui/renderer.js';
+import { appState, state } from './state.js';
+import { CONSTANTS } from './constants.js';
+import { updateUI } from './renderer.js';
 
 export class CombatSystem {
     constructor() {
         this._bossTimerId = null;
+        this._onTimeout = null;
     }
 
-    // ============================================================
-    //  БОСС-ТАЙМЕР
-    // ============================================================
-    
-    startBossTimer() {
+    startBossTimer(onTimeout = null) {
         if (state.bossTimerRunning) return;
         if (this._bossTimerId) {
             clearInterval(this._bossTimerId);
         }
 
+        this._onTimeout = onTimeout;
         appState.set('bossTimer', CONSTANTS.BOSS_TIMER);
         appState.set('bossTimerRunning', true);
         this._updateTimerUI();
@@ -31,9 +29,9 @@ export class CombatSystem {
 
             if (newTimer <= 0) {
                 this.clearBossTimer();
-                // Восстанавливаем HP луны
-                appState.set('moonHP', state.maxHP);
-                updateUI();
+                if (typeof this._onTimeout === 'function') {
+                    this._onTimeout();
+                }
             }
         }, CONSTANTS.INTERVALS.BOSS_TICK);
 
@@ -45,10 +43,10 @@ export class CombatSystem {
             clearInterval(this._bossTimerId);
             this._bossTimerId = null;
         }
+        this._onTimeout = null;
         appState.set('bossTimerRunning', false);
         appState.set('bossTimerInterval', null);
         
-        // Скрываем UI таймера
         const container = document.getElementById('timerBarContainer');
         if (container) {
             container.classList.remove('active');
@@ -61,7 +59,7 @@ export class CombatSystem {
         
         const percent = document.getElementById('timerPercent');
         if (percent) {
-            percent.textContent = '0с';
+            percent.textContent = '30с';
         }
     }
 
@@ -84,37 +82,26 @@ export class CombatSystem {
         }
     }
 
-    // ============================================================
-    //  РАСЧЕТ УРОНА
-    // ============================================================
-    
     calculateDamage(baseDamage, bonuses = {}) {
         let damage = baseDamage;
         
-        // Бонусы от лун
         if (bonuses.moonDamageBonus) {
             damage *= (1 + bonuses.moonDamageBonus);
         }
         
-        // Бонусы от синергий
         if (bonuses.synergyBonus) {
             damage *= (1 + bonuses.synergyBonus);
         }
         
-        // Критический удар
         const critChance = bonuses.critChance || 0.05;
         if (Math.random() < critChance) {
             damage *= 2;
-            return { damage, isCrit: true };
+            return { damage: Math.floor(damage), isCrit: true };
         }
         
-        return { damage, isCrit: false };
+        return { damage: Math.floor(damage), isCrit: false };
     }
 
-    // ============================================================
-    //  ПРОВЕРКА НА БОССА
-    // ============================================================
-    
     isBossLevel(level) {
         return level % CONSTANTS.BOSS_INTERVAL === 0;
     }
@@ -124,10 +111,6 @@ export class CombatSystem {
         return CONSTANTS.BASE_HP * level;
     }
 
-    // ============================================================
-    //  ОЧИСТКА
-    // ============================================================
-    
     destroy() {
         this.clearBossTimer();
     }
