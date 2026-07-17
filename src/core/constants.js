@@ -415,7 +415,7 @@ export const QUESTS = {
         id: 'slotUpgrade',
         name: 'Откройте 2 слота',
         description: 'Откройте второй слот для лун',
-        target: 1,
+        target: 2, // было 1 — теперь проверяется количество слотов
         reward: 300,
         type: 'slot'
     }
