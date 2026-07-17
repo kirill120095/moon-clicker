@@ -4,9 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>🌙 Лунный кликер</title>
-    <link rel="stylesheet" href="css/style.css" />
-    <script src="https://unpkg.com/@supabase/supabase-js@2.43.1">
-    </script>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/@supabase/supabase-js@2.43.1"></script>
 </head>
 <body>
 
@@ -108,7 +107,7 @@
         </div>
     </div>
 
-    <!-- ---------- ЛЕВАЯ ПАНЕЛЬ (Только профиль, лидеры, настройки) ---------- -->
+    <!-- ---------- ЛЕВАЯ ПАНЕЛЬ ---------- -->
     <div class="side-panel left-panel" id="sidePanel">
         <div class="panel-tabs">
             <button class="active" data-tab="leaders">🏆</button>
@@ -152,7 +151,7 @@
         </svg>
     </button>
 
-    <!-- ---------- ПРАВАЯ ПАНЕЛЬ (Магазин, квесты, ачивки) ---------- -->
+    <!-- ---------- ПРАВАЯ ПАНЕЛЬ ---------- -->
     <div class="side-panel right-panel shop-panel" id="shopPanel">
         <div class="panel-tabs">
             <button class="active" data-shop-tab="shop">🛒</button>
@@ -160,11 +159,9 @@
             <button data-shop-tab="achievements">🏅</button>
         </div>
 
-        <!-- Контент: Магазин -->
         <div class="panel-content active" id="shopContent">
             <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">Магазин</div>
             <div id="shopItems">
-                <!-- Улучшение клика -->
                 <div class="shop-item" id="upgradeClickDamage">
                     <div class="shop-item-info">
                         <span class="shop-item-name">⚔️ Усиление клика</span>
@@ -180,7 +177,6 @@
                     <span id="shopLockMessage">🔒 Доступно с 5 уровня</span>
                 </div>
 
-                <!-- Улучшение слотов -->
                 <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
                     <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">🔓 Слоты для лун (макс. 3)</div>
                     <div class="shop-item" id="upgradeSlots">
@@ -196,7 +192,6 @@
                     </div>
                 </div>
 
-                <!-- Луны -->
                 <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
                     <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">🌙 Луны</div>
                     <div id="moonShopItems"></div>
@@ -204,20 +199,17 @@
             </div>
         </div>
 
-        <!-- Контент: Квесты -->
         <div class="panel-content" id="questsContent">
             <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">📋 Квесты (обновляются каждый час)</div>
             <div id="questsList"></div>
         </div>
 
-        <!-- Контент: Достижения -->
         <div class="panel-content" id="achievementsContent">
             <div style="color: rgba(255,255,255,0.5); font-size:0.8rem; margin-bottom:10px;">🏅 Достижения</div>
             <div id="achievementsList"></div>
         </div>
     </div>
 
-    <!-- ---------- ТРИГГЕР ПРАВОЙ ПАНЕЛИ ---------- -->
     <button class="panel-trigger right-trigger" id="shopTrigger" title="Открыть магазин">
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6" />
@@ -238,6 +230,6 @@
     <!-- ---------- TOAST ---------- -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <script type="module" src="src/index.js"></script>
+    <script type="module" src="index.js"></script>
 </body>
 </html>
