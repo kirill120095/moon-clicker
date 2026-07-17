@@ -87,6 +87,27 @@ export const db = {
         return result;
     },
 
+    // НОВЫЙ МЕТОД
+    async getPlayerByUsername(username) {
+        const cacheKey = `player_username_${username}`;
+        const cached = cache.get(cacheKey);
+        if (cached) return cached;
+
+        const result = await fetchWithRetry(async () => {
+            const { data, error } = await supabaseClient
+                .from(CONFIG.endpoints.players)
+                .select('*')
+                .eq('username', username)
+                .single();
+
+            if (error) throw error;
+            return data;
+        });
+
+        cache.set(cacheKey, result);
+        return result;
+    },
+
     async updatePlayer(userId, updates) {
         cache.invalidate(`player_${userId}`);
         
