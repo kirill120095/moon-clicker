@@ -3,7 +3,7 @@
 // Singleton-паттерн для предотвращения множественных инстансов
 // ============================================================
 
-const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co/rest/v1/';
+const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 
 // ============================================================
