@@ -5,13 +5,13 @@ import { handleLogin, handleRegister, handleLogout, handleResetProgress } from '
 import { gameEngine } from '../game/game.js';
 
 // ============================================================
-// 🌍 ГЛОБАЛЬНЫЕ ФУНКЦИИ (ОБЪЯВЛЕНЫ СРАЗУ ДЛЯ onclick В HTML)
+// 🌍 ГЛОБАЛЬНЫЕ ФУНКЦИИ
 // ============================================================
 
-/**
- * TOGGLE - открыть/закрыть панель одной кнопкой
- */
 if (typeof window !== 'undefined') {
+  /**
+   * TOGGLE - открыть/закрыть панель независимо от других
+   */
   window.togglePanel = (panelId) => {
     const panel = document.getElementById(panelId);
     if (!panel) {
@@ -26,15 +26,8 @@ if (typeof window !== 'undefined') {
       panel.classList.add('hidden');
       updateToggleButton(panelId, false);
     } else {
-      // Закрыть все другие панели сначала
-      document.querySelectorAll('.panel').forEach(p => {
-        if (p.id !== panelId) {
-          p.classList.add('hidden');
-          updateToggleButton(p.id, false);
-        }
-      });
-      
-      // Открыть эту панель
+      // ВАЖНО: НЕ закрываем другие панели!
+      // Просто открываем эту
       panel.classList.remove('hidden');
       updateToggleButton(panelId, true);
       
@@ -43,9 +36,6 @@ if (typeof window !== 'undefined') {
     }
   };
 
-  /**
-   * Обновить визуальное состояние toggle кнопки
-   */
   function updateToggleButton(panelId, isOpen) {
     if (panelId === 'profilePanel') {
       const btn = document.getElementById('profileToggleBtn');
@@ -56,26 +46,18 @@ if (typeof window !== 'undefined') {
     }
   }
 
-  /**
-   * Обновить контент панели при открытии
-   */
   function refreshPanelOnOpen(panelId) {
     if (panelId === 'profilePanel') {
-      // Обновляем профиль, лидеров
       if (window.updateProfileAndLeaders) {
         window.updateProfileAndLeaders();
       }
     } else if (panelId === 'shopPanel') {
-      // Обновляем магазин, квесты, ачивки
       if (window.updateShopUI) window.updateShopUI();
       if (window.updateQuestUI) window.updateQuestUI();
       if (window.updateAchievementUI) window.updateAchievementUI();
     }
   }
 
-  /**
-   * Закрыть все панели
-   */
   window.closeAllPanels = () => {
     document.querySelectorAll('.panel').forEach(p => {
       p.classList.add('hidden');
@@ -85,9 +67,6 @@ if (typeof window !== 'undefined') {
     });
   };
 
-  /**
-   * Закрыть конкретную панель
-   */
   window.closePanel = (panelId) => {
     const panel = document.getElementById(panelId);
     if (panel) {
@@ -96,27 +75,19 @@ if (typeof window !== 'undefined') {
     }
   };
 
-  /**
-   * Закрыть модалку
-   */
   window.closeModal = (modalId) => {
     const modal = document.getElementById(modalId);
     if (modal) modal.classList.add('hidden');
   };
 
-  /**
-   * Переключение вкладок в профиле
-   */
   window.switchProfileTab = (tabName) => {
     const panel = document.getElementById('profilePanel');
     if (!panel) return;
     
-    // Обновляем табы
     panel.querySelectorAll('.panel-tab').forEach(tab => {
       tab.classList.toggle('active', tab.dataset.tab === tabName);
     });
     
-    // Обновляем контент
     panel.querySelectorAll('.tab-content').forEach(content => {
       content.classList.remove('active');
     });
@@ -126,27 +97,19 @@ if (typeof window !== 'undefined') {
       targetContent.classList.add('active');
     }
     
-    // Обновляем контент вкладки при переключении
-    if (tabName === 'leaders') {
-      if (window.updateProfileAndLeaders) window.updateProfileAndLeaders();
-    } else if (tabName === 'profile') {
+    if (tabName === 'leaders' || tabName === 'profile') {
       if (window.updateProfileAndLeaders) window.updateProfileAndLeaders();
     }
   };
 
-  /**
-   * Переключение вкладок в магазине
-   */
   window.switchShopTab = (tabName) => {
     const panel = document.getElementById('shopPanel');
     if (!panel) return;
     
-    // Обновляем табы
     panel.querySelectorAll('.panel-tab').forEach(tab => {
       tab.classList.toggle('active', tab.dataset.tab === tabName);
     });
     
-    // Обновляем контент
     panel.querySelectorAll('.tab-content').forEach(content => {
       content.classList.remove('active');
     });
@@ -156,7 +119,6 @@ if (typeof window !== 'undefined') {
       targetContent.classList.add('active');
     }
     
-    // Обновляем контент вкладки при переключении
     if (tabName === 'shop') {
       if (window.updateShopUI) window.updateShopUI();
     } else if (tabName === 'quests') {
@@ -166,65 +128,41 @@ if (typeof window !== 'undefined') {
     }
   };
 
-  /**
-   * Активация/деактивация луны
-   */
   window.toggleMoonActive = (moonId) => {
     if (window.gameEngine && window.gameEngine.toggleMoonActive) {
       window.gameEngine.toggleMoonActive(moonId);
-    } else {
-      console.warn('[Events] gameEngine not ready yet');
     }
   };
 
-  /**
-   * Получение награды за квест
-   */
   window.claimQuestReward = async (questId) => {
     if (window.gameEngine && window.gameEngine.claimQuestReward) {
       await window.gameEngine.claimQuestReward(questId);
     }
   };
 
-  /**
-   * Получение награды за достижение
-   */
   window.claimAchievementReward = async (achId, tierLevel) => {
     if (window.gameEngine && window.gameEngine.claimAchievementReward) {
       await window.gameEngine.claimAchievementReward(achId, tierLevel);
     }
   };
 
-  /**
-   * Установить категорию квестов
-   */
   window.setQuestCategory = (category) => {
-    if (window._setQuestCategory) {
-      window._setQuestCategory(category);
-    }
+    if (window._setQuestCategory) window._setQuestCategory(category);
   };
 
-  /**
-   * Установить категорию достижений
-   */
   window.setAchievementCategory = (category) => {
-    if (window._setAchievementCategory) {
-      window._setAchievementCategory(category);
-    }
+    if (window._setAchievementCategory) window._setAchievementCategory(category);
   };
 
   console.log('[Events] Global functions registered');
 }
 
 // ============================================================
-// 🎯 ИНИЦИАЛИЗАЦИЯ ОБРАБОТЧИКОВ (ADD EVENT LISTENER)
+// 🎯 ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 export function initEvents() {
   console.log('[Events] Инициализация...');
 
-  // ============================================================
-  // КНОПКИ АВТОРИЗАЦИИ
-  // ============================================================
   const loginBtn = document.getElementById('loginBtn');
   const registerBtn = document.getElementById('registerBtn');
   const logoutBtn = document.getElementById('logoutBtn');
@@ -233,7 +171,6 @@ export function initEvents() {
   if (loginBtn) {
     loginBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('[Events] Login clicked');
       await handleLogin();
     });
   }
@@ -241,7 +178,6 @@ export function initEvents() {
   if (registerBtn) {
     registerBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('[Events] Register clicked');
       await handleRegister();
     });
   }
@@ -249,7 +185,6 @@ export function initEvents() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('[Events] Logout clicked');
       await handleLogout();
     });
   }
@@ -257,14 +192,10 @@ export function initEvents() {
   if (resetBtn) {
     resetBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('[Events] Reset clicked');
       await handleResetProgress();
     });
   }
 
-  // ============================================================
-  // КЛИК ПО ЛУНЕ
-  // ============================================================
   const moonWrapper = document.getElementById('moonWrapper');
 
   if (moonWrapper) {
@@ -289,9 +220,6 @@ export function initEvents() {
     }, { passive: false });
   }
 
-  // ============================================================
-  // ENTER В ФОРМЕ АВТОРИЗАЦИИ
-  // ============================================================
   const authPassword = document.getElementById('authPassword');
   if (authPassword) {
     authPassword.addEventListener('keypress', (e) => {
