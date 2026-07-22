@@ -521,7 +521,25 @@ export class GameEngine {
     updateProfileAndLeaders(); // ВАЖНО: обновляем профиль при изменении состояния
     this.recalcMoonBonuses();
   }
-
+  // ============================================================
+  // ТЕСТОВЫЙ РЕЖИМ (ИСПРАВЛЕНО)
+  // ============================================================
+  toggleTestMode() {
+    const newMode = !state.testMode;
+    appState.setTestMode(newMode);
+    
+    const toggleBtn = document.getElementById('testModeToggle');
+    if (toggleBtn) {
+      toggleBtn.textContent = newMode ? 'ВКЛ' : 'ВЫКЛ';
+      toggleBtn.classList.toggle('active', newMode);
+    }
+    
+    showToast(newMode ? '🧪 Тестовый режим ВКЛЮЧЁН' : '🎮 Тестовый режим ВЫКЛЮЧЕН', 'info');
+    
+    updateUI();
+    updateShopUI();
+    updateProfileAndLeaders();
+  }
   async buyClickDamage() {
     if (!state.user) {
       showToast('⚠️ Войдите в аккаунт', 'warning');
