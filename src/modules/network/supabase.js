@@ -1,11 +1,20 @@
 // ============================================================
 // SUPABASE DATABASE CLIENT
+// Singleton-паттерн для предотвращения множественных инстансов
 // ============================================================
 
 const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbG5zbXp0YWFrZHdqcG5panNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcwNTQwNTQsImV4cCI6MjA1MjYzMDA1NH0.5qXZz8wvZxVXqYxYxYxYxYxYxYxYxYxYxYxYxYxYxY';
 
-// Ждём загрузки Supabase
+// ============================================================
+// SINGLETON ИНИЦИАЛИЗАЦИЯ (через Promise)
+// ============================================================
+
+let _initPromise = null;
+
+/**
+ * Ждёт загрузки библиотеки Supabase с CDN
+ */
 function waitForSupabase() {
   return new Promise((resolve, reject) => {
     if (typeof window !== 'undefined' && window.supabase) {
@@ -29,37 +38,43 @@ function waitForSupabase() {
   });
 }
 
-let supabaseClient = null;
-
-// Инициализация клиента
-async function initSupabase() {
-  if (supabaseClient) return supabaseClient;
-  
-  try {
-    const supabase = await waitForSupabase();
-    const { createClient } = supabase;
-    
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-        storage: window.localStorage
-      }
-    });
-    
-    console.log('[Supabase] Client initialized');
-    return supabaseClient;
-  } catch (error) {
-    console.error('[Supabase] Init error:', error);
-    throw error;
+/**
+ * Инициализирует Supabase клиент (singleton)
+ * Все параллельные вызовы получат один и тот же Promise
+ */
+function initSupabase() {
+  // Если уже есть Promise инициализации - возвращаем его
+  if (_initPromise) {
+    return _initPromise;
   }
+  
+  // Создаём Promise инициализации ОДИН раз
+  _initPromise = (async () => {
+    try {
+      const supabase = await waitForSupabase();
+      const { createClient } = supabase;
+      
+      const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+          storage: window.localStorage
+        }
+      });
+      
+      console.log('[Supabase] Client initialized');
+      return client;
+    } catch (error) {
+      console.error('[Supabase] Init error:', error);
+      // Сбрасываем Promise при ошибке, чтобы можно было попробовать снова
+      _initPromise = null;
+      throw error;
+    }
+  })();
+  
+  return _initPromise;
 }
-
-// Запускаем инициализацию сразу
-initSupabase().catch(err => {
-  console.error('[Supabase] Failed to initialize:', err);
-});
 
 // ============================================================
 // DATABASE OPERATIONS
@@ -67,7 +82,7 @@ initSupabase().catch(err => {
 
 export const db = {
   // ============================================================
-  // AUTH: ПОЛУЧЕНИЕ СЕССИИ (ИСПРАВЛЕНО)
+  // AUTH: ПОЛУЧЕНИЕ СЕССИИ
   // ============================================================
   async getSession() {
     try {
@@ -304,9 +319,8 @@ export const db = {
 };
 
 // ============================================================
-// ЭКСПОРТ КЛИЕНТА (для прямого использования)
+// ЭКСПОРТ ФУНКЦИИ ИНИЦИАЛИЗАЦИИ (для прямого использования)
 // ============================================================
-export { supabaseClient };
 export { initSupabase };
 
 // ============================================================
@@ -326,6 +340,9 @@ export function handleDatabaseError(error) {
   }
   if (error.message && error.message.includes('User already registered')) {
     return 'Пользователь уже зарегистрирован';
+  }
+  if (error.message && error.message.includes('Email not confirmed')) {
+    return 'Email не подтверждён';
   }
   if (error.error_description) {
     return error.error_description;
