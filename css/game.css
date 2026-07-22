@@ -250,3 +250,180 @@
     width: 22px;
     height: 22px;
 }
+
+/* ============================================================
+   ВИЗУАЛЬНЫЕ ЭФФЕКТЫ КЛИКА
+   ============================================================ */
+
+/* Всплывающий урон */
+.damage-number {
+  position: fixed;
+  pointer-events: none;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f0e6d0;
+  text-shadow: 0 0 10px rgba(240, 230, 208, 0.8), 
+               0 2px 4px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  transform: translateY(0) scale(0.5);
+  opacity: 0;
+  transition: none;
+}
+
+.damage-number.animate {
+  animation: damageFloat 1.2s ease-out forwards;
+}
+
+.damage-number.crit {
+  font-size: 3rem;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 
+               0 0 40px rgba(255, 215, 0, 0.6),
+               0 2px 8px rgba(0, 0, 0, 0.8);
+  animation: damageFloatCrit 1.2s ease-out forwards;
+}
+
+.damage-number.boss-damage {
+  color: #ff6b6b;
+  text-shadow: 0 0 15px rgba(255, 107, 107, 0.8),
+               0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes damageFloat {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.2);
+  }
+  20% {
+    transform: translateY(-20px) scale(1);
+  }
+  100% {
+    transform: translateY(-100px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes damageFloatCrit {
+  0% {
+    transform: translateY(0) scale(0.5) rotate(-10deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-15px) scale(1.5) rotate(5deg);
+  }
+  30% {
+    transform: translateY(-30px) scale(1.2) rotate(-3deg);
+  }
+  100% {
+    transform: translateY(-120px) scale(0.9) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+/* Ударная волна */
+.shockwave {
+  position: fixed;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+  border: 3px solid rgba(240, 230, 208, 0.8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9998;
+  animation: shockwaveExpand 0.6s ease-out forwards;
+  box-shadow: 0 0 20px rgba(240, 230, 208, 0.6);
+}
+
+.shockwave.crit-shockwave {
+  border-width: 4px;
+  border-color: rgba(255, 215, 0, 0.9);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+}
+
+.shockwave.boss-shockwave {
+  border-width: 5px;
+  border-color: rgba(255, 215, 0, 1);
+  box-shadow: 0 0 40px rgba(255, 215, 0, 1);
+}
+
+@keyframes shockwaveExpand {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+  }
+}
+
+/* Эффект смерти босса */
+.screen-shake {
+  animation: screenShake 0.4s ease-out;
+}
+
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-8px, -6px); }
+  20% { transform: translate(8px, 6px); }
+  30% { transform: translate(-6px, 8px); }
+  40% { transform: translate(6px, -8px); }
+  50% { transform: translate(-4px, 4px); }
+  60% { transform: translate(4px, -4px); }
+  70% { transform: translate(-2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  90% { transform: translate(-1px, 1px); }
+}
+
+.death-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 99999;
+  animation: deathFlash 0.2s ease-out forwards;
+}
+
+@keyframes deathFlash {
+  0% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 700px) {
+  .damage-number {
+    font-size: 1.6rem;
+  }
+  
+  .damage-number.crit {
+    font-size: 2.4rem;
+  }
+  
+  @keyframes shockwaveExpand {
+    0% {
+      width: 0;
+      height: 0;
+      opacity: 1;
+    }
+    100% {
+      width: 200px;
+      height: 200px;
+      opacity: 0;
+    }
+  }
+}
