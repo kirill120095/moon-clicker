@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0d1b2a">
+  <meta name="theme-color" content="#0a0e1a">
   <meta name="description" content="Лунный кликер - космическая idle игра">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -12,14 +12,18 @@
   
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
   
-  <link rel="stylesheet" href="css/galaxy.css?v=3">
-  <link rel="stylesheet" href="css/panel.css?v=3">
-  <link rel="stylesheet" href="css/modal.css?v=3">
-  <link rel="stylesheet" href="css/game.css?v=3">
-  <link rel="stylesheet" href="css/responsive.css?v=3">
+  <!-- КРАСИВЫЕ ШРИФТЫ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/galaxy.css?v=4">
+  <link rel="stylesheet" href="css/panel.css?v=4">
+  <link rel="stylesheet" href="css/modal.css?v=4">
+  <link rel="stylesheet" href="css/game.css?v=4">
+  <link rel="stylesheet" href="css/responsive.css?v=4">
 </head>
 <body>
-  <!-- ЗВЁЗДНОЕ НЕБО -->
   <div id="stars"></div>
   <div id="toastContainer" class="toast-container"></div>
 
@@ -43,7 +47,6 @@
     </div>
   </div>
 
-  <!-- ОСНОВНОЙ ЭКРАН ИГРЫ -->
   <div id="app" class="app hidden">
     
     <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
@@ -70,19 +73,16 @@
       </div>
     </header>
 
-    <!-- ТАЙМЕР БОССА -->
     <div id="timerBarContainer" class="timer-bar-container">
       <div id="timerBar" class="timer-bar"></div>
       <span id="timerPercent" class="timer-percent">30с</span>
     </div>
 
-    <!-- HP БАР -->
     <div class="hp-bar-container">
       <div id="hpBar" class="hp-bar"></div>
       <span id="hpPercent" class="hp-percent">100/100</span>
     </div>
 
-    <!-- ЛУНА -->
     <div id="moonContainer" class="moon-container">
       <div id="moonWrapper" class="moon-wrapper">
         <div id="moonInner" class="moon-inner"></div>
@@ -90,7 +90,6 @@
       </div>
     </div>
 
-    <!-- БОКОВЫЕ ТРИГГЕРЫ -->
     <button class="panel-trigger panel-trigger-left" onclick="window.openPanel('profilePanel')">
       <span>👤</span>
     </button>
@@ -98,7 +97,7 @@
       <span>🛒</span>
     </button>
 
-    <!-- ПАНЕЛЬ: МАГАЗИН (СПРАВА) -->
+    <!-- МАГАЗИН -->
     <div id="shopPanel" class="panel panel-right hidden">
       <div class="panel-header">
         <h2 class="panel-title">🛒 Магазин</h2>
@@ -135,13 +134,13 @@
         </div>
         
         <div class="shop-section">
-          <h3 class="shop-section-title">🔗 Активные синергии</h3>
+          <h3 class="shop-section-title">🔗 Синергии</h3>
           <div id="activeSynergies" class="active-synergies"></div>
         </div>
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: ПРОФИЛЬ (СЛЕВА) -->
+    <!-- ПРОФИЛЬ -->
     <div id="profilePanel" class="panel panel-left hidden">
       <div class="panel-header">
         <h2 class="panel-title">👤 Профиль</h2>
@@ -157,7 +156,7 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: КВЕСТЫ -->
+    <!-- КВЕСТЫ -->
     <div id="questsPanel" class="panel panel-bottom hidden">
       <div class="panel-header">
         <h2 class="panel-title">🎯 Квесты</h2>
@@ -168,7 +167,7 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: ДОСТИЖЕНИЯ -->
+    <!-- ДОСТИЖЕНИЯ -->
     <div id="achievementsPanel" class="panel panel-bottom hidden">
       <div class="panel-header">
         <h2 class="panel-title">🏆 Достижения</h2>
@@ -179,7 +178,7 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: ЛИДЕРЫ -->
+    <!-- ЛИДЕРЫ -->
     <div id="leadersPanel" class="panel panel-bottom hidden">
       <div class="panel-header">
         <h2 class="panel-title">🏅 Таблица лидеров</h2>
@@ -190,7 +189,7 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: НАСТРОЙКИ -->
+    <!-- НАСТРОЙКИ -->
     <div id="settingsPanel" class="panel panel-bottom hidden">
       <div class="panel-header">
         <h2 class="panel-title">⚙️ Настройки</h2>
@@ -228,7 +227,6 @@
     </nav>
   </div>
 
-  <!-- МОДАЛЬНОЕ ОКНО -->
   <div id="confirmModal" class="modal hidden">
     <div class="modal-backdrop" onclick="window.closeModal('confirmModal')"></div>
     <div class="modal-content">
@@ -242,6 +240,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.1/dist/umd/supabase.min.js"></script>
-  <script type="module" src="src/index.js?v=3"></script>
+  <script type="module" src="src/index.js?v=4"></script>
 </body>
 </html>
