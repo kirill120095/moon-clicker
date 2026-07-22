@@ -71,6 +71,15 @@ export function formatTime(seconds) {
   return parts.join(' ') || '0с';
 }
 
+export function formatNumber(num) {
+  if (num === undefined || num === null) return '0';
+  num = Math.floor(num);
+  if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 10000) return (num / 1000).toFixed(1) + 'K';
+  return num.toLocaleString('ru-RU');
+}
+
 const lockOpenSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 const lockClosedSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>`;
 
@@ -95,7 +104,7 @@ function _updateCounter() {
   const counter = document.getElementById('counter');
   if (!counter) return;
   const shards = state.playerData?.shards || 0;
-  counter.textContent = `💎 ${shards}`;
+  counter.textContent = `💎 ${formatNumber(shards)}`;
 }
 
 function _updateLevelTitle() {
@@ -216,7 +225,7 @@ function _updateClickDamageShop() {
   const nextDamage = currentDamage + 1;
   const displayCost = state.testMode ? 0 : cost;
 
-  priceEl.textContent = `${displayCost} 💎`;
+  priceEl.textContent = `${formatNumber(displayCost)} 💎`;
   levelEl.innerHTML = `Ур. ${currentLevelUpgrade}: ${currentDamage} → ${nextDamage}`;
 
   const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
@@ -240,7 +249,7 @@ function _updateSlotShop() {
   ) : 0;
   const displayCost = state.testMode ? 0 : cost;
 
-  priceEl.textContent = canUpgrade ? `${displayCost} 💎` : 'MAX';
+  priceEl.textContent = canUpgrade ? `${formatNumber(displayCost)} 💎` : 'MAX';
   levelEl.textContent = `Слотов: ${currentSlots}/${CONSTANTS.MAX_SLOTS}`;
 
   const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
@@ -303,17 +312,17 @@ function _updateMoonShop() {
         <div class="moon-shop-actions">
           ${owned ? 
             (isActive ? 
-              '<button class="btn-active" onclick="window.toggleMoonActive(\'' + id + '\')">✓ Активна</button>' :
-              `<button class="btn-select" onclick="window.toggleMoonActive('${id}')">Активировать</button>`)
+              '<button class="btn-moon-active" onclick="window.toggleMoonActive(\'' + id + '\')">✓ Активна</button>' :
+              `<button class="btn-moon-activate" onclick="window.toggleMoonActive('${id}')">Активировать</button>`)
             : (moon.cost === 0 ? 
-              '<button class="btn-free" disabled>Доступна</button>' :
+              '<button class="btn-moon-free" disabled>Доступна</button>' :
               (isLockedByLevel ? 
-                '<button class="btn-locked" disabled>🔒</button>' :
-                `<button class="btn-buy ${canBuy ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.buyMoon('${id}')">${canBuy ? `Купить ${displayCost} 💎` : `Нужно ${displayCost} 💎`}</button>`))
+                '<button class="btn-moon-locked" disabled>🔒</button>' :
+                `<button class="btn-moon-buy ${canBuy ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.buyMoon('${id}')">${canBuy ? `Купить ${formatNumber(displayCost)} 💎` : `Нужно ${formatNumber(displayCost)} 💎`}</button>`))
           }
           ${owned && level < 10 ? 
-            `<button class="btn-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}')">
-              ${canUpgrade ? `⬆️ ${displayUpgradeCost} 💎` : 'MAX'}
+            `<button class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}')">
+              ${canUpgrade ? `⬆️ ${formatNumber(displayUpgradeCost)} 💎` : 'MAX'}
             </button>` : ''}
         </div>
       </div>
@@ -363,6 +372,9 @@ export function updateProfileAndLeaders() {
   });
 }
 
+// ============================================================
+// НОВЫЙ КРАСИВЫЙ ПРОФИЛЬ
+// ============================================================
 function _updateProfile() {
   const profileContent = document.getElementById('profileContent');
   if (!profileContent || !state.user || !state.playerData) return;
@@ -370,59 +382,215 @@ function _updateProfile() {
   const data = state.playerData;
   const title = getTitle(data.level || 1);
 
-  // Собираем информацию о лунах и бонусах
-  const ownedMoons = state.ownedMoons || [];
-  const activeMoons = state.activeMoons || [];
-  const maxSlots = state.maxSlots || 1;
+  // === БЛОК 1: ШАПКА ПРОФИЛЯ ===
+  const headerBlock = `
+    <div class="profile-block profile-header-block">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">👤</div>
+        <div class="profile-level-badge">Ур. ${data.level || 1}</div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">${escapeHTML(state.user.user_metadata?.username || 'Игрок')}</div>
+        <div class="profile-email">${escapeHTML(state.user.email || '-')}</div>
+        <div class="profile-title">${title}</div>
+      </div>
+    </div>
+  `;
+
+  // === БЛОК 2: БОЕВЫЕ ХАРАКТЕРИСТИКИ ===
+  const baseDamage = data.click_damage || 1;
   const totalDamageBonus = window._totalDamageBonus || 0;
   const totalShardBonus = window._totalShardBonus || 0;
   const totalCritChanceBonus = window._totalCritChanceBonus || 0;
   const totalCritDamageBonus = window._totalCritDamageBonus || 0;
-  const activeSynergies = window._activeSynergies || [];
+  const finalCritChance = Math.round((0.05 + totalCritChanceBonus) * 100);
+  const finalCritDamage = Math.round((2 + totalCritDamageBonus) * 100);
+  const finalDamage = Math.round(baseDamage * (1 + totalDamageBonus));
 
-  // HTML для активных лун
+  const combatBlock = `
+    <div class="profile-block">
+      <div class="profile-block-header">
+        <span class="block-icon">⚔️</span>
+        <span class="block-title">Боевые характеристики</span>
+      </div>
+      <div class="combat-stats">
+        <div class="combat-stat">
+          <div class="combat-stat-icon">🗡️</div>
+          <div class="combat-stat-info">
+            <div class="combat-stat-label">Базовый урон</div>
+            <div class="combat-stat-value">${baseDamage}</div>
+          </div>
+        </div>
+        <div class="combat-stat">
+          <div class="combat-stat-icon">💥</div>
+          <div class="combat-stat-info">
+            <div class="combat-stat-label">Финальный урон</div>
+            <div class="combat-stat-value highlight">${finalDamage}</div>
+          </div>
+        </div>
+        <div class="combat-stat">
+          <div class="combat-stat-icon">🎯</div>
+          <div class="combat-stat-info">
+            <div class="combat-stat-label">Шанс крита</div>
+            <div class="combat-stat-value">${finalCritChance}%</div>
+          </div>
+        </div>
+        <div class="combat-stat">
+          <div class="combat-stat-icon">⚡</div>
+          <div class="combat-stat-info">
+            <div class="combat-stat-label">Урон крита</div>
+            <div class="combat-stat-value">${finalCritDamage}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // === БЛОК 3: БОНУСЫ ===
+  const bonusesBlock = `
+    <div class="profile-block">
+      <div class="profile-block-header">
+        <span class="block-icon">📊</span>
+        <span class="block-title">Текущие бонусы</span>
+      </div>
+      <div class="bonuses-grid">
+        <div class="bonus-card damage-bonus">
+          <div class="bonus-card-icon">⚔️</div>
+          <div class="bonus-card-label">Урон</div>
+          <div class="bonus-card-value">+${Math.round(totalDamageBonus * 100)}%</div>
+        </div>
+        <div class="bonus-card shard-bonus">
+          <div class="bonus-card-icon">💎</div>
+          <div class="bonus-card-label">Осколки</div>
+          <div class="bonus-card-value">+${Math.round(totalShardBonus * 100)}%</div>
+        </div>
+        <div class="bonus-card crit-chance-bonus">
+          <div class="bonus-card-icon">🎯</div>
+          <div class="bonus-card-label">Крит шанс</div>
+          <div class="bonus-card-value">+${Math.round(totalCritChanceBonus * 100)}%</div>
+        </div>
+        <div class="bonus-card crit-damage-bonus">
+          <div class="bonus-card-icon">💥</div>
+          <div class="bonus-card-label">Крит урон</div>
+          <div class="bonus-card-value">+${Math.round(totalCritDamageBonus * 100)}%</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // === БЛОК 4: АКТИВНЫЕ ЛУНЫ (С КНОПКАМИ) ===
+  const activeMoons = state.activeMoons || [];
+  const maxSlots = state.maxSlots || 1;
+  const emptySlotsCount = Math.max(0, maxSlots - activeMoons.length);
+  
   let activeMoonsHtml = '';
   activeMoons.forEach(moonId => {
     const moon = MOON_TYPES[moonId];
     if (!moon) return;
     const level = state.moonLevels[moonId] || 1;
+    const rarity = RARITY_CONFIG[moon.rarity] || RARITY_CONFIG.common;
     activeMoonsHtml += `
-      <div class="active-moon-badge" onclick="window.toggleMoonActive('${moonId}')" title="Нажмите чтобы деактивировать">
-        <span class="active-moon-emoji">${moon.emoji}</span>
-        <span class="active-moon-level">Ур.${level}</span>
+      <div class="profile-moon-card active rarity-${moon.rarity}">
+        <div class="profile-moon-emoji" style="background-image: ${moon.gradient}; box-shadow: ${moon.shadow}"></div>
+        <div class="profile-moon-info">
+          <div class="profile-moon-name">${escapeHTML(moon.name)}</div>
+          <div class="profile-moon-level">Ур. ${level}</div>
+        </div>
+        <button class="btn-moon-deactivate" onclick="window.toggleMoonActive('${moonId}')" title="Деактивировать">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
     `;
   });
 
-  // HTML для всех купленных лун
+  for (let i = 0; i < emptySlotsCount; i++) {
+    activeMoonsHtml += `
+      <div class="profile-moon-card empty-slot">
+        <div class="profile-moon-emoji empty"></div>
+        <div class="profile-moon-info">
+          <div class="profile-moon-name empty-name">Пустой слот</div>
+          <div class="profile-moon-level empty-level">Выберите луну ниже</div>
+        </div>
+      </div>
+    `;
+  }
+
+  const activeMoonsBlock = `
+    <div class="profile-block">
+      <div class="profile-block-header">
+        <span class="block-icon">⭐</span>
+        <span class="block-title">Активные луны</span>
+        <span class="block-counter">${activeMoons.length}/${maxSlots}</span>
+      </div>
+      <div class="active-moons-list">
+        ${activeMoonsHtml}
+      </div>
+    </div>
+  `;
+
+  // === БЛОК 5: ВСЕ КУПЛЕННЫЕ ЛУНЫ ===
+  const ownedMoons = state.ownedMoons || [];
   let ownedMoonsHtml = '';
   ownedMoons.forEach(moonId => {
     const moon = MOON_TYPES[moonId];
     if (!moon) return;
     const isActive = activeMoons.includes(moonId);
     const level = state.moonLevels[moonId] || 1;
+    const rarity = RARITY_CONFIG[moon.rarity] || RARITY_CONFIG.common;
+    
     ownedMoonsHtml += `
-      <div class="owned-moon-card ${isActive ? 'active' : ''}" onclick="window.toggleMoonActive('${moonId}')">
-        <div class="owned-moon-emoji">${moon.emoji}</div>
-        <div class="owned-moon-name">${escapeHTML(moon.name)}</div>
-        <div class="owned-moon-level">Ур. ${level}</div>
-        <div class="owned-moon-status">${isActive ? '✓ Активна' : 'Неактивна'}</div>
+      <div class="owned-moon-card rarity-${moon.rarity} ${isActive ? 'is-active' : ''}">
+        <div class="owned-moon-visual">
+          <div class="owned-moon-emoji" style="background-image: ${moon.gradient}; box-shadow: ${moon.shadow}"></div>
+          <div class="owned-moon-level-badge">Ур. ${level}</div>
+        </div>
+        <div class="owned-moon-details">
+          <div class="owned-moon-name">${escapeHTML(moon.name)}</div>
+          <div class="owned-moon-rarity" style="background: ${rarity.gradient}">${rarity.name}</div>
+        </div>
+        <button class="btn-owned-moon-toggle ${isActive ? 'active' : ''}" onclick="window.toggleMoonActive('${moonId}')">
+          ${isActive ? '✓' : '+'}
+        </button>
       </div>
     `;
   });
 
-  // HTML для синергий
+  const ownedMoonsBlock = `
+    <div class="profile-block">
+      <div class="profile-block-header">
+        <span class="block-icon">🌙</span>
+        <span class="block-title">Коллекция лун</span>
+        <span class="block-counter">${ownedMoons.length}/${Object.keys(MOON_TYPES).length}</span>
+      </div>
+      <div class="owned-moons-grid">
+        ${ownedMoonsHtml || '<div class="empty-state">Нет купленных лун</div>'}
+      </div>
+    </div>
+  `;
+
+  // === БЛОК 6: АКТИВНЫЕ СИНЕРГИИ ===
+  const activeSynergies = window._activeSynergies || [];
   let synergiesHtml = '';
   if (activeSynergies.length > 0) {
     activeSynergies.forEach(syn => {
+      const moons = syn.key.split('+');
+      const moonsHtml = moons.map(m => {
+        const moon = MOON_TYPES[m];
+        return moon ? `<span class="synergy-moon-emoji">${moon.emoji}</span>` : '';
+      }).join('');
+      
       synergiesHtml += `
-        <div class="profile-synergy tier-${syn.tier}">
-          <div class="profile-synergy-header">
-            <span class="profile-synergy-icon">${syn.icon}</span>
-            <span class="profile-synergy-name">${escapeHTML(syn.name)}</span>
-            <span class="profile-synergy-tier">${syn.tierName}</span>
+        <div class="profile-synergy-card tier-${syn.tier}" style="--tier-color: ${syn.tierColor}">
+          <div class="synergy-card-header">
+            <div class="synergy-card-icon">${syn.icon}</div>
+            <div class="synergy-card-info">
+              <div class="synergy-card-name">${escapeHTML(syn.name)}</div>
+              <div class="synergy-card-tier">${syn.tierName}</div>
+            </div>
           </div>
-          <div class="profile-synergy-bonuses">
+          <div class="synergy-card-moons">${moonsHtml}</div>
+          <div class="synergy-card-desc">${escapeHTML(syn.description || '')}</div>
+          <div class="synergy-card-bonuses">
             ${syn.damageBonus > 0 ? `<span>⚔️+${Math.round(syn.damageBonus*100)}%</span>` : ''}
             ${syn.shardBonus > 0 ? `<span>💎+${Math.round(syn.shardBonus*100)}%</span>` : ''}
             ${syn.critChanceBonus > 0 ? `<span>🎯+${Math.round(syn.critChanceBonus*100)}%</span>` : ''}
@@ -432,140 +600,125 @@ function _updateProfile() {
       `;
     });
   } else {
-    synergiesHtml = '<div class="no-synergies-profile">Нет активных синергий. Комбинируйте луны!</div>';
+    synergiesHtml = `
+      <div class="empty-state">
+        <div class="empty-state-icon">🔗</div>
+        <div class="empty-state-text">Нет активных синергий</div>
+        <div class="empty-state-hint">Активируйте несколько лун для синергии</div>
+      </div>
+    `;
   }
 
-  profileContent.innerHTML = `
-    <div class="profile-header">
-      <div class="profile-avatar">👤</div>
-      <div class="profile-info">
-        <div class="profile-name">${escapeHTML(state.user.user_metadata?.username || 'Игрок')}</div>
-        <div class="profile-email">${escapeHTML(state.user.email || '-')}</div>
-        <div class="profile-title">${title}</div>
+  const synergiesBlock = `
+    <div class="profile-block">
+      <div class="profile-block-header">
+        <span class="block-icon">🔗</span>
+        <span class="block-title">Активные синергии</span>
+        <span class="block-counter">${activeSynergies.length}</span>
       </div>
-    </div>
-    
-    <div class="profile-stats">
-      <div class="stat-item">
-        <div class="stat-icon">📊</div>
-        <div class="stat-label">Уровень</div>
-        <div class="stat-value">${data.level || 1}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-icon">👆</div>
-        <div class="stat-label">Клики</div>
-        <div class="stat-value">${data.total_clicks || 0}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-icon">💎</div>
-        <div class="stat-label">Осколки</div>
-        <div class="stat-value">${data.shards || 0}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-icon">👹</div>
-        <div class="stat-label">Боссы</div>
-        <div class="stat-value">${state.bossKills || 0}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-icon">🌙</div>
-        <div class="stat-label">Луны</div>
-        <div class="stat-value">${ownedMoons.length}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-icon">⏱️</div>
-        <div class="stat-label">В игре</div>
-        <div class="stat-value">${formatTime(state.totalSecondsPlayed || 0)}</div>
-      </div>
-    </div>
-
-    <div class="profile-section">
-      <h3 class="section-title">🌙 Активные луны (${activeMoons.length}/${maxSlots})</h3>
-      <div class="active-moons-container">
-        ${activeMoonsHtml || '<div class="no-active-moons">Нет активных лун</div>'}
-      </div>
-    </div>
-
-    <div class="profile-section">
-      <h3 class="section-title">📦 Все купленные луны (${ownedMoons.length})</h3>
-      <div class="owned-moons-grid">
-        ${ownedMoonsHtml}
-      </div>
-    </div>
-
-    <div class="profile-section">
-      <h3 class="section-title">📊 Текущие бонусы</h3>
-      <div class="bonus-stats">
-        <div class="bonus-item">
-          <span class="bonus-icon">⚔️</span>
-          <span class="bonus-label">Урон:</span>
-          <span class="bonus-value">+${Math.round(totalDamageBonus * 100)}%</span>
-        </div>
-        <div class="bonus-item">
-          <span class="bonus-icon">💎</span>
-          <span class="bonus-label">Осколки:</span>
-          <span class="bonus-value">+${Math.round(totalShardBonus * 100)}%</span>
-        </div>
-        <div class="bonus-item">
-          <span class="bonus-icon">🎯</span>
-          <span class="bonus-label">Шанс крита:</span>
-          <span class="bonus-value">+${Math.round(totalCritChanceBonus * 100)}%</span>
-        </div>
-        <div class="bonus-item">
-          <span class="bonus-icon">💥</span>
-          <span class="bonus-label">Урон крита:</span>
-          <span class="bonus-value">+${Math.round(totalCritDamageBonus * 100)}%</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="profile-section">
-      <h3 class="section-title">🔗 Активные синергии (${activeSynergies.length})</h3>
-      <div class="profile-synergies-list">
+      <div class="synergies-list">
         ${synergiesHtml}
       </div>
     </div>
+  `;
 
-    <div class="profile-section">
-      <h3 class="section-title">💡 Описание улучшений</h3>
-      <div class="upgrade-descriptions">
-        <div class="upgrade-desc-item">
-          <span class="upgrade-icon">⚔️</span>
-          <div>
-            <div class="upgrade-name">Урон клика</div>
-            <div class="upgrade-desc">Увеличивает базовый урон от каждого клика на +1</div>
+  // === БЛОК 7: СТАТИСТИКА ===
+  const statsBlock = `
+    <div class="profile-block">
+      <div class="profile-block-header">
+        <span class="block-icon">📈</span>
+        <span class="block-title">Статистика</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-icon">👆</div>
+          <div class="stat-card-label">Кликов</div>
+          <div class="stat-card-value">${formatNumber(data.total_clicks || 0)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">👹</div>
+          <div class="stat-card-label">Боссов</div>
+          <div class="stat-card-value">${state.bossKills || 0}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">🌙</div>
+          <div class="stat-card-label">Лун</div>
+          <div class="stat-card-value">${ownedMoons.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">🎰</div>
+          <div class="stat-card-label">Слотов</div>
+          <div class="stat-card-value">${maxSlots}/${CONSTANTS.MAX_SLOTS}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">💎</div>
+          <div class="stat-card-label">Всего осколков</div>
+          <div class="stat-card-value">${formatNumber(data.shards || 0)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">⏱️</div>
+          <div class="stat-card-label">В игре</div>
+          <div class="stat-card-value">${formatTime(state.totalSecondsPlayed || 0)}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // === БЛОК 8: СПРАВОЧНИК ===
+  const guideBlock = `
+    <div class="profile-block">
+      <div class="profile-block-header">
+        <span class="block-icon">💡</span>
+        <span class="block-title">Справочник</span>
+      </div>
+      <div class="guide-list">
+        <div class="guide-item">
+          <div class="guide-item-icon">⚔️</div>
+          <div class="guide-item-content">
+            <div class="guide-item-title">Урон клика</div>
+            <div class="guide-item-text">Увеличивает базовый урон на +1 за уровень. Финальный урон учитывает бонусы от лун и синергий.</div>
           </div>
         </div>
-        <div class="upgrade-desc-item">
-          <span class="upgrade-icon">🎰</span>
-          <div>
-            <div class="upgrade-name">Слоты лун</div>
-            <div class="upgrade-desc">Позволяет активировать несколько лун одновременно для получения синергий</div>
+        <div class="guide-item">
+          <div class="guide-item-icon">🎰</div>
+          <div class="guide-item-content">
+            <div class="guide-item-title">Слоты лун</div>
+            <div class="guide-item-text">Позволяет активировать несколько лун одновременно. Больше слотов — больше синергий!</div>
           </div>
         </div>
-        <div class="upgrade-desc-item">
-          <span class="upgrade-icon">💎</span>
-          <div>
-            <div class="upgrade-name">Осколки (Shards)</div>
-            <div class="upgrade-desc">Валюта для покупки лун и улучшений. Получаете за убийство лун и боссов</div>
+        <div class="guide-item">
+          <div class="guide-item-icon">🎯</div>
+          <div class="guide-item-content">
+            <div class="guide-item-title">Критический удар</div>
+            <div class="guide-item-text">Шанс нанести усиленный удар. Базово 5%, крит-урон ×2. Бонусы от лун и синергий увеличивают оба параметра.</div>
           </div>
         </div>
-        <div class="upgrade-desc-item">
-          <span class="upgrade-icon">🎯</span>
-          <div>
-            <div class="upgrade-name">Критический удар</div>
-            <div class="upgrade-desc">Шанс нанести увеличенный урон (базово 5%, крит урон ×2)</div>
+        <div class="guide-item">
+          <div class="guide-item-icon">💎</div>
+          <div class="guide-item-content">
+            <div class="guide-item-title">Лунные осколки</div>
+            <div class="guide-item-text">Основная валюта. Получаете за убийство лун и боссов. Тратятся на улучшения и новые луны.</div>
           </div>
         </div>
-        <div class="upgrade-desc-item">
-          <span class="upgrade-icon">🔗</span>
-          <div>
-            <div class="upgrade-name">Синергии</div>
-            <div class="upgrade-desc">Комбинации лун дают дополнительные бонусы. Чем больше лун - тем мощнее синергии</div>
+        <div class="guide-item">
+          <div class="guide-item-icon">🔗</div>
+          <div class="guide-item-content">
+            <div class="guide-item-title">Синергии</div>
+            <div class="guide-item-text">Определённые комбинации лун дают мощные бонусы. 4 уровня: Базовая → Продвинутая → Легендарная → Мифическая.</div>
+          </div>
+        </div>
+        <div class="guide-item">
+          <div class="guide-item-icon">👹</div>
+          <div class="guide-item-content">
+            <div class="guide-item-title">Боссы</div>
+            <div class="guide-item-text">Появляются каждые 10 уровней. У вас 30 секунд, чтобы их убить. Дают много осколков!</div>
           </div>
         </div>
       </div>
     </div>
   `;
+
+  profileContent.innerHTML = headerBlock + combatBlock + bonusesBlock + activeMoonsBlock + ownedMoonsBlock + synergiesBlock + statsBlock + guideBlock;
 }
 
 async function _updateLeaders() {
@@ -589,7 +742,7 @@ async function _updateLeaders() {
           <div class="leader-rank">#${i + 1}</div>
           <div class="leader-name">${escapeHTML(p.username || 'Аноним')}</div>
           <div class="leader-level">Ур. ${p.level || 0}</div>
-          <div class="leader-clicks">👆 ${p.total_clicks || 0}</div>
+          <div class="leader-clicks">👆 ${formatNumber(p.total_clicks || 0)}</div>
         </div>
       `;
     });
@@ -627,17 +780,21 @@ export function setQuestCategory(category) {
   updateQuestUI();
 }
 
+// ============================================================
+// КВЕСТЫ - БЕЗ ПОЛЗУНКА, С FLEX-WRAP
+// ============================================================
 export function updateQuestUI() {
   const container = document.getElementById('questsList');
   if (!container) return;
 
   const quests = state.quests || {};
   
-  let tabsHtml = '<div class="quest-tabs">';
+  // Табы категорий - БЕЗ overflow-x scroll, с flex-wrap
+  let tabsHtml = '<div class="filter-tabs quest-tabs">';
   for (const [catId, cat] of Object.entries(QUEST_CATEGORIES)) {
     const isActive = currentQuestCategory === catId;
     tabsHtml += `
-      <button class="quest-tab ${isActive ? 'active' : ''}" 
+      <button class="filter-tab quest-tab ${isActive ? 'active' : ''}" 
               onclick="window.setQuestCategory('${catId}')"
               style="--tab-color: ${cat.color}">
         <span class="tab-icon">${cat.icon}</span>
@@ -690,7 +847,7 @@ export function updateQuestUI() {
           <div class="quest-reward">
             <span class="reward-label">Награда:</span>
             <span class="reward-value">💎 ${questData.reward}</span>
-            ${questData.bonusReward ? `<span class="bonus-reward">+${questData.bonusReward} бонус</span>` : ''}
+            ${questData.bonusReward ? `<span class="bonus-reward">+${questData.bonusReward}</span>` : ''}
           </div>
           <div class="quest-status">
             ${isClaimed ? '<span class="status-claimed">✓ Получено</span>' :
@@ -717,17 +874,20 @@ export function setAchievementCategory(category) {
   updateAchievementUI();
 }
 
+// ============================================================
+// ДОСТИЖЕНИЯ - БЕЗ ПОЛЗУНКА, С FLEX-WRAP
+// ============================================================
 export function updateAchievementUI() {
   const container = document.getElementById('achievementsList');
   if (!container) return;
 
   const achievements = state.achievements || {};
   
-  let tabsHtml = '<div class="achievement-tabs">';
+  let tabsHtml = '<div class="filter-tabs achievement-tabs">';
   for (const [catId, cat] of Object.entries(ACHIEVEMENT_CATEGORIES)) {
     const isActive = currentAchievementCategory === catId;
     tabsHtml += `
-      <button class="achievement-tab ${isActive ? 'active' : ''}" 
+      <button class="filter-tab achievement-tab ${isActive ? 'active' : ''}" 
               onclick="window.setAchievementCategory('${catId}')">
         <span class="tab-icon">${cat.icon}</span>
         <span class="tab-name">${cat.name}</span>
