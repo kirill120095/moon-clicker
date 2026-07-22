@@ -480,7 +480,10 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 1000, name: 'Опытный кликер', description: 'Сделайте 1 000 кликов', reward: 200 },
       { level: 'gold', target: 10000, name: 'Мастер кликов', description: 'Сделайте 10 000 кликов', reward: 1000 }
     ],
-    check: (state, tier) => state.clickCount >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      return (state?.clickCount || 0) >= tier.target;
+    }
   },
   clickMaster: {
     id: 'clickMaster',
@@ -492,7 +495,10 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 250000, name: 'Кликер-легенда', description: 'Сделайте 250 000 кликов', reward: 10000 },
       { level: 'gold', target: 1000000, name: 'Бог кликов', description: 'Сделайте 1 000 000 кликов', reward: 50000 }
     ],
-    check: (state, tier) => state.clickCount >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      return (state?.clickCount || 0) >= tier.target;
+    }
   },
 
   // ==== КАТЕГОРИЯ: УРОВНИ ====
@@ -506,7 +512,10 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 25, name: 'Опытный искатель', description: 'Достигните 25 уровня', reward: 800 },
       { level: 'gold', target: 50, name: 'Покоритель миров', description: 'Достигните 50 уровня', reward: 3000 }
     ],
-    check: (state, tier) => state.currentLevel >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      return (state?.currentLevel || 1) >= tier.target;
+    }
   },
   levelMaster: {
     id: 'levelMaster',
@@ -518,7 +527,10 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 100, name: 'Сотня!', description: 'Достигните 100 уровня', reward: 15000 },
       { level: 'gold', target: 200, name: 'Легенда галактики', description: 'Достигните 200 уровня', reward: 50000 }
     ],
-    check: (state, tier) => state.currentLevel >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      return (state?.currentLevel || 1) >= tier.target;
+    }
   },
 
   // ==== КАТЕГОРИЯ: БОССЫ ====
@@ -532,7 +544,10 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 25, name: 'Гроза боссов', description: 'Убейте 25 боссов', reward: 2500 },
       { level: 'gold', target: 100, name: 'Легендарный убийца', description: 'Убейте 100 боссов', reward: 10000 }
     ],
-    check: (state, tier) => state.bossKills >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      return (state?.bossKills || 0) >= tier.target;
+    }
   },
 
   // ==== КАТЕГОРИЯ: ЛУНЫ ====
@@ -546,7 +561,11 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 5, name: 'Коллекционер', description: 'Соберите 5 разных лун', reward: 1500 },
       { level: 'gold', target: 8, name: 'Повелитель лун', description: 'Соберите все 8 лун', reward: 8000 }
     ],
-    check: (state, tier) => state.ownedMoons && state.ownedMoons.length >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      const ownedCount = state?.ownedMoons?.length || 0;
+      return ownedCount >= tier.target;
+    }
   },
   moonUpgrader: {
     id: 'moonUpgrader',
@@ -558,7 +577,12 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 7, name: 'Мастер лун', description: 'Прокачайте любую луну до 7 уровня', reward: 2000 },
       { level: 'gold', target: 10, name: 'Максимальная мощь', description: 'Прокачайте любую луну до 10 уровня', reward: 6000 }
     ],
-    check: (state, tier) => Object.values(state.moonLevels || {}).some(lvl => lvl >= tier.target)
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      const moonLevels = state?.moonLevels || {};
+      const maxLevel = Math.max(0, ...Object.values(moonLevels));
+      return maxLevel >= tier.target;
+    }
   },
 
   // ==== КАТЕГОРИЯ: БОГАТСТВО ====
@@ -572,7 +596,11 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 10000, name: 'Десять тысяч', description: 'Накопите 10 000 осколков', reward: 500 },
       { level: 'gold', target: 100000, name: 'Сто тысяч!', description: 'Накопите 100 000 осколков', reward: 2500 }
     ],
-    check: (state, tier) => (state.playerData?.shards || 0) >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      const shards = state?.playerData?.shards || 0;
+      return shards >= tier.target;
+    }
   },
   shardMillionaire: {
     id: 'shardMillionaire',
@@ -584,7 +612,11 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 2000000, name: 'Мультимиллионер', description: 'Накопите 2 000 000 осколков', reward: 20000 },
       { level: 'gold', target: 10000000, name: 'Миллиардер', description: 'Накопите 10 000 000 осколков', reward: 100000 }
     ],
-    check: (state, tier) => (state.playerData?.shards || 0) >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      const shards = state?.playerData?.shards || 0;
+      return shards >= tier.target;
+    }
   },
 
   // ==== КАТЕГОРИЯ: СЛОТЫ ====
@@ -598,7 +630,10 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 4, name: 'Четыре слота', description: 'Откройте 4 слота', reward: 1500 },
       { level: 'gold', target: 5, name: 'Все слоты открыты', description: 'Откройте все 5 слотов', reward: 5000 }
     ],
-    check: (state, tier) => state.maxSlots >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      return (state?.maxSlots || 1) >= tier.target;
+    }
   },
 
   // ==== КАТЕГОРИЯ: СИНЕРГИИ ====
@@ -612,7 +647,13 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 3, name: 'Мастер комбинаций', description: 'Активируйте 3 синергии', reward: 2000 },
       { level: 'gold', target: 5, name: 'Синергетический бог', description: 'Активируйте 5 синергий', reward: 8000 }
     ],
-    check: (state, tier) => (window._activeSynergies?.length || 0) >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      // Синергии хранятся в window._activeSynergies
+      if (typeof window === 'undefined') return false;
+      const synergyCount = window._activeSynergies?.length || 0;
+      return synergyCount >= tier.target;
+    }
   },
 
   // ==== КАТЕГОРИЯ: ВРЕМЯ ====
@@ -626,7 +667,10 @@ export const ACHIEVEMENTS = {
       { level: 'silver', target: 36000, name: '10 часов', description: 'Сыграйте 10 часов', reward: 1500 },
       { level: 'gold', target: 360000, name: '100 часов!', description: 'Сыграйте 100 часов', reward: 10000 }
     ],
-    check: (state, tier) => state.totalSecondsPlayed >= tier.target
+    check: (state, tier) => {
+      if (!tier || typeof tier.target !== 'number') return false;
+      return (state?.totalSecondsPlayed || 0) >= tier.target;
+    }
   }
 };
 
