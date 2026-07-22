@@ -94,7 +94,7 @@ export function updateUI() {
     _updateCounter();
     _updateLevelTitle();
     _updateHPBar();
-    _updateTimerBar();
+    updateTimerBar();
     _updateRollbackButton();
     _updateMoonStyle();
     _updateMoonAuras(); // НОВОЕ: обновление аур
@@ -135,7 +135,10 @@ function _updateHPBar() {
   }
 }
 
-function _updateTimerBar() {
+// ============================================================
+// ОБНОВЛЕНИЕ ТАЙМЕРА БОССА (ЭКСПОРТИРУЕМАЯ ФУНКЦИЯ)
+// ============================================================
+export function updateTimerBar() {
   const container = document.getElementById('timerBarContainer');
   const bar = document.getElementById('timerBar');
   const percent = document.getElementById('timerPercent');
@@ -153,7 +156,7 @@ function _updateTimerBar() {
   } else {
     container.classList.remove('active');
     bar.style.width = '100%';
-    percent.textContent = '30с';
+    percent.textContent = `${CONSTANTS.BOSS_TIMER}с`;
   }
 }
 
@@ -1066,27 +1069,19 @@ if (typeof window !== 'undefined') {
   window._setAchievementCategory = setAchievementCategory;
 }
 
+
 // ============================================================
-// ОБНОВЛЕНИЕ ТАЙМЕРА БОССА (ЭКСПОРТИРУЕМАЯ ФУНКЦИЯ)
+// ЭКСПОРТ ФУНКЦИЙ В WINDOW
 // ============================================================
-export function updateTimerBar() {
-  const container = document.getElementById('timerBarContainer');
-  const bar = document.getElementById('timerBar');
-  const percent = document.getElementById('timerPercent');
-
-  if (!container || !bar || !percent) return;
-
-  const isBoss = state.currentLevel % CONSTANTS.BOSS_INTERVAL === 0;
-  const isActive = isBoss && state.moonHP > 0 && state.bossTimerRunning;
-
-  if (isActive) {
-    container.classList.add('active');
-    const pct = Math.max(0, (state.bossTimer / CONSTANTS.BOSS_TIMER) * 100);
-    bar.style.width = pct + '%';
-    percent.textContent = `${Math.ceil(state.bossTimer)}с`;
-  } else {
-    container.classList.remove('active');
-    bar.style.width = '100%';
-    percent.textContent = `${CONSTANTS.BOSS_TIMER}с`;
-  }
+if (typeof window !== 'undefined') {
+  window.updateProfileAndLeaders = updateProfileAndLeaders;
+  window.updateShopUI = updateShopUI;
+  window.updateQuestUI = updateQuestUI;
+  window.updateAchievementUI = updateAchievementUI;
+  window.updateQuestAndAchievementUI = updateQuestAndAchievementUI;
+  window.updateTimerBar = updateTimerBar;
+  window.showToast = showToast;
+  
+  window._setQuestCategory = setQuestCategory;
+  window._setAchievementCategory = setAchievementCategory;
 }
