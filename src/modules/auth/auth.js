@@ -1,181 +1,234 @@
 // ============================================================
-//  АВТОРИЗАЦИЯ
+// АВТОРИЗАЦИЯ
 // ============================================================
-import { appState, state } from '../../core/state.js';
 import { db, handleDatabaseError } from '../network/supabase.js';
-import { authSchemas, validateForm, isEmail } from './validation.js';
-import { escapeHTML, throttle, RateLimiter } from '../../utils/security.js';
+import { appState, state } from '../../core/state.js';
 import { showToast } from '../ui/renderer.js';
+import { gameEngine } from '../game/game.js';
 
-const loginLimiter = new RateLimiter({ limit: 5, window: 60000 });
-const registerLimiter = new RateLimiter({ limit: 3, window: 60000 });
-
-export async function handleLogin(identifier, password) {
-    const ip = 'client';
-    const loginCheck = loginLimiter.check(ip);
-    if (!loginCheck.allowed) {
-        showToast('⚠️ Слишком много попыток входа. Подождите.', 'warning');
-        return { success: false, error: 'Rate limit exceeded' };
-    }
-
-    const formData = { identifier, password };
-    const validation = validateForm(formData, authSchemas.login);
-    if (!validation.valid) {
-        const error = Object.values(validation.errors)[0];
-        showToast(`⚠️ ${error}`, 'warning');
-        return { success: false, error };
-    }
-
-    try {
-        let email = validation.data.identifier;
-
-        // Если ввели логин, ищем email в базе
-        if (!isEmail(email)) {
-            const player = await db.getPlayerByUsername(validation.data.identifier);
-            if (!player) {
-                showToast('⚠️ Пользователь не найден', 'warning');
-                return { success: false, error: 'User not found' };
-            }
-            email = player.email;
-        }
-
-        const { user, session } = await db.signIn(
-            email,
-            validation.data.password
-        );
-        
-        appState.setUser(user);
-        
-        const player = await db.getPlayer(user.id);
-        appState.loadPlayerData(player);
-        
-        showToast('✅ Добро пожаловать!', 'success');
-        return { success: true, user, player };
-        
-    } catch (error) {
-        const dbError = handleDatabaseError(error);
-        showToast(`⚠️ ${dbError.message}`, 'warning');
-        return { success: false, error: dbError.message };
-    }
-}
-
-export async function handleRegister(email, nickname, password) {
-    const ip = 'client';
-    const registerCheck = registerLimiter.check(ip);
-    if (!registerCheck.allowed) {
-        showToast('⚠️ Слишком много попыток регистрации. Подождите.', 'warning');
-        return { success: false, error: 'Rate limit exceeded' };
-    }
-
-    const formData = { email, nickname, password };
-    const validation = validateForm(formData, authSchemas.register);
-    if (!validation.valid) {
-        const error = Object.values(validation.errors)[0];
-        showToast(`⚠️ ${error}`, 'warning');
-        return { success: false, error };
-    }
-
-    try {
-        const { user, session } = await db.signUp(
-            validation.data.email,
-            validation.data.password,
-            { username: validation.data.nickname }
-        );
-        
-        if (!user) {
-            showToast('⚠️ Ошибка регистрации', 'warning');
-            return { success: false, error: 'Registration failed' };
-        }
-        
-        const playerData = {
-            id: user.id,
-            email: user.email,
-            username: validation.data.nickname,
-            total_clicks: 0,
-            level: 1,
-            moon_hp: 100,
-            shards: 0,
-            total_seconds_played: 0,
-            session_count: 1,
-            current_session_start: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        };
-        
-        const player = await db.createPlayer(playerData);
-        
-        appState.setUser(user);
-        appState.loadPlayerData(player);
-        
-        showToast('✅ Регистрация успешна!', 'success');
-        return { success: true, user, player };
-        
-    } catch (error) {
-        const dbError = handleDatabaseError(error);
-        showToast(`⚠️ ${dbError.message}`, 'warning');
-        return { success: false, error: dbError.message };
-    }
-}
-
-export async function handleLogout() {
-    try {
-        await db.signOut();
-        appState.clearAll();
-        showToast('👋 Вы вышли из аккаунта', 'success');
-        return { success: true };
-    } catch (error) {
-        const dbError = handleDatabaseError(error);
-        showToast(`⚠️ ${dbError.message}`, 'warning');
-        return { success: false, error: dbError.message };
-    }
-}
-
+// ============================================================
+// ПРОВЕРКА АВТОРИЗАЦИИ
+// ============================================================
 export async function checkAuth() {
-    try {
-        const { session } = await db.getSession();
-        if (session?.user) {
-            const user = session.user;
-            appState.setUser(user);
-            
-            const player = await db.getPlayer(user.id);
-            if (player) {
-                appState.loadPlayerData(player);
-            }
-            
-            return { success: true, user, player };
-        }
-        return { success: false };
-    } catch (error) {
-        console.error('Auth check error:', error);
-        return { success: false, error: error.message };
+  try {
+    const { session } = await db.getSession();
+    
+    if (session && session.user) {
+      console.log('[Auth] User is logged in:', session.user.email);
+      await handleSuccessfulLogin(session.user);
+    } else {
+      console.log('[Auth] No active session');
+      showAuthScreen();
     }
+  } catch (error) {
+    console.error('[Auth] Check auth error:', error);
+    showAuthScreen();
+  }
 }
 
-export async function updateProfile(updates) {
-    const user = state.user;
-    if (!user) {
-        showToast('⚠️ Войдите в аккаунт', 'warning');
-        return { success: false, error: 'Not authenticated' };
-    }
+// ============================================================
+// ВХОД
+// ============================================================
+export async function handleLogin() {
+  const emailInput = document.getElementById('authEmail');
+  const passwordInput = document.getElementById('authPassword');
+  const errorDiv = document.getElementById('authError');
 
-    try {
-        const player = await db.updatePlayer(user.id, updates);
-        appState.loadPlayerData(player);
-        showToast('✅ Профиль обновлен', 'success');
-        return { success: true, player };
-    } catch (error) {
-        const dbError = handleDatabaseError(error);
-        showToast(`⚠️ ${dbError.message}`, 'warning');
-        return { success: false, error: dbError.message };
+  const email = emailInput?.value?.trim();
+  const password = passwordInput?.value;
+
+  if (!email || !password) {
+    showError('Введите email и пароль');
+    return;
+  }
+
+  try {
+    console.log('[Auth] Attempting login for:', email);
+    const { user, session } = await db.signInWithPassword(email, password);
+
+    if (user) {
+      await handleSuccessfulLogin(user);
+      hideError();
+    } else {
+      showError('Не удалось войти');
     }
+  } catch (error) {
+    console.error('[Auth] Login error:', error);
+    const errorMessage = handleDatabaseError(error);
+    showError(errorMessage);
+  }
 }
 
-export async function getLeaders(limit = 10) {
-    try {
-        const leaders = await db.getLeaders(limit);
-        return { success: true, leaders };
-    } catch (error) {
-        const dbError = handleDatabaseError(error);
-        return { success: false, error: dbError.message };
+// ============================================================
+// РЕГИСТРАЦИЯ
+// ============================================================
+export async function handleRegister() {
+  const emailInput = document.getElementById('authEmail');
+  const passwordInput = document.getElementById('authPassword');
+  const usernameInput = document.getElementById('authUsername');
+
+  const email = emailInput?.value?.trim();
+  const password = passwordInput?.value;
+  const username = usernameInput?.value?.trim() || email.split('@')[0];
+
+  if (!email || !password) {
+    showError('Введите email и пароль');
+    return;
+  }
+
+  if (password.length < 6) {
+    showError('Пароль должен быть минимум 6 символов');
+    return;
+  }
+
+  try {
+    console.log('[Auth] Attempting registration for:', email);
+    const { user } = await db.register(email, password, username);
+
+    if (user) {
+      // Показываем сообщение о необходимости подтверждения email
+      showError('Проверьте email для подтверждения аккаунта');
+      
+      // Если email подтверждение выключено в Supabase, входим сразу
+      if (user.confirmed_at || user.email_confirmed_at) {
+        await handleSuccessfulLogin(user);
+      }
+    } else {
+      showError('Не удалось зарегистрироваться');
     }
+  } catch (error) {
+    console.error('[Auth] Register error:', error);
+    const errorMessage = handleDatabaseError(error);
+    showError(errorMessage);
+  }
+}
+
+// ============================================================
+// УСПЕШНЫЙ ВХОД
+// ============================================================
+async function handleSuccessfulLogin(user) {
+  console.log('[Auth] Successful login:', user.email);
+  
+  // Устанавливаем пользователя в state
+  appState.setUser(user);
+
+  // Загружаем данные игрока из БД
+  try {
+    const playerData = await db.getPlayer(user.id);
+    if (playerData) {
+      appState.loadPlayerData(playerData);
+    }
+  } catch (error) {
+    console.error('[Auth] Load player data error:', error);
+  }
+
+  // Скрываем экран авторизации
+  hideAuthScreen();
+  
+  // Показываем основной экран
+  showApp();
+
+  // Инициализируем игру
+  if (gameEngine && gameEngine.init) {
+    gameEngine.init();
+  }
+
+  showToast(`✅ Добро пожаловать, ${user.user_metadata?.username || 'Игрок'}!`, 'success');
+}
+
+// ============================================================
+// ВЫХОД
+// ============================================================
+export async function handleLogout() {
+  try {
+    await db.signOut();
+    
+    // Очищаем state
+    appState.clearUser();
+    appState.reset();
+
+    // Уничтожаем game engine
+    if (gameEngine && gameEngine.destroy) {
+      gameEngine.destroy();
+    }
+
+    // Показываем экран авторизации
+    showAuthScreen();
+    hideApp();
+
+    showToast('👋 Вы вышли из аккаунта', 'info');
+  } catch (error) {
+    console.error('[Auth] Logout error:', error);
+    showToast('⚠️ Ошибка выхода', 'warning');
+  }
+}
+
+// ============================================================
+// СБРОС ПРОГРЕССА
+// ============================================================
+export async function handleResetProgress() {
+  if (!state.user) {
+    showToast('⚠️ Войдите в аккаунт', 'warning');
+    return;
+  }
+
+  const confirmed = confirm('Вы уверены, что хотите сбросить весь прогресс? Это действие нельзя отменить!');
+  
+  if (!confirmed) return;
+
+  try {
+    if (gameEngine && gameEngine.resetProgress) {
+      await gameEngine.resetProgress();
+    }
+  } catch (error) {
+    console.error('[Auth] Reset progress error:', error);
+    showToast('⚠️ Ошибка сброса прогресса', 'warning');
+  }
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function showAuthScreen() {
+  const authScreen = document.getElementById('authScreen');
+  if (authScreen) {
+    authScreen.classList.remove('hidden');
+  }
+}
+
+function hideAuthScreen() {
+  const authScreen = document.getElementById('authScreen');
+  if (authScreen) {
+    authScreen.classList.add('hidden');
+  }
+}
+
+function showApp() {
+  const app = document.getElementById('app');
+  if (app) {
+    app.classList.remove('hidden');
+  }
+}
+
+function hideApp() {
+  const app = document.getElementById('app');
+  if (app) {
+    app.classList.add('hidden');
+  }
+}
+
+function showError(message) {
+  const errorDiv = document.getElementById('authError');
+  if (errorDiv) {
+    errorDiv.textContent = message;
+    errorDiv.classList.add('show');
+  }
+}
+
+function hideError() {
+  const errorDiv = document.getElementById('authError');
+  if (errorDiv) {
+    errorDiv.textContent = '';
+    errorDiv.classList.remove('show');
+  }
 }
