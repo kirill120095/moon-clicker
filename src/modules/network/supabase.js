@@ -2,25 +2,63 @@
 // SUPABASE DATABASE CLIENT
 // ============================================================
 
-// Конфигурация Supabase
 const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbG5zbXp0YWFrZHdqcG5panNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcwNTQwNTQsImV4cCI6MjA1MjYzMDA1NH0.5qXZz8wvZxVXqYxYxYxYxYxYxYxYxYxYxYxYxYxYxY';
 
-// Проверка загрузки Supabase
-if (typeof window.supabase === 'undefined') {
-  console.error('[Supabase] Библиотека не загружена! Проверьте CDN в index.html');
-  throw new Error('Supabase library not loaded');
+// Ждём загрузки Supabase
+function waitForSupabase() {
+  return new Promise((resolve, reject) => {
+    if (typeof window !== 'undefined' && window.supabase) {
+      resolve(window.supabase);
+      return;
+    }
+    
+    let attempts = 0;
+    const maxAttempts = 50;
+    
+    const checkInterval = setInterval(() => {
+      attempts++;
+      if (typeof window !== 'undefined' && window.supabase) {
+        clearInterval(checkInterval);
+        resolve(window.supabase);
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        reject(new Error('Supabase library not loaded after 5 seconds'));
+      }
+    }, 100);
+  });
 }
 
-// Создаем клиент Supabase
-const { createClient } = window.supabase;
+let supabaseClient = null;
 
-export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
+// Инициализация клиента
+async function initSupabase() {
+  if (supabaseClient) return supabaseClient;
+  
+  try {
+    const supabase = await waitForSupabase();
+    const { createClient } = supabase;
+    
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        storage: window.localStorage
+      }
+    });
+    
+    console.log('[Supabase] Client initialized');
+    return supabaseClient;
+  } catch (error) {
+    console.error('[Supabase] Init error:', error);
+    throw error;
   }
+}
+
+// Запускаем инициализацию сразу
+initSupabase().catch(err => {
+  console.error('[Supabase] Failed to initialize:', err);
 });
 
 // ============================================================
@@ -29,11 +67,140 @@ export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 export const db = {
   // ============================================================
-  // ПОЛУЧЕНИЕ ИГРОКА
+  // AUTH: ПОЛУЧЕНИЕ СЕССИИ (ИСПРАВЛЕНО)
+  // ============================================================
+  async getSession() {
+    try {
+      const client = await initSupabase();
+      const { data, error } = await client.auth.getSession();
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('[DB] getSession error:', error);
+      return { session: null };
+    }
+  },
+
+  // ============================================================
+  // AUTH: ВХОД С ПАРОЛЕМ
+  // ============================================================
+  async signInWithPassword(email, password) {
+    try {
+      const client = await initSupabase();
+      const { data, error } = await client.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('[DB] signInWithPassword error:', error);
+      throw error;
+    }
+  },
+
+  // Алиас для совместимости
+  async login(email, password) {
+    return this.signInWithPassword(email, password);
+  },
+
+  // ============================================================
+  // AUTH: РЕГИСТРАЦИЯ
+  // ============================================================
+  async signUp(email, password, options = {}) {
+    try {
+      const client = await initSupabase();
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: options
+      });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('[DB] signUp error:', error);
+      throw error;
+    }
+  },
+
+  // Алиас для совместимости
+  async register(email, password, username) {
+    try {
+      const result = await this.signUp(email, password, {
+        data: { username: username }
+      });
+      
+      if (result.user) {
+        await this.createPlayer(result.user.id);
+        await this.updatePlayer(result.user.id, { username });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('[DB] register error:', error);
+      throw error;
+    }
+  },
+
+  // ============================================================
+  // AUTH: ВЫХОД
+  // ============================================================
+  async signOut() {
+    try {
+      const client = await initSupabase();
+      const { error } = await client.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('[DB] signOut error:', error);
+      throw error;
+    }
+  },
+
+  // Алиас для совместимости
+  async logout() {
+    return this.signOut();
+  },
+
+  // ============================================================
+  // AUTH: ПОЛУЧЕНИЕ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ
+  // ============================================================
+  async getUser() {
+    try {
+      const client = await initSupabase();
+      const { data: { user }, error } = await client.auth.getUser();
+      if (error) throw error;
+      return user;
+    } catch (error) {
+      console.error('[DB] getUser error:', error);
+      return null;
+    }
+  },
+
+  // Алиас для совместимости
+  async getCurrentUser() {
+    return this.getUser();
+  },
+
+  // ============================================================
+  // AUTH: ПОДПИСКА НА ИЗМЕНЕНИЯ
+  // ============================================================
+  onAuthStateChange(callback) {
+    initSupabase().then(client => {
+      client.auth.onAuthStateChange((event, session) => {
+        callback(event, session);
+      });
+    }).catch(err => {
+      console.error('[DB] onAuthStateChange init error:', err);
+    });
+  },
+
+  // ============================================================
+  // DB: ПОЛУЧЕНИЕ ИГРОКА
   // ============================================================
   async getPlayer(userId, createIfNotExists = true) {
     try {
-      const { data, error } = await supabaseClient
+      const client = await initSupabase();
+      const { data, error } = await client
         .from('players')
         .select('*')
         .eq('id', userId)
@@ -55,10 +222,11 @@ export const db = {
   },
 
   // ============================================================
-  // СОЗДАНИЕ ИГРОКА
+  // DB: СОЗДАНИЕ ИГРОКА
   // ============================================================
   async createPlayer(userId) {
     try {
+      const client = await initSupabase();
       const newPlayer = {
         id: userId,
         level: 1,
@@ -73,7 +241,7 @@ export const db = {
         updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await supabaseClient
+      const { data, error } = await client
         .from('players')
         .insert(newPlayer)
         .select()
@@ -89,13 +257,14 @@ export const db = {
   },
 
   // ============================================================
-  // ОБНОВЛЕНИЕ ИГРОКА
+  // DB: ОБНОВЛЕНИЕ ИГРОКА
   // ============================================================
   async updatePlayer(userId, updates) {
     try {
+      const client = await initSupabase();
       updates.updated_at = new Date().toISOString();
 
-      const { data, error } = await supabaseClient
+      const { data, error } = await client
         .from('players')
         .update(updates)
         .eq('id', userId)
@@ -112,11 +281,12 @@ export const db = {
   },
 
   // ============================================================
-  // ПОЛУЧЕНИЕ ЛИДЕРОВ
+  // DB: ПОЛУЧЕНИЕ ЛИДЕРОВ
   // ============================================================
   async getLeaders(limit = 10) {
     try {
-      const { data, error } = await supabaseClient
+      const client = await initSupabase();
+      const { data, error } = await client
         .from('players')
         .select('username, level, total_clicks, shards')
         .order('level', { ascending: false })
@@ -130,96 +300,14 @@ export const db = {
       console.error('[DB] getLeaders error:', error);
       return [];
     }
-  },
-
-  // ============================================================
-  // РЕГИСТРАЦИЯ
-  // ============================================================
-  async register(email, password, username) {
-    try {
-      // Создаем пользователя в Supabase Auth
-      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username: username
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Создаем запись в таблице players
-        await this.createPlayer(authData.user.id);
-        
-        // Обновляем username
-        await this.updatePlayer(authData.user.id, { username });
-      }
-
-      return authData;
-    } catch (error) {
-      console.error('[DB] register error:', error);
-      throw error;
-    }
-  },
-
-  // ============================================================
-  // ВХОД
-  // ============================================================
-  async login(email, password) {
-    try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw error;
-
-      return data;
-    } catch (error) {
-      console.error('[DB] login error:', error);
-      throw error;
-    }
-  },
-
-  // ============================================================
-  // ВЫХОД
-  // ============================================================
-  async logout() {
-    try {
-      const { error } = await supabaseClient.auth.signOut();
-      if (error) throw error;
-    } catch (error) {
-      console.error('[DB] logout error:', error);
-      throw error;
-    }
-  },
-
-  // ============================================================
-  // ПОЛУЧЕНИЕ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ
-  // ============================================================
-  async getCurrentUser() {
-    try {
-      const { data: { user }, error } = await supabaseClient.auth.getUser();
-      if (error) throw error;
-      return user;
-    } catch (error) {
-      console.error('[DB] getCurrentUser error:', error);
-      return null;
-    }
-  },
-
-  // ============================================================
-  // ПОДПИСКА НА ИЗМЕНЕНИЯ AUTH
-  // ============================================================
-  onAuthStateChange(callback) {
-    return supabaseClient.auth.onAuthStateChange((event, session) => {
-      callback(event, session);
-    });
   }
 };
+
+// ============================================================
+// ЭКСПОРТ КЛИЕНТА (для прямого использования)
+// ============================================================
+export { supabaseClient };
+export { initSupabase };
 
 // ============================================================
 // ERROR HANDLER
@@ -233,11 +321,14 @@ export function handleDatabaseError(error) {
   if (error.code === 'PGRST116') {
     return 'Запись не найдена';
   }
-  if (error.message.includes('Invalid login credentials')) {
+  if (error.message && error.message.includes('Invalid login credentials')) {
     return 'Неверный email или пароль';
   }
-  if (error.message.includes('User already registered')) {
+  if (error.message && error.message.includes('User already registered')) {
     return 'Пользователь уже зарегистрирован';
+  }
+  if (error.error_description) {
+    return error.error_description;
   }
   
   return error.message || 'Ошибка базы данных';
