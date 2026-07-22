@@ -1,5 +1,5 @@
 // ============================================================
-// АНИМАЦИИ
+// АНИМАЦИИ - С ВСПЛЫВАЮЩИМ УРОНОМ
 // ============================================================
 
 export class AnimationManager {
@@ -7,7 +7,7 @@ export class AnimationManager {
     this._animations = new Map();
     this._rafId = null;
     this._isRunning = false;
-    this._baseDamage = 1; // Для расчёта цвета
+    this._baseDamage = 1;
   }
 
   setBaseDamage(damage) {
@@ -15,63 +15,42 @@ export class AnimationManager {
   }
 
   // ============================================================
-// ЦВЕТ УРОНА В ЗАВИСИМОСТИ ОТ ВЕЛИЧИНЫ
-  // Белый → Жёлтый → Оранжевый → Красный
+  // ЦВЕТ УРОНА В ЗАВИСИМОСТИ ОТ ВЕЛИЧИНЫ
   // ============================================================
   getDamageColor(damage, isCrit = false) {
     const base = this._baseDamage || 1;
     const ratio = damage / Math.max(1, base);
     
-    // Определяем цветовую стадию
-    if (ratio <= 1.5) {
-      // Белый / светло-бежевый
-      return isCrit ? '#fff9c4' : '#f0e6d0';
-    } else if (ratio <= 3) {
-      // Жёлтый
-      return isCrit ? '#fff176' : '#ffeb3b';
-    } else if (ratio <= 6) {
-      // Оранжевый
-      return isCrit ? '#ffb74d' : '#ff9800';
-    } else if (ratio <= 10) {
-      // Красно-оранжевый
-      return isCrit ? '#ff8a65' : '#ff5722';
-    } else {
-      // Красный
-      return isCrit ? '#ef5350' : '#d32f2f';
-    }
+    if (ratio <= 1.5) return isCrit ? '#fff9c4' : '#f0e6d0';
+    if (ratio <= 3) return isCrit ? '#fff176' : '#ffeb3b';
+    if (ratio <= 6) return isCrit ? '#ffb74d' : '#ff9800';
+    if (ratio <= 10) return isCrit ? '#ff8a65' : '#ff5722';
+    return isCrit ? '#ef5350' : '#d32f2f';
   }
 
-  // Glow цвет (для тени)
   getDamageGlow(damage, isCrit = false) {
     const base = this._baseDamage || 1;
     const ratio = damage / Math.max(1, base);
     
-    if (ratio <= 1.5) {
-      return isCrit ? 'rgba(255,249,196,0.9)' : 'rgba(240,230,208,0.8)';
-    } else if (ratio <= 3) {
-      return isCrit ? 'rgba(255,241,118,0.9)' : 'rgba(255,235,59,0.8)';
-    } else if (ratio <= 6) {
-      return isCrit ? 'rgba(255,183,77,0.9)' : 'rgba(255,152,0,0.8)';
-    } else if (ratio <= 10) {
-      return isCrit ? 'rgba(255,138,101,0.9)' : 'rgba(255,87,34,0.8)';
-    } else {
-      return isCrit ? 'rgba(239,83,80,0.9)' : 'rgba(211,47,47,0.8)';
-    }
+    if (ratio <= 1.5) return isCrit ? 'rgba(255,249,196,0.9)' : 'rgba(240,230,208,0.8)';
+    if (ratio <= 3) return isCrit ? 'rgba(255,241,118,0.9)' : 'rgba(255,235,59,0.8)';
+    if (ratio <= 6) return isCrit ? 'rgba(255,183,77,0.9)' : 'rgba(255,152,0,0.8)';
+    if (ratio <= 10) return isCrit ? 'rgba(255,138,101,0.9)' : 'rgba(255,87,34,0.8)';
+    return isCrit ? 'rgba(239,83,80,0.9)' : 'rgba(211,47,47,0.8)';
   }
 
   // ============================================================
-// ЗВЕЗДЫ
+  // ЗВЁЗДЫ
   // ============================================================
   createStars(count = 300) {
     const container = document.getElementById('stars');
     if (!container) return;
 
     const fragment = document.createDocumentFragment();
-
     for (let i = 0; i < count; i++) {
       const star = document.createElement('div');
       star.className = 'star';
-      const size = Math.random() * 3 + 1;
+      const size = Math.random() * 2.5 + 0.5;
       star.style.width = size + 'px';
       star.style.height = size + 'px';
       star.style.left = Math.random() * 100 + '%';
@@ -80,48 +59,27 @@ export class AnimationManager {
       star.style.animationDelay = Math.random() * 5 + 's';
       fragment.appendChild(star);
     }
-
     container.appendChild(fragment);
   }
 
   // ============================================================
-// ЭФФЕКТ КЛИКА
-  // ============================================================
-  playClickEffect(element) {
-    if (!element) return;
-
-    element.classList.remove('active');
-    void element.offsetWidth;
-    element.classList.add('active');
-  }
-
-  // ============================================================
-// ВСПЛЫВАЮЩИЙ УРОН (БЕЗ ВОСКЛИЦАТЕЛЬНЫХ ЗНАКОВ)
+  // ВСПЛЫВАЮЩИЙ УРОН
   // ============================================================
   showDamageNumber(x, y, damage, isCrit = false, isBoss = false) {
     const damageEl = document.createElement('div');
     damageEl.className = 'damage-number';
     
-    // Цвет на основе величины урона
     const color = this.getDamageColor(damage, isCrit);
     const glow = this.getDamageGlow(damage, isCrit);
     
-    // Текст БЕЗ восклицательных знаков
     damageEl.textContent = `-${damage}`;
     
-    if (isCrit) {
-      damageEl.classList.add('crit');
-    }
+    if (isCrit) damageEl.classList.add('crit');
+    if (isBoss) damageEl.classList.add('boss-damage');
     
-    if (isBoss) {
-      damageEl.classList.add('boss-damage');
-    }
-    
-    // Применяем динамические цвета
     damageEl.style.color = color;
     damageEl.style.textShadow = `0 0 10px ${glow}, 0 2px 4px rgba(0,0,0,0.8)`;
     
-    // Позиционирование
     const offsetX = (Math.random() - 0.5) * 60;
     const offsetY = (Math.random() - 0.5) * 30;
     
@@ -135,24 +93,19 @@ export class AnimationManager {
     });
     
     setTimeout(() => {
-      if (damageEl.parentNode) {
-        damageEl.remove();
-      }
+      if (damageEl.parentNode) damageEl.remove();
     }, 1200);
   }
 
   // ============================================================
-// УДАРНАЯ ВОЛНА
+  // УДАРНАЯ ВОЛНА
   // ============================================================
   createShockwave(x, y, intensity = 'normal', color = null) {
     const shockwave = document.createElement('div');
     shockwave.className = 'shockwave';
     
-    if (intensity === 'crit') {
-      shockwave.classList.add('crit-shockwave');
-    } else if (intensity === 'boss') {
-      shockwave.classList.add('boss-shockwave');
-    }
+    if (intensity === 'crit') shockwave.classList.add('crit-shockwave');
+    else if (intensity === 'boss') shockwave.classList.add('boss-shockwave');
     
     if (color) {
       shockwave.style.borderColor = color;
@@ -165,204 +118,49 @@ export class AnimationManager {
     document.body.appendChild(shockwave);
     
     setTimeout(() => {
-      if (shockwave.parentNode) {
-        shockwave.remove();
-      }
+      if (shockwave.parentNode) shockwave.remove();
     }, 600);
   }
 
   // ============================================================
-// ЭФФЕКТ ПОВЫШЕНИЯ УРОВНЯ
+  // ЭФФЕКТ ПОВЫШЕНИЯ УРОВНЯ
   // ============================================================
   playLevelUpEffect(element) {
     if (!element) return;
-
     element.classList.remove('level-up');
     void element.offsetWidth;
     element.classList.add('level-up');
-
-    setTimeout(() => {
-      element.classList.remove('level-up');
-    }, 800);
+    setTimeout(() => element.classList.remove('level-up'), 800);
   }
 
   // ============================================================
-// ЭФФЕКТ УБИЙСТВА БОССА
+  // ЭФФЕКТ УБИЙСТВА БОССА
   // ============================================================
   playBossDeathEffect(x, y) {
-    // Screen shake
     document.body.classList.add('screen-shake');
-    setTimeout(() => {
-      document.body.classList.remove('screen-shake');
-    }, 400);
+    setTimeout(() => document.body.classList.remove('screen-shake'), 400);
     
-    // Flash effect
     const flash = document.createElement('div');
     flash.className = 'death-flash';
     document.body.appendChild(flash);
+    setTimeout(() => { if (flash.parentNode) flash.remove(); }, 300);
     
-    setTimeout(() => {
-      if (flash.parentNode) {
-        flash.remove();
-      }
-    }, 200);
-    
-    // Много частиц
     this.createParticles(null, {
       count: 40,
       color: '#ffd700',
       size: 6,
       duration: 1500,
       spread: 200,
-      x: x,
-      y: y
+      x, y
     });
     
-    // Несколько ударных волн
     for (let i = 0; i < 3; i++) {
-      setTimeout(() => {
-        this.createShockwave(x, y, 'boss');
-      }, i * 150);
+      setTimeout(() => this.createShockwave(x, y, 'boss'), i * 150);
     }
   }
 
   // ============================================================
-// ЭФФЕКТ НАЖАТИЯ
-  // ============================================================
-  playPressEffect(element, scale = 0.92, duration = 150) {
-    if (!element) return;
-
-    element.style.transform = `scale(${scale})`;
-    element.style.transition = `transform ${duration}ms ease`;
-
-    setTimeout(() => {
-      element.style.transform = 'scale(1)';
-    }, duration);
-  }
-
-  // ============================================================
-// ПУЛЬСАЦИЯ
-  // ============================================================
-  pulse(element, options = {}) {
-    const {
-      duration = 1000,
-      scale = 1.1,
-      iterations = Infinity,
-      direction = 'alternate'
-    } = options;
-
-    if (!element) return;
-
-    const animation = element.animate([
-      { transform: 'scale(1)' },
-      { transform: `scale(${scale})` }
-    ], {
-      duration,
-      iterations,
-      direction,
-      easing: 'ease-in-out'
-    });
-
-    return animation;
-  }
-
-  // ============================================================
-// ПЛАВНОЕ ПОЯВЛЕНИЕ
-  // ============================================================
-  fadeIn(element, duration = 300) {
-    if (!element) return Promise.resolve();
-
-    return new Promise((resolve) => {
-      element.style.opacity = '0';
-      element.style.display = 'block';
-      element.style.transition = `opacity ${duration}ms ease`;
-
-      requestAnimationFrame(() => {
-        element.style.opacity = '1';
-      });
-
-      setTimeout(resolve, duration);
-    });
-  }
-
-  fadeOut(element, duration = 300) {
-    if (!element) return Promise.resolve();
-
-    return new Promise((resolve) => {
-      element.style.transition = `opacity ${duration}ms ease`;
-      element.style.opacity = '0';
-
-      setTimeout(() => {
-        element.style.display = 'none';
-        resolve();
-      }, duration);
-    });
-  }
-
-  // ============================================================
-// СЧЁТЧИК
-  // ============================================================
-  animateCounter(element, from, to, duration = 1000) {
-    if (!element) return Promise.resolve();
-
-    return new Promise((resolve) => {
-      const startTime = performance.now();
-      const diff = to - from;
-
-      const update = (currentTime) => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = Math.round(from + diff * eased);
-
-        element.textContent = current;
-
-        if (progress < 1) {
-          requestAnimationFrame(update);
-        } else {
-          element.textContent = to;
-          resolve();
-        }
-      };
-
-      requestAnimationFrame(update);
-    });
-  }
-
-  // ============================================================
-// ПРОГРЕСС-БАР
-  // ============================================================
-  animateProgressBar(element, from, to, duration = 300) {
-    if (!element) return Promise.resolve();
-
-    return new Promise((resolve) => {
-      const startTime = performance.now();
-      const diff = to - from;
-
-      const update = (currentTime) => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = from + diff * eased;
-
-        element.style.width = Math.min(100, current) + '%';
-
-        if (progress < 1) {
-          requestAnimationFrame(update);
-        } else {
-          element.style.width = Math.min(100, to) + '%';
-          resolve();
-        }
-      };
-
-      requestAnimationFrame(update);
-    });
-  }
-
-  // ============================================================
-// ПАРТИКЛЫ (С ЦВЕТОМ ПОД УРОН)
+  // ПАРТИКЛЫ
   // ============================================================
   createParticles(container, options = {}) {
     const {
@@ -412,26 +210,18 @@ export class AnimationManager {
       const dy = Math.sin(angle) * distance - spread * 0.3;
 
       particle.animate([
-        {
-          transform: 'translate(0, 0) scale(1)',
-          opacity: 1
-        },
-        {
-          transform: `translate(${dx}px, ${dy}px) scale(0)`,
-          opacity: 0
-        }
+        { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+        { transform: `translate(${dx}px, ${dy}px) scale(0)`, opacity: 0 }
       ], {
         duration: duration * (0.5 + Math.random() * 0.5),
         easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         fill: 'forwards'
-      }).onfinish = () => {
-        particle.remove();
-      };
+      }).onfinish = () => particle.remove();
     }
   }
 
   // ============================================================
-// КОМПЛЕКСНЫЙ ЭФФЕКТ КЛИКА (С ЦВЕТОМ)
+  // КОМПЛЕКСНЫЙ ЭФФЕКТ КЛИКА
   // ============================================================
   playClickVisualFeedback(event, damage, isCrit, isBoss = false) {
     const x = event.clientX || event.pageX;
@@ -442,11 +232,11 @@ export class AnimationManager {
     // 1. Всплывающий урон
     this.showDamageNumber(x, y, damage, isCrit, isBoss);
     
-    // 2. Ударная волна с цветом под урон
+    // 2. Ударная волна
     const shockwaveIntensity = isCrit ? 'crit' : 'normal';
     this.createShockwave(x, y, shockwaveIntensity, color);
     
-    // 3. Частицы с цветом под урон
+    // 3. Частицы
     const particleCount = isCrit ? 15 : 8;
     this.createParticles(null, {
       count: particleCount,
@@ -454,14 +244,10 @@ export class AnimationManager {
       size: isCrit ? 5 : 3,
       duration: isCrit ? 800 : 600,
       spread: isCrit ? 120 : 80,
-      x: x,
-      y: y
+      x, y
     });
   }
 
-  // ============================================================
-// УПРАВЛЕНИЕ АНИМАЦИЯМИ
-  // ============================================================
   start() {
     if (this._isRunning) return;
     this._isRunning = true;
@@ -478,27 +264,15 @@ export class AnimationManager {
 
   _tick() {
     if (!this._isRunning) return;
-
     for (const [id, animation] of this._animations) {
-      if (animation.update) {
-        animation.update();
-      }
+      if (animation.update) animation.update();
     }
-
     this._rafId = requestAnimationFrame(() => this._tick());
   }
 
-  add(id, animation) {
-    this._animations.set(id, animation);
-  }
-
-  remove(id) {
-    this._animations.delete(id);
-  }
-
-  clear() {
-    this._animations.clear();
-  }
+  add(id, animation) { this._animations.set(id, animation); }
+  remove(id) { this._animations.delete(id); }
+  clear() { this._animations.clear(); }
 }
 
 export const animations = new AnimationManager();
