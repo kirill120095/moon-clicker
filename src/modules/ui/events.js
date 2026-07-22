@@ -1,5 +1,5 @@
 // ============================================================
-// ОБРАБОТЧИКИ СОБЫТИЙ
+// ОБРАБОТЧИКИ СОБЫТИЙ - С TOGGLE ПАНЕЛЯМИ
 // ============================================================
 import { handleLogin, handleRegister, handleLogout, handleResetProgress } from '../auth/auth.js';
 import { gameEngine } from '../game/game.js';
@@ -18,7 +18,6 @@ export function initEvents() {
   if (loginBtn) {
     loginBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('[Events] Login button clicked');
       await handleLogin();
     });
   }
@@ -26,7 +25,6 @@ export function initEvents() {
   if (registerBtn) {
     registerBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('[Events] Register button clicked');
       await handleRegister();
     });
   }
@@ -34,7 +32,6 @@ export function initEvents() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('[Events] Logout button clicked');
       await handleLogout();
     });
   }
@@ -42,45 +39,22 @@ export function initEvents() {
   if (resetBtn) {
     resetBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      console.log('[Events] Reset button clicked');
       await handleResetProgress();
     });
   }
 
   // ============================================================
-  // КНОПКИ УПРАВЛЕНИЯ ИГРОЙ
+  // КЛИК ПО ЛУНЕ
   // ============================================================
-  const lockToggle = document.getElementById('lockToggleMain');
-  const rollbackBtn = document.getElementById('rollbackBtnMain');
   const moonWrapper = document.getElementById('moonWrapper');
 
-  if (lockToggle) {
-    lockToggle.addEventListener('click', () => {
-      console.log('[Events] Lock toggle clicked');
-      if (gameEngine && gameEngine.toggleLevelLock) {
-        gameEngine.toggleLevelLock();
-      }
-    });
-  }
-
-  if (rollbackBtn) {
-    rollbackBtn.addEventListener('click', async () => {
-      console.log('[Events] Rollback button clicked');
-      if (gameEngine && gameEngine.rollbackLevel) {
-        await gameEngine.rollbackLevel();
-      }
-    });
-  }
-
   if (moonWrapper) {
-    // Обработчик клика по луне (десктоп)
     moonWrapper.addEventListener('click', (e) => {
       if (gameEngine && gameEngine.handleClick) {
         gameEngine.handleClick(e);
       }
     });
 
-    // Обработчик для мобильных устройств
     moonWrapper.addEventListener('touchstart', (e) => {
       e.preventDefault();
       if (gameEngine && gameEngine.handleClick) {
@@ -99,35 +73,117 @@ export function initEvents() {
   // ============================================================
   // ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ ПАНЕЛЕЙ
   // ============================================================
-  window.openPanel = (panelId) => {
+  
+  /**
+   * TOGGLE - открыть/закрыть панель одной кнопкой
+   */
+  window.togglePanel = (panelId) => {
     const panel = document.getElementById(panelId);
-    if (panel) {
-      // Закрываем все другие панели
+    if (!panel) return;
+
+    const isOpen = !panel.classList.contains('hidden');
+    
+    if (isOpen) {
+      // Закрыть панель
+      panel.classList.add('hidden');
+      updateToggleButton(panelId, false);
+    } else {
+      // Закрыть все другие панели сначала
       document.querySelectorAll('.panel').forEach(p => {
         if (p.id !== panelId) {
           p.classList.add('hidden');
+          updateToggleButton(p.id, false);
         }
       });
+      
+      // Открыть эту панель
       panel.classList.remove('hidden');
+      updateToggleButton(panelId, true);
     }
   };
 
+  /**
+   * Обновить визуальное состояние toggle кнопки
+   */
+  function updateToggleButton(panelId, isOpen) {
+    if (panelId === 'profilePanel') {
+      const btn = document.getElementById('profileToggleBtn');
+      if (btn) btn.classList.toggle('panel-open', isOpen);
+    } else if (panelId === 'shopPanel') {
+      const btn = document.getElementById('shopToggleBtn');
+      if (btn) btn.classList.toggle('panel-open', isOpen);
+    }
+  }
+
+  /**
+   * Закрыть все панели
+   */
+  window.closeAllPanels = () => {
+    document.querySelectorAll('.panel').forEach(p => {
+      p.classList.add('hidden');
+    });
+    document.querySelectorAll('.side-toggle-btn').forEach(btn => {
+      btn.classList.remove('panel-open');
+    });
+  };
+
+  /**
+   * Закрыть конкретную панель (для совместимости)
+   */
   window.closePanel = (panelId) => {
-    const panel = document.getElementById(panelId);
-    if (panel) {
-      panel.classList.add('hidden');
-    }
+    window.togglePanel(panelId);
   };
 
+  /**
+   * Закрыть модалку
+   */
   window.closeModal = (modalId) => {
     const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  // ============================================================
+  // ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК В ПРОФИЛЕ
+  // ============================================================
+  window.switchProfileTab = (tabName) => {
+    // Обновляем табы
+    document.querySelectorAll('#profilePanel .panel-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+    
+    // Обновляем контент
+    document.querySelectorAll('#profilePanel .tab-content').forEach(content => {
+      content.classList.remove('active');
+    });
+    
+    const targetContent = document.getElementById(`${tabName}TabContent`);
+    if (targetContent) {
+      targetContent.classList.add('active');
     }
   };
 
   // ============================================================
-  // ОБРАБОТКА НАЖАТИЯ ENTER В ФОРМЕ АВТОРИЗАЦИИ
+  // ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК В МАГАЗИНЕ
+  // ============================================================
+  window.switchShopTab = (tabName) => {
+    // Обновляем табы
+    document.querySelectorAll('#shopPanel .panel-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+    
+    // Обновляем контент
+    document.querySelectorAll('#shopPanel .tab-content').forEach(content => {
+      content.classList.remove('active');
+    });
+    
+    const targetContent = document.getElementById(`${tabName}TabContent`);
+    if (targetContent) {
+      targetContent.classList.add('active');
+    }
+  };
+
+  // ============================================================
+  // ENTER В ФОРМЕ АВТОРИЗАЦИИ
   // ============================================================
   const authPassword = document.getElementById('authPassword');
   if (authPassword) {
