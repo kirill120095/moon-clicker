@@ -12,8 +12,8 @@ export const CONSTANTS = {
   // Стоимость улучшений (СБАЛАНСИРОВАНО)
   UPGRADE_COSTS: {
     clickDamage: {
-      base: 30,          // было 50
-      multiplier: 1.35   // было 1.8
+      base: 30,
+      multiplier: 1.35
     },
     critChance: {
       base: 200,
@@ -24,16 +24,16 @@ export const CONSTANTS = {
       multiplier: 1.45
     },
     moonSlots: {
-      base: 1500,        // было 5000
-      multiplier: 2.4    // было 3.0
+      base: 1500,
+      multiplier: 2.4
     }
   },
 
   // Временные интервалы (в миллисекундах)
   INTERVALS: {
     SAVE_TIME: 30000,
-    QUEST_RESET: 86400000,   // 24 часа (ежедневные квесты)
-    WEEKLY_RESET: 604800000, // 7 дней
+    QUEST_RESET: 86400000,
+    WEEKLY_RESET: 604800000,
     UI_UPDATE: 16,
     BOSS_TICK: 1000,
     TOAST_DURATION: 2000,
@@ -67,7 +67,7 @@ export const CONSTANTS = {
 };
 
 // ============================================================
-// ТИПЫ ЛУН (ПЕРЕРАБОТАННЫЕ БОНУСЫ)
+// ТИПЫ ЛУН
 // ============================================================
 export const MOON_TYPES = {
   normal: {
@@ -201,10 +201,9 @@ export const MOON_TYPES = {
 };
 
 // ============================================================
-// СИНЕРГИИ (С УРОВНЯМИ И ГРАФИКОЙ)
+// СИНЕРГИИ
 // ============================================================
 export const SYNERGY_BONUSES = {
-  // ---- TIER 1: BASIC (2 луны, простые) ----
   'blood+fire': {
     name: 'Адское пламя',
     tier: 1,
@@ -301,8 +300,6 @@ export const SYNERGY_BONUSES = {
     icon: '💰',
     description: 'Тень приносит богатство'
   },
-
-  // ---- TIER 2: ADVANCED (2 луны, мощные) ----
   'blood+shadow': {
     name: 'Кровавая тень',
     tier: 2,
@@ -351,8 +348,6 @@ export const SYNERGY_BONUSES = {
     icon: '❄️',
     description: 'Абсолютный ноль космоса'
   },
-
-  // ---- TIER 3: LEGENDARY (3+ луны) ----
   'blood+fire+ice': {
     name: 'Адский лёд',
     tier: 3,
@@ -425,8 +420,6 @@ export const SYNERGY_BONUSES = {
     icon: '☀️',
     description: 'Пылающее золото звезды'
   },
-
-  // ---- TIER 4: MYTHIC (4+ луны) ----
   'blood+fire+ice+shadow': {
     name: 'Апокалипсис стихий',
     tier: 4,
@@ -466,19 +459,18 @@ export const SYNERGY_BONUSES = {
 };
 
 // ============================================================
-// ДОСТИЖЕНИЯ (С УРОВНЯМИ: BRONZE / SILVER / GOLD)
+// ДОСТИЖЕНИЯ (СНИЖЕННЫЕ НАГРАДЫ)
 // ============================================================
 export const ACHIEVEMENTS = {
-  // ==== КАТЕГОРИЯ: КЛИКИ ====
   clickNovice: {
     id: 'clickNovice',
     category: 'clicks',
     categoryName: 'Клики',
     icon: '👆',
     tiers: [
-      { level: 'bronze', target: 100, name: 'Начинающий кликер', description: 'Сделайте 100 кликов', reward: 50 },
-      { level: 'silver', target: 1000, name: 'Опытный кликер', description: 'Сделайте 1 000 кликов', reward: 200 },
-      { level: 'gold', target: 10000, name: 'Мастер кликов', description: 'Сделайте 10 000 кликов', reward: 1000 }
+      { level: 'bronze', target: 100, name: 'Начинающий кликер', description: 'Сделайте 100 кликов', reward: 15 },
+      { level: 'silver', target: 1000, name: 'Опытный кликер', description: 'Сделайте 1 000 кликов', reward: 50 },
+      { level: 'gold', target: 10000, name: 'Мастер кликов', description: 'Сделайте 10 000 кликов', reward: 200 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
@@ -491,26 +483,24 @@ export const ACHIEVEMENTS = {
     categoryName: 'Клики',
     icon: '🖱️',
     tiers: [
-      { level: 'bronze', target: 50000, name: 'Кликомания', description: 'Сделайте 50 000 кликов', reward: 3000 },
-      { level: 'silver', target: 250000, name: 'Кликер-легенда', description: 'Сделайте 250 000 кликов', reward: 10000 },
-      { level: 'gold', target: 1000000, name: 'Бог кликов', description: 'Сделайте 1 000 000 кликов', reward: 50000 }
+      { level: 'bronze', target: 50000, name: 'Кликомания', description: 'Сделайте 50 000 кликов', reward: 500 },
+      { level: 'silver', target: 250000, name: 'Кликер-легенда', description: 'Сделайте 250 000 кликов', reward: 1500 },
+      { level: 'gold', target: 1000000, name: 'Бог кликов', description: 'Сделайте 1 000 000 кликов', reward: 5000 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
       return (state?.clickCount || 0) >= tier.target;
     }
   },
-
-  // ==== КАТЕГОРИЯ: УРОВНИ ====
   levelUp: {
     id: 'levelUp',
     category: 'levels',
     categoryName: 'Уровни',
     icon: '📈',
     tiers: [
-      { level: 'bronze', target: 10, name: 'Путь начат', description: 'Достигните 10 уровня', reward: 200 },
-      { level: 'silver', target: 25, name: 'Опытный искатель', description: 'Достигните 25 уровня', reward: 800 },
-      { level: 'gold', target: 50, name: 'Покоритель миров', description: 'Достигните 50 уровня', reward: 3000 }
+      { level: 'bronze', target: 10, name: 'Путь начат', description: 'Достигните 10 уровня', reward: 40 },
+      { level: 'silver', target: 25, name: 'Опытный искатель', description: 'Достигните 25 уровня', reward: 150 },
+      { level: 'gold', target: 50, name: 'Покоритель миров', description: 'Достигните 50 уровня', reward: 500 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
@@ -523,43 +513,39 @@ export const ACHIEVEMENTS = {
     categoryName: 'Уровни',
     icon: '⭐',
     tiers: [
-      { level: 'bronze', target: 75, name: 'Ветеран', description: 'Достигните 75 уровня', reward: 5000 },
-      { level: 'silver', target: 100, name: 'Сотня!', description: 'Достигните 100 уровня', reward: 15000 },
-      { level: 'gold', target: 200, name: 'Легенда галактики', description: 'Достигните 200 уровня', reward: 50000 }
+      { level: 'bronze', target: 75, name: 'Ветеран', description: 'Достигните 75 уровня', reward: 800 },
+      { level: 'silver', target: 100, name: 'Сотня!', description: 'Достигните 100 уровня', reward: 2000 },
+      { level: 'gold', target: 200, name: 'Легенда галактики', description: 'Достигните 200 уровня', reward: 5000 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
       return (state?.currentLevel || 1) >= tier.target;
     }
   },
-
-  // ==== КАТЕГОРИЯ: БОССЫ ====
   bossSlayer: {
     id: 'bossSlayer',
     category: 'bosses',
     categoryName: 'Боссы',
     icon: '👹',
     tiers: [
-      { level: 'bronze', target: 5, name: 'Охотник на боссов', description: 'Убейте 5 боссов', reward: 500 },
-      { level: 'silver', target: 25, name: 'Гроза боссов', description: 'Убейте 25 боссов', reward: 2500 },
-      { level: 'gold', target: 100, name: 'Легендарный убийца', description: 'Убейте 100 боссов', reward: 10000 }
+      { level: 'bronze', target: 5, name: 'Охотник на боссов', description: 'Убейте 5 боссов', reward: 100 },
+      { level: 'silver', target: 25, name: 'Гроза боссов', description: 'Убейте 25 боссов', reward: 400 },
+      { level: 'gold', target: 100, name: 'Легендарный убийца', description: 'Убейте 100 боссов', reward: 1500 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
       return (state?.bossKills || 0) >= tier.target;
     }
   },
-
-  // ==== КАТЕГОРИЯ: ЛУНЫ ====
   moonCollector: {
     id: 'moonCollector',
     category: 'moons',
     categoryName: 'Луны',
     icon: '🌙',
     tiers: [
-      { level: 'bronze', target: 3, name: 'Собиратель', description: 'Соберите 3 разных луны', reward: 300 },
-      { level: 'silver', target: 5, name: 'Коллекционер', description: 'Соберите 5 разных лун', reward: 1500 },
-      { level: 'gold', target: 8, name: 'Повелитель лун', description: 'Соберите все 8 лун', reward: 8000 }
+      { level: 'bronze', target: 3, name: 'Собиратель', description: 'Соберите 3 разных луны', reward: 80 },
+      { level: 'silver', target: 5, name: 'Коллекционер', description: 'Соберите 5 разных лун', reward: 300 },
+      { level: 'gold', target: 8, name: 'Повелитель лун', description: 'Соберите все 8 лун', reward: 1500 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
@@ -573,9 +559,9 @@ export const ACHIEVEMENTS = {
     categoryName: 'Луны',
     icon: '⬆️',
     tiers: [
-      { level: 'bronze', target: 3, name: 'Улучшатель', description: 'Прокачайте любую луну до 3 уровня', reward: 400 },
-      { level: 'silver', target: 7, name: 'Мастер лун', description: 'Прокачайте любую луну до 7 уровня', reward: 2000 },
-      { level: 'gold', target: 10, name: 'Максимальная мощь', description: 'Прокачайте любую луну до 10 уровня', reward: 6000 }
+      { level: 'bronze', target: 3, name: 'Улучшатель', description: 'Прокачайте любую луну до 3 уровня', reward: 100 },
+      { level: 'silver', target: 7, name: 'Мастер лун', description: 'Прокачайте любую луну до 7 уровня', reward: 400 },
+      { level: 'gold', target: 10, name: 'Максимальная мощь', description: 'Прокачайте любую луну до 10 уровня', reward: 1200 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
@@ -584,17 +570,15 @@ export const ACHIEVEMENTS = {
       return maxLevel >= tier.target;
     }
   },
-
-  // ==== КАТЕГОРИЯ: БОГАТСТВО ====
   shardCollector: {
     id: 'shardCollector',
     category: 'wealth',
     categoryName: 'Богатство',
     icon: '💎',
     tiers: [
-      { level: 'bronze', target: 1000, name: 'Первая тысяча', description: 'Накопите 1 000 осколков', reward: 100 },
-      { level: 'silver', target: 10000, name: 'Десять тысяч', description: 'Накопите 10 000 осколков', reward: 500 },
-      { level: 'gold', target: 100000, name: 'Сто тысяч!', description: 'Накопите 100 000 осколков', reward: 2500 }
+      { level: 'bronze', target: 1000, name: 'Первая тысяча', description: 'Накопите 1 000 осколков', reward: 30 },
+      { level: 'silver', target: 10000, name: 'Десять тысяч', description: 'Накопите 10 000 осколков', reward: 150 },
+      { level: 'gold', target: 100000, name: 'Сто тысяч!', description: 'Накопите 100 000 осколков', reward: 600 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
@@ -608,9 +592,9 @@ export const ACHIEVEMENTS = {
     categoryName: 'Богатство',
     icon: '💰',
     tiers: [
-      { level: 'bronze', target: 500000, name: 'Полмиллиона', description: 'Накопите 500 000 осколков', reward: 5000 },
-      { level: 'silver', target: 2000000, name: 'Мультимиллионер', description: 'Накопите 2 000 000 осколков', reward: 20000 },
-      { level: 'gold', target: 10000000, name: 'Миллиардер', description: 'Накопите 10 000 000 осколков', reward: 100000 }
+      { level: 'bronze', target: 500000, name: 'Полмиллиона', description: 'Накопите 500 000 осколков', reward: 1000 },
+      { level: 'silver', target: 2000000, name: 'Мультимиллионер', description: 'Накопите 2 000 000 осколков', reward: 3000 },
+      { level: 'gold', target: 10000000, name: 'Миллиардер', description: 'Накопите 10 000 000 осколков', reward: 10000 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
@@ -618,54 +602,47 @@ export const ACHIEVEMENTS = {
       return shards >= tier.target;
     }
   },
-
-  // ==== КАТЕГОРИЯ: СЛОТЫ ====
   slotMaster: {
     id: 'slotMaster',
     category: 'slots',
     categoryName: 'Слоты',
     icon: '🎰',
     tiers: [
-      { level: 'bronze', target: 2, name: 'Двойной слот', description: 'Откройте 2 слота', reward: 300 },
-      { level: 'silver', target: 4, name: 'Четыре слота', description: 'Откройте 4 слота', reward: 1500 },
-      { level: 'gold', target: 5, name: 'Все слоты открыты', description: 'Откройте все 5 слотов', reward: 5000 }
+      { level: 'bronze', target: 2, name: 'Двойной слот', description: 'Откройте 2 слота', reward: 80 },
+      { level: 'silver', target: 4, name: 'Четыре слота', description: 'Откройте 4 слота', reward: 300 },
+      { level: 'gold', target: 5, name: 'Все слоты открыты', description: 'Откройте все 5 слотов', reward: 800 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
       return (state?.maxSlots || 1) >= tier.target;
     }
   },
-
-  // ==== КАТЕГОРИЯ: СИНЕРГИИ ====
   synergyHunter: {
     id: 'synergyHunter',
     category: 'synergies',
     categoryName: 'Синергии',
     icon: '🔗',
     tiers: [
-      { level: 'bronze', target: 1, name: 'Первая синергия', description: 'Активируйте 1 синергию', reward: 400 },
-      { level: 'silver', target: 3, name: 'Мастер комбинаций', description: 'Активируйте 3 синергии', reward: 2000 },
-      { level: 'gold', target: 5, name: 'Синергетический бог', description: 'Активируйте 5 синергий', reward: 8000 }
+      { level: 'bronze', target: 1, name: 'Первая синергия', description: 'Активируйте 1 синергию', reward: 100 },
+      { level: 'silver', target: 3, name: 'Мастер комбинаций', description: 'Активируйте 3 синергии', reward: 400 },
+      { level: 'gold', target: 5, name: 'Синергетический бог', description: 'Активируйте 5 синергий', reward: 1500 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
-      // Синергии хранятся в window._activeSynergies
       if (typeof window === 'undefined') return false;
       const synergyCount = window._activeSynergies?.length || 0;
       return synergyCount >= tier.target;
     }
   },
-
-  // ==== КАТЕГОРИЯ: ВРЕМЯ ====
   timePlayed: {
     id: 'timePlayed',
     category: 'time',
     categoryName: 'Время',
     icon: '⏱️',
     tiers: [
-      { level: 'bronze', target: 3600, name: 'Первый час', description: 'Сыграйте 1 час', reward: 200 },
-      { level: 'silver', target: 36000, name: '10 часов', description: 'Сыграйте 10 часов', reward: 1500 },
-      { level: 'gold', target: 360000, name: '100 часов!', description: 'Сыграйте 100 часов', reward: 10000 }
+      { level: 'bronze', target: 3600, name: 'Первый час', description: 'Сыграйте 1 час', reward: 50 },
+      { level: 'silver', target: 36000, name: '10 часов', description: 'Сыграйте 10 часов', reward: 300 },
+      { level: 'gold', target: 360000, name: '100 часов!', description: 'Сыграйте 100 часов', reward: 1500 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
@@ -675,10 +652,9 @@ export const ACHIEVEMENTS = {
 };
 
 // ============================================================
-// КВЕСТЫ (3 КАТЕГОРИИ С ПРОГРЕССИВНЫМИ ЦЕЛЯМИ)
+// КВЕСТЫ (СНИЖЕННЫЕ НАГРАДЫ)
 // ============================================================
 export const QUESTS = {
-  // ==== КАТЕГОРИЯ: КЛИКЕР (Clicker) ====
   clickDaily100: {
     id: 'clickDaily100',
     category: 'clicker',
@@ -687,8 +663,8 @@ export const QUESTS = {
     name: 'Утренняя разминка',
     description: 'Сделайте 100 кликов за день',
     target: 100,
-    reward: 80,
-    bonusReward: 40,
+    reward: 20,
+    bonusReward: 10,
     type: 'click',
     difficulty: 'easy',
     color: '#4caf50'
@@ -701,8 +677,8 @@ export const QUESTS = {
     name: 'Марафон кликов',
     description: 'Сделайте 500 кликов за день',
     target: 500,
-    reward: 250,
-    bonusReward: 150,
+    reward: 60,
+    bonusReward: 30,
     type: 'click',
     difficulty: 'medium',
     color: '#ff9800'
@@ -715,14 +691,12 @@ export const QUESTS = {
     name: 'Кликомания',
     description: 'Сделайте 2000 кликов за день',
     target: 2000,
-    reward: 800,
-    bonusReward: 400,
+    reward: 200,
+    bonusReward: 100,
     type: 'click',
     difficulty: 'hard',
     color: '#f44336'
   },
-
-  // ==== КАТЕГОРИЯ: ОХОТНИК (Hunter) ====
   killBoss1: {
     id: 'killBoss1',
     category: 'hunter',
@@ -731,8 +705,8 @@ export const QUESTS = {
     name: 'Первая кровь',
     description: 'Убейте 1 босса',
     target: 1,
-    reward: 300,
-    bonusReward: 200,
+    reward: 80,
+    bonusReward: 40,
     type: 'bossKill',
     difficulty: 'easy',
     color: '#4caf50'
@@ -745,8 +719,8 @@ export const QUESTS = {
     name: 'Серия убийств',
     description: 'Убейте 3 боссов подряд',
     target: 3,
-    reward: 900,
-    bonusReward: 500,
+    reward: 200,
+    bonusReward: 100,
     type: 'bossKill',
     difficulty: 'medium',
     color: '#ff9800'
@@ -759,14 +733,12 @@ export const QUESTS = {
     name: 'Истребитель',
     description: 'Убейте 10 боссов',
     target: 10,
-    reward: 3000,
-    bonusReward: 1500,
+    reward: 600,
+    bonusReward: 300,
     type: 'bossKill',
     difficulty: 'hard',
     color: '#f44336'
   },
-
-  // ==== КАТЕГОРИЯ: КОЛЛЕКЦИОНЕР (Collector) ====
   shardDaily200: {
     id: 'shardDaily200',
     category: 'collector',
@@ -775,8 +747,8 @@ export const QUESTS = {
     name: 'Скромная добыча',
     description: 'Соберите 200 осколков за день',
     target: 200,
-    reward: 150,
-    bonusReward: 80,
+    reward: 40,
+    bonusReward: 20,
     type: 'shard',
     difficulty: 'easy',
     color: '#4caf50'
@@ -789,8 +761,8 @@ export const QUESTS = {
     name: 'Хороший улов',
     description: 'Соберите 1000 осколков за день',
     target: 1000,
-    reward: 500,
-    bonusReward: 300,
+    reward: 120,
+    bonusReward: 60,
     type: 'shard',
     difficulty: 'medium',
     color: '#ff9800'
@@ -803,14 +775,12 @@ export const QUESTS = {
     name: 'Богатая жатва',
     description: 'Соберите 5000 осколков за день',
     target: 5000,
-    reward: 2000,
-    bonusReward: 1000,
+    reward: 400,
+    bonusReward: 200,
     type: 'shard',
     difficulty: 'hard',
     color: '#f44336'
   },
-
-  // ==== КАТЕГОРИЯ: ПРОГРЕСС ====
   levelUp2: {
     id: 'levelUp2',
     category: 'progress',
@@ -819,8 +789,8 @@ export const QUESTS = {
     name: 'Быстрый рост',
     description: 'Повысьте уровень 2 раза за день',
     target: 2,
-    reward: 250,
-    bonusReward: 150,
+    reward: 50,
+    bonusReward: 25,
     type: 'level',
     difficulty: 'easy',
     color: '#4caf50'
@@ -833,15 +803,14 @@ export const QUESTS = {
     name: 'Взрывной рост',
     description: 'Повысьте уровень 5 раз за день',
     target: 5,
-    reward: 800,
-    bonusReward: 400,
+    reward: 150,
+    bonusReward: 75,
     type: 'level',
     difficulty: 'medium',
     color: '#ff9800'
   }
 };
 
-// Категории квестов для табов
 export const QUEST_CATEGORIES = {
   all: { name: 'Все', icon: '📋', color: '#9e9e9e' },
   clicker: { name: 'Кликер', icon: '👆', color: '#4caf50' },
@@ -850,7 +819,6 @@ export const QUEST_CATEGORIES = {
   progress: { name: 'Прогресс', icon: '📈', color: '#ff9800' }
 };
 
-// Категории достижений
 export const ACHIEVEMENT_CATEGORIES = {
   all: { name: 'Все', icon: '🏆' },
   clicks: { name: 'Клики', icon: '👆' },
@@ -863,7 +831,6 @@ export const ACHIEVEMENT_CATEGORIES = {
   time: { name: 'Время', icon: '⏱️' }
 };
 
-// Редкости лун (для красивого отображения)
 export const RARITY_CONFIG = {
   common: { name: 'Обычная', color: '#9e9e9e', gradient: 'linear-gradient(135deg, #9e9e9e, #616161)' },
   rare: { name: 'Редкая', color: '#2196f3', gradient: 'linear-gradient(135deg, #2196f3, #0d47a1)' },
