@@ -1790,3 +1790,73 @@
   .profile-header-block { flex-direction: column; text-align: center; }
   .profile-avatar { width: 54px; height: 54px; font-size: 1.8rem; }
 }
+
+/* ============================================================
+   КНОПКИ ЗАКРЫТИЯ ВНУТРИ ПАНЕЛЕЙ
+   ============================================================ */
+.panel-close-tab {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 60px;
+  background: linear-gradient(135deg, rgba(21, 26, 46, 0.95), rgba(30, 36, 64, 0.95));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 101;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+  padding: 0;
+}
+
+.panel-close-tab:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 152, 0, 0.15));
+  border-color: rgba(255, 215, 0, 0.4);
+  color: var(--accent-gold);
+}
+
+/* Для панели слева (profile) - кнопка закрытия справа */
+.panel-left .panel-close-tab {
+  right: -28px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border-left: none;
+}
+
+/* Для панели справа (shop) - кнопка закрытия слева */
+.panel-right .panel-close-tab {
+  left: -28px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  border-right: none;
+}
+
+.panel-close-tab svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Когда панель скрыта - кнопку тоже скрываем */
+.panel.hidden .panel-close-tab {
+  display: none;
+}
+
+/* Когда панель открыта - кнопка появляется с анимацией */
+.panel:not(.hidden) .panel-close-tab {
+  animation: closeButtonAppear 0.3s ease-out 0.1s both;
+}
+
+@keyframes closeButtonAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
