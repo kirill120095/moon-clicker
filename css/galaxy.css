@@ -1,85 +1,118 @@
 /* ============================================================
-   ГАЛАКТИКА, ЗВЁЗДЫ, ПЛАНЕТЫ
+   GALAXY - БАЗОВЫЕ СТИЛИ И ФОН
    ============================================================ */
-.galaxy {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    background: radial-gradient(ellipse at 20% 50%, #0d1b2a, #1b1f3a 60%, #0b0e1a);
-    overflow: hidden;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* ---------- ЗВЁЗДЫ ---------- */
-.stars {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
+:root {
+  --bg-primary: #0d1b2a;
+  --bg-secondary: #1a1f35;
+  --bg-tertiary: #2a2f45;
+  --text-primary: #f0e6d0;
+  --text-secondary: rgba(240, 230, 208, 0.7);
+  --text-muted: rgba(240, 230, 208, 0.5);
+  --accent-gold: #ffd700;
+  --accent-orange: #ff9800;
+  --success: #4caf50;
+  --danger: #f44336;
+  --info: #2196f3;
+  --warning: #ff9800;
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ЗВЁЗДНОЕ НЕБО */
+#stars {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 .star {
-    position: absolute;
-    background: white;
-    border-radius: 50%;
-    animation: twinkle var(--duration) infinite alternate;
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle var(--duration) ease-in-out infinite;
+  opacity: 0.6;
 }
 
-/* ---------- ПЛАНЕТЫ ---------- */
-.planet {
-    position: absolute;
-    border-radius: 50%;
-    box-shadow: 0 0 40px rgba(255, 180, 100, 0.2);
-    animation: orbit linear infinite;
-    pointer-events: none;
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
 }
 
-.planet::after {
-    content: '';
-    position: absolute;
-    width: 20%;
-    height: 20%;
-    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3), transparent);
-    border-radius: 50%;
-    top: 15%;
-    left: 20%;
+/* СКРЫТИЕ ЭЛЕМЕНТОВ */
+.hidden {
+  display: none !important;
 }
 
-.planet-1 {
-    width: 60px;
-    height: 60px;
-    top: 15%;
-    left: 85%;
-    background: radial-gradient(circle at 30% 30%, #ffb07c, #d98c5f);
-    animation-duration: 25s;
-    animation-name: orbit1;
-    box-shadow: 0 0 60px rgba(255, 150, 80, 0.2);
+/* ОСНОВНОЙ КОНТЕЙНЕР */
+.app {
+  position: relative;
+  min-height: 100vh;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.planet-2 {
-    width: 40px;
-    height: 40px;
-    top: 75%;
-    left: 10%;
-    background: radial-gradient(circle at 30% 30%, #8fc7ff, #4a7db5);
-    animation-duration: 35s;
-    animation-name: orbit2;
-    box-shadow: 0 0 50px rgba(100, 180, 255, 0.2);
+/* СКРОЛЛБАР */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-@media (max-width: 600px) {
-    .planet-1 { width: 40px; height: 40px; }
-    .planet-2 { width: 30px; height: 30px; }
-    @keyframes orbit1 {
-        0% { transform: rotate(0deg) translateX(100px) rotate(0deg); }
-        100% { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
-    }
-    @keyframes orbit2 {
-        0% { transform: rotate(0deg) translateX(-90px) rotate(0deg); }
-        100% { transform: rotate(360deg) translateX(-90px) rotate(-360deg); }
-    }
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.5);
+}
+
+/* АНИМАЦИИ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
