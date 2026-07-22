@@ -1032,3 +1032,20 @@ if (typeof window !== 'undefined') {
   window.setQuestCategory = setQuestCategory;
   window.setAchievementCategory = setAchievementCategory;
 }
+
+
+// ============================================================
+// ОБНОВЛЕНИЕ UI ПРИ ОТКРЫТИИ ПАНЕЛЕЙ
+// ============================================================
+export function refreshPanelContent() {
+  // Обновляем контент всех открытых панелей
+  updateProfileAndLeaders();
+  updateShopUI();
+  updateQuestUI();
+  updateAchievementUI();
+}
+
+// Добавляем в window для доступа
+if (typeof window !== 'undefined') {
+  window.refreshPanelContent = refreshPanelContent;
+}
