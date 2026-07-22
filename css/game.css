@@ -1383,3 +1383,749 @@
     display: none;
   }
 }
+
+/* ============================================================
+   ФИЛЬТР-ТАБЫ (БЕЗ ПОЛЗУНКА, С WRAP)
+   ============================================================ */
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  margin-bottom: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.filter-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.filter-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.filter-tab.active {
+  background: var(--tab-color, linear-gradient(135deg, #ffd700, #ff9800));
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--tab-color, #ffd700) 40%, transparent);
+}
+
+.achievement-tab.active {
+  background: linear-gradient(135deg, #ffd700, #ff9800);
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+}
+
+.filter-tab .tab-icon {
+  font-size: 1.1rem;
+}
+
+/* ============================================================
+   ПРОФИЛЬ - НОВЫЕ БЛОКИ
+   ============================================================ */
+.profile-block {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 14px;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+.profile-block-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-block-header .block-icon {
+  font-size: 1.4rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.profile-block-header .block-title {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f0e6d0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.profile-block-header .block-counter {
+  padding: 4px 10px;
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* === ШАПКА ПРОФИЛЯ === */
+.profile-header-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 152, 0, 0.04));
+  border-color: rgba(255, 215, 0, 0.2);
+}
+
+.profile-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, #ffd700, #ff9800);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4), inset 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.profile-level-badge {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: white;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 2px solid rgba(13, 27, 42, 1);
+  white-space: nowrap;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f0e6d0;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-email {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-title {
+  display: inline-block;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #ffd700, #ff9800);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+/* === БОЕВЫЕ ХАРАКТЕРИСТИКИ === */
+.combat-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.combat-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.combat-stat-icon {
+  font-size: 1.6rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.combat-stat-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.combat-stat-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.combat-stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f0e6d0;
+}
+
+.combat-stat-value.highlight {
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* === БОНУСЫ === */
+.bonuses-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.bonus-card {
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.3s;
+}
+
+.bonus-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.bonus-card.damage-bonus { border-left: 3px solid #f44336; }
+.bonus-card.shard-bonus { border-left: 3px solid #2196f3; }
+.bonus-card.crit-chance-bonus { border-left: 3px solid #ff9800; }
+.bonus-card.crit-damage-bonus { border-left: 3px solid #9c27b0; }
+
+.bonus-card-icon {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.bonus-card-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.bonus-card-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+/* === АКТИВНЫЕ ЛУНЫ === */
+.active-moons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-moon-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s;
+}
+
+.profile-moon-card.active {
+  border-color: rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(0, 0, 0, 0.25));
+}
+
+.profile-moon-card.empty-slot {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.profile-moon-emoji {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+.profile-moon-emoji.empty {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+.profile-moon-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-moon-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f0e6d0;
+  margin-bottom: 2px;
+}
+
+.profile-moon-name.empty-name {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.profile-moon-level {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.profile-moon-level.empty-level {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+.btn-moon-deactivate {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(244, 67, 54, 0.2);
+  color: #ef5350;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.btn-moon-deactivate svg {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-moon-deactivate:hover {
+  background: rgba(244, 67, 54, 0.4);
+  transform: scale(1.1);
+}
+
+/* === КОЛЛЕКЦИЯ КУПЛЕННЫХ ЛУН === */
+.owned-moons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.owned-moon-card {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.owned-moon-card.is-active {
+  border-color: rgba(255, 215, 0, 0.5);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(0, 0, 0, 0.25));
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.owned-moon-card.rarity-rare { border-color: rgba(33, 150, 243, 0.3); }
+.owned-moon-card.rarity-epic { border-color: rgba(156, 39, 176, 0.3); }
+.owned-moon-card.rarity-legendary { border-color: rgba(255, 152, 0, 0.4); }
+.owned-moon-card.rarity-mythic { 
+  border-color: rgba(233, 30, 99, 0.5); 
+  animation: mythicPulse 3s ease-in-out infinite;
+}
+
+.owned-moon-visual {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.owned-moon-emoji {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.owned-moon-level-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border: 2px solid rgba(13, 27, 42, 1);
+}
+
+.owned-moon-details {
+  margin-bottom: 8px;
+}
+
+.owned-moon-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f0e6d0;
+  margin-bottom: 4px;
+}
+
+.owned-moon-rarity {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-owned-moon-toggle {
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.3s;
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: white;
+}
+
+.btn-owned-moon-toggle.active {
+  background: linear-gradient(135deg, #f44336, #c62828);
+}
+
+.btn-owned-moon-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* === СИНЕРГИИ В ПРОФИЛЕ === */
+.synergies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-synergy-card {
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 14px;
+  border: 1px solid var(--tier-color, rgba(255, 255, 255, 0.1));
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-synergy-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--tier-color);
+}
+
+.profile-synergy-card.tier-3 {
+  animation: legendaryGlow 3s ease-in-out infinite;
+}
+
+.profile-synergy-card.tier-4 {
+  animation: mythicGlow 2s ease-in-out infinite;
+}
+
+.synergy-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.synergy-card-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  border: 1px solid var(--tier-color);
+}
+
+.synergy-card-info {
+  flex: 1;
+}
+
+.synergy-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f0e6d0;
+  margin-bottom: 2px;
+}
+
+.synergy-card-tier {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--tier-color);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.synergy-card-moons {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  justify-content: center;
+}
+
+.synergy-moon-emoji {
+  font-size: 1.2rem;
+}
+
+.synergy-card-desc {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.synergy-card-bonuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.synergy-card-bonuses span {
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: #ffd700;
+  font-weight: 600;
+}
+
+/* === СТАТИСТИКА === */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat-card {
+  padding: 10px 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 215, 0, 0.2);
+}
+
+.stat-card-icon {
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+}
+
+.stat-card-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.stat-card-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+/* === СПРАВОЧНИК === */
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guide-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border-left: 3px solid rgba(255, 215, 0, 0.4);
+}
+
+.guide-item-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.guide-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.guide-item-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f0e6d0;
+  margin-bottom: 4px;
+}
+
+.guide-item-text {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+/* === ПУСТЫЕ СОСТОЯНИЯ === */
+.empty-state {
+  text-align: center;
+  padding: 24px 16px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.empty-state-hint {
+  font-size: 0.8rem;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* === АДАПТИВНОСТЬ === */
+@media (max-width: 700px) {
+  .combat-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .owned-moons-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .profile-header-block {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .profile-avatar {
+    width: 64px;
+    height: 64px;
+    font-size: 2rem;
+  }
+  
+  .filter-tabs {
+    padding: 8px;
+    gap: 6px;
+  }
+  
+  .filter-tab {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (min-width: 701px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .owned-moons-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
