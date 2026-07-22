@@ -97,6 +97,7 @@ export function updateUI() {
     _updateTimerBar();
     _updateRollbackButton();
     _updateMoonStyle();
+    _updateMoonAuras(); // НОВОЕ: обновление аур
   });
 }
 
@@ -188,6 +189,47 @@ function _updateMoonStyle() {
     container.classList.add('blood-mode');
   } else {
     container.classList.remove('blood-mode');
+  }
+}
+
+// ============================================================
+// НОВОЕ: ОБНОВЛЕНИЕ АУР НА ЛУНЕ ОТ СИНЕРГИЙ
+// ============================================================
+function _updateMoonAuras() {
+  const moonInner = document.getElementById('moonInner');
+  const moonContainer = document.getElementById('moonContainer');
+  if (!moonInner || !moonContainer) return;
+  
+  // Убираем все старые ауры
+  const auraClasses = [
+    'aura-normal', 'aura-blood', 'aura-ice', 'aura-shadow',
+    'aura-fire', 'aura-electric', 'aura-gold', 'aura-cosmic',
+    'has-synergy-aura', 'has-multi-aura'
+  ];
+  auraClasses.forEach(cls => moonContainer.classList.remove(cls));
+  
+  // Получаем активные синергии
+  const synergies = window._activeSynergies || [];
+  if (synergies.length === 0) return;
+  
+  // Собираем все ауры из всех активных синергий
+  const allAuraClasses = new Set();
+  synergies.forEach(syn => {
+    if (syn.auraCombo && Array.isArray(syn.auraCombo)) {
+      syn.auraCombo.forEach(aura => allAuraClasses.add(aura));
+    }
+  });
+  
+  // Применяем ауры к луне
+  allAuraClasses.forEach(auraClass => {
+    moonContainer.classList.add(auraClass);
+  });
+  
+  if (allAuraClasses.size > 0) {
+    moonContainer.classList.add('has-synergy-aura');
+    if (allAuraClasses.size > 1) {
+      moonContainer.classList.add('has-multi-aura');
+    }
   }
 }
 
@@ -302,6 +344,12 @@ function _updateMoonShop() {
         </div>
         <div class="moon-shop-name">${escapeHTML(moon.name)}</div>
         <div class="moon-shop-desc">${escapeHTML(moon.description || '')}</div>
+        
+        <div class="moon-shop-special">
+          <div class="special-name">✨ ${escapeHTML(moon.specialName || 'Особенность')}</div>
+          <div class="special-desc">${escapeHTML(moon.specialDescription || '')}</div>
+        </div>
+        
         <div class="moon-shop-bonuses">
           ${bonusDesc.length ? bonusDesc.join('<br>') : '<span class="no-bonus">Без бонусов</span>'}
         </div>
@@ -366,10 +414,9 @@ function _updateSynergiesDisplay() {
 }
 
 export function updateProfileAndLeaders() {
-  uiScheduler.schedule(() => {
-    _updateProfile();
-    _updateLeaders();
-  });
+  // ПРИНУДИТЕЛЬНО обновляем профиль каждый раз
+  _updateProfile();
+  _updateLeaders();
 }
 
 // ============================================================
@@ -377,12 +424,23 @@ export function updateProfileAndLeaders() {
 // ============================================================
 function _updateProfile() {
   const profileContent = document.getElementById('profileContent');
-  if (!profileContent || !state.user || !state.playerData) return;
+  if (!profileContent) return;
+  
+  // Если нет пользователя - показываем заглушку
+  if (!state.user) {
+    profileContent.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">👤</div>
+        <div class="empty-state-text">Войдите в аккаунт</div>
+        <div class="empty-state-hint">Чтобы увидеть профиль</div>
+      </div>
+    `;
+    return;
+  }
 
-  const data = state.playerData;
+  const data = state.playerData || {};
   const title = getTitle(data.level || 1);
 
-  // === БЛОК 1: ШАПКА ПРОФИЛЯ ===
   const headerBlock = `
     <div class="profile-block profile-header-block">
       <div class="profile-avatar-wrap">
@@ -397,7 +455,6 @@ function _updateProfile() {
     </div>
   `;
 
-  // === БЛОК 2: БОЕВЫЕ ХАРАКТЕРИСТИКИ ===
   const baseDamage = data.click_damage || 1;
   const totalDamageBonus = window._totalDamageBonus || 0;
   const totalShardBonus = window._totalShardBonus || 0;
@@ -446,7 +503,6 @@ function _updateProfile() {
     </div>
   `;
 
-  // === БЛОК 3: БОНУСЫ ===
   const bonusesBlock = `
     <div class="profile-block">
       <div class="profile-block-header">
@@ -478,7 +534,6 @@ function _updateProfile() {
     </div>
   `;
 
-  // === БЛОК 4: АКТИВНЫЕ ЛУНЫ (С КНОПКАМИ) ===
   const activeMoons = state.activeMoons || [];
   const maxSlots = state.maxSlots || 1;
   const emptySlotsCount = Math.max(0, maxSlots - activeMoons.length);
@@ -488,13 +543,13 @@ function _updateProfile() {
     const moon = MOON_TYPES[moonId];
     if (!moon) return;
     const level = state.moonLevels[moonId] || 1;
-    const rarity = RARITY_CONFIG[moon.rarity] || RARITY_CONFIG.common;
     activeMoonsHtml += `
       <div class="profile-moon-card active rarity-${moon.rarity}">
         <div class="profile-moon-emoji" style="background-image: ${moon.gradient}; box-shadow: ${moon.shadow}"></div>
         <div class="profile-moon-info">
           <div class="profile-moon-name">${escapeHTML(moon.name)}</div>
           <div class="profile-moon-level">Ур. ${level}</div>
+          <div class="profile-moon-special">✨ ${escapeHTML(moon.specialName || '')}</div>
         </div>
         <button class="btn-moon-deactivate" onclick="window.toggleMoonActive('${moonId}')" title="Деактивировать">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -528,7 +583,6 @@ function _updateProfile() {
     </div>
   `;
 
-  // === БЛОК 5: ВСЕ КУПЛЕННЫЕ ЛУНЫ ===
   const ownedMoons = state.ownedMoons || [];
   let ownedMoonsHtml = '';
   ownedMoons.forEach(moonId => {
@@ -547,6 +601,7 @@ function _updateProfile() {
         <div class="owned-moon-details">
           <div class="owned-moon-name">${escapeHTML(moon.name)}</div>
           <div class="owned-moon-rarity" style="background: ${rarity.gradient}">${rarity.name}</div>
+          <div class="owned-moon-special-small">✨ ${escapeHTML(moon.specialName || '')}</div>
         </div>
         <button class="btn-owned-moon-toggle ${isActive ? 'active' : ''}" onclick="window.toggleMoonActive('${moonId}')">
           ${isActive ? '✓' : '+'}
@@ -568,7 +623,6 @@ function _updateProfile() {
     </div>
   `;
 
-  // === БЛОК 6: АКТИВНЫЕ СИНЕРГИИ ===
   const activeSynergies = window._activeSynergies || [];
   let synergiesHtml = '';
   if (activeSynergies.length > 0) {
@@ -622,7 +676,6 @@ function _updateProfile() {
     </div>
   `;
 
-  // === БЛОК 7: СТАТИСТИКА ===
   const statsBlock = `
     <div class="profile-block">
       <div class="profile-block-header">
@@ -664,7 +717,6 @@ function _updateProfile() {
     </div>
   `;
 
-  // === БЛОК 8: СПРАВОЧНИК ===
   const guideBlock = `
     <div class="profile-block">
       <div class="profile-block-header">
@@ -682,7 +734,7 @@ function _updateProfile() {
         <div class="guide-item">
           <div class="guide-item-icon">🎰</div>
           <div class="guide-item-content">
-            <div class="guide-item-title">Слоты лун</div>
+            <div class="guide-item-title">Слоты лун (макс ${CONSTANTS.MAX_SLOTS})</div>
             <div class="guide-item-text">Позволяет активировать несколько лун одновременно. Больше слотов — больше синергий!</div>
           </div>
         </div>
@@ -694,17 +746,17 @@ function _updateProfile() {
           </div>
         </div>
         <div class="guide-item">
-          <div class="guide-item-icon">💎</div>
+          <div class="guide-item-icon">✨</div>
           <div class="guide-item-content">
-            <div class="guide-item-title">Лунные осколки</div>
-            <div class="guide-item-text">Основная валюта. Получаете за убийство лун и боссов. Тратятся на улучшения и новые луны.</div>
+            <div class="guide-item-title">Уникальные механики</div>
+            <div class="guide-item-text">Каждая луна имеет свою уникальную особенность: вампиризм, заморозка, поджог, цепная молния и другие!</div>
           </div>
         </div>
         <div class="guide-item">
           <div class="guide-item-icon">🔗</div>
           <div class="guide-item-content">
-            <div class="guide-item-title">Синергии</div>
-            <div class="guide-item-text">Определённые комбинации лун дают мощные бонусы. 4 уровня: Базовая → Продвинутая → Легендарная → Мифическая.</div>
+            <div class="guide-item-title">Синергии и ауры</div>
+            <div class="guide-item-text">Комбинации лун дают мощные бонусы и визуальные эффекты. Луна на экране меняется в зависимости от активных синергий!</div>
           </div>
         </div>
         <div class="guide-item">
@@ -780,16 +832,12 @@ export function setQuestCategory(category) {
   updateQuestUI();
 }
 
-// ============================================================
-// КВЕСТЫ - БЕЗ ПОЛЗУНКА, С FLEX-WRAP
-// ============================================================
 export function updateQuestUI() {
   const container = document.getElementById('questsList');
   if (!container) return;
 
   const quests = state.quests || {};
   
-  // Табы категорий - БЕЗ overflow-x scroll, с flex-wrap
   let tabsHtml = '<div class="filter-tabs quest-tabs">';
   for (const [catId, cat] of Object.entries(QUEST_CATEGORIES)) {
     const isActive = currentQuestCategory === catId;
@@ -874,9 +922,6 @@ export function setAchievementCategory(category) {
   updateAchievementUI();
 }
 
-// ============================================================
-// ДОСТИЖЕНИЯ - БЕЗ ПОЛЗУНКА, С FLEX-WRAP
-// ============================================================
 export function updateAchievementUI() {
   const container = document.getElementById('achievementsList');
   if (!container) return;
