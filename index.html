@@ -12,16 +12,15 @@
   
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
   
-  <!-- КРАСИВЫЕ ШРИФТЫ -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="css/galaxy.css?v=4">
-  <link rel="stylesheet" href="css/panel.css?v=4">
-  <link rel="stylesheet" href="css/modal.css?v=4">
-  <link rel="stylesheet" href="css/game.css?v=4">
-  <link rel="stylesheet" href="css/responsive.css?v=4">
+  <link rel="stylesheet" href="css/galaxy.css?v=5">
+  <link rel="stylesheet" href="css/panel.css?v=5">
+  <link rel="stylesheet" href="css/modal.css?v=5">
+  <link rel="stylesheet" href="css/game.css?v=5">
+  <link rel="stylesheet" href="css/responsive.css?v=5">
 </head>
 <body>
   <div id="stars"></div>
@@ -47,42 +46,10 @@
     </div>
   </div>
 
+  <!-- ОСНОВНОЙ ЭКРАН -->
   <div id="app" class="app hidden">
     
-    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
-    <header class="top-bar">
-      <div class="top-bar-left">
-        <button id="profileBtn" class="btn-icon" onclick="window.openPanel('profilePanel')" title="Профиль">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </button>
-      </div>
-      <div class="top-bar-center">
-        <div id="counter" class="counter">💎 0</div>
-        <div id="levelTitle" class="level-title">Уровень 1</div>
-      </div>
-      <div class="top-bar-right">
-        <button id="shopBtn" class="btn-icon" onclick="window.openPanel('shopPanel')" title="Магазин">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-          </svg>
-        </button>
-      </div>
-    </header>
-
-    <div id="timerBarContainer" class="timer-bar-container">
-      <div id="timerBar" class="timer-bar"></div>
-      <span id="timerPercent" class="timer-percent">30с</span>
-    </div>
-
-    <div class="hp-bar-container">
-      <div id="hpBar" class="hp-bar"></div>
-      <span id="hpPercent" class="hp-percent">100/100</span>
-    </div>
-
+    <!-- ЛУНА ПО ЦЕНТРУ -->
     <div id="moonContainer" class="moon-container">
       <div id="moonWrapper" class="moon-wrapper">
         <div id="moonInner" class="moon-inner"></div>
@@ -90,143 +57,132 @@
       </div>
     </div>
 
-    <button class="panel-trigger panel-trigger-left" onclick="window.openPanel('profilePanel')">
-      <span>👤</span>
-    </button>
-    <button class="panel-trigger panel-trigger-right" onclick="window.openPanel('shopPanel')">
-      <span>🛒</span>
-    </button>
-
-    <!-- МАГАЗИН -->
-    <div id="shopPanel" class="panel panel-right hidden">
-      <div class="panel-header">
-        <h2 class="panel-title">🛒 Магазин</h2>
-        <button class="btn-close-panel" onclick="window.closePanel('shopPanel')">✕</button>
+    <!-- ИНФО ПОД ЛУНОЙ -->
+    <div class="moon-info-below">
+      <div class="info-row-top">
+        <div id="counter" class="counter">💎 0</div>
+        <div id="levelTitle" class="level-title">Уровень 1</div>
       </div>
-      <div class="panel-content">
-        <div id="shopLockMessage" class="shop-lock-message">🔒 Доступно с 5 уровня</div>
-        
-        <div class="shop-section">
-          <h3 class="shop-section-title">⚔️ Урон клика</h3>
-          <div class="shop-item">
-            <div class="shop-item-info">
-              <div id="clickDamageLevel" class="shop-item-level">Ур. 0: 1 → 2</div>
-              <div id="clickDamagePrice" class="shop-item-price">30 💎</div>
-            </div>
-            <button id="buyClickDamageBtn" class="btn-buy-shop" onclick="window.gameEngine.buyClickDamage()">Купить</button>
-          </div>
-        </div>
-        
-        <div class="shop-section">
-          <h3 class="shop-section-title">🎰 Слоты лун</h3>
-          <div class="shop-item">
-            <div class="shop-item-info">
-              <div id="slotLevel" class="shop-item-level">Слотов: 1/3</div>
-              <div id="slotPrice" class="shop-item-price">1500 💎</div>
-            </div>
-            <button id="buySlotBtn" class="btn-buy-shop" onclick="window.gameEngine.buySlot()">Купить</button>
-          </div>
-        </div>
-        
-        <div class="shop-section">
-          <h3 class="shop-section-title">🌙 Луны</h3>
-          <div id="moonShopItems" class="moon-shop-items"></div>
-        </div>
-        
-        <div class="shop-section">
-          <h3 class="shop-section-title">🔗 Синергии</h3>
-          <div id="activeSynergies" class="active-synergies"></div>
-        </div>
+      
+      <div id="timerBarContainer" class="timer-bar-container">
+        <div id="timerBar" class="timer-bar"></div>
+        <span id="timerPercent" class="timer-percent">30с</span>
+      </div>
+      
+      <div class="hp-bar-container">
+        <div id="hpBar" class="hp-bar"></div>
+        <span id="hpPercent" class="hp-percent">100/100</span>
       </div>
     </div>
 
-    <!-- ПРОФИЛЬ -->
+    <!-- БОКОВАЯ КНОПКА: ПРОФИЛЬ (СЛЕВА) -->
+    <button id="profileToggleBtn" class="side-toggle-btn side-toggle-left" onclick="window.togglePanel('profilePanel')">
+      <span class="toggle-icon">👤</span>
+      <span class="toggle-label">Профиль</span>
+    </button>
+
+    <!-- БОКОВАЯ КНОПКА: МАГАЗИН (СПРАВА) -->
+    <button id="shopToggleBtn" class="side-toggle-btn side-toggle-right" onclick="window.togglePanel('shopPanel')">
+      <span class="toggle-icon">🛒</span>
+      <span class="toggle-label">Магазин</span>
+    </button>
+
+    <!-- ПАНЕЛЬ: ПРОФИЛЬ (СЛЕВА) - с вкладками Профиль/Топ/Настройки -->
     <div id="profilePanel" class="panel panel-left hidden">
       <div class="panel-header">
-        <h2 class="panel-title">👤 Профиль</h2>
-        <button class="btn-close-panel" onclick="window.closePanel('profilePanel')">✕</button>
+        <div class="panel-tabs">
+          <button class="panel-tab active" data-tab="profile" onclick="window.switchProfileTab('profile')">👤 Профиль</button>
+          <button class="panel-tab" data-tab="leaders" onclick="window.switchProfileTab('leaders')">🏅 Топ</button>
+          <button class="panel-tab" data-tab="settings" onclick="window.switchProfileTab('settings')">⚙️ Настройки</button>
+        </div>
       </div>
       <div class="panel-content panel-scrollable">
-        <div id="profileContent" class="profile-content"></div>
+        <!-- Вкладка: Профиль -->
+        <div id="profileTabContent" class="tab-content active">
+          <div id="profileContent" class="profile-content"></div>
+          <div class="profile-actions">
+            <button id="logoutBtn" class="btn-action btn-logout">🚪 Выйти</button>
+            <button id="resetBtn" class="btn-action btn-reset">♻️ Сбросить прогресс</button>
+          </div>
+        </div>
         
-        <div class="profile-actions">
-          <button id="logoutBtn" class="btn-action btn-logout">🚪 Выйти</button>
-          <button id="resetBtn" class="btn-action btn-reset">♻️ Сбросить прогресс</button>
+        <!-- Вкладка: Топ -->
+        <div id="leadersTabContent" class="tab-content">
+          <div id="leadersList" class="leaders-list"></div>
+        </div>
+        
+        <!-- Вкладка: Настройки -->
+        <div id="settingsTabContent" class="tab-content">
+          <div class="settings-item">
+            <label class="settings-label">Тестовый режим</label>
+            <button id="testModeToggle" class="btn-toggle" onclick="window.gameEngine.toggleTestMode()">ВЫКЛ</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- КВЕСТЫ -->
-    <div id="questsPanel" class="panel panel-bottom hidden">
+    <!-- ПАНЕЛЬ: МАГАЗИН (СПРАВА) - с вкладками Магазин/Квесты/Ачивки -->
+    <div id="shopPanel" class="panel panel-right hidden">
       <div class="panel-header">
-        <h2 class="panel-title">🎯 Квесты</h2>
-        <button class="btn-close-panel" onclick="window.closePanel('questsPanel')">✕</button>
+        <div class="panel-tabs">
+          <button class="panel-tab active" data-tab="shop" onclick="window.switchShopTab('shop')">🛒 Магазин</button>
+          <button class="panel-tab" data-tab="quests" onclick="window.switchShopTab('quests')">🎯 Квесты</button>
+          <button class="panel-tab" data-tab="achievements" onclick="window.switchShopTab('achievements')">🏆 Ачивки</button>
+        </div>
       </div>
       <div class="panel-content panel-scrollable">
-        <div id="questsList" class="quests-list"></div>
-      </div>
-    </div>
-
-    <!-- ДОСТИЖЕНИЯ -->
-    <div id="achievementsPanel" class="panel panel-bottom hidden">
-      <div class="panel-header">
-        <h2 class="panel-title">🏆 Достижения</h2>
-        <button class="btn-close-panel" onclick="window.closePanel('achievementsPanel')">✕</button>
-      </div>
-      <div class="panel-content panel-scrollable">
-        <div id="achievementsList" class="achievements-list"></div>
-      </div>
-    </div>
-
-    <!-- ЛИДЕРЫ -->
-    <div id="leadersPanel" class="panel panel-bottom hidden">
-      <div class="panel-header">
-        <h2 class="panel-title">🏅 Таблица лидеров</h2>
-        <button class="btn-close-panel" onclick="window.closePanel('leadersPanel')">✕</button>
-      </div>
-      <div class="panel-content panel-scrollable">
-        <div id="leadersList" class="leaders-list"></div>
-      </div>
-    </div>
-
-    <!-- НАСТРОЙКИ -->
-    <div id="settingsPanel" class="panel panel-bottom hidden">
-      <div class="panel-header">
-        <h2 class="panel-title">⚙️ Настройки</h2>
-        <button class="btn-close-panel" onclick="window.closePanel('settingsPanel')">✕</button>
-      </div>
-      <div class="panel-content">
-        <div class="settings-item">
-          <label class="settings-label">Тестовый режим</label>
-          <button id="testModeToggle" class="btn-toggle" onclick="window.gameEngine.toggleTestMode()">ВЫКЛ</button>
+        <!-- Вкладка: Магазин -->
+        <div id="shopTabContent" class="tab-content active">
+          <div id="shopLockMessage" class="shop-lock-message">🔒 Доступно с 5 уровня</div>
+          
+          <div class="shop-section">
+            <h3 class="shop-section-title">⚔️ Урон клика</h3>
+            <div class="shop-item">
+              <div class="shop-item-info">
+                <div id="clickDamageLevel" class="shop-item-level">Ур. 0: 1 → 2</div>
+                <div id="clickDamagePrice" class="shop-item-price">30 💎</div>
+              </div>
+              <button id="buyClickDamageBtn" class="btn-buy-shop" onclick="window.gameEngine.buyClickDamage()">Купить</button>
+            </div>
+          </div>
+          
+          <div class="shop-section">
+            <h3 class="shop-section-title">🎰 Слоты лун</h3>
+            <div class="shop-item">
+              <div class="shop-item-info">
+                <div id="slotLevel" class="shop-item-level">Слотов: 1/3</div>
+                <div id="slotPrice" class="shop-item-price">1500 💎</div>
+              </div>
+              <button id="buySlotBtn" class="btn-buy-shop" onclick="window.gameEngine.buySlot()">Купить</button>
+            </div>
+          </div>
+          
+          <div class="shop-section">
+            <h3 class="shop-section-title">🌙 Луны</h3>
+            <div id="moonShopItems" class="moon-shop-items"></div>
+          </div>
+          
+          <div class="shop-section">
+            <h3 class="shop-section-title">🔗 Синергии</h3>
+            <div id="activeSynergies" class="active-synergies"></div>
+          </div>
+        </div>
+        
+        <!-- Вкладка: Квесты -->
+        <div id="questsTabContent" class="tab-content">
+          <div id="questsList" class="quests-list"></div>
+        </div>
+        
+        <!-- Вкладка: Ачивки -->
+        <div id="achievementsTabContent" class="tab-content">
+          <div id="achievementsList" class="achievements-list"></div>
         </div>
       </div>
     </div>
 
-    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
-    <nav class="bottom-nav">
-      <button class="nav-btn" onclick="window.openPanel('leadersPanel')">
-        <span class="nav-icon">🏅</span>
-        <span class="nav-label">Топ</span>
-      </button>
-      <button class="nav-btn" onclick="window.openPanel('questsPanel')">
-        <span class="nav-icon">🎯</span>
-        <span class="nav-label">Квесты</span>
-      </button>
-      <button class="nav-btn nav-btn-main" onclick="window.closeAllPanels()">
-        <span class="nav-icon">🌙</span>
-      </button>
-      <button class="nav-btn" onclick="window.openPanel('achievementsPanel')">
-        <span class="nav-icon">🏆</span>
-        <span class="nav-label">Ачивки</span>
-      </button>
-      <button class="nav-btn" onclick="window.openPanel('settingsPanel')">
-        <span class="nav-icon">⚙️</span>
-        <span class="nav-label">Настр</span>
-      </button>
-    </nav>
   </div>
 
+  <!-- МОДАЛЬНОЕ ОКНО -->
   <div id="confirmModal" class="modal hidden">
     <div class="modal-backdrop" onclick="window.closeModal('confirmModal')"></div>
     <div class="modal-content">
@@ -240,6 +196,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.1/dist/umd/supabase.min.js"></script>
-  <script type="module" src="src/index.js?v=4"></script>
+  <script type="module" src="src/index.js?v=5"></script>
 </body>
 </html>
