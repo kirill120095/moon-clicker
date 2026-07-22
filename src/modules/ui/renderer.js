@@ -1049,3 +1049,19 @@ export function refreshPanelContent() {
 if (typeof window !== 'undefined') {
   window.refreshPanelContent = refreshPanelContent;
 }
+
+// ============================================================
+// ЭКСПОРТ ФУНКЦИЙ В WINDOW (ДЛЯ onclick И ГЛОБАЛЬНЫХ ВЫЗОВОВ)
+// ============================================================
+if (typeof window !== 'undefined') {
+  window.updateProfileAndLeaders = updateProfileAndLeaders;
+  window.updateShopUI = updateShopUI;
+  window.updateQuestUI = updateQuestUI;
+  window.updateAchievementUI = updateAchievementUI;
+  window.updateQuestAndAchievementUI = updateQuestAndAchievementUI;
+  window.showToast = showToast;
+  
+  // Для кастомных категорий
+  window._setQuestCategory = setQuestCategory;
+  window._setAchievementCategory = setAchievementCategory;
+}
