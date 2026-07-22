@@ -100,12 +100,6 @@ class State {
   // ПОДПИСКА НА ИЗМЕНЕНИЯ
   // ============================================================
   
-  /**
-   * Подписаться на изменение конкретного свойства
-   * @param {string} property - имя свойства
-   * @param {Function} callback - функция обратного вызова
-   * @returns {Function} - функция отписки
-   */
   subscribe(property, callback) {
     if (!this._subscribers.has(property)) {
       this._subscribers.set(property, new Set());
@@ -113,7 +107,6 @@ class State {
     
     this._subscribers.get(property).add(callback);
     
-    // Возвращаем функцию отписки
     return () => {
       const subs = this._subscribers.get(property);
       if (subs) {
@@ -125,12 +118,6 @@ class State {
     };
   }
 
-  /**
-   * Подписаться на изменения нескольких свойств сразу
-   * @param {Array<string>} properties - массив имен свойств
-   * @param {Function} callback - функция обратного вызова
-   * @returns {Function} - функция отписки
-   */
   subscribeMany(properties, callback) {
     const unsubscribes = properties.map(prop => this.subscribe(prop, callback));
     
@@ -139,11 +126,6 @@ class State {
     };
   }
 
-  /**
-   * Подписаться на все изменения
-   * @param {Function} callback - функция обратного вызова
-   * @returns {Function} - функция отписки
-   */
   subscribeAll(callback) {
     return this.subscribe('*', callback);
   }
@@ -153,7 +135,6 @@ class State {
   // ============================================================
   
   _notify(property, newValue, oldValue) {
-    // Уведомляем подписчиков конкретного свойства
     const subs = this._subscribers.get(property);
     if (subs) {
       subs.forEach(callback => {
@@ -165,7 +146,6 @@ class State {
       });
     }
     
-    // Уведомляем подписчиков всех изменений
     const allSubs = this._subscribers.get('*');
     if (allSubs) {
       allSubs.forEach(callback => {
@@ -179,7 +159,7 @@ class State {
   }
 
   // ============================================================
-  // Пакетное обновление (для нескольких изменений сразу)
+  // Пакетное обновление
   // ============================================================
   
   startBatch() {
@@ -190,7 +170,6 @@ class State {
   endBatch() {
     this._batchUpdates = false;
     
-    // Уведомляем обо всех измененных свойствах
     this._pendingUpdates.forEach(property => {
       const value = this._state[property];
       this._notify(property, value, undefined);
@@ -203,19 +182,10 @@ class State {
   // УСТАНОВКА ЗНАЧЕНИЙ
   // ============================================================
   
-  /**
-   * Установить значение свойства
-   * @param {string} property - имя свойства
-   * @param {*} value - значение
-   */
   set(property, value) {
     this._proxy[property] = value;
   }
 
-  /**
-   * Установить несколько свойств сразу
-   * @param {Object} updates - объект с обновлениями
-   */
   setMany(updates) {
     this.startBatch();
     Object.entries(updates).forEach(([key, value]) => {
@@ -224,67 +194,149 @@ class State {
     this.endBatch();
   }
 
-  /**
-   * Получить значение свойства
-   * @param {string} property - имя свойства
-   * @returns {*} значение
-   */
   get(property) {
     return this._state[property];
+  }
+
+  // ============================================================
+  // УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЕМ (ДЛЯ AUTH.JS)
+  // ============================================================
+  
+  /**
+   * Установить текущего пользователя
+   * @param {Object|null} user - объект пользователя Supabase или null
+   */
+  setUser(user) {
+    this.set('user', user);
+    
+    // Если пользователь установлен - загружаем его данные из localStorage
+    if (user?.id) {
+      this._loadUserLocalStorage(user.id);
+    }
+  }
+
+  /**
+   * Получить текущего пользователя
+   * @returns {Object|null}
+   */
+  getUser() {
+    return this._state.user;
+  }
+
+  /**
+   * Загрузить сохраненные данные пользователя из localStorage
+   */
+  _loadUserLocalStorage(userId) {
+    try {
+      // Загружаем активные луны
+      const activeMoons = localStorage.getItem(`activeMoons_${userId}`);
+      if (activeMoons) {
+        const moons = JSON.parse(activeMoons);
+        if (Array.isArray(moons) && moons.length > 0) {
+          const validMoons = moons.filter(id => this._state.ownedMoons.includes(id));
+          if (validMoons.length > 0) {
+            this._state.activeMoons = validMoons;
+            this._state.activeMoon = validMoons[0];
+          }
+        }
+      }
+
+      // Загружаем квесты
+      const quests = localStorage.getItem(`quests_${userId}`);
+      if (quests) {
+        try {
+          this._state.quests = JSON.parse(quests);
+        } catch (e) {
+          this._state.quests = {};
+        }
+      }
+
+      // Загружаем достижения
+      const achievements = localStorage.getItem(`ach_${userId}`);
+      if (achievements) {
+        try {
+          this._state.achievements = JSON.parse(achievements);
+        } catch (e) {
+          this._state.achievements = {};
+        }
+      }
+
+      // Загружаем режимы
+      const levelLocked = localStorage.getItem(`levelLocked_${userId}`);
+      if (levelLocked !== null) {
+        this._state.levelLocked = levelLocked === 'true';
+      }
+
+      const testMode = localStorage.getItem(`testMode_${userId}`);
+      if (testMode !== null) {
+        this._state.testMode = testMode === 'true';
+      }
+
+      const bossKills = localStorage.getItem(`bossKills_${userId}`);
+      if (bossKills !== null) {
+        this._state.bossKills = parseInt(bossKills, 10) || 0;
+      }
+
+      const slotLevel = localStorage.getItem(`slotLevel_${userId}`);
+      if (slotLevel !== null) {
+        this._state.maxSlots = parseInt(slotLevel, 10) || 1;
+      }
+
+    } catch (error) {
+      console.error('[State] Error loading user localStorage:', error);
+    }
+  }
+
+  /**
+   * Очистить пользователя (при выходе)
+   */
+  clearUser() {
+    this.set('user', null);
   }
 
   // ============================================================
   // СПЕЦИФИЧНЫЕ МЕТОДЫ ДЛЯ ИГРЫ
   // ============================================================
   
-  /**
-   * Увеличить счетчик кликов
-   */
   incrementClickCount() {
     this.set('clickCount', this._state.clickCount + 1);
   }
 
-  /**
-   * Увеличить уровень
-   */
   incrementLevel() {
     this.set('currentLevel', this._state.currentLevel + 1);
   }
 
-  /**
-   * Установить текущий уровень
-   */
   setCurrentLevel(level) {
     this.set('currentLevel', level);
   }
 
-  /**
-   * Установить количество убитых боссов
-   */
   setBossKills(count) {
     this.set('bossKills', count);
+    
+    // Сохраняем в localStorage
+    if (this._state.user?.id) {
+      localStorage.setItem(`bossKills_${this._state.user.id}`, count.toString());
+    }
   }
 
-  /**
-   * Установить уровень слотов
-   */
   setSlotLevel(level) {
     this.set('maxSlots', level);
+    
+    // Сохраняем в localStorage
+    if (this._state.user?.id) {
+      localStorage.setItem(`slotLevel_${this._state.user.id}`, level.toString());
+    }
   }
 
   // ============================================================
   // УПРАВЛЕНИЕ ЛУНАМИ
   // ============================================================
   
-  /**
-   * Добавить луну в коллекцию
-   */
   addOwnedMoon(moonId) {
     const owned = this._state.ownedMoons || [];
     if (!owned.includes(moonId)) {
       this.set('ownedMoons', [...owned, moonId]);
       
-      // Устанавливаем начальный уровень
       const levels = this._state.moonLevels || {};
       if (!levels[moonId]) {
         this.set('moonLevels', { ...levels, [moonId]: 1 });
@@ -292,40 +344,27 @@ class State {
     }
   }
 
-  /**
-   * Установить уровень луны
-   */
   setMoonLevel(moonId, level) {
     const levels = this._state.moonLevels || {};
     this.set('moonLevels', { ...levels, [moonId]: level });
   }
 
-  /**
-   * Получить уровень луны
-   */
   getMoonLevel(moonId) {
     return this._state.moonLevels?.[moonId] || 1;
   }
 
-  /**
-   * Добавить активную луну
-   */
   addActiveMoon(moonId) {
     const current = this._state.activeMoons || [];
     if (!current.includes(moonId) && current.length < this._state.maxSlots) {
       this.set('activeMoons', [...current, moonId]);
       this.set('activeMoon', moonId);
       
-      // Сохраняем в localStorage
       if (this._state.user?.id) {
         localStorage.setItem(`activeMoons_${this._state.user.id}`, JSON.stringify([...current, moonId]));
       }
     }
   }
 
-  /**
-   * Удалить активную луну
-   */
   removeActiveMoon(moonId) {
     const current = this._state.activeMoons || [];
     if (current.includes(moonId) && current.length > 1) {
@@ -333,42 +372,31 @@ class State {
       this.set('activeMoons', newActive);
       this.set('activeMoon', newActive[0] || 'normal');
       
-      // Сохраняем в localStorage
       if (this._state.user?.id) {
         localStorage.setItem(`activeMoons_${this._state.user.id}`, JSON.stringify(newActive));
       }
     }
   }
 
-  /**
-   * Установить активную луну
-   */
   setActiveMoon(moonId) {
     const current = this._state.activeMoons || ['normal'];
     
     if (current.includes(moonId)) {
-      // Луна уже в списке активных - просто делаем её главной
       this.set('activeMoon', moonId);
     } else if (current.length < this._state.maxSlots) {
-      // Есть свободный слот - добавляем
       this.set('activeMoons', [...current, moonId]);
       this.set('activeMoon', moonId);
     } else {
-      // Нет свободных слотов - заменяем первую луну
       const newActive = [moonId, ...current.slice(1)];
       this.set('activeMoons', newActive);
       this.set('activeMoon', moonId);
     }
     
-    // Сохраняем в localStorage
     if (this._state.user?.id) {
       localStorage.setItem(`activeMoons_${this._state.user.id}`, JSON.stringify(this._state.activeMoons));
     }
   }
 
-  /**
-   * Загрузить активные луны из localStorage
-   */
   loadActiveMoons() {
     if (this._state.user?.id) {
       const saved = localStorage.getItem(`activeMoons_${this._state.user.id}`);
@@ -376,7 +404,6 @@ class State {
         try {
           const moons = JSON.parse(saved);
           if (Array.isArray(moons) && moons.length > 0) {
-            // Проверяем, что все луны действительно куплены
             const validMoons = moons.filter(id => this._state.ownedMoons.includes(id));
             if (validMoons.length > 0) {
               this._state.activeMoons = validMoons;
@@ -394,9 +421,6 @@ class State {
   // КВЕСТЫ
   // ============================================================
   
-  /**
-   * Обновить прогресс квеста
-   */
   updateQuestProgress(questId, progress) {
     const quests = this._state.quests || {};
     const quest = quests[questId];
@@ -410,37 +434,56 @@ class State {
     }
   }
 
-  /**
-   * Сбросить квесты
-   */
   resetQuests() {
     this.set('quests', {});
+    
+    if (this._state.user?.id) {
+      localStorage.removeItem(`quests_${this._state.user.id}`);
+      localStorage.removeItem(`quests_last_reset_${this._state.user.id}`);
+    }
   }
 
   // ============================================================
   // ДОСТИЖЕНИЯ
   // ============================================================
   
-  /**
-   * Очистить достижения
-   */
   clearAchievements() {
     this.set('achievements', {});
+    
+    if (this._state.user?.id) {
+      localStorage.removeItem(`ach_${this._state.user.id}`);
+    }
+  }
+
+  // ============================================================
+  // РЕЖИМЫ
+  // ============================================================
+  
+  setLevelLocked(locked) {
+    this.set('levelLocked', locked);
+    
+    if (this._state.user?.id) {
+      localStorage.setItem(`levelLocked_${this._state.user.id}`, locked.toString());
+    }
+  }
+
+  setTestMode(enabled) {
+    this.set('testMode', enabled);
+    
+    if (this._state.user?.id) {
+      localStorage.setItem(`testMode_${this._state.user.id}`, enabled.toString());
+    }
   }
 
   // ============================================================
   // ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE
   // ============================================================
   
-  /**
-   * Загрузить данные игрока из Supabase
-   */
   loadPlayerData(data) {
     if (!data) return;
 
     this.startBatch();
 
-    // Основные данные
     if (data.level !== undefined) {
       this.set('currentLevel', data.level);
     }
@@ -454,7 +497,6 @@ class State {
       this.set('moonHP', data.moon_hp);
     }
 
-    // Данные игрока
     this.set('playerData', {
       shards: data.shards || 0,
       click_damage: data.click_damage || 1,
@@ -470,7 +512,6 @@ class State {
 
     this.endBatch();
 
-    // Загружаем активные луны после загрузки данных
     this.loadActiveMoons();
   }
 
@@ -479,9 +520,7 @@ class State {
   // ============================================================
   
   init() {
-    // Загружаем активные луны из localStorage
     this.loadActiveMoons();
-    
     console.log('[State] Инициализация завершена');
   }
 
