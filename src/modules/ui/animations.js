@@ -2,20 +2,66 @@
 // АНИМАЦИИ
 // ============================================================
 
-// ============================================================
-// УПРАВЛЕНИЕ АНИМАЦИЯМИ
-// ============================================================
 export class AnimationManager {
   constructor() {
     this._animations = new Map();
     this._rafId = null;
     this._isRunning = false;
+    this._baseDamage = 1; // Для расчёта цвета
+  }
+
+  setBaseDamage(damage) {
+    this._baseDamage = damage || 1;
   }
 
   // ============================================================
-  // ЗВЕЗДЫ
+// ЦВЕТ УРОНА В ЗАВИСИМОСТИ ОТ ВЕЛИЧИНЫ
+  // Белый → Жёлтый → Оранжевый → Красный
   // ============================================================
+  getDamageColor(damage, isCrit = false) {
+    const base = this._baseDamage || 1;
+    const ratio = damage / Math.max(1, base);
+    
+    // Определяем цветовую стадию
+    if (ratio <= 1.5) {
+      // Белый / светло-бежевый
+      return isCrit ? '#fff9c4' : '#f0e6d0';
+    } else if (ratio <= 3) {
+      // Жёлтый
+      return isCrit ? '#fff176' : '#ffeb3b';
+    } else if (ratio <= 6) {
+      // Оранжевый
+      return isCrit ? '#ffb74d' : '#ff9800';
+    } else if (ratio <= 10) {
+      // Красно-оранжевый
+      return isCrit ? '#ff8a65' : '#ff5722';
+    } else {
+      // Красный
+      return isCrit ? '#ef5350' : '#d32f2f';
+    }
+  }
 
+  // Glow цвет (для тени)
+  getDamageGlow(damage, isCrit = false) {
+    const base = this._baseDamage || 1;
+    const ratio = damage / Math.max(1, base);
+    
+    if (ratio <= 1.5) {
+      return isCrit ? 'rgba(255,249,196,0.9)' : 'rgba(240,230,208,0.8)';
+    } else if (ratio <= 3) {
+      return isCrit ? 'rgba(255,241,118,0.9)' : 'rgba(255,235,59,0.8)';
+    } else if (ratio <= 6) {
+      return isCrit ? 'rgba(255,183,77,0.9)' : 'rgba(255,152,0,0.8)';
+    } else if (ratio <= 10) {
+      return isCrit ? 'rgba(255,138,101,0.9)' : 'rgba(255,87,34,0.8)';
+    } else {
+      return isCrit ? 'rgba(239,83,80,0.9)' : 'rgba(211,47,47,0.8)';
+    }
+  }
+
+  // ============================================================
+// ЗВЕЗДЫ
+  // ============================================================
   createStars(count = 300) {
     const container = document.getElementById('stars');
     if (!container) return;
@@ -39,39 +85,43 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // ЭФФЕКТ КЛИКА
+// ЭФФЕКТ КЛИКА
   // ============================================================
-
   playClickEffect(element) {
     if (!element) return;
 
     element.classList.remove('active');
-    // Триггер reflow для перезапуска анимации
     void element.offsetWidth;
     element.classList.add('active');
   }
 
   // ============================================================
-  // ВСПЛЫВАЮЩИЙ УРОН (FLOATING DAMAGE NUMBERS)
+// ВСПЛЫВАЮЩИЙ УРОН (БЕЗ ВОСКЛИЦАТЕЛЬНЫХ ЗНАКОВ)
   // ============================================================
-
   showDamageNumber(x, y, damage, isCrit = false, isBoss = false) {
     const damageEl = document.createElement('div');
     damageEl.className = 'damage-number';
     
-    // Стилизация в зависимости от типа удара
+    // Цвет на основе величины урона
+    const color = this.getDamageColor(damage, isCrit);
+    const glow = this.getDamageGlow(damage, isCrit);
+    
+    // Текст БЕЗ восклицательных знаков
+    damageEl.textContent = `-${damage}`;
+    
     if (isCrit) {
       damageEl.classList.add('crit');
-      damageEl.textContent = `${damage}!`;
-    } else {
-      damageEl.textContent = `-${damage}`;
     }
     
     if (isBoss) {
       damageEl.classList.add('boss-damage');
     }
     
-    // Позиционирование в точке клика с небольшим разбросом
+    // Применяем динамические цвета
+    damageEl.style.color = color;
+    damageEl.style.textShadow = `0 0 10px ${glow}, 0 2px 4px rgba(0,0,0,0.8)`;
+    
+    // Позиционирование
     const offsetX = (Math.random() - 0.5) * 60;
     const offsetY = (Math.random() - 0.5) * 30;
     
@@ -80,12 +130,10 @@ export class AnimationManager {
     
     document.body.appendChild(damageEl);
     
-    // Запускаем анимацию
     requestAnimationFrame(() => {
       damageEl.classList.add('animate');
     });
     
-    // Удаляем элемент после анимации
     setTimeout(() => {
       if (damageEl.parentNode) {
         damageEl.remove();
@@ -94,10 +142,9 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // УДАРНАЯ ВОЛНА (SHOCKWAVE)
+// УДАРНАЯ ВОЛНА
   // ============================================================
-
-  createShockwave(x, y, intensity = 'normal') {
+  createShockwave(x, y, intensity = 'normal', color = null) {
     const shockwave = document.createElement('div');
     shockwave.className = 'shockwave';
     
@@ -107,12 +154,16 @@ export class AnimationManager {
       shockwave.classList.add('boss-shockwave');
     }
     
+    if (color) {
+      shockwave.style.borderColor = color;
+      shockwave.style.boxShadow = `0 0 20px ${color}`;
+    }
+    
     shockwave.style.left = `${x}px`;
     shockwave.style.top = `${y}px`;
     
     document.body.appendChild(shockwave);
     
-    // Удаляем после анимации
     setTimeout(() => {
       if (shockwave.parentNode) {
         shockwave.remove();
@@ -121,9 +172,8 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // ЭФФЕКТ ПОВЫШЕНИЯ УРОВНЯ
+// ЭФФЕКТ ПОВЫШЕНИЯ УРОВНЯ
   // ============================================================
-
   playLevelUpEffect(element) {
     if (!element) return;
 
@@ -137,9 +187,8 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // ЭФФЕКТ УБИЙСТВА БОССА
+// ЭФФЕКТ УБИЙСТВА БОССА
   // ============================================================
-
   playBossDeathEffect(x, y) {
     // Screen shake
     document.body.classList.add('screen-shake');
@@ -178,9 +227,8 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // ЭФФЕКТ НАЖАТИЯ
+// ЭФФЕКТ НАЖАТИЯ
   // ============================================================
-
   playPressEffect(element, scale = 0.92, duration = 150) {
     if (!element) return;
 
@@ -193,9 +241,8 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // ПУЛЬСАЦИЯ
+// ПУЛЬСАЦИЯ
   // ============================================================
-
   pulse(element, options = {}) {
     const {
       duration = 1000,
@@ -220,9 +267,8 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // ПЛАВНОЕ ПОЯВЛЕНИЕ
+// ПЛАВНОЕ ПОЯВЛЕНИЕ
   // ============================================================
-
   fadeIn(element, duration = 300) {
     if (!element) return Promise.resolve();
 
@@ -254,9 +300,8 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // СЧЕТЧИК
+// СЧЁТЧИК
   // ============================================================
-
   animateCounter(element, from, to, duration = 1000) {
     if (!element) return Promise.resolve();
 
@@ -268,7 +313,6 @@ export class AnimationManager {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Easing function (ease-out)
         const eased = 1 - Math.pow(1 - progress, 3);
         const current = Math.round(from + diff * eased);
 
@@ -287,9 +331,8 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // ПРОГРЕСС-БАР
+// ПРОГРЕСС-БАР
   // ============================================================
-
   animateProgressBar(element, from, to, duration = 300) {
     if (!element) return Promise.resolve();
 
@@ -301,7 +344,6 @@ export class AnimationManager {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Easing function (ease-out)
         const eased = 1 - Math.pow(1 - progress, 3);
         const current = from + diff * eased;
 
@@ -320,9 +362,8 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // ПАРТИКЛЫ (УЛУЧШЕННАЯ ВЕРСИЯ)
+// ПАРТИКЛЫ (С ЦВЕТОМ ПОД УРОН)
   // ============================================================
-
   createParticles(container, options = {}) {
     const {
       count = 20,
@@ -334,7 +375,6 @@ export class AnimationManager {
       y = null
     } = options;
 
-    // Определяем центр частиц
     let centerX, centerY;
     
     if (x !== null && y !== null) {
@@ -391,26 +431,26 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // КОМПЛЕКСНЫЙ ЭФФЕКТ КЛИКА
+// КОМПЛЕКСНЫЙ ЭФФЕКТ КЛИКА (С ЦВЕТОМ)
   // ============================================================
-
   playClickVisualFeedback(event, damage, isCrit, isBoss = false) {
     const x = event.clientX || event.pageX;
     const y = event.clientY || event.pageY;
     
+    const color = this.getDamageColor(damage, isCrit);
+    
     // 1. Всплывающий урон
     this.showDamageNumber(x, y, damage, isCrit, isBoss);
     
-    // 2. Ударная волна
+    // 2. Ударная волна с цветом под урон
     const shockwaveIntensity = isCrit ? 'crit' : 'normal';
-    this.createShockwave(x, y, shockwaveIntensity);
+    this.createShockwave(x, y, shockwaveIntensity, color);
     
-    // 3. Частицы
-    const particleColor = isCrit ? '#ffd700' : '#f0e6d0';
+    // 3. Частицы с цветом под урон
     const particleCount = isCrit ? 15 : 8;
     this.createParticles(null, {
       count: particleCount,
-      color: particleColor,
+      color: color,
       size: isCrit ? 5 : 3,
       duration: isCrit ? 800 : 600,
       spread: isCrit ? 120 : 80,
@@ -420,9 +460,8 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // УПРАВЛЕНИЕ АНИМАЦИЯМИ
+// УПРАВЛЕНИЕ АНИМАЦИЯМИ
   // ============================================================
-
   start() {
     if (this._isRunning) return;
     this._isRunning = true;
@@ -440,7 +479,6 @@ export class AnimationManager {
   _tick() {
     if (!this._isRunning) return;
 
-    // Обновляем все активные анимации
     for (const [id, animation] of this._animations) {
       if (animation.update) {
         animation.update();
@@ -463,7 +501,4 @@ export class AnimationManager {
   }
 }
 
-// ============================================================
-// ЭКСПОРТ ЕДИНСТВЕННОГО ЭКЗЕМПЛЯРА
-// ============================================================
 export const animations = new AnimationManager();
