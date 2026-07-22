@@ -16,17 +16,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="css/galaxy.css?v=5">
-  <link rel="stylesheet" href="css/panel.css?v=5">
-  <link rel="stylesheet" href="css/modal.css?v=5">
-  <link rel="stylesheet" href="css/game.css?v=5">
-  <link rel="stylesheet" href="css/responsive.css?v=5">
+  <link rel="stylesheet" href="css/galaxy.css?v=6">
+  <link rel="stylesheet" href="css/panel.css?v=6">
+  <link rel="stylesheet" href="css/modal.css?v=6">
+  <link rel="stylesheet" href="css/game.css?v=6">
+  <link rel="stylesheet" href="css/responsive.css?v=6">
 </head>
 <body>
+  <!-- ЗВЁЗДНОЕ НЕБО -->
   <div id="stars"></div>
+  
+  <!-- TOAST УВЕДОМЛЕНИЯ -->
   <div id="toastContainer" class="toast-container"></div>
 
+  <!-- ============================================================ -->
   <!-- ЭКРАН АВТОРИЗАЦИИ -->
+  <!-- ============================================================ -->
   <div id="authScreen" class="auth-screen">
     <div class="auth-card">
       <div class="auth-logo">🌙</div>
@@ -46,7 +51,9 @@
     </div>
   </div>
 
-  <!-- ОСНОВНОЙ ЭКРАН -->
+  <!-- ============================================================ -->
+  <!-- ОСНОВНОЙ ЭКРАН ИГРЫ -->
+  <!-- ============================================================ -->
   <div id="app" class="app hidden">
     
     <!-- ЛУНА ПО ЦЕНТРУ -->
@@ -87,15 +94,25 @@
       <span class="toggle-label">Магазин</span>
     </button>
 
-    <!-- ПАНЕЛЬ: ПРОФИЛЬ (СЛЕВА) - с вкладками Профиль/Топ/Настройки -->
+    <!-- ============================================================ -->
+    <!-- ПАНЕЛЬ: ПРОФИЛЬ (СЛЕВА) -->
+    <!-- ============================================================ -->
     <div id="profilePanel" class="panel panel-left hidden">
+      <!-- Кнопка закрытия сбоку от панели -->
+      <button class="panel-close-tab" onclick="window.closePanel('profilePanel')" title="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      
       <div class="panel-header">
         <div class="panel-tabs">
           <button class="panel-tab active" data-tab="profile" onclick="window.switchProfileTab('profile')">👤 Профиль</button>
           <button class="panel-tab" data-tab="leaders" onclick="window.switchProfileTab('leaders')">🏅 Топ</button>
-          <button class="panel-tab" data-tab="settings" onclick="window.switchProfileTab('settings')">⚙️ Настройки</button>
+          <button class="panel-tab" data-tab="settings" onclick="window.switchProfileTab('settings')">⚙️ Настр</button>
         </div>
       </div>
+      
       <div class="panel-content panel-scrollable">
         <!-- Вкладка: Профиль -->
         <div id="profileTabContent" class="tab-content active">
@@ -121,8 +138,17 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: МАГАЗИН (СПРАВА) - с вкладками Магазин/Квесты/Ачивки -->
+    <!-- ============================================================ -->
+    <!-- ПАНЕЛЬ: МАГАЗИН (СПРАВА) -->
+    <!-- ============================================================ -->
     <div id="shopPanel" class="panel panel-right hidden">
+      <!-- Кнопка закрытия сбоку от панели -->
+      <button class="panel-close-tab shop-close" onclick="window.closePanel('shopPanel')" title="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+      
       <div class="panel-header">
         <div class="panel-tabs">
           <button class="panel-tab active" data-tab="shop" onclick="window.switchShopTab('shop')">🛒 Магазин</button>
@@ -130,6 +156,7 @@
           <button class="panel-tab" data-tab="achievements" onclick="window.switchShopTab('achievements')">🏆 Ачивки</button>
         </div>
       </div>
+      
       <div class="panel-content panel-scrollable">
         <!-- Вкладка: Магазин -->
         <div id="shopTabContent" class="tab-content active">
@@ -182,7 +209,9 @@
 
   </div>
 
-  <!-- МОДАЛЬНОЕ ОКНО -->
+  <!-- ============================================================ -->
+  <!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
+  <!-- ============================================================ -->
   <div id="confirmModal" class="modal hidden">
     <div class="modal-backdrop" onclick="window.closeModal('confirmModal')"></div>
     <div class="modal-content">
@@ -195,7 +224,10 @@
     </div>
   </div>
 
+  <!-- SUPABASE CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.1/dist/umd/supabase.min.js"></script>
-  <script type="module" src="src/index.js?v=5"></script>
+  
+  <!-- ОСНОВНОЙ СКРИПТ -->
+  <script type="module" src="src/index.js?v=6"></script>
 </body>
 </html>
