@@ -7,7 +7,6 @@
   <meta name="description" content="Лунный кликер - космическая idle игра">
   <title>🌙 Лунный Кликер</title>
   
-  <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
   
   <!-- CSS -->
@@ -18,19 +17,9 @@
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
-  <!-- ============================================================ -->
-  <!-- ЗВЁЗДНОЕ НЕБО (ФОН) -->
-  <!-- ============================================================ -->
   <div id="stars"></div>
-  
-  <!-- ============================================================ -->
-  <!-- TOAST УВЕДОМЛЕНИЯ -->
-  <!-- ============================================================ -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- ============================================================ -->
-  <!-- ЭКРАН АВТОРИЗАЦИИ -->
-  <!-- ============================================================ -->
   <div id="authScreen" class="auth-screen">
     <div class="auth-card">
       <div class="auth-logo">🌙</div>
@@ -50,12 +39,7 @@
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- ОСНОВНОЙ ЭКРАН ИГРЫ -->
-  <!-- ============================================================ -->
   <div id="app" class="app hidden">
-    
-    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
     <header class="top-bar">
       <div class="top-bar-left">
         <div id="counter" class="counter">💎 0</div>
@@ -79,19 +63,16 @@
       </div>
     </header>
 
-    <!-- ТАЙМЕР БОССА -->
     <div id="timerBarContainer" class="timer-bar-container">
       <div id="timerBar" class="timer-bar"></div>
       <span id="timerPercent" class="timer-percent">30с</span>
     </div>
 
-    <!-- HP БАР -->
     <div class="hp-bar-container">
       <div id="hpBar" class="hp-bar"></div>
       <span id="hpPercent" class="hp-percent">100/100</span>
     </div>
 
-    <!-- ЛУНА (КЛИКАБЕЛЬНЫЙ ОБЪЕКТ) -->
     <div id="moonContainer" class="moon-container">
       <div id="moonWrapper" class="moon-wrapper">
         <div id="moonInner" class="moon-inner"></div>
@@ -99,11 +80,6 @@
       </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- ПАНЕЛИ (ВЫЕЗЖАЮЩИЕ МЕНЮ) -->
-    <!-- ============================================================ -->
-
-    <!-- ПАНЕЛЬ: МАГАЗИН -->
     <div id="shopPanel" class="panel panel-right hidden">
       <div class="panel-header">
         <h2 class="panel-title">🛒 Магазин</h2>
@@ -112,7 +88,6 @@
       <div class="panel-content">
         <div id="shopLockMessage" class="shop-lock-message">🔒 Доступно с 5 уровня</div>
         
-        <!-- Улучшение урона -->
         <div class="shop-section">
           <h3 class="shop-section-title">⚔️ Урон клика</h3>
           <div class="shop-item">
@@ -124,7 +99,6 @@
           </div>
         </div>
         
-        <!-- Слоты -->
         <div class="shop-section">
           <h3 class="shop-section-title">🎰 Слоты лун</h3>
           <div class="shop-item">
@@ -136,13 +110,11 @@
           </div>
         </div>
         
-        <!-- Луны -->
         <div class="shop-section">
           <h3 class="shop-section-title">🌙 Луны</h3>
           <div id="moonShopItems" class="moon-shop-items"></div>
         </div>
         
-        <!-- Активные синергии -->
         <div class="shop-section">
           <h3 class="shop-section-title">🔗 Синергии</h3>
           <div id="activeSynergies" class="active-synergies"></div>
@@ -150,7 +122,6 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: ПРОФИЛЬ -->
     <div id="profilePanel" class="panel panel-left hidden">
       <div class="panel-header">
         <h2 class="panel-title">👤 Профиль</h2>
@@ -166,7 +137,6 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: КВЕСТЫ -->
     <div id="questsPanel" class="panel panel-bottom hidden">
       <div class="panel-header">
         <h2 class="panel-title">🎯 Квесты</h2>
@@ -177,7 +147,6 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: ДОСТИЖЕНИЯ -->
     <div id="achievementsPanel" class="panel panel-bottom hidden">
       <div class="panel-header">
         <h2 class="panel-title">🏆 Достижения</h2>
@@ -188,7 +157,6 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: ЛИДЕРЫ -->
     <div id="leadersPanel" class="panel panel-bottom hidden">
       <div class="panel-header">
         <h2 class="panel-title">🏅 Таблица лидеров</h2>
@@ -199,7 +167,6 @@
       </div>
     </div>
 
-    <!-- ПАНЕЛЬ: НАСТРОЙКИ -->
     <div id="settingsPanel" class="panel panel-bottom hidden">
       <div class="panel-header">
         <h2 class="panel-title">⚙️ Настройки</h2>
@@ -213,9 +180,6 @@
       </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
-    <!-- ============================================================ -->
     <nav class="bottom-nav">
       <button class="nav-btn" onclick="window.openPanel('leadersPanel')" title="Лидеры">
         <span class="nav-icon">🏅</span>
@@ -240,9 +204,6 @@
     </nav>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ -->
-  <!-- ============================================================ -->
   <div id="confirmModal" class="modal hidden">
     <div class="modal-backdrop" onclick="window.closeModal('confirmModal')"></div>
     <div class="modal-content">
@@ -255,9 +216,10 @@
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- JAVASCRIPT -->
-  <!-- ============================================================ -->
+  <!-- SUPABASE CDN - ДОЛЖЕН БЫТЬ ПЕРЕД ОСНОВНЫМ СКРИПТОМ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.1/dist/umd/supabase.min.js"></script>
+  
+  <!-- ОСНОВНОЙ СКРИПТ -->
   <script type="module" src="src/index.js"></script>
 </body>
 </html>
