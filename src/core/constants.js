@@ -3,33 +3,22 @@
 // ============================================================
 
 export const CONSTANTS = {
-  // Игровые константы
   BOSS_INTERVAL: 10,
   BOSS_TIMER: 30,
   BASE_HP: 100,
-  MAX_SLOTS: 5,
+  MAX_SLOTS: 3, // УМЕНЬШЕНО ДО 3
 
-  // Стоимость улучшений (СБАЛАНСИРОВАНО)
   UPGRADE_COSTS: {
     clickDamage: {
       base: 30,
       multiplier: 1.35
     },
-    critChance: {
-      base: 200,
-      multiplier: 1.5
-    },
-    critDamage: {
-      base: 350,
-      multiplier: 1.45
-    },
     moonSlots: {
       base: 1500,
-      multiplier: 2.4
+      multiplier: 2.8 // УВЕЛИЧЕНО, так как всего 3 слота
     }
   },
 
-  // Временные интервалы (в миллисекундах)
   INTERVALS: {
     SAVE_TIME: 30000,
     QUEST_RESET: 86400000,
@@ -39,18 +28,14 @@ export const CONSTANTS = {
     TOAST_DURATION: 2000,
   },
 
-  // Ограничения
   LIMITS: {
     MAX_CLICK_DAMAGE_LEVEL: 50,
-    MAX_CRIT_CHANCE_LEVEL: 20,
-    MAX_CRIT_DAMAGE_LEVEL: 30,
     MAX_MOON_LEVEL: 10,
     MAX_LEADERS: 10,
     MAX_STARS: 300,
     MAX_QUESTS: 6,
   },
 
-  // Значения по умолчанию
   DEFAULTS: {
     LEVEL: 1,
     SHARDS: 0,
@@ -67,7 +52,7 @@ export const CONSTANTS = {
 };
 
 // ============================================================
-// ТИПЫ ЛУН
+// ТИПЫ ЛУН - КАЖДАЯ УНИКАЛЬНА
 // ============================================================
 export const MOON_TYPES = {
   normal: {
@@ -77,15 +62,28 @@ export const MOON_TYPES = {
     cost: 0,
     unlockLevel: 1,
     rarity: 'common',
+    
+    // Базовые бонусы
     damageBonus: 0.05,
     shardBonus: 0,
     critChanceBonus: 0,
     critDamageBonus: 0,
-    description: 'Верный спутник в начале пути',
+    
+    // УНИКАЛЬНАЯ МЕХАНИКА: Combo Master
+    specialMechanic: 'combo',
+    specialName: 'Комбо-мастер',
+    specialDescription: 'Каждые 10 кликов подряд дают +5% к урону (до +50%)',
+    specialValue: 0.05,
+    specialMaxStacks: 10,
+    
+    description: 'Верный спутник, становящийся сильнее с каждым ударом',
     gradient: 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)',
     shadow: '0 0 60px rgba(255,215,150,0.4), 0 0 120px rgba(255,215,150,0.2), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,255,255,0.3)',
-    accentColor: '#d4af37'
+    accentColor: '#d4af37',
+    auraColor: 'rgba(240, 230, 208, 0.4)',
+    auraClass: 'aura-normal'
   },
+  
   blood: {
     id: 'blood',
     name: 'Кровавая',
@@ -93,15 +91,26 @@ export const MOON_TYPES = {
     cost: 800,
     unlockLevel: 5,
     rarity: 'rare',
-    damageBonus: 0.30,
+    
+    damageBonus: 0.25,
     shardBonus: 0,
-    critChanceBonus: 0.05,
+    critChanceBonus: 0.03,
     critDamageBonus: 0.15,
-    description: 'Питается жизненной силой врагов',
+    
+    // УНИКАЛЬНАЯ МЕХАНИКА: Lifesteal
+    specialMechanic: 'lifesteal',
+    specialName: 'Вампиризм',
+    specialDescription: 'Убийство восстанавливает 20% от макс. HP луны',
+    specialValue: 0.20,
+    
+    description: 'Питается жизненной силой, исцеляя себя',
     gradient: 'radial-gradient(circle at 30% 30%, #8b0000, #4a0000)',
     shadow: '0 0 60px rgba(255,0,0,0.6), 0 0 120px rgba(255,0,0,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,0,0,0.2)',
-    accentColor: '#cc0000'
+    accentColor: '#cc0000',
+    auraColor: 'rgba(255, 0, 0, 0.5)',
+    auraClass: 'aura-blood'
   },
+  
   ice: {
     id: 'ice',
     name: 'Ледяная',
@@ -109,15 +118,26 @@ export const MOON_TYPES = {
     cost: 5000,
     unlockLevel: 10,
     rarity: 'rare',
+    
     damageBonus: 0.10,
-    shardBonus: 0.40,
-    critChanceBonus: 0.03,
+    shardBonus: 0.35,
+    critChanceBonus: 0.02,
     critDamageBonus: 0,
-    description: 'Замораживает осколки во времени',
+    
+    // УНИКАЛЬНАЯ МЕХАНИКА: Заморозка босса
+    specialMechanic: 'freeze',
+    specialName: 'Заморозка времени',
+    specialDescription: 'Таймер босса замедляется на 50%, давая больше времени',
+    specialValue: 0.50,
+    
+    description: 'Замораживает время вокруг врагов',
     gradient: 'radial-gradient(circle at 30% 30%, #b3e5fc, #4fc3f7)',
     shadow: '0 0 60px rgba(79,195,247,0.6), 0 0 120px rgba(79,195,247,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(79,195,247,0.2)',
-    accentColor: '#4fc3f7'
+    accentColor: '#4fc3f7',
+    auraColor: 'rgba(79, 195, 247, 0.5)',
+    auraClass: 'aura-ice'
   },
+  
   shadow: {
     id: 'shadow',
     name: 'Теневая',
@@ -125,15 +145,26 @@ export const MOON_TYPES = {
     cost: 25000,
     unlockLevel: 15,
     rarity: 'epic',
-    damageBonus: 0.25,
-    shardBonus: 0.20,
-    critChanceBonus: 0.04,
+    
+    damageBonus: 0.20,
+    shardBonus: 0.15,
+    critChanceBonus: 0.08,
     critDamageBonus: 0.10,
-    description: 'Скрывается во мраке, атакуя из тени',
+    
+    // УНИКАЛЬНАЯ МЕХАНИКА: Уклонение
+    specialMechanic: 'evasion',
+    specialName: 'Уклонение',
+    specialDescription: 'Шанс 15% уклониться от атаки босса (не потерять время)',
+    specialValue: 0.15,
+    
+    description: 'Скрывается во мраке, уклоняясь от ударов',
     gradient: 'radial-gradient(circle at 30% 30%, #6a1b9a, #2a0a3a)',
     shadow: '0 0 60px rgba(106,27,154,0.6), 0 0 120px rgba(106,27,154,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(106,27,154,0.2)',
-    accentColor: '#6a1b9a'
+    accentColor: '#6a1b9a',
+    auraColor: 'rgba(106, 27, 154, 0.5)',
+    auraClass: 'aura-shadow'
   },
+  
   fire: {
     id: 'fire',
     name: 'Огненная',
@@ -141,15 +172,27 @@ export const MOON_TYPES = {
     cost: 75000,
     unlockLevel: 20,
     rarity: 'epic',
-    damageBonus: 0.35,
+    
+    damageBonus: 0.30,
     shardBonus: 0.05,
-    critChanceBonus: 0.06,
-    critDamageBonus: 0.25,
-    description: 'Обжигает всё живое вокруг',
+    critChanceBonus: 0.05,
+    critDamageBonus: 0.35,
+    
+    // УНИКАЛЬНАЯ МЕХАНИКА: Поджог
+    specialMechanic: 'burn',
+    specialName: 'Поджог',
+    specialDescription: 'Каждый 5-й клик наносит额外 100% урона как огонь',
+    specialValue: 1.0,
+    specialInterval: 5,
+    
+    description: 'Обжигает всё живое, нанося дополнительный урон',
     gradient: 'radial-gradient(circle at 30% 30%, #ff6f00, #bf360c)',
     shadow: '0 0 60px rgba(255,100,0,0.6), 0 0 120px rgba(255,100,0,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,100,0,0.2)',
-    accentColor: '#ff6f00'
+    accentColor: '#ff6f00',
+    auraColor: 'rgba(255, 100, 0, 0.5)',
+    auraClass: 'aura-fire'
   },
+  
   electric: {
     id: 'electric',
     name: 'Электрическая',
@@ -157,15 +200,26 @@ export const MOON_TYPES = {
     cost: 250000,
     unlockLevel: 25,
     rarity: 'epic',
+    
     damageBonus: 0.20,
-    shardBonus: 0.25,
-    critChanceBonus: 0.08,
-    critDamageBonus: 0.15,
-    description: 'Разряды молний бьют по целям',
+    shardBonus: 0.20,
+    critChanceBonus: 0.06,
+    critDamageBonus: 0.20,
+    
+    // УНИКАЛЬНАЯ МЕХАНИКА: Цепная молния
+    specialMechanic: 'chain',
+    specialName: 'Цепная молния',
+    specialDescription: 'Шанс 20% нанести двойной удар (2x урон)',
+    specialValue: 0.20,
+    
+    description: 'Разряды молний бьют с удвоенной силой',
     gradient: 'radial-gradient(circle at 30% 30%, #fff176, #fdd835)',
     shadow: '0 0 60px rgba(255,235,59,0.6), 0 0 120px rgba(255,235,59,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,235,59,0.2)',
-    accentColor: '#fdd835'
+    accentColor: '#fdd835',
+    auraColor: 'rgba(255, 235, 59, 0.5)',
+    auraClass: 'aura-electric'
   },
+  
   gold: {
     id: 'gold',
     name: 'Золотая',
@@ -173,15 +227,26 @@ export const MOON_TYPES = {
     cost: 1000000,
     unlockLevel: 30,
     rarity: 'legendary',
-    damageBonus: 0.25,
-    shardBonus: 0.60,
-    critChanceBonus: 0.05,
-    critDamageBonus: 0.20,
-    description: 'Притягивает богатство со всей галактики',
+    
+    damageBonus: 0.15,
+    shardBonus: 0.70,
+    critChanceBonus: 0.04,
+    critDamageBonus: 0.15,
+    
+    // УНИКАЛЬНАЯ МЕХАНИКА: Золотой дождь
+    specialMechanic: 'goldRush',
+    specialName: 'Золотой дождь',
+    specialDescription: 'Убийство босса дает +100% осколков бонусом',
+    specialValue: 1.0,
+    
+    description: 'Притягивает богатство из космоса',
     gradient: 'radial-gradient(circle at 30% 30%, #fff9c4, #ffd700)',
     shadow: '0 0 60px rgba(255,215,0,0.6), 0 0 120px rgba(255,215,0,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,215,0,0.2)',
-    accentColor: '#ffd700'
+    accentColor: '#ffd700',
+    auraColor: 'rgba(255, 215, 0, 0.5)',
+    auraClass: 'aura-gold'
   },
+  
   cosmic: {
     id: 'cosmic',
     name: 'Космическая',
@@ -189,277 +254,369 @@ export const MOON_TYPES = {
     cost: 5000000,
     unlockLevel: 40,
     rarity: 'mythic',
-    damageBonus: 0.40,
-    shardBonus: 0.35,
+    
+    damageBonus: 0.35,
+    shardBonus: 0.40,
     critChanceBonus: 0.10,
     critDamageBonus: 0.30,
-    description: 'Сила самой вселенной в ваших руках',
+    
+    // УНИКАЛЬНАЯ МЕХАНИКА: Космическое масштабирование
+    specialMechanic: 'scaling',
+    specialName: 'Космическая мощь',
+    specialDescription: 'Все бонусы увеличиваются на +1% за каждый уровень игрока',
+    specialValue: 0.01,
+    
+    description: 'Сила вселенной растет вместе с вами',
     gradient: 'radial-gradient(circle at 30% 30%, #e1bee7, #4a148c, #1a237e)',
     shadow: '0 0 80px rgba(156,39,176,0.8), 0 0 160px rgba(63,81,181,0.4), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(233,30,99,0.3)',
-    accentColor: '#9c27b0'
+    accentColor: '#9c27b0',
+    auraColor: 'rgba(156, 39, 176, 0.5)',
+    auraClass: 'aura-cosmic'
   }
 };
 
 // ============================================================
-// СИНЕРГИИ
+// СИНЕРГИИ (МАКС 3 ЛУНЫ, ЧЕМ ДОРОЖЕ - ТЕМ СИЛЬНЕЕ)
 // ============================================================
 export const SYNERGY_BONUSES = {
+  // ==== TIER 1: НАЧАЛЬНЫЕ (дешёвые луны) ====
   'blood+fire': {
     name: 'Адское пламя',
     tier: 1,
-    tierName: 'Базовая',
+    tierName: 'Начальная',
     tierColor: '#8bc34a',
-    damageBonus: 0.20,
+    damageBonus: 0.25,
     shardBonus: 0,
-    critChanceBonus: 0.02,
-    critDamageBonus: 0.10,
+    critChanceBonus: 0.03,
+    critDamageBonus: 0.15,
     icon: '🔥',
-    description: 'Огонь и кровь питают друг друга'
-  },
-  'ice+electric': {
-    name: 'Ледяная буря',
-    tier: 1,
-    tierName: 'Базовая',
-    tierColor: '#8bc34a',
-    damageBonus: 0.10,
-    shardBonus: 0.25,
-    critChanceBonus: 0.05,
-    critDamageBonus: 0,
-    icon: '❄️',
-    description: 'Мороз усиливает электрические разряды'
+    description: 'Огонь и кровь питают друг друга',
+    auraCombo: ['aura-blood', 'aura-fire']
   },
   'blood+ice': {
     name: 'Кровавый лёд',
     tier: 1,
-    tierName: 'Базовая',
+    tierName: 'Начальная',
     tierColor: '#8bc34a',
-    damageBonus: 0.15,
-    shardBonus: 0.10,
-    critChanceBonus: 0.03,
-    critDamageBonus: 0.05,
-    icon: '🧊',
-    description: 'Замороженная кровь становится оружием'
-  },
-  'fire+shadow': {
-    name: 'Теневой огонь',
-    tier: 1,
-    tierName: 'Базовая',
-    tierColor: '#8bc34a',
-    damageBonus: 0.18,
-    shardBonus: 0.08,
-    critChanceBonus: 0.02,
-    critDamageBonus: 0.08,
-    icon: '🔥',
-    description: 'Огонь, скрытый в тени, бьёт без предупреждения'
-  },
-  'gold+electric': {
-    name: 'Золотая молния',
-    tier: 1,
-    tierName: 'Базовая',
-    tierColor: '#8bc34a',
-    damageBonus: 0.10,
-    shardBonus: 0.20,
+    damageBonus: 0.20,
+    shardBonus: 0.15,
     critChanceBonus: 0.04,
     critDamageBonus: 0.10,
-    icon: '⚡',
-    description: 'Золото проводит электрический ток'
-  },
-  'fire+electric': {
-    name: 'Грозовой пожар',
-    tier: 1,
-    tierName: 'Базовая',
-    tierColor: '#8bc34a',
-    damageBonus: 0.18,
-    shardBonus: 0.12,
-    critChanceBonus: 0.03,
-    critDamageBonus: 0.10,
-    icon: '⚡',
-    description: 'Молнии разжигают пожары'
+    icon: '🧊',
+    description: 'Замороженная кровь',
+    auraCombo: ['aura-blood', 'aura-ice']
   },
   'ice+shadow': {
     name: 'Ледяная тень',
     tier: 1,
-    tierName: 'Базовая',
+    tierName: 'Начальная',
     tierColor: '#8bc34a',
-    damageBonus: 0.08,
-    shardBonus: 0.18,
-    critChanceBonus: 0.03,
-    critDamageBonus: 0,
-    icon: '🌑',
-    description: 'Замороженные тени крадут осколки'
-  },
-  'shadow+gold': {
-    name: 'Теневой капитал',
-    tier: 1,
-    tierName: 'Базовая',
-    tierColor: '#8bc34a',
-    damageBonus: 0.10,
+    damageBonus: 0.15,
     shardBonus: 0.20,
-    critChanceBonus: 0.02,
-    critDamageBonus: 0.05,
-    icon: '💰',
-    description: 'Тень приносит богатство'
-  },
-  'blood+shadow': {
-    name: 'Кровавая тень',
-    tier: 2,
-    tierName: 'Продвинутая',
-    tierColor: '#03a9f4',
-    damageBonus: 0.25,
-    shardBonus: 0.15,
     critChanceBonus: 0.05,
-    critDamageBonus: 0.15,
+    critDamageBonus: 0.05,
+    icon: '🌑',
+    description: 'Тени крадут тепло',
+    auraCombo: ['aura-ice', 'aura-shadow']
+  },
+  
+  // ==== TIER 2: СРЕДНИЕ (комбинации средних лун) ====
+  'blood+shadow': {
+    name: 'Тёмная кровь',
+    tier: 2,
+    tierName: 'Средняя',
+    tierColor: '#03a9f4',
+    damageBonus: 0.35,
+    shardBonus: 0.20,
+    critChanceBonus: 0.08,
+    critDamageBonus: 0.20,
     icon: '🌒',
-    description: 'Тени пропитаны кровью'
+    description: 'Тени пропитаны кровью',
+    auraCombo: ['aura-blood', 'aura-shadow']
   },
-  'fire+gold': {
-    name: 'Пылающее золото',
+  'fire+electric': {
+    name: 'Грозовой пожар',
     tier: 2,
-    tierName: 'Продвинутая',
+    tierName: 'Средняя',
     tierColor: '#03a9f4',
-    damageBonus: 0.22,
-    shardBonus: 0.30,
-    critChanceBonus: 0.04,
-    critDamageBonus: 0.12,
-    icon: '🔱',
-    description: 'Расплавленное золото увеличивает добычу'
-  },
-  'electric+cosmic': {
-    name: 'Звёздный разряд',
-    tier: 2,
-    tierName: 'Продвинутая',
-    tierColor: '#03a9f4',
-    damageBonus: 0.25,
-    shardBonus: 0.20,
-    critChanceBonus: 0.08,
-    critDamageBonus: 0.15,
-    icon: '🌌',
-    description: 'Космическая энергия усиливает молнии'
-  },
-  'ice+cosmic': {
-    name: 'Космический мороз',
-    tier: 2,
-    tierName: 'Продвинутая',
-    tierColor: '#03a9f4',
-    damageBonus: 0.18,
-    shardBonus: 0.35,
-    critChanceBonus: 0.06,
-    critDamageBonus: 0.10,
-    icon: '❄️',
-    description: 'Абсолютный ноль космоса'
-  },
-  'blood+fire+ice': {
-    name: 'Адский лёд',
-    tier: 3,
-    tierName: 'Легендарная',
-    tierColor: '#ff9800',
     damageBonus: 0.40,
-    shardBonus: 0.20,
-    critChanceBonus: 0.08,
-    critDamageBonus: 0.25,
-    icon: '⚔️',
-    description: 'Три стихии слились в единую ярость'
-  },
-  'blood+fire+shadow': {
-    name: 'Теневой ад',
-    tier: 3,
-    tierName: 'Легендарная',
-    tierColor: '#ff9800',
-    damageBonus: 0.45,
     shardBonus: 0.15,
-    critChanceBonus: 0.10,
-    critDamageBonus: 0.30,
-    icon: '👹',
-    description: 'Ад скрыт в тенях и жаждет крови'
-  },
-  'blood+fire+electric': {
-    name: 'Грозовая кровь',
-    tier: 3,
-    tierName: 'Легендарная',
-    tierColor: '#ff9800',
-    damageBonus: 0.42,
-    shardBonus: 0.25,
-    critChanceBonus: 0.12,
+    critChanceBonus: 0.07,
     critDamageBonus: 0.25,
     icon: '⚡',
-    description: 'Кровь кипит от электрических разрядов'
+    description: 'Молнии разжигают пожары',
+    auraCombo: ['aura-fire', 'aura-electric']
   },
-  'gold+electric+cosmic': {
-    name: 'Звёздная корона',
+  'ice+electric': {
+    name: 'Ледяная буря',
+    tier: 2,
+    tierName: 'Средняя',
+    tierColor: '#03a9f4',
+    damageBonus: 0.25,
+    shardBonus: 0.30,
+    critChanceBonus: 0.10,
+    critDamageBonus: 0.10,
+    icon: '❄️',
+    description: 'Мороз усиливает разряды',
+    auraCombo: ['aura-ice', 'aura-electric']
+  },
+  'fire+shadow': {
+    name: 'Теневой огонь',
+    tier: 2,
+    tierName: 'Средняя',
+    tierColor: '#03a9f4',
+    damageBonus: 0.35,
+    shardBonus: 0.15,
+    critChanceBonus: 0.06,
+    critDamageBonus: 0.20,
+    icon: '🔥',
+    description: 'Огонь скрытый во тьме',
+    auraCombo: ['aura-fire', 'aura-shadow']
+  },
+  
+  // ==== TIER 3: ПРОДВИНУТЫЕ (с дорогими лунами) ====
+  'fire+gold': {
+    name: 'Пылающее золото',
     tier: 3,
-    tierName: 'Легендарная',
+    tierName: 'Продвинутая',
+    tierColor: '#ff9800',
+    damageBonus: 0.35,
+    shardBonus: 0.50,
+    critChanceBonus: 0.08,
+    critDamageBonus: 0.25,
+    icon: '🔱',
+    description: 'Расплавленное богатство',
+    auraCombo: ['aura-fire', 'aura-gold']
+  },
+  'electric+gold': {
+    name: 'Золотая молния',
+    tier: 3,
+    tierName: 'Продвинутая',
     tierColor: '#ff9800',
     damageBonus: 0.30,
     shardBonus: 0.55,
-    critChanceBonus: 0.15,
-    critDamageBonus: 0.25,
-    icon: '👑',
-    description: 'Космическая корона из золота и молний'
-  },
-  'blood+shadow+cosmic': {
-    name: 'Кровавый космос',
-    tier: 3,
-    tierName: 'Легендарная',
-    tierColor: '#ff9800',
-    damageBonus: 0.50,
-    shardBonus: 0.30,
     critChanceBonus: 0.12,
+    critDamageBonus: 0.20,
+    icon: '⚡',
+    description: 'Золото проводит ток',
+    auraCombo: ['aura-electric', 'aura-gold']
+  },
+  'shadow+gold': {
+    name: 'Теневой капитал',
+    tier: 3,
+    tierName: 'Продвинутая',
+    tierColor: '#ff9800',
+    damageBonus: 0.25,
+    shardBonus: 0.50,
+    critChanceBonus: 0.08,
+    critDamageBonus: 0.15,
+    icon: '💰',
+    description: 'Тень приносит богатство',
+    auraCombo: ['aura-shadow', 'aura-gold']
+  },
+  'ice+gold': {
+    name: 'Замороженное богатство',
+    tier: 3,
+    tierName: 'Продвинутая',
+    tierColor: '#ff9800',
+    damageBonus: 0.25,
+    shardBonus: 0.60,
+    critChanceBonus: 0.06,
+    critDamageBonus: 0.10,
+    icon: '💎',
+    description: 'Лёд сохраняет сокровища',
+    auraCombo: ['aura-ice', 'aura-gold']
+  },
+  'blood+fire+shadow': {
+    name: 'Адская тень',
+    tier: 3,
+    tierName: 'Продвинутая',
+    tierColor: '#ff9800',
+    damageBonus: 0.60,
+    shardBonus: 0.20,
+    critChanceBonus: 0.15,
+    critDamageBonus: 0.40,
+    icon: '👹',
+    description: 'Три стихии тьмы',
+    auraCombo: ['aura-blood', 'aura-fire', 'aura-shadow']
+  },
+  'blood+ice+electric': {
+    name: 'Шторм стихий',
+    tier: 3,
+    tierName: 'Продвинутая',
+    tierColor: '#ff9800',
+    damageBonus: 0.45,
+    shardBonus: 0.35,
+    critChanceBonus: 0.20,
+    critDamageBonus: 0.25,
+    icon: '🌪️',
+    description: 'Буря крови, льда и молний',
+    auraCombo: ['aura-blood', 'aura-ice', 'aura-electric']
+  },
+  
+  // ==== TIER 4: ЛЕГЕНДАРНЫЕ (с cosmic) ====
+  'electric+cosmic': {
+    name: 'Звёздный разряд',
+    tier: 4,
+    tierName: 'Легендарная',
+    tierColor: '#e91e63',
+    damageBonus: 0.50,
+    shardBonus: 0.40,
+    critChanceBonus: 0.20,
     critDamageBonus: 0.35,
     icon: '🌌',
-    description: 'Вселенная пропитана кровью'
+    description: 'Космическая энергия молний',
+    auraCombo: ['aura-electric', 'aura-cosmic']
+  },
+  'fire+cosmic': {
+    name: 'Звёздное пламя',
+    tier: 4,
+    tierName: 'Легендарная',
+    tierColor: '#e91e63',
+    damageBonus: 0.55,
+    shardBonus: 0.35,
+    critChanceBonus: 0.15,
+    critDamageBonus: 0.45,
+    icon: '☀️',
+    description: 'Пламя звезды',
+    auraCombo: ['aura-fire', 'aura-cosmic']
+  },
+  'ice+cosmic': {
+    name: 'Космический мороз',
+    tier: 4,
+    tierName: 'Легендарная',
+    tierColor: '#e91e63',
+    damageBonus: 0.35,
+    shardBonus: 0.55,
+    critChanceBonus: 0.18,
+    critDamageBonus: 0.20,
+    icon: '❄️',
+    description: 'Абсолютный ноль космоса',
+    auraCombo: ['aura-ice', 'aura-cosmic']
+  },
+  'shadow+cosmic': {
+    name: 'Тёмная материя',
+    tier: 4,
+    tierName: 'Легендарная',
+    tierColor: '#e91e63',
+    damageBonus: 0.50,
+    shardBonus: 0.45,
+    critChanceBonus: 0.22,
+    critDamageBonus: 0.30,
+    icon: '🌑',
+    description: 'Сила тёмной материи',
+    auraCombo: ['aura-shadow', 'aura-cosmic']
+  },
+  'blood+cosmic': {
+    name: 'Кровавая звезда',
+    tier: 4,
+    tierName: 'Легендарная',
+    tierColor: '#e91e63',
+    damageBonus: 0.60,
+    shardBonus: 0.30,
+    critChanceBonus: 0.18,
+    critDamageBonus: 0.50,
+    icon: '🌟',
+    description: 'Кровь звёзд',
+    auraCombo: ['aura-blood', 'aura-cosmic']
+  },
+  'gold+cosmic': {
+    name: 'Галактическая корона',
+    tier: 4,
+    tierName: 'Легендарная',
+    tierColor: '#e91e63',
+    damageBonus: 0.40,
+    shardBonus: 0.80,
+    critChanceBonus: 0.15,
+    critDamageBonus: 0.30,
+    icon: '👑',
+    description: 'Золото галактики',
+    auraCombo: ['aura-gold', 'aura-cosmic']
+  },
+  
+  // ==== TIER 5: МИФИЧЕСКИЕ (3 луны с cosmic) ====
+  'blood+fire+cosmic': {
+    name: 'Адская звезда',
+    tier: 5,
+    tierName: 'Мифическая',
+    tierColor: '#9c27b0',
+    damageBonus: 0.90,
+    shardBonus: 0.50,
+    critChanceBonus: 0.30,
+    critDamageBonus: 0.70,
+    icon: '💥',
+    description: 'Звезда питающаяся кровью',
+    auraCombo: ['aura-blood', 'aura-fire', 'aura-cosmic']
   },
   'fire+gold+cosmic': {
     name: 'Солнечная корона',
-    tier: 3,
-    tierName: 'Легендарная',
-    tierColor: '#ff9800',
-    damageBonus: 0.45,
-    shardBonus: 0.50,
-    critChanceBonus: 0.10,
-    critDamageBonus: 0.30,
-    icon: '☀️',
-    description: 'Пылающее золото звезды'
-  },
-  'blood+fire+ice+shadow': {
-    name: 'Апокалипсис стихий',
-    tier: 4,
+    tier: 5,
     tierName: 'Мифическая',
-    tierColor: '#e91e63',
+    tierColor: '#9c27b0',
     damageBonus: 0.70,
-    shardBonus: 0.40,
-    critChanceBonus: 0.18,
-    critDamageBonus: 0.50,
-    icon: '💀',
-    description: 'Четыре стихии разрушают всё на своём пути'
+    shardBonus: 0.90,
+    critChanceBonus: 0.25,
+    critDamageBonus: 0.60,
+    icon: '☀️',
+    description: 'Пылающее золото звезды',
+    auraCombo: ['aura-fire', 'aura-gold', 'aura-cosmic']
   },
-  'blood+fire+gold+cosmic': {
-    name: 'Божественная корона',
-    tier: 4,
+  'ice+electric+cosmic': {
+    name: 'Квантовый шторм',
+    tier: 5,
     tierName: 'Мифическая',
-    tierColor: '#e91e63',
-    damageBonus: 0.65,
-    shardBonus: 0.65,
-    critChanceBonus: 0.20,
+    tierColor: '#9c27b0',
+    damageBonus: 0.80,
+    shardBonus: 0.70,
+    critChanceBonus: 0.35,
     critDamageBonus: 0.55,
-    icon: '👑',
-    description: 'Власть над огнём, золотом и космосом'
+    icon: '🌀',
+    description: 'Квантовая буря',
+    auraCombo: ['aura-ice', 'aura-electric', 'aura-cosmic']
   },
-  'blood+fire+electric+shadow+gold+ice+cosmic': {
-    name: 'Властелин Вселенной',
-    tier: 4,
+  'blood+shadow+cosmic': {
+    name: 'Тёмная дыра',
+    tier: 5,
     tierName: 'Мифическая',
-    tierColor: '#e91e63',
-    damageBonus: 1.50,
-    shardBonus: 1.00,
-    critChanceBonus: 0.30,
-    critDamageBonus: 1.00,
-    icon: '🌟',
-    description: 'Все стихии в одном — абсолютная власть'
+    tierColor: '#9c27b0',
+    damageBonus: 0.95,
+    shardBonus: 0.60,
+    critChanceBonus: 0.35,
+    critDamageBonus: 0.75,
+    icon: '🕳️',
+    description: 'Поглощает всё вокруг',
+    auraCombo: ['aura-blood', 'aura-shadow', 'aura-cosmic']
+  },
+  'shadow+gold+cosmic': {
+    name: 'Звёздный торговец',
+    tier: 5,
+    tierName: 'Мифическая',
+    tierColor: '#9c27b0',
+    damageBonus: 0.65,
+    shardBonus: 1.20,
+    critChanceBonus: 0.25,
+    critDamageBonus: 0.50,
+    icon: '🌌',
+    description: 'Торговец между галактиками',
+    auraCombo: ['aura-shadow', 'aura-gold', 'aura-cosmic']
+  },
+  'fire+electric+cosmic': {
+    name: 'Сверхновая',
+    tier: 5,
+    tierName: 'Мифическая',
+    tierColor: '#9c27b0',
+    damageBonus: 1.10,
+    shardBonus: 0.60,
+    critChanceBonus: 0.35,
+    critDamageBonus: 0.85,
+    icon: '💫',
+    description: 'Взрыв звезды',
+    auraCombo: ['aura-fire', 'aura-electric', 'aura-cosmic']
   }
 };
 
 // ============================================================
-// ДОСТИЖЕНИЯ (СНИЖЕННЫЕ НАГРАДЫ)
+// ДОСТИЖЕНИЯ
 // ============================================================
 export const ACHIEVEMENTS = {
   clickNovice: {
@@ -609,8 +766,7 @@ export const ACHIEVEMENTS = {
     icon: '🎰',
     tiers: [
       { level: 'bronze', target: 2, name: 'Двойной слот', description: 'Откройте 2 слота', reward: 80 },
-      { level: 'silver', target: 4, name: 'Четыре слота', description: 'Откройте 4 слота', reward: 300 },
-      { level: 'gold', target: 5, name: 'Все слоты открыты', description: 'Откройте все 5 слотов', reward: 800 }
+      { level: 'silver', target: 3, name: 'Все слоты открыты', description: 'Откройте все 3 слота', reward: 500 }
     ],
     check: (state, tier) => {
       if (!tier || typeof tier.target !== 'number') return false;
@@ -652,7 +808,7 @@ export const ACHIEVEMENTS = {
 };
 
 // ============================================================
-// КВЕСТЫ (СНИЖЕННЫЕ НАГРАДЫ)
+// КВЕСТЫ
 // ============================================================
 export const QUESTS = {
   clickDaily100: {
@@ -717,7 +873,7 @@ export const QUESTS = {
     categoryName: 'Охотник',
     icon: '⚔️',
     name: 'Серия убийств',
-    description: 'Убейте 3 боссов подряд',
+    description: 'Убейте 3 боссов',
     target: 3,
     reward: 200,
     bonusReward: 100,
