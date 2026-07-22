@@ -1,7 +1,6 @@
 /* ============================================================
    ПАНЕЛИ (ВЫЕЗЖАЮЩИЕ МЕНЮ)
    ============================================================ */
-
 .panel {
   position: fixed;
   background: linear-gradient(135deg, rgba(26, 31, 53, 0.98), rgba(42, 47, 69, 0.98));
@@ -10,53 +9,40 @@
   z-index: 100;
   display: flex;
   flex-direction: column;
-  animation: panelSlide 0.3s ease-out;
   border: 1px solid rgba(255, 215, 0, 0.1);
 }
 
-@keyframes panelSlide {
-  from { opacity: 0; transform: translateX(100%); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-/* ПАНЕЛЬ СПРАВА */
 .panel-right {
   top: 0;
   right: 0;
   width: 100%;
   max-width: 400px;
   height: 100vh;
+  animation: slideFromRight 0.3s ease-out;
 }
 
-/* ПАНЕЛЬ СЛЕВА */
 .panel-left {
   top: 0;
   left: 0;
   width: 100%;
   max-width: 400px;
   height: 100vh;
+  animation: slideFromLeft 0.3s ease-out;
 }
 
-/* ПАНЕЛЬ СНИЗУ */
 .panel-bottom {
   bottom: 0;
   left: 0;
   right: 0;
-  width: 100%;
   max-height: 80vh;
   border-radius: 20px 20px 0 0;
+  animation: slideFromBottom 0.3s ease-out;
 }
 
-@keyframes panelSlideBottom {
-  from { opacity: 0; transform: translateY(100%); }
-  to { opacity: 1; transform: translateY(0); }
-}
+@keyframes slideFromRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes slideFromLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes slideFromBottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-.panel-bottom {
-  animation: panelSlideBottom 0.3s ease-out;
-}
-
-/* ШАПКА ПАНЕЛИ */
 .panel-header {
   display: flex;
   align-items: center;
@@ -92,21 +78,52 @@
   transform: rotate(90deg);
 }
 
-/* КОНТЕНТ ПАНЕЛИ */
 .panel-content {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
 }
 
-.panel-scrollable {
-  overflow-y: auto;
+.panel-scrollable { overflow-y: auto; }
+
+/* БОКОВЫЕ ТРИГГЕРЫ */
+.panel-trigger {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 80px;
+  background: rgba(26, 31, 53, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  color: var(--text-primary);
+  cursor: pointer;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  transition: all 0.3s;
 }
 
-/* ============================================================
-   ЭКРАН АВТОРИЗАЦИИ
-   ============================================================ */
+.panel-trigger-left {
+  left: 0;
+  border-radius: 0 12px 12px 0;
+  border-left: none;
+}
 
+.panel-trigger-right {
+  right: 0;
+  border-radius: 12px 0 0 12px;
+  border-right: none;
+}
+
+.panel-trigger:hover {
+  background: rgba(255, 215, 0, 0.2);
+  width: 50px;
+}
+
+/* AUTH SCREEN */
 .auth-screen {
   position: fixed;
   top: 0;
@@ -145,14 +162,12 @@
   font-weight: 700;
   text-align: center;
   margin-bottom: 8px;
-  color: var(--text-primary);
 }
 
 .auth-subtitle {
   text-align: center;
   color: var(--text-muted);
   margin-bottom: 32px;
-  font-size: 0.95rem;
 }
 
 .auth-form {
@@ -168,7 +183,6 @@
   background: rgba(0, 0, 0, 0.3);
   color: var(--text-primary);
   font-size: 1rem;
-  transition: all 0.3s;
 }
 
 .auth-form input:focus {
