@@ -3,8 +3,8 @@
 // Singleton-паттерн для предотвращения множественных инстансов
 // ============================================================
 
-const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpsbG5zbXp0YWFrZHdqcG5panNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcwNTQwNTQsImV4cCI6MjA1MjYzMDA1NH0.5qXZz8wvZxVXqYxYxYxYxYxYxYxYxYxYxYxYxYxYxY';
+const SUPABASE_URL = 'https://zllnsmztaakdwjpnijsk.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 
 // ============================================================
 // SINGLETON ИНИЦИАЛИЗАЦИЯ (через Promise)
