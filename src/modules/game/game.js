@@ -50,6 +50,12 @@ if (typeof window !== 'undefined') {
       await window.gameEngine.claimAchievementReward(achId, tierLevel);
     }
   };
+  
+  window.toggleMoonActive = (moonId) => {
+    if (window.gameEngine) {
+      window.gameEngine.toggleMoonActive(moonId);
+    }
+  };
 }
 
 export class GameEngine {
@@ -60,6 +66,7 @@ export class GameEngine {
     this._lastSave = 0;
     this._saveInterval = CONSTANTS.INTERVALS.SAVE_TIME;
     this._lastClickEvent = null;
+    this._clickTimestamps = []; // Для отслеживания двойных кликов
 
     this._unsubscribe = appState.subscribeMany(
       ['currentLevel', 'moonHP', 'maxHP', 'activeMoons', 'maxSlots'],
@@ -102,9 +109,18 @@ export class GameEngine {
   }
 
   // ============================================================
-  // ОБРАБОТКА КЛИКОВ
+  // ОБРАБОТКА КЛИКОВ (ИСПРАВЛЕН ДВОЙНОЙ ПОДСЧЕТ)
   // ============================================================
   handleClick = throttle(async (e) => {
+    // Защита от двойных кликов
+    const now = Date.now();
+    const recentClicks = this._clickTimestamps.filter(t => now - t < 100);
+    if (recentClicks.length > 0) {
+      return; // Игнорируем клик если был клик менее 100мс назад
+    }
+    this._clickTimestamps.push(now);
+    this._clickTimestamps = this._clickTimestamps.filter(t => now - t < 1000);
+
     if (this.isProcessing) return;
     if (!state.user) {
       showToast('⚠️ Войдите в аккаунт', 'warning');
@@ -112,6 +128,14 @@ export class GameEngine {
     }
     if (state.moonHP <= 0) {
       return;
+    }
+
+    // Предотвращаем всплытие события
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
     }
 
     this._lastClickEvent = e;
@@ -290,7 +314,15 @@ export class GameEngine {
           activeSynergies.push({
             name: bonus.name,
             description: bonus.description,
-            key: key
+            key: key,
+            tier: bonus.tier,
+            tierName: bonus.tierName,
+            tierColor: bonus.tierColor,
+            icon: bonus.icon,
+            damageBonus: bonus.damageBonus || 0,
+            shardBonus: bonus.shardBonus || 0,
+            critChanceBonus: bonus.critChanceBonus || 0,
+            critDamageBonus: bonus.critDamageBonus || 0
           });
         }
       }
@@ -318,7 +350,7 @@ export class GameEngine {
   }
 
   // ============================================================
-  // СОХРАНЕНИЕ
+  // СОХРАНЕНИЕ (ИСПРАВЛЕНО - УБРАНЫ НЕСУЩЕСТВУЮЩИЕ КОЛОНКИ)
   // ============================================================
   async _saveProgress() {
     const now = Date.now();
@@ -328,6 +360,7 @@ export class GameEngine {
     if (!user) return;
 
     try {
+      // Сохраняем только существующие колонки в Supabase
       await db.updatePlayer(user.id, {
         total_clicks: state.clickCount,
         total_seconds_played: state.totalSecondsPlayed,
@@ -342,6 +375,7 @@ export class GameEngine {
       if (user.id) {
         localStorage.setItem(`quests_${user.id}`, JSON.stringify(state.quests || {}));
         localStorage.setItem(`ach_${user.id}`, JSON.stringify(state.achievements || {}));
+        localStorage.setItem(`activeMoons_${user.id}`, JSON.stringify(state.activeMoons || []));
       }
     } catch (error) {
       console.error('[Game] Ошибка сохранения:', error);
@@ -475,116 +509,6 @@ export class GameEngine {
   }
 
   // ============================================================
-  // 🛒 МАГАЗИН: ШАНС КРИТА
-  // ============================================================
-  async buyCritChance() {
-    if (!state.user) {
-      showToast('⚠️ Войдите в аккаунт', 'warning');
-      return;
-    }
-    const level = state.currentLevel || 1;
-    if (level < 8) {
-      showToast('🔒 Доступно с 8 уровня', 'warning');
-      return;
-    }
-    const currentLevel = state.playerData?.crit_chance_level || 0;
-    if (currentLevel >= CONSTANTS.LIMITS.MAX_CRIT_CHANCE_LEVEL) {
-      showToast('⚠️ Максимальный уровень', 'warning');
-      return;
-    }
-
-    const cost = Math.floor(
-      CONSTANTS.UPGRADE_COSTS.critChance.base *
-      Math.pow(CONSTANTS.UPGRADE_COSTS.critChance.multiplier, currentLevel)
-    );
-
-    if (!state.testMode && (state.playerData?.shards || 0) < cost) {
-      showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
-      return;
-    }
-
-    const newLevel = currentLevel + 1;
-    const newShards = state.testMode ? (state.playerData?.shards || 0) : (state.playerData?.shards || 0) - cost;
-
-    try {
-      await db.updatePlayer(state.user.id, {
-        crit_chance_level: newLevel,
-        shards: newShards,
-        updated_at: new Date().toISOString()
-      });
-
-      appState.set('playerData', {
-        ...state.playerData,
-        crit_chance_level: newLevel,
-        shards: newShards
-      });
-
-      updateUI();
-      updateShopUI();
-      this.recalcMoonBonuses();
-      showToast(`✅ Шанс крита: +${newLevel * 2}%`, 'success');
-    } catch (error) {
-      console.error('[Game] Ошибка покупки:', error);
-      showToast('⚠️ Ошибка при покупке', 'warning');
-    }
-  }
-
-  // ============================================================
-  // 🛒 МАГАЗИН: УРОН КРИТА
-  // ============================================================
-  async buyCritDamage() {
-    if (!state.user) {
-      showToast('⚠️ Войдите в аккаунт', 'warning');
-      return;
-    }
-    const level = state.currentLevel || 1;
-    if (level < 12) {
-      showToast('🔒 Доступно с 12 уровня', 'warning');
-      return;
-    }
-    const currentLevel = state.playerData?.crit_damage_level || 0;
-    if (currentLevel >= CONSTANTS.LIMITS.MAX_CRIT_DAMAGE_LEVEL) {
-      showToast('⚠️ Максимальный уровень', 'warning');
-      return;
-    }
-
-    const cost = Math.floor(
-      CONSTANTS.UPGRADE_COSTS.critDamage.base *
-      Math.pow(CONSTANTS.UPGRADE_COSTS.critDamage.multiplier, currentLevel)
-    );
-
-    if (!state.testMode && (state.playerData?.shards || 0) < cost) {
-      showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
-      return;
-    }
-
-    const newLevel = currentLevel + 1;
-    const newShards = state.testMode ? (state.playerData?.shards || 0) : (state.playerData?.shards || 0) - cost;
-
-    try {
-      await db.updatePlayer(state.user.id, {
-        crit_damage_level: newLevel,
-        shards: newShards,
-        updated_at: new Date().toISOString()
-      });
-
-      appState.set('playerData', {
-        ...state.playerData,
-        crit_damage_level: newLevel,
-        shards: newShards
-      });
-
-      updateUI();
-      updateShopUI();
-      this.recalcMoonBonuses();
-      showToast(`✅ Урон крита: +${newLevel * 10}%`, 'success');
-    } catch (error) {
-      console.error('[Game] Ошибка покупки:', error);
-      showToast('⚠️ Ошибка при покупке', 'warning');
-    }
-  }
-
-  // ============================================================
   // 🛒 МАГАЗИН: СЛОТЫ
   // ============================================================
   async buySlot() {
@@ -665,7 +589,14 @@ export class GameEngine {
       });
 
       appState.addOwnedMoon(moonId);
-      appState.setActiveMoon(moonId);
+      
+      // Автоматически активируем луну если есть свободный слот
+      if (state.activeMoons.length < state.maxSlots) {
+        appState.addActiveMoon(moonId);
+      } else {
+        appState.setActiveMoon(moonId);
+      }
+      
       appState.set('playerData', { ...state.playerData, shards: newShards });
 
       updateUI();
@@ -694,17 +625,60 @@ export class GameEngine {
       showToast('⚠️ У вас нет этой луны', 'warning');
       return;
     }
-    if (state.activeMoon === moonId) {
-      showToast('⚠️ Эта луна уже активна', 'info');
+
+    // Если луна уже активна - деактивируем
+    if (state.activeMoons.includes(moonId)) {
+      this.toggleMoonActive(moonId);
       return;
     }
 
-    appState.setActiveMoon(moonId);
+    // Если есть свободный слот - добавляем
+    if (state.activeMoons.length < state.maxSlots) {
+      appState.addActiveMoon(moonId);
+      showToast(`✅ Активирована луна "${MOON_TYPES[moonId].name}"`, 'success');
+    } else {
+      // Если слотов нет - заменяем первую активную
+      appState.setActiveMoon(moonId);
+      showToast(`✅ Заменена активная луна на "${MOON_TYPES[moonId].name}"`, 'success');
+    }
+
     updateUI();
     updateShopUI();
     updateProfileAndLeaders();
     this.recalcMoonBonuses();
-    showToast(`✅ Активна луна "${MOON_TYPES[moonId].name}"`, 'success');
+  }
+
+  // ============================================================
+  // ПЕРЕКЛЮЧЕНИЕ АКТИВНОСТИ ЛУНЫ
+  // ============================================================
+  toggleMoonActive(moonId) {
+    if (!state.user) return;
+    if (!state.ownedMoons.includes(moonId)) return;
+
+    const isActive = state.activeMoons.includes(moonId);
+    
+    if (isActive) {
+      // Деактивируем
+      if (state.activeMoons.length === 1) {
+        showToast('⚠️ Должна быть хотя бы одна активная луна', 'warning');
+        return;
+      }
+      appState.removeActiveMoon(moonId);
+      showToast(`❌ Деактивирована луна "${MOON_TYPES[moonId].name}"`, 'info');
+    } else {
+      // Активируем
+      if (state.activeMoons.length >= state.maxSlots) {
+        showToast(`⚠️ Нет свободных слотов (макс: ${state.maxSlots})`, 'warning');
+        return;
+      }
+      appState.addActiveMoon(moonId);
+      showToast(`✅ Активирована луна "${MOON_TYPES[moonId].name}"`, 'success');
+    }
+
+    updateUI();
+    updateShopUI();
+    updateProfileAndLeaders();
+    this.recalcMoonBonuses();
   }
 
   // ============================================================
@@ -766,31 +740,22 @@ export class GameEngine {
   // 📋 СИСТЕМА КВЕСТОВ
   // ============================================================
   
-  /**
-   * Генерация ежедневных квестов если их нет или истекли
-   */
   _ensureDailyQuests() {
     const quests = state.quests || {};
     const today = new Date().toDateString();
     const lastReset = localStorage.getItem(`quests_last_reset_${state.user?.id}`);
     
-    // Если квесты уже есть и сегодня не сбрасывались — оставляем
     if (Object.keys(quests).length > 0 && lastReset === today) {
       return;
     }
     
-    // Генерируем новые квесты
     this._generateDailyQuests();
     localStorage.setItem(`quests_last_reset_${state.user?.id}`, today);
   }
   
-  /**
-   * Генерация случайных ежедневных квестов из разных категорий
-   */
   _generateDailyQuests() {
     const questsByCategory = {};
     
-    // Группируем квесты по категориям
     for (const [id, q] of Object.entries(QUESTS)) {
       if (!questsByCategory[q.category]) {
         questsByCategory[q.category] = [];
@@ -801,7 +766,6 @@ export class GameEngine {
     const newQuests = {};
     const categories = ['clicker', 'hunter', 'collector', 'progress'];
     
-    // Берём по 1 квесту из каждой категории (случайный)
     categories.forEach(category => {
       const pool = questsByCategory[category] || [];
       if (pool.length === 0) return;
@@ -816,7 +780,6 @@ export class GameEngine {
       };
     });
     
-    // Добавляем ещё 2 случайных квеста любой категории
     const allQuests = Object.entries(QUESTS);
     for (let i = 0; i < 2; i++) {
       const randomEntry = allQuests[Math.floor(Math.random() * allQuests.length)];
@@ -835,11 +798,6 @@ export class GameEngine {
     updateQuestUI();
   }
   
-  /**
-   * Обновление прогресса квестов по типу события
-   * @param {string} type - 'click' | 'shard' | 'bossKill' | 'level'
-   * @param {number} amount - количество
-   */
   updateQuestProgress(type, amount = 1) {
     const quests = state.quests || {};
     let updated = false;
@@ -857,7 +815,6 @@ export class GameEngine {
         questState.completed = true;
         showToast(`🎯 Квест выполнен: ${questData.name}`, 'success', 2500);
         
-        // Эффект выполнения
         animations.createParticles(null, {
           count: 25,
           color: questData.color,
@@ -878,16 +835,19 @@ export class GameEngine {
     }
   }
   
-  /**
-   * Получение награды за квест
-   */
   async claimQuestReward(questId) {
     const quests = state.quests || {};
     const questState = quests[questId];
     const questData = QUESTS[questId];
     
-    if (!questState || !questData) return;
-    if (!questState.completed || questState.claimed) return;
+    if (!questState || !questData) {
+      console.error('[Game] Quest not found:', questId);
+      return;
+    }
+    if (!questState.completed || questState.claimed) {
+      console.error('[Game] Quest not completable:', questId, questState);
+      return;
+    }
     
     const reward = questData.reward + (questData.bonusReward || 0);
     const currentShards = (state.playerData?.shards || 0) + reward;
@@ -910,7 +870,6 @@ export class GameEngine {
       
       showToast(`💎 +${reward} осколков за квест!`, 'success', 2500);
       
-      // Эффект получения награды
       animations.createParticles(null, {
         count: 30,
         color: '#ffd700',
@@ -930,9 +889,6 @@ export class GameEngine {
   // 🏆 СИСТЕМА ДОСТИЖЕНИЙ
   // ============================================================
   
-  /**
-   * Проверка всех достижений и их уровней
-   */
   checkAchievements() {
     const achievements = state.achievements || {};
     let updated = false;
@@ -943,18 +899,14 @@ export class GameEngine {
       }
       
       for (const tier of ach.tiers) {
-        // Если этот уровень уже достигнут — пропускаем
         if (achievements[achId][tier.level]) continue;
         
-        // Проверяем достижение
         if (ach.check(state, tier)) {
-          // Достижение разблокировано, но награда не получена
           achievements[achId][tier.level] = 'unclaimed';
           updated = true;
           
           showToast(`🏆 Достижение: ${tier.name}`, 'success', 3000);
           
-          // Эффект получения достижения
           animations.createParticles(null, {
             count: 35,
             color: tier.level === 'gold' ? '#ffd700' : (tier.level === 'silver' ? '#c0c0c0' : '#cd7f32'),
@@ -974,18 +926,24 @@ export class GameEngine {
     }
   }
   
-  /**
-   * Получение награды за достижение
-   */
   async claimAchievementReward(achId, tierLevel) {
     const achievements = state.achievements || {};
     const ach = ACHIEVEMENTS[achId];
     
-    if (!ach || !achievements[achId]) return;
-    if (achievements[achId][tierLevel] !== 'unclaimed') return;
+    if (!ach || !achievements[achId]) {
+      console.error('[Game] Achievement not found:', achId);
+      return;
+    }
+    if (achievements[achId][tierLevel] !== 'unclaimed') {
+      console.error('[Game] Achievement not unclaimed:', achId, tierLevel, achievements[achId][tierLevel]);
+      return;
+    }
     
     const tier = ach.tiers.find(t => t.level === tierLevel);
-    if (!tier) return;
+    if (!tier) {
+      console.error('[Game] Tier not found:', tierLevel);
+      return;
+    }
     
     const currentShards = (state.playerData?.shards || 0) + tier.reward;
     
@@ -1007,7 +965,6 @@ export class GameEngine {
       
       showToast(`💎 +${tier.reward} за "${tier.name}"!`, 'success', 2500);
       
-      // Эффект
       animations.createParticles(null, {
         count: 40,
         color: '#ffd700',
@@ -1024,7 +981,7 @@ export class GameEngine {
   }
 
   // ============================================================
-  // СБРОС ПРОГРЕССА
+  // СБРОС ПРОГРЕССА (ИСПРАВЛЕНО)
   // ============================================================
   async resetProgress() {
     if (!state.user) return;
@@ -1038,8 +995,6 @@ export class GameEngine {
         shards: 0,
         click_damage: 1,
         click_damage_level: 0,
-        crit_chance_level: 0,
-        crit_damage_level: 0,
         updated_at: new Date().toISOString()
       });
 
@@ -1059,7 +1014,7 @@ export class GameEngine {
 
       if (state.user) {
         const userId = state.user.id;
-        ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel', 'levelLocked', 'testMode', `quests_last_reset_${userId}`]
+        ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel', 'levelLocked', 'testMode', `quests_last_reset_${userId}`, `activeMoons_${userId}`]
           .forEach(key => localStorage.removeItem(`${key}_${userId}`));
         localStorage.removeItem(`quests_last_reset_${userId}`);
       }
@@ -1148,7 +1103,6 @@ export class GameEngine {
 
 export const gameEngine = new GameEngine();
 
-// Экспортируем gameEngine в window для использования в onclick из renderer.js
 if (typeof window !== 'undefined') {
   window.gameEngine = gameEngine;
 }
