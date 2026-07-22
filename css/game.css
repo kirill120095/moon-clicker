@@ -2129,3 +2129,457 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* ============================================================
+   ВИЗУАЛЬНЫЕ АУРЫ НА ГЛАВНОЙ ЛУНЕ
+   ============================================================ */
+
+/* Контейнер луны должен иметь position: relative */
+#moonContainer {
+  position: relative;
+  transition: all 0.5s ease;
+}
+
+/* Базовое свечение при активной синергии */
+.has-synergy-aura #moonInner {
+  animation: moonAuraGlow 2s ease-in-out infinite alternate;
+}
+
+.has-multi-aura #moonInner {
+  animation: moonMultiAuraGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes moonAuraGlow {
+  0% { filter: brightness(1) saturate(1); }
+  100% { filter: brightness(1.15) saturate(1.2); }
+}
+
+@keyframes moonMultiAuraGlow {
+  0% { filter: brightness(1) saturate(1) hue-rotate(0deg); }
+  50% { filter: brightness(1.2) saturate(1.3) hue-rotate(10deg); }
+  100% { filter: brightness(1.1) saturate(1.1) hue-rotate(-10deg); }
+}
+
+/* === AURA: NORMAL (Обычная) === */
+.aura-normal::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140%;
+  height: 140%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(240, 230, 208, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: auraNormalPulse 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes auraNormalPulse {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* === AURA: BLOOD (Кровавая) === */
+.aura-blood::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 0, 0, 0.4) 0%, rgba(139, 0, 0, 0.2) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: auraBloodPulse 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aura-blood::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, transparent 50%, rgba(255, 0, 0, 0.3) 70%, transparent 90%);
+  border-radius: 50%;
+  animation: auraBloodRing 3s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes auraBloodPulse {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+}
+
+@keyframes auraBloodRing {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* === AURA: ICE (Ледяная) === */
+.aura-ice::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(79, 195, 247, 0.4) 0%, rgba(179, 229, 252, 0.2) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: auraIcePulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aura-ice::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 130%;
+  height: 130%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(from 0deg, transparent, rgba(179, 229, 252, 0.4), transparent, rgba(79, 195, 247, 0.4), transparent);
+  border-radius: 50%;
+  animation: auraIceRotate 6s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+  filter: blur(8px);
+}
+
+@keyframes auraIcePulse {
+  0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes auraIceRotate {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* === AURA: SHADOW (Теневая) === */
+.aura-shadow::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 160%;
+  height: 160%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(42, 10, 58, 0.6) 0%, rgba(106, 27, 154, 0.3) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: auraShadowPulse 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aura-shadow::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.5) 60%, transparent 80%);
+  border-radius: 50%;
+  animation: auraShadowSwirl 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes auraShadowPulse {
+  0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+}
+
+@keyframes auraShadowSwirl {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+  50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.1); }
+}
+
+/* === AURA: FIRE (Огненная) === */
+.aura-fire::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 160%;
+  height: 160%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 152, 0, 0.5) 0%, rgba(255, 87, 34, 0.3) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: auraFirePulse 1.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aura-fire::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140%;
+  height: 140%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(from 0deg, transparent, rgba(255, 152, 0, 0.6), transparent, rgba(255, 87, 34, 0.6), transparent);
+  border-radius: 50%;
+  animation: auraFireFlicker 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+  filter: blur(10px);
+}
+
+@keyframes auraFirePulse {
+  0%, 100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+}
+
+@keyframes auraFireFlicker {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg); opacity: 0.8; }
+  25% { transform: translate(-50%, -50%) rotate(90deg); opacity: 1; }
+  50% { transform: translate(-50%, -50%) rotate(180deg); opacity: 0.9; }
+  75% { transform: translate(-50%, -50%) rotate(270deg); opacity: 1; }
+}
+
+/* === AURA: ELECTRIC (Электрическая) === */
+.aura-electric::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 235, 59, 0.5) 0%, rgba(255, 241, 118, 0.3) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: auraElectricPulse 1.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aura-electric::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 130%;
+  height: 130%;
+  transform: translate(-50%, -50%);
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.8) 0%, transparent 10%),
+    radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.8) 0%, transparent 10%),
+    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.8) 0%, transparent 10%);
+  border-radius: 50%;
+  animation: auraElectricSpark 0.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes auraElectricPulse {
+  0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes auraElectricSpark {
+  0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+/* === AURA: GOLD (Золотая) === */
+.aura-gold::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.5) 0%, rgba(255, 193, 7, 0.3) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: auraGoldPulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aura-gold::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 130%;
+  height: 130%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(from 0deg, 
+    transparent 0%, 
+    rgba(255, 215, 0, 0.6) 25%, 
+    transparent 50%,
+    rgba(255, 193, 7, 0.6) 75%,
+    transparent 100%);
+  border-radius: 50%;
+  animation: auraGoldRotate 4s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+  filter: blur(6px);
+}
+
+@keyframes auraGoldPulse {
+  0%, 100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+}
+
+@keyframes auraGoldRotate {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* === AURA: COSMIC (Космическая) - САМАЯ МОЩНАЯ === */
+.aura-cosmic::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 170%;
+  height: 170%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, 
+    rgba(156, 39, 176, 0.6) 0%, 
+    rgba(63, 81, 181, 0.4) 30%,
+    rgba(233, 30, 99, 0.3) 50%,
+    transparent 70%);
+  border-radius: 50%;
+  animation: auraCosmicPulse 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aura-cosmic::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  background: 
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.9) 0%, transparent 8%),
+    radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.9) 0%, transparent 8%),
+    radial-gradient(circle at 25% 75%, rgba(255, 255, 255, 0.9) 0%, transparent 8%),
+    radial-gradient(circle at 70% 85%, rgba(255, 255, 255, 0.9) 0%, transparent 8%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0%, transparent 6%);
+  border-radius: 50%;
+  animation: auraCosmicStars 8s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes auraCosmicPulse {
+  0%, 100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(180deg); }
+}
+
+@keyframes auraCosmicStars {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* === КОМБО ЭФФЕКТЫ (несколько аур одновременно) === */
+
+/* Лёд + Кровь = фиолетовое мерцание */
+.aura-blood.aura-ice #moonInner {
+  filter: hue-rotate(20deg) brightness(1.1);
+}
+
+/* Огонь + Кровь = красно-оранжевое пламя */
+.aura-blood.aura-fire #moonInner {
+  filter: hue-rotate(-10deg) saturate(1.3) brightness(1.15);
+}
+
+/* Космос + любая = усиление свечения */
+.aura-cosmic.has-multi-aura #moonInner {
+  filter: brightness(1.2) saturate(1.3);
+}
+
+/* === УВЕЛИЧЕНИЕ Z-INDEX ДЛЯ АУР === */
+#moonInner {
+  position: relative;
+  z-index: 10;
+}
+
+/* === АДАПТИВНОСТЬ АУР === */
+@media (max-width: 700px) {
+  .aura-blood::before,
+  .aura-ice::before,
+  .aura-shadow::before,
+  .aura-fire::before,
+  .aura-electric::before,
+  .aura-gold::before,
+  .aura-cosmic::before,
+  .aura-normal::before {
+    width: 130%;
+    height: 130%;
+  }
+  
+  .aura-blood::after,
+  .aura-ice::after,
+  .aura-shadow::after,
+  .aura-fire::after,
+  .aura-electric::after,
+  .aura-gold::after,
+  .aura-cosmic::after {
+    width: 110%;
+    height: 110%;
+  }
+}
+
+/* ============================================================
+   СПЕЦИАЛЬНЫЕ МЕХАНИКИ В МАГАЗИНЕ
+   ============================================================ */
+.moon-shop-special {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.15), rgba(63, 81, 181, 0.08));
+  border: 1px solid rgba(156, 39, 176, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+
+.moon-shop-special .special-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e1bee7;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.moon-shop-special .special-desc {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* === СПЕЦИАЛЬНАЯ МЕХАНИКА В ПРОФИЛЕ === */
+.profile-moon-special {
+  font-size: 0.7rem;
+  color: #e1bee7;
+  margin-top: 2px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.owned-moon-special-small {
+  font-size: 0.65rem;
+  color: #e1bee7;
+  margin-top: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
