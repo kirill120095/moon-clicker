@@ -1,132 +1,50 @@
 // ============================================================
-// ОБРАБОТЧИКИ СОБЫТИЙ
+// ТОЧКА ВХОДА ПРИЛОЖЕНИЯ
 // ============================================================
-import { handleLogin, handleRegister, handleLogout, handleResetProgress } from '../auth/auth.js';
-import { gameEngine } from '../game/game.js';
+import { appState } from './core/state.js';
+import { initEvents } from './modules/ui/events.js';  // ← ИСПРАВЛЕН ПУТЬ
+import { checkAuth } from './modules/auth/auth.js';
+import { createStars } from './modules/ui/renderer.js';
 
-export function initEvents() {
-  console.log('[Events] Инициализация...');
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+async function init() {
+  console.log('[App] Инициализация...');
 
-  // ============================================================
-  // КНОПКИ АВТОРИЗАЦИИ
-  // ============================================================
-  const loginBtn = document.getElementById('loginBtn');
-  const registerBtn = document.getElementById('registerBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const resetBtn = document.getElementById('resetBtn');
+  try {
+    // Инициализируем события (кнопки, клики)
+    initEvents();
 
-  if (loginBtn) {
-    loginBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      console.log('[Events] Login button clicked');
-      await handleLogin();
-    });
-  } else {
-    console.warn('[Events] Login button not found');
-  }
+    // Создаём звёзды на фоне
+    createStars(300);
 
-  if (registerBtn) {
-    registerBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      console.log('[Events] Register button clicked');
-      await handleRegister();
-    });
-  } else {
-    console.warn('[Events] Register button not found');
-  }
+    // Проверяем авторизацию
+    await checkAuth();
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      console.log('[Events] Logout button clicked');
-      await handleLogout();
-    });
-  }
-
-  if (resetBtn) {
-    resetBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      console.log('[Events] Reset button clicked');
-      await handleResetProgress();
-    });
-  }
-
-  // ============================================================
-  // КНОПКИ УПРАВЛЕНИЯ ИГРОЙ
-  // ============================================================
-  const lockToggle = document.getElementById('lockToggleMain');
-  const rollbackBtn = document.getElementById('rollbackBtnMain');
-  const moonWrapper = document.getElementById('moonWrapper');
-
-  if (lockToggle) {
-    lockToggle.addEventListener('click', () => {
-      console.log('[Events] Lock toggle clicked');
-      // TODO: реализовать фиксацию уровня
-    });
-  }
-
-  if (rollbackBtn) {
-    rollbackBtn.addEventListener('click', async () => {
-      console.log('[Events] Rollback button clicked');
-      if (gameEngine && gameEngine.rollbackLevel) {
-        await gameEngine.rollbackLevel();
-      }
-    });
-  }
-
-  if (moonWrapper) {
-    // Обработчик клика по луне
-    moonWrapper.addEventListener('click', (e) => {
-      if (gameEngine && gameEngine.handleClick) {
-        gameEngine.handleClick(e);
-      }
-    });
-
-    // Обработчик для мобильных устройств
-    moonWrapper.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      if (gameEngine && gameEngine.handleClick) {
-        const touch = e.touches[0];
-        const syntheticEvent = {
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-          preventDefault: () => {},
-          stopPropagation: () => {}
-        };
-        gameEngine.handleClick(syntheticEvent);
-      }
-    }, { passive: false });
-  }
-
-  // ============================================================
-  // ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ ПАНЕЛЕЙ
-  // ============================================================
-  window.openPanel = (panelId) => {
-    const panel = document.getElementById(panelId);
-    if (panel) {
-      // Закрываем все другие панели
-      document.querySelectorAll('.panel').forEach(p => {
-        if (p.id !== panelId) {
-          p.classList.add('hidden');
-        }
-      });
-      panel.classList.remove('hidden');
+    console.log('[App] Инициализация завершена');
+  } catch (error) {
+    console.error('[App] Критическая ошибка инициализации:', error);
+    
+    // Даже при ошибке показываем экран авторизации
+    const authScreen = document.getElementById('authScreen');
+    const app = document.getElementById('app');
+    
+    if (authScreen) {
+      authScreen.classList.remove('hidden');
     }
-  };
-
-  window.closePanel = (panelId) => {
-    const panel = document.getElementById(panelId);
-    if (panel) {
-      panel.classList.add('hidden');
+    if (app) {
+      app.classList.add('hidden');
     }
-  };
+  }
+}
 
-  window.closeModal = (modalId) => {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-      modal.classList.add('hidden');
-    }
-  };
-
-  console.log('[Events] Инициализация завершена');
+// ============================================================
+// ЗАПУСК
+// ============================================================
+// Ждём полной загрузки DOM
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
 }
