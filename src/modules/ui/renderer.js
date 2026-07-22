@@ -10,7 +10,6 @@ import { db } from '../network/supabase.js';
 
 let toastContainer = null;
 
-// Текущая выбранная категория квестов и достижений
 let currentQuestCategory = 'all';
 let currentAchievementCategory = 'all';
 
@@ -256,7 +255,7 @@ function _updateMoonShop() {
   let html = '';
   for (const [id, moon] of Object.entries(MOON_TYPES)) {
     const owned = state.ownedMoons.includes(id);
-    const active = (state.activeMoon === id);
+    const isActive = state.activeMoons.includes(id);
     const isLockedByLevel = state.currentLevel < (moon.unlockLevel || 1);
     const canBuy = !owned && !isLockedByLevel &&
       (state.testMode || (state.playerData?.shards || 0) >= moon.cost) &&
@@ -303,9 +302,9 @@ function _updateMoonShop() {
         </div>
         <div class="moon-shop-actions">
           ${owned ? 
-            (active ? 
-              '<button class="btn-active" disabled>✓ Активна</button>' :
-              `<button class="btn-select" onclick="window.gameEngine.selectMoon('${id}')">Выбрать</button>`)
+            (isActive ? 
+              '<button class="btn-active" onclick="window.toggleMoonActive(\'' + id + '\')">✓ Активна</button>' :
+              `<button class="btn-select" onclick="window.toggleMoonActive('${id}')">Активировать</button>`)
             : (moon.cost === 0 ? 
               '<button class="btn-free" disabled>Доступна</button>' :
               (isLockedByLevel ? 
@@ -323,9 +322,6 @@ function _updateMoonShop() {
   container.innerHTML = html;
 }
 
-// ============================================================
-// ОТОБРАЖЕНИЕ АКТИВНЫХ СИНЕРГИЙ
-// ============================================================
 function _updateSynergiesDisplay() {
   const container = document.getElementById('activeSynergies');
   if (!container) return;
@@ -339,21 +335,18 @@ function _updateSynergiesDisplay() {
   
   let html = '';
   synergies.forEach(syn => {
-    const synData = Object.values(SYNERGY_BONUSES).find(s => s.name === syn.name);
-    if (!synData) return;
-    
     html += `
-      <div class="synergy-badge tier-${synData.tier}" style="--tier-color: ${synData.tierColor}">
-        <div class="synergy-icon">${synData.icon || '🔗'}</div>
+      <div class="synergy-badge tier-${syn.tier}" style="--tier-color: ${syn.tierColor}">
+        <div class="synergy-icon">${syn.icon || '🔗'}</div>
         <div class="synergy-info">
-          <div class="synergy-name">${escapeHTML(synData.name)}</div>
-          <div class="synergy-tier">${synData.tierName}</div>
-          <div class="synergy-desc">${escapeHTML(synData.description || '')}</div>
+          <div class="synergy-name">${escapeHTML(syn.name)}</div>
+          <div class="synergy-tier">${syn.tierName}</div>
+          <div class="synergy-desc">${escapeHTML(syn.description || '')}</div>
           <div class="synergy-bonuses">
-            ${synData.damageBonus > 0 ? `<span class="bonus">⚔️+${Math.round(synData.damageBonus*100)}%</span>` : ''}
-            ${synData.shardBonus > 0 ? `<span class="bonus">💎+${Math.round(synData.shardBonus*100)}%</span>` : ''}
-            ${synData.critChanceBonus > 0 ? `<span class="bonus">🎯+${Math.round(synData.critChanceBonus*100)}%</span>` : ''}
-            ${synData.critDamageBonus > 0 ? `<span class="bonus">💥+${Math.round(synData.critDamageBonus*100)}%</span>` : ''}
+            ${syn.damageBonus > 0 ? `<span class="bonus">⚔️+${Math.round(syn.damageBonus*100)}%</span>` : ''}
+            ${syn.shardBonus > 0 ? `<span class="bonus">💎+${Math.round(syn.shardBonus*100)}%</span>` : ''}
+            ${syn.critChanceBonus > 0 ? `<span class="bonus">🎯+${Math.round(syn.critChanceBonus*100)}%</span>` : ''}
+            ${syn.critDamageBonus > 0 ? `<span class="bonus">💥+${Math.round(syn.critDamageBonus*100)}%</span>` : ''}
           </div>
         </div>
       </div>
@@ -377,6 +370,71 @@ function _updateProfile() {
   const data = state.playerData;
   const title = getTitle(data.level || 1);
 
+  // Собираем информацию о лунах и бонусах
+  const ownedMoons = state.ownedMoons || [];
+  const activeMoons = state.activeMoons || [];
+  const maxSlots = state.maxSlots || 1;
+  const totalDamageBonus = window._totalDamageBonus || 0;
+  const totalShardBonus = window._totalShardBonus || 0;
+  const totalCritChanceBonus = window._totalCritChanceBonus || 0;
+  const totalCritDamageBonus = window._totalCritDamageBonus || 0;
+  const activeSynergies = window._activeSynergies || [];
+
+  // HTML для активных лун
+  let activeMoonsHtml = '';
+  activeMoons.forEach(moonId => {
+    const moon = MOON_TYPES[moonId];
+    if (!moon) return;
+    const level = state.moonLevels[moonId] || 1;
+    activeMoonsHtml += `
+      <div class="active-moon-badge" onclick="window.toggleMoonActive('${moonId}')" title="Нажмите чтобы деактивировать">
+        <span class="active-moon-emoji">${moon.emoji}</span>
+        <span class="active-moon-level">Ур.${level}</span>
+      </div>
+    `;
+  });
+
+  // HTML для всех купленных лун
+  let ownedMoonsHtml = '';
+  ownedMoons.forEach(moonId => {
+    const moon = MOON_TYPES[moonId];
+    if (!moon) return;
+    const isActive = activeMoons.includes(moonId);
+    const level = state.moonLevels[moonId] || 1;
+    ownedMoonsHtml += `
+      <div class="owned-moon-card ${isActive ? 'active' : ''}" onclick="window.toggleMoonActive('${moonId}')">
+        <div class="owned-moon-emoji">${moon.emoji}</div>
+        <div class="owned-moon-name">${escapeHTML(moon.name)}</div>
+        <div class="owned-moon-level">Ур. ${level}</div>
+        <div class="owned-moon-status">${isActive ? '✓ Активна' : 'Неактивна'}</div>
+      </div>
+    `;
+  });
+
+  // HTML для синергий
+  let synergiesHtml = '';
+  if (activeSynergies.length > 0) {
+    activeSynergies.forEach(syn => {
+      synergiesHtml += `
+        <div class="profile-synergy tier-${syn.tier}">
+          <div class="profile-synergy-header">
+            <span class="profile-synergy-icon">${syn.icon}</span>
+            <span class="profile-synergy-name">${escapeHTML(syn.name)}</span>
+            <span class="profile-synergy-tier">${syn.tierName}</span>
+          </div>
+          <div class="profile-synergy-bonuses">
+            ${syn.damageBonus > 0 ? `<span>⚔️+${Math.round(syn.damageBonus*100)}%</span>` : ''}
+            ${syn.shardBonus > 0 ? `<span>💎+${Math.round(syn.shardBonus*100)}%</span>` : ''}
+            ${syn.critChanceBonus > 0 ? `<span>🎯+${Math.round(syn.critChanceBonus*100)}%</span>` : ''}
+            ${syn.critDamageBonus > 0 ? `<span>💥+${Math.round(syn.critDamageBonus*100)}%</span>` : ''}
+          </div>
+        </div>
+      `;
+    });
+  } else {
+    synergiesHtml = '<div class="no-synergies-profile">Нет активных синергий. Комбинируйте луны!</div>';
+  }
+
   profileContent.innerHTML = `
     <div class="profile-header">
       <div class="profile-avatar">👤</div>
@@ -386,6 +444,7 @@ function _updateProfile() {
         <div class="profile-title">${title}</div>
       </div>
     </div>
+    
     <div class="profile-stats">
       <div class="stat-item">
         <div class="stat-icon">📊</div>
@@ -410,12 +469,100 @@ function _updateProfile() {
       <div class="stat-item">
         <div class="stat-icon">🌙</div>
         <div class="stat-label">Луны</div>
-        <div class="stat-value">${state.ownedMoons?.length || 0}</div>
+        <div class="stat-value">${ownedMoons.length}</div>
       </div>
       <div class="stat-item">
         <div class="stat-icon">⏱️</div>
         <div class="stat-label">В игре</div>
         <div class="stat-value">${formatTime(state.totalSecondsPlayed || 0)}</div>
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <h3 class="section-title">🌙 Активные луны (${activeMoons.length}/${maxSlots})</h3>
+      <div class="active-moons-container">
+        ${activeMoonsHtml || '<div class="no-active-moons">Нет активных лун</div>'}
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <h3 class="section-title">📦 Все купленные луны (${ownedMoons.length})</h3>
+      <div class="owned-moons-grid">
+        ${ownedMoonsHtml}
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <h3 class="section-title">📊 Текущие бонусы</h3>
+      <div class="bonus-stats">
+        <div class="bonus-item">
+          <span class="bonus-icon">⚔️</span>
+          <span class="bonus-label">Урон:</span>
+          <span class="bonus-value">+${Math.round(totalDamageBonus * 100)}%</span>
+        </div>
+        <div class="bonus-item">
+          <span class="bonus-icon">💎</span>
+          <span class="bonus-label">Осколки:</span>
+          <span class="bonus-value">+${Math.round(totalShardBonus * 100)}%</span>
+        </div>
+        <div class="bonus-item">
+          <span class="bonus-icon">🎯</span>
+          <span class="bonus-label">Шанс крита:</span>
+          <span class="bonus-value">+${Math.round(totalCritChanceBonus * 100)}%</span>
+        </div>
+        <div class="bonus-item">
+          <span class="bonus-icon">💥</span>
+          <span class="bonus-label">Урон крита:</span>
+          <span class="bonus-value">+${Math.round(totalCritDamageBonus * 100)}%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <h3 class="section-title">🔗 Активные синергии (${activeSynergies.length})</h3>
+      <div class="profile-synergies-list">
+        ${synergiesHtml}
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <h3 class="section-title">💡 Описание улучшений</h3>
+      <div class="upgrade-descriptions">
+        <div class="upgrade-desc-item">
+          <span class="upgrade-icon">⚔️</span>
+          <div>
+            <div class="upgrade-name">Урон клика</div>
+            <div class="upgrade-desc">Увеличивает базовый урон от каждого клика на +1</div>
+          </div>
+        </div>
+        <div class="upgrade-desc-item">
+          <span class="upgrade-icon">🎰</span>
+          <div>
+            <div class="upgrade-name">Слоты лун</div>
+            <div class="upgrade-desc">Позволяет активировать несколько лун одновременно для получения синергий</div>
+          </div>
+        </div>
+        <div class="upgrade-desc-item">
+          <span class="upgrade-icon">💎</span>
+          <div>
+            <div class="upgrade-name">Осколки (Shards)</div>
+            <div class="upgrade-desc">Валюта для покупки лун и улучшений. Получаете за убийство лун и боссов</div>
+          </div>
+        </div>
+        <div class="upgrade-desc-item">
+          <span class="upgrade-icon">🎯</span>
+          <div>
+            <div class="upgrade-name">Критический удар</div>
+            <div class="upgrade-desc">Шанс нанести увеличенный урон (базово 5%, крит урон ×2)</div>
+          </div>
+        </div>
+        <div class="upgrade-desc-item">
+          <span class="upgrade-icon">🔗</span>
+          <div>
+            <div class="upgrade-name">Синергии</div>
+            <div class="upgrade-desc">Комбинации лун дают дополнительные бонусы. Чем больше лун - тем мощнее синергии</div>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -475,9 +622,6 @@ export function createStars(count = 300) {
   container.appendChild(fragment);
 }
 
-// ============================================================
-// КВЕСТЫ (С ТАБАМИ И ПРОГРЕСС-БАРАМИ)
-// ============================================================
 export function setQuestCategory(category) {
   currentQuestCategory = category;
   updateQuestUI();
@@ -489,7 +633,6 @@ export function updateQuestUI() {
 
   const quests = state.quests || {};
   
-  // Табы категорий
   let tabsHtml = '<div class="quest-tabs">';
   for (const [catId, cat] of Object.entries(QUEST_CATEGORIES)) {
     const isActive = currentQuestCategory === catId;
@@ -504,7 +647,6 @@ export function updateQuestUI() {
   }
   tabsHtml += '</div>';
   
-  // Список квестов
   let listHtml = '<div class="quest-list">';
   let questCount = 0;
   
@@ -512,7 +654,6 @@ export function updateQuestUI() {
     const questData = QUESTS[id];
     if (!questData) continue;
     
-    // Фильтр по категории
     if (currentQuestCategory !== 'all' && questData.category !== currentQuestCategory) {
       continue;
     }
@@ -571,9 +712,6 @@ export function updateQuestUI() {
   container.innerHTML = tabsHtml + listHtml;
 }
 
-// ============================================================
-// ДОСТИЖЕНИЯ (С УРОВНЯМИ BRONZE/SILVER/GOLD)
-// ============================================================
 export function setAchievementCategory(category) {
   currentAchievementCategory = category;
   updateAchievementUI();
@@ -585,7 +723,6 @@ export function updateAchievementUI() {
 
   const achievements = state.achievements || {};
   
-  // Табы категорий
   let tabsHtml = '<div class="achievement-tabs">';
   for (const [catId, cat] of Object.entries(ACHIEVEMENT_CATEGORIES)) {
     const isActive = currentAchievementCategory === catId;
@@ -599,7 +736,6 @@ export function updateAchievementUI() {
   }
   tabsHtml += '</div>';
   
-  // Группируем достижения по категориям
   const grouped = {};
   for (const [id, ach] of Object.entries(ACHIEVEMENTS)) {
     if (currentAchievementCategory !== 'all' && ach.category !== currentAchievementCategory) {
@@ -635,22 +771,29 @@ export function updateAchievementUI() {
             <div class="achievement-icon">${ach.icon}</div>
             <div class="achievement-info">
               <div class="achievement-title-group">
-          `;
+      `;
       
-      // 3 уровня достижений
       ach.tiers.forEach((tier, idx) => {
-        const isAchieved = achState[tier.level] || false;
+        const tierState = achState[tier.level];
+        const isAchieved = tierState === 'claimed';
+        const isUnclaimed = tierState === 'unclaimed';
+        const isLocked = !tierState;
+        
         const tierIcon = isAchieved ? 
-          (tier.level === 'gold' ? '🥇' : (tier.level === 'silver' ? '🥈' : '🥉')) : '🔒';
+          (tier.level === 'gold' ? '🥇' : (tier.level === 'silver' ? '🥈' : '🥉')) : 
+          (isUnclaimed ? '🎁' : '🔒');
         
         listHtml += `
-          <div class="achievement-tier tier-${tier.level} ${isAchieved ? 'achieved' : 'locked'}">
+          <div class="achievement-tier tier-${tier.level} ${isAchieved ? 'achieved' : (isUnclaimed ? 'unclaimed' : 'locked')}">
             <span class="tier-medal">${tierIcon}</span>
             <div class="tier-info">
               <div class="tier-name">${escapeHTML(tier.name)}</div>
               <div class="tier-desc">${escapeHTML(tier.description)}</div>
               <div class="tier-reward">💎 ${tier.reward}</div>
             </div>
+            ${isUnclaimed ? 
+              `<button class="btn-claim-tier" onclick="window.claimAchievementReward('${ach.id}', '${tier.level}')">Получить</button>` 
+              : ''}
           </div>
         `;
       });
@@ -680,7 +823,6 @@ export function updateQuestAndAchievementUI() {
   updateAchievementUI();
 }
 
-// Экспорт функций для window
 if (typeof window !== 'undefined') {
   window.setQuestCategory = setQuestCategory;
   window.setAchievementCategory = setAchievementCategory;
