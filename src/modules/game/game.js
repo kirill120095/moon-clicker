@@ -1,12 +1,13 @@
 // ============================================================
-// ОСНОВНАЯ ИГРОВАЯ ЛОГИКА - С УВЕЛИЧЕННЫМИ ЗНАЧЕНИЯМИ
+// ОСНОВНАЯ ИГРОВАЯ ЛОГИКА - НОВАЯ СИСТЕМА МЕХАНИК
 // ============================================================
 import { appState, state } from '../../core/state.js';
 import { 
-  CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS, RARITY_CONFIG 
+  CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS, RARITY_CONFIG,
+  getMoonMechanicParams, getMoonUpgradeCostForLevel
 } from '../../core/constants.js';
 import { 
-  getMaxHPForLevel, isBossLevel, getMoonUpgradeCost, getSlotUpgradeCost 
+  getMaxHPForLevel, isBossLevel, getSlotUpgradeCost 
 } from '../../core/config.js';
 import { db } from '../network/supabase.js';
 import { 
@@ -31,19 +32,23 @@ export class GameEngine {
     this._lastClickTime = 0;
     this._minClickInterval = 16;
     
-    // Счётчики механик
+    // Счётчики механик (сбрасываются при бездействии)
     this._comboClicks = 0;
     this._fireStacks = 0;
+    this._shadowCritStacks = 0;
     this._clickCounter = 0;
+    this._pityClicks = 0; // Для электрической луны
+    this._superconductorClicksLeft = 0; // Для электрической ур. 7
+    this._firstStrikeUsed = false; // Для теневой ур. 5
+    this._newMoon = true; // Флаг новой луны (для первого удара)
     
-    // НОВОЕ: Таймер активности
+    // Таймер активности
     this._lastActivityTime = Date.now();
     this._activityCheckInterval = null;
     this._ACTIVITY_TIMEOUT = 15000;
-    
-    // НОВОЕ: Флаг предотвращения повторного сброса
     this._buffsAlreadyReset = false;
     
+    // Подписки
     this._unsubscribeMain = appState.subscribeMany(
       ['currentLevel', 'moonHP', 'maxHP', 'activeMoons', 'maxSlots'],
       () => this._onStateChange()
@@ -80,7 +85,7 @@ export class GameEngine {
   }
 
   // ============================================================
-  // ИСПРАВЛЕНО: ПРОВЕРКА АКТИВНОСТИ
+  // ПРОВЕРКА АКТИВНОСТИ
   // ============================================================
   _startActivityCheck() {
     if (this._activityCheckInterval) clearInterval(this._activityCheckInterval);
@@ -89,20 +94,54 @@ export class GameEngine {
       const timeSinceLastClick = Date.now() - this._lastActivityTime;
       
       if (timeSinceLastClick >= this._ACTIVITY_TIMEOUT) {
-        // Сбрасываем ТОЛЬКО если есть что сбрасывать И еще не сбросили
-        if (!this._buffsAlreadyReset && (this._comboClicks > 0 || this._fireStacks > 0)) {
+        // Проверяем, есть ли механики с resetTimeout
+        const mechanics = this._getActiveMechanics();
+        let shouldReset = false;
+        
+        // Обычная луна (combo)
+        if (mechanics.includes('combo')) {
+          const normalParams = this._getMechanicParamsForActiveMoon('normal');
+          const timeout = normalParams?.resetTimeout || 15000;
+          if (timeSinceLastClick >= timeout && this._comboClicks > 0) {
+            shouldReset = true;
+          }
+        }
+        
+        // Огненная луна (fireStacks)
+        if (mechanics.includes('fireStacks')) {
+          const fireParams = this._getMechanicParamsForActiveMoon('fire');
+          const timeout = fireParams?.resetTimeout || 15000;
+          if (timeSinceLastClick >= timeout && this._fireStacks > 0) {
+            shouldReset = true;
+          }
+        }
+        
+        // Теневая луна (shadowCritStacks)
+        if (mechanics.includes('shadowCritStacks')) {
+          const shadowParams = this._getMechanicParamsForActiveMoon('shadow');
+          const timeout = shadowParams?.resetTimeout || 15000;
+          if (timeSinceLastClick >= timeout && this._shadowCritStacks > 0) {
+            shouldReset = true;
+          }
+        }
+        
+        if (shouldReset && !this._buffsAlreadyReset) {
           this._comboClicks = 0;
           this._fireStacks = 0;
-          this._buffsAlreadyReset = true; // Помечаем что уже сбросили
-          
-          showToast('💨 Комбо сброшено (бездействие)', 'info', 1500);
+          this._shadowCritStacks = 0;
+          this._buffsAlreadyReset = true;
           this._updateBuffsDisplay();
         }
       }
       
-      // Обновляем отображение (для таймеров)
       this._updateBuffsDisplay();
     }, 500);
+  }
+
+  _getMechanicParamsForActiveMoon(moonId) {
+    if (!state.activeMoons.includes(moonId)) return null;
+    const moonLevel = state.moonLevels[moonId] || 1;
+    return getMoonMechanicParams(moonId, moonLevel);
   }
 
   handleClick = (e) => {
@@ -116,7 +155,6 @@ export class GameEngine {
     }
     if (state.moonHP <= 0) return;
 
-    // НОВОЕ: При клике сбрасываем флаг "уже сброшено"
     this._lastActivityTime = Date.now();
     this._buffsAlreadyReset = false;
 
@@ -128,9 +166,8 @@ export class GameEngine {
     const isBoss = isBossLevel(state.currentLevel, CONSTANTS.BOSS_INTERVAL);
     
     const bonuses = this._calculateAllBonuses();
-    const { finalDamage, isCrit, specialEffect } = this._applyMoonMechanics(
-      baseDamage, bonuses, isBoss
-    );
+    const result = this._applyMoonMechanics(baseDamage, bonuses, isBoss);
+    const { finalDamage, isCrit, specialEffect } = result;
     
     appState.incrementClickCount();
     animations.setBaseDamage(baseDamage);
@@ -161,6 +198,18 @@ export class GameEngine {
           duration: 800, spread: 100,
           x: e.clientX, y: e.clientY
         });
+      } else if (specialEffect === 'chainLightning') {
+        animations.createParticles(null, {
+          count: 25, color: '#fff176', size: 6,
+          duration: 1000, spread: 150,
+          x: e.clientX, y: e.clientY
+        });
+      } else if (specialEffect === 'icePierce') {
+        animations.createParticles(null, {
+          count: 20, color: '#4fc3f7', size: 6,
+          duration: 900, spread: 120,
+          x: e.clientX, y: e.clientY
+        });
       }
     }
     
@@ -178,6 +227,9 @@ export class GameEngine {
     }
   }
 
+  // ============================================================
+  // РАСЧЁТ ВСЕХ БОНУСОВ (С УЧЁТОМ ПРОКАЧКИ ЛУН)
+  // ============================================================
   _calculateAllBonuses() {
     let totalDamageBonus = 0;
     let totalShardBonus = 0;
@@ -190,22 +242,35 @@ export class GameEngine {
       const moon = MOON_TYPES[id];
       if (!moon) return;
       
-      const level = appState.getMoonLevel(id);
-      const levelMultiplier = 1 + (level - 1) * 0.05;
+      const moonLevel = state.moonLevels[id] || 1;
+      const levelMultiplier = 1 + (moonLevel - 1) * 0.05;
       
-      let cosmicDamageBonus = 0;
-      let cosmicShardBonus = 0;
+      // Базовые статы с учётом уровня
+      totalDamageBonus += (moon.baseStats.damageBonus || 0) * levelMultiplier;
+      totalShardBonus += (moon.baseStats.shardBonus || 0) * levelMultiplier;
+      totalCritChanceBonus += (moon.baseStats.critChanceBonus || 0) * levelMultiplier;
+      totalCritDamageBonus += (moon.baseStats.critDamageBonus || 0) * levelMultiplier;
+      
+      // Космическая луна - бонусы от уровня игрока
       if (moon.specialMechanic === 'scaling') {
-        cosmicDamageBonus = moon.specialDamagePerLevel * state.currentLevel;
-        cosmicShardBonus = moon.specialShardPerLevel * state.currentLevel;
+        const cosmicParams = getMoonMechanicParams(id, moonLevel);
+        const levelBonus = state.currentLevel;
+        totalDamageBonus += cosmicParams.damagePerLevel * levelBonus;
+        totalShardBonus += cosmicParams.shardPerLevel * levelBonus;
+        totalCritDamageBonus += cosmicParams.critDamagePerLevel * levelBonus;
       }
       
-      totalDamageBonus += ((moon.damageBonus || 0) + cosmicDamageBonus) * levelMultiplier;
-      totalShardBonus += ((moon.shardBonus || 0) + cosmicShardBonus) * levelMultiplier;
-      totalCritChanceBonus += (moon.critChanceBonus || 0) * levelMultiplier;
-      totalCritDamageBonus += (moon.critDamageBonus || 0) * levelMultiplier;
+      // Золотая луна ур. 10 - +0.1% урона от осколков
+      if (moon.specialMechanic === 'goldRush') {
+        const goldParams = getMoonMechanicParams(id, moonLevel);
+        if (goldParams.shardToDamageRatio > 0) {
+          const shards = state.playerData?.shards || 0;
+          totalDamageBonus += shards * goldParams.shardToDamageRatio;
+        }
+      }
     });
     
+    // Синергии
     if (activeIds.length > 1 && state.maxSlots > 1) {
       const sortedActive = [...activeIds].sort();
       
@@ -228,56 +293,210 @@ export class GameEngine {
     return { totalDamageBonus, totalShardBonus, totalCritChanceBonus, totalCritDamageBonus };
   }
 
+  // ============================================================
+  // ПРИМЕНЕНИЕ МЕХАНИК ЛУН (ПОЛНАЯ ПЕРЕРАБОТКА)
+  // ============================================================
   _applyMoonMechanics(baseDamage, bonuses, isBoss) {
     const mechanics = this._getActiveMechanics();
     let damageMultiplier = 1 + bonuses.totalDamageBonus;
+    let critChance = Math.min(0.95, 0.05 + bonuses.totalCritChanceBonus);
+    let critDamageMultiplier = 2 + bonuses.totalCritDamageBonus;
+    let finalMultiplier = 1; // Применяется в самом конце
     let specialEffect = null;
     
-    // КОМБО (обычная)
+    this._clickCounter++;
+    
+    // ============================================================
+    // 🌙 ОБЫЧНАЯ ЛУНА: Комбо-мастер
+    // ============================================================
     if (mechanics.includes('combo')) {
-      this._comboClicks++;
-      const comboStacks = Math.min(Math.floor(this._comboClicks / 10), 10);
-      damageMultiplier += comboStacks * 0.05;
-      if (this._comboClicks >= 100) this._comboClicks = 0;
+      const params = this._getMechanicParamsForActiveMoon('normal');
+      if (params) {
+        this._comboClicks++;
+        const stacks = Math.min(
+          Math.floor(this._comboClicks / params.clicksPerStack), 
+          params.maxStacks
+        );
+        damageMultiplier += stacks * params.bonusPerStack;
+        
+        // Сброс при достижении максимума
+        if (this._comboClicks >= params.clicksPerStack * params.maxStacks) {
+          this._comboClicks = 0;
+        }
+      }
     }
     
-    // ЖАР (огненная)
+    // ============================================================
+    // 🔥 ОГНЕННАЯ ЛУНА: Накопление жара
+    // ============================================================
     if (mechanics.includes('fireStacks')) {
-      this._fireStacks = Math.min(this._fireStacks + 1, 75);
-      const fireStacks = Math.floor(this._fireStacks / 5);
-      damageMultiplier += fireStacks * 0.10;
-      
-      if (this._fireStacks % 5 === 0 && this._fireStacks > 0 && this._fireStacks <= 75) {
-        specialEffect = 'fireStack';
+      const params = this._getMechanicParamsForActiveMoon('fire');
+      if (params) {
+        this._fireStacks = Math.min(this._fireStacks + 1, params.maxStacks);
+        const stacks = Math.floor(this._fireStacks / params.clicksPerStack);
+        damageMultiplier += stacks * params.bonusPerStack;
+        
+        // Визуальный эффект при новом стеке
+        if (this._fireStacks % params.clicksPerStack === 0 && this._fireStacks > 0) {
+          specialEffect = 'fireStack';
+        }
+        
+        // Уровень 10: шанс сброса после safeStacks
+        if (params.maxStacks === Infinity && this._fireStacks > params.safeStacks) {
+          if (Math.random() < params.resetChance) {
+            this._fireStacks = 0;
+          }
+        }
       }
     }
     
-    // МЕГА-РАЗРЯД (электрическая)
-    if (mechanics.includes('megaStrike')) {
-      this._clickCounter++;
-      if (this._clickCounter >= 20) {
-        damageMultiplier *= 10;
-        specialEffect = 'megaStrike';
-        this._clickCounter = 0;
+    // ============================================================
+    // 🌑 ТЕНЕВАЯ ЛУНА: Крит стеки
+    // ============================================================
+    if (mechanics.includes('shadowCritStacks')) {
+      const params = this._getMechanicParamsForActiveMoon('shadow');
+      if (params) {
+        this._shadowCritStacks++;
+        const stacks = Math.min(
+          Math.floor(this._shadowCritStacks / params.clicksPerStack), 
+          params.maxStacks
+        );
+        critDamageMultiplier += stacks * params.critDamagePerStack;
+        
+        // Уровень 5: Первый удар = гарантированный крит
+        if (params.firstStrikeCrit && this._firstStrikeUsed === false && this._newMoon) {
+          critChance = 1.0;
+          this._firstStrikeUsed = true;
+        }
+        
+        // Уровень 10: при полном стаке +10% к шансу крита
+        if (params.fullStackCritChance > 0 && stacks >= params.maxStacks) {
+          critChance = Math.min(0.95, critChance + params.fullStackCritChance);
+        }
+        
+        // Сброс при достижении максимума
+        if (this._shadowCritStacks >= params.clicksPerStack * params.maxStacks) {
+          this._shadowCritStacks = 0;
+        }
       }
     }
     
-    // КРОВАВАЯ ЛУНА
+    // ============================================================
+    // 🩸 КРОВАВАЯ ЛУНА: Бонус при низком HP босса
+    // ============================================================
     if (mechanics.includes('bloodMoon') && isBoss) {
-      const hpRatio = state.moonHP / state.maxHP;
-      if (hpRatio < 0.5) {
-        damageMultiplier += 1.00;
+      const params = this._getMechanicParamsForActiveMoon('blood');
+      if (params) {
+        const hpRatio = state.moonHP / state.maxHP;
+        
+        if (hpRatio < params.hpThreshold) {
+          damageMultiplier += params.damageBonus;
+        }
+        
+        // Мгновенное убийство
+        if (params.executeThreshold > 0 && hpRatio <= params.executeThreshold) {
+          damageMultiplier = 999; // Гарантированное убийство
+        }
       }
     }
     
+    // ============================================================
+    // ❄️ ЛЕДЯНАЯ ЛУНА: Заморозка + пронзающий удар
+    // ============================================================
+    if (mechanics.includes('freeze')) {
+      const params = this._getMechanicParamsForActiveMoon('ice');
+      if (params && params.pierceInterval > 0) {
+        if (this._clickCounter % params.pierceInterval === 0) {
+          damageMultiplier += params.pierceDamage;
+          specialEffect = 'icePierce';
+        }
+      }
+    }
+    
+    // ============================================================
+    // ⚡ ЭЛЕКТРИЧЕСКАЯ ЛУНА: Цепная молния
+    // ============================================================
+    if (mechanics.includes('chainLightning')) {
+      const params = this._getMechanicParamsForActiveMoon('electric');
+      if (params) {
+        // Уровень 5: pity система (накопление шанса)
+        let pityBonus = 0;
+        if (params.pityMax > 0) {
+          pityBonus = Math.min(this._pityClicks * params.pityBonus, params.pityMax);
+        }
+        
+        const roll = Math.random();
+        const effectiveX2 = params.chanceX2 + pityBonus;
+        const effectiveX5 = params.chanceX5 + pityBonus;
+        const effectiveX10 = params.chanceX10 + pityBonus;
+        
+        if (roll < effectiveX10) {
+          finalMultiplier *= 10;
+          specialEffect = 'chainLightning';
+          this._pityClicks = 0;
+          this._superconductorClicksLeft = params.superconductorClicks || 0;
+        } else if (roll < effectiveX5 + effectiveX10) {
+          finalMultiplier *= 5;
+          specialEffect = 'chainLightning';
+          this._pityClicks = 0;
+          this._superconductorClicksLeft = params.superconductorClicks || 0;
+        } else if (roll < effectiveX2 + effectiveX5 + effectiveX10) {
+          finalMultiplier *= 2;
+          specialEffect = 'chainLightning';
+          this._pityClicks = 0;
+          this._superconductorClicksLeft = params.superconductorClicks || 0;
+        } else {
+          this._pityClicks++;
+        }
+        
+        // Уровень 7: Сверхпроводник - следующие N кликов +50% урона
+        if (this._superconductorClicksLeft > 0) {
+          damageMultiplier += params.superconductorBonus;
+          this._superconductorClicksLeft--;
+        }
+      }
+    }
+    
+    // ============================================================
+    // 👑 ЗОЛОТАЯ ЛУНА: Золотой клик (обрабатывается отдельно)
+    // ============================================================
+    // (обрабатывается в _onMoonDefeated и при клике)
+    
+    // ============================================================
+    // ✨ КОСМИЧЕСКАЯ ЛУНА: Бонусы уже учтены в _calculateAllBonuses
+    // ============================================================
+    
+    // Применяем базовый урон с множителем
     let finalDamage = Math.max(1, Math.round(baseDamage * damageMultiplier));
     
-    const critChance = Math.min(0.95, 0.05 + bonuses.totalCritChanceBonus);
+    // Критический удар
     const isCrit = Math.random() < critChance;
-    
     if (isCrit) {
-      const critMultiplier = 2 + bonuses.totalCritDamageBonus;
-      finalDamage = Math.round(finalDamage * critMultiplier);
+      finalDamage = Math.round(finalDamage * critDamageMultiplier);
+      
+      // Теневая ур. 7: двойной крит
+      if (mechanics.includes('shadowCritStacks')) {
+        const params = this._getMechanicParamsForActiveMoon('shadow');
+        if (params && params.doubleCritChance > 0 && Math.random() < params.doubleCritChance) {
+          finalDamage = Math.round(finalDamage * (1 + critDamageMultiplier / 2));
+        }
+      }
+    }
+    
+    // Применяем финальный множитель (электрическая)
+    finalDamage = Math.round(finalDamage * finalMultiplier);
+    
+    // Золотой клик (отдельная проверка)
+    if (mechanics.includes('goldRush')) {
+      const params = this._getMechanicParamsForActiveMoon('gold');
+      if (params && params.goldenClickChance > 0) {
+        if (Math.random() < params.goldenClickChance) {
+          const bonus = params.goldenClickReward * (1 + bonuses.totalShardBonus);
+          const currentShards = (state.playerData?.shards || 0) + Math.round(bonus);
+          appState.set('playerData', { ...state.playerData, shards: currentShards });
+          showToast(`🎁 Золотой клик! +${Math.round(bonus)} 💎`, 'success', 1500);
+        }
+      }
     }
     
     return { finalDamage, isCrit, specialEffect };
@@ -296,127 +515,171 @@ export class GameEngine {
   }
 
   // ============================================================
-  // ПОЛУЧЕНИЕ АКТИВНЫХ БАФОВ
+  // АКТИВНЫЕ БАФЫ ДЛЯ UI
   // ============================================================
   _getActiveBuffs() {
     const buffs = [];
     const mechanics = this._getActiveMechanics();
     const isBoss = isBossLevel(state.currentLevel, CONSTANTS.BOSS_INTERVAL);
     const timeSinceLastClick = Date.now() - this._lastActivityTime;
-    const timeLeft = Math.max(0, Math.ceil((this._ACTIVITY_TIMEOUT - timeSinceLastClick) / 1000));
     
-    // 🌙 КОМБО-МАСТЕР
+    // 🌙 Комбо
     if (mechanics.includes('combo')) {
-      const comboProgress = this._comboClicks % 10;
-      const comboStacks = Math.min(Math.floor(this._comboClicks / 10), 10);
-      
-      buffs.push({
-        id: 'combo', icon: '🌙', name: 'Комбо',
-        value: comboStacks, maxStacks: 10,
-        progress: comboProgress, progressMax: 10,
-        bonus: `+${comboStacks * 5}% урон`,
-        timeLeft: (this._comboClicks > 0 && !this._buffsAlreadyReset) ? timeLeft : null,
-        isActive: comboStacks > 0,
-        isMaxed: comboStacks >= 10,
-        isTemporary: true
-      });
+      const params = this._getMechanicParamsForActiveMoon('normal');
+      if (params) {
+        const stacks = Math.min(
+          Math.floor(this._comboClicks / params.clicksPerStack), 
+          params.maxStacks
+        );
+        const progress = this._comboClicks % params.clicksPerStack;
+        const timeLeft = this._comboClicks > 0 ? 
+          Math.max(0, Math.ceil((params.resetTimeout - timeSinceLastClick) / 1000)) : null;
+        
+        buffs.push({
+          id: 'combo', icon: '🌙', name: 'Комбо',
+          value: stacks, maxStacks: params.maxStacks,
+          progress, progressMax: params.clicksPerStack,
+          bonus: `+${Math.round(stacks * params.bonusPerStack * 100)}% урон`,
+          timeLeft, isActive: stacks > 0,
+          isMaxed: stacks >= params.maxStacks,
+          isTemporary: true
+        });
+      }
     }
     
-    // 🔥 НАКОПЛЕНИЕ ЖАРА
+    // 🔥 Жар
     if (mechanics.includes('fireStacks')) {
-      const fireStacks = Math.floor(this._fireStacks / 5);
-      const fireProgress = this._fireStacks % 5;
-      
-      buffs.push({
-        id: 'fire', icon: '🔥', name: 'Жар',
-        value: fireStacks, maxStacks: 15,
-        progress: fireProgress, progressMax: 5,
-        bonus: `+${fireStacks * 10}% урон`,
-        timeLeft: (this._fireStacks > 0 && !this._buffsAlreadyReset) ? timeLeft : null,
-        isActive: fireStacks > 0,
-        isMaxed: fireStacks >= 15,
-        isTemporary: true
-      });
+      const params = this._getMechanicParamsForActiveMoon('fire');
+      if (params) {
+        const stacks = Math.floor(this._fireStacks / params.clicksPerStack);
+        const progress = this._fireStacks % params.clicksPerStack;
+        const maxDisplay = params.maxStacks === Infinity ? '∞' : params.maxStacks;
+        const timeLeft = this._fireStacks > 0 ? 
+          Math.max(0, Math.ceil((params.resetTimeout - timeSinceLastClick) / 1000)) : null;
+        
+        buffs.push({
+          id: 'fire', icon: '🔥', name: 'Жар',
+          value: stacks, maxStacks: params.maxStacks === Infinity ? 999 : params.maxStacks,
+          progress, progressMax: params.clicksPerStack,
+          bonus: params.maxStacks === Infinity 
+            ? `+${Math.round(stacks * params.bonusPerStack * 100)}%${this._fireStacks > params.safeStacks ? ' ⚠️' : ''}`
+            : `+${Math.round(stacks * params.bonusPerStack * 100)}% урон`,
+          timeLeft, isActive: stacks > 0,
+          isMaxed: params.maxStacks !== Infinity && stacks >= params.maxStacks,
+          isTemporary: true
+        });
+      }
     }
     
-    // ⚡ МЕГА-РАЗРЯД
-    if (mechanics.includes('megaStrike')) {
-      const isReady = this._clickCounter >= 18;
-      buffs.push({
-        id: 'electric', icon: '⚡', name: 'Заряд',
-        value: this._clickCounter, maxStacks: 20,
-        progress: this._clickCounter, progressMax: 20,
-        bonus: isReady ? '⚡ ГОТОВ x10!' : `${20 - this._clickCounter} до x10`,
-        timeLeft: null,
-        isActive: this._clickCounter > 0,
-        isMaxed: isReady,
-        isTemporary: false
-      });
+    // 🌑 Теневые криты
+    if (mechanics.includes('shadowCritStacks')) {
+      const params = this._getMechanicParamsForActiveMoon('shadow');
+      if (params) {
+        const stacks = Math.min(
+          Math.floor(this._shadowCritStacks / params.clicksPerStack), 
+          params.maxStacks
+        );
+        const progress = this._shadowCritStacks % params.clicksPerStack;
+        const timeLeft = this._shadowCritStacks > 0 ? 
+          Math.max(0, Math.ceil((params.resetTimeout - timeSinceLastClick) / 1000)) : null;
+        
+        buffs.push({
+          id: 'shadow', icon: '🌑', name: 'Тень',
+          value: stacks, maxStacks: params.maxStacks,
+          progress, progressMax: params.clicksPerStack,
+          bonus: `+${Math.round(stacks * params.critDamagePerStack * 100)}% крит`,
+          timeLeft, isActive: stacks > 0,
+          isMaxed: stacks >= params.maxStacks,
+          isTemporary: true
+        });
+      }
     }
     
-    // 🩸 КРОВАВАЯ ЖАТВА
+    // ⚡ Электрический заряд
+    if (mechanics.includes('chainLightning')) {
+      const params = this._getMechanicParamsForActiveMoon('electric');
+      if (params) {
+        buffs.push({
+          id: 'electric', icon: '⚡', name: 'Заряд',
+          value: this._pityClicks, maxStacks: 20,
+          progress: this._pityClicks, progressMax: 20,
+          bonus: params.pityMax > 0 
+            ? `+${Math.round(Math.min(this._pityClicks * params.pityBonus, params.pityMax) * 100)}% шанс`
+            : `Молния готова`,
+          timeLeft: null,
+          isActive: this._pityClicks > 0 || this._superconductorClicksLeft > 0,
+          isMaxed: this._superconductorClicksLeft > 0,
+          isPassive: params.pityMax === 0
+        });
+      }
+    }
+    
+    // 🩸 Кровавая луна
     if (mechanics.includes('bloodMoon') && isBoss) {
-      const hpRatio = state.moonHP / state.maxHP;
-      const isActive = hpRatio < 0.5;
-      
-      buffs.push({
-        id: 'blood', icon: '🩸', name: 'Кровавая жатва',
-        value: isActive ? 100 : Math.round(hpRatio * 100),
-        maxStacks: 100,
-        progress: isActive ? 100 : Math.round((0.5 - hpRatio) * 200),
-        progressMax: 100,
-        bonus: isActive ? '💀 +100% УРОН' : `${Math.round(hpRatio * 100)}% HP`,
-        timeLeft: null,
-        isActive: isActive,
-        isMaxed: isActive,
-        isTemporary: false,
-        isConditional: true
-      });
+      const params = this._getMechanicParamsForActiveMoon('blood');
+      if (params) {
+        const hpRatio = state.moonHP / state.maxHP;
+        const isActive = hpRatio < params.hpThreshold;
+        
+        buffs.push({
+          id: 'blood', icon: '🩸', name: 'Кровь',
+          value: isActive ? 100 : Math.round(hpRatio * 100),
+          maxStacks: 100,
+          progress: isActive ? 100 : Math.round((params.hpThreshold - hpRatio) * 100 / params.hpThreshold),
+          progressMax: 100,
+          bonus: isActive 
+            ? `💀 +${Math.round(params.damageBonus * 100)}%` 
+            : `${Math.round(hpRatio * 100)}% HP`,
+          timeLeft: null,
+          isActive, isMaxed: isActive,
+          isConditional: true
+        });
+      }
     }
     
-    // ❄️ ЗАМОРОЗКА
+    // ❄️ Заморозка
     if (mechanics.includes('freeze') && isBoss) {
-      buffs.push({
-        id: 'freeze', icon: '❄️', name: 'Заморозка',
-        value: 25, maxStacks: 25, progress: 25, progressMax: 25,
-        bonus: '+25% времени',
-        timeLeft: null, isActive: true, isMaxed: true, isPassive: true
-      });
+      const params = this._getMechanicParamsForActiveMoon('ice');
+      if (params) {
+        buffs.push({
+          id: 'freeze', icon: '❄️', name: 'Заморозка',
+          value: Math.round(params.timerBonus * 100), maxStacks: 100,
+          progress: 100, progressMax: 100,
+          bonus: `+${Math.round(params.timerBonus * 100)}% времени`,
+          timeLeft: null, isActive: true, isMaxed: true, isPassive: true
+        });
+      }
     }
     
-    // 🌑 ТЕНЕВОЙ УДАР
-    if (mechanics.includes('shadowCrit')) {
-      buffs.push({
-        id: 'shadow', icon: '🌑', name: 'Теневой удар',
-        value: 100, maxStacks: 100, progress: 100, progressMax: 100,
-        bonus: '+100% крит урон',
-        timeLeft: null, isActive: true, isMaxed: true, isPassive: true
-      });
-    }
-    
-    // ✨ КОСМИЧЕСКАЯ МОЩЬ
+    // ✨ Космос
     if (mechanics.includes('scaling')) {
-      const level = state.currentLevel;
-      buffs.push({
-        id: 'cosmic', icon: '✨', name: 'Космос',
-        value: level, maxStacks: 100,
-        progress: Math.min(level, 100), progressMax: 100,
-        bonus: `+${level}% урон, +${(level * 0.25).toFixed(1)}% 💎`,
-        timeLeft: null, isActive: true, isMaxed: level >= 100, isPassive: true
-      });
+      const params = this._getMechanicParamsForActiveMoon('cosmic');
+      if (params) {
+        const level = state.currentLevel;
+        buffs.push({
+          id: 'cosmic', icon: '✨', name: 'Космос',
+          value: level, maxStacks: 100,
+          progress: Math.min(level, 100), progressMax: 100,
+          bonus: `+${Math.round(params.damagePerLevel * level * 100)}% урон`,
+          timeLeft: null, isActive: true, isMaxed: level >= 100, isPassive: true
+        });
+      }
     }
     
-    // 👑 ЗОЛОТОЙ ДОЖДЬ
+    // 👑 Золото
     if (mechanics.includes('goldRush')) {
-      buffs.push({
-        id: 'gold', icon: '👑', name: 'Золотой дождь',
-        value: 100, maxStacks: 100, progress: 100, progressMax: 100,
-        bonus: 'x2 / x3 💎',
-        timeLeft: null, isActive: true, isMaxed: true, isPassive: true
-      });
+      const params = this._getMechanicParamsForActiveMoon('gold');
+      if (params) {
+        buffs.push({
+          id: 'gold', icon: '👑', name: 'Золото',
+          value: 100, maxStacks: 100,
+          progress: 100, progressMax: 100,
+          bonus: `x${params.normalMultiplier}/x${params.bossMultiplier}`,
+          timeLeft: null, isActive: true, isMaxed: true, isPassive: true
+        });
+      }
     }
     
-    // Возвращаем максимум 3 бафа
     return buffs.slice(0, 3);
   }
 
@@ -429,11 +692,14 @@ export class GameEngine {
     }
   }
 
+  // ============================================================
+  // ПОБЕДА НАД ЛУНОЙ
+  // ============================================================
   async _onMoonDefeated(isBoss) {
     if (state.levelLocked) {
       appState.set('moonHP', state.maxHP);
       updateUI();
-      showToast('🔒 Уровень зафиксирован', 'info');
+      showToast('🔒 Уровень закреплён', 'info');
       return;
     }
     
@@ -444,11 +710,27 @@ export class GameEngine {
       state.currentLevel, isBoss, bonuses.totalShardBonus
     );
     
+    // Золотая луна: множитель
     if (mechanics.includes('goldRush')) {
-      const goldMoon = MOON_TYPES.gold;
-      const multiplier = isBoss ? goldMoon.specialValueBoss : goldMoon.specialValueNormal;
-      reward = Math.round(reward * multiplier);
-      showToast(`👑 Золотой дождь: x${multiplier} осколков!`, 'success', 2000);
+      const params = this._getMechanicParamsForActiveMoon('gold');
+      if (params) {
+        const multiplier = isBoss ? params.bossMultiplier : params.normalMultiplier;
+        reward = Math.round(reward * multiplier);
+      }
+    }
+    
+    // Обычная луна ур. 7: +10% осколков при полном стаке
+    if (mechanics.includes('combo')) {
+      const params = this._getMechanicParamsForActiveMoon('normal');
+      if (params && params.shardBonusOnFullStack > 0) {
+        const stacks = Math.min(
+          Math.floor(this._comboClicks / params.clicksPerStack), 
+          params.maxStacks
+        );
+        if (stacks >= params.maxStacks) {
+          reward = Math.round(reward * (1 + params.shardBonusOnFullStack));
+        }
+      }
     }
     
     const currentShards = (state.playerData?.shards || 0) + reward;
@@ -460,11 +742,10 @@ export class GameEngine {
     if (isBoss) {
       appState.setBossKills(state.bossKills + 1);
       this.updateQuestProgress('bossKill', 1);
-      
       animations.playBossDeathEffect(window.innerWidth / 2, window.innerHeight / 2);
     }
     
-    showToast(`💎 +${reward} лунных осколков!`, 'success', 2000);
+    showToast(`💎 +${reward} осколков!`, 'success', 2000);
     
     appState.incrementLevel();
     
@@ -475,10 +756,15 @@ export class GameEngine {
     
     this._applyLevelUpEffect();
     
-    // Сбрасываем все счётчики при смене уровня
+    // Сброс счётчиков
     this._comboClicks = 0;
     this._fireStacks = 0;
+    this._shadowCritStacks = 0;
     this._clickCounter = 0;
+    this._pityClicks = 0;
+    this._superconductorClicksLeft = 0;
+    this._firstStrikeUsed = false;
+    this._newMoon = true;
     this._buffsAlreadyReset = false;
     
     this.checkAchievements();
@@ -502,10 +788,11 @@ export class GameEngine {
       let bossTimer = CONSTANTS.BOSS_TIMER;
       
       if (mechanics.includes('freeze')) {
-        const iceMoon = MOON_TYPES.ice;
-        const extraTime = Math.round(CONSTANTS.BOSS_TIMER * iceMoon.specialValue);
-        bossTimer += extraTime;
-        showToast(`❄️ Заморозка: +${extraTime}с к таймеру!`, 'info', 2000);
+        const params = this._getMechanicParamsForActiveMoon('ice');
+        if (params) {
+          const extraTime = Math.round(CONSTANTS.BOSS_TIMER * params.timerBonus);
+          bossTimer += extraTime;
+        }
       }
       
       this.combat.startBossTimer(() => this._onBossTimeout(), bossTimer);
@@ -517,7 +804,7 @@ export class GameEngine {
   _onBossTimeout() {
     appState.set('moonHP', state.maxHP);
     updateUI();
-    showToast('⏱️ Время вышло! Босс восстановил здоровье', 'warning');
+    showToast('⏱️ Время вышло!', 'warning');
   }
 
   recalcMoonBonuses() {
@@ -558,17 +845,12 @@ export class GameEngine {
     const now = Date.now();
     if (now - this._lastSave < 1000) return;
     this._lastSave = now;
-    
-    this._saveProgress().catch(err => {
-      console.error('[Game] Background save failed:', err);
-    });
+    this._saveProgress().catch(err => console.error('[Game] Background save failed:', err));
   }
 
   _forceSave() {
     this._lastSave = Date.now();
-    this._saveProgress().catch(err => {
-      console.error('[Game] Force save failed:', err);
-    });
+    this._saveProgress().catch(err => console.error('[Game] Force save failed:', err));
   }
 
   async _saveProgress() {
@@ -589,6 +871,7 @@ export class GameEngine {
         localStorage.setItem(`quests_${user.id}`, JSON.stringify(state.quests || {}));
         localStorage.setItem(`ach_${user.id}`, JSON.stringify(state.achievements || {}));
         localStorage.setItem(`activeMoons_${user.id}`, JSON.stringify(state.activeMoons || []));
+        localStorage.setItem(`moonLevels_${user.id}`, JSON.stringify(state.moonLevels || {}));
       }
     } catch (error) {
       console.error('[Game] Ошибка сохранения:', error);
@@ -597,24 +880,16 @@ export class GameEngine {
 
   _startTimeTracking() {
     if (state.timeUpdateInterval) clearInterval(state.timeUpdateInterval);
-    
     const interval = setInterval(() => {
       appState.set('totalSecondsPlayed', state.totalSecondsPlayed + 1);
-      if (state.totalSecondsPlayed % 60 === 0) {
-        this.checkAchievements();
-      }
+      if (state.totalSecondsPlayed % 60 === 0) this.checkAchievements();
     }, 1000);
-    
     appState.set('timeUpdateInterval', interval);
   }
 
   _startAutoSave() {
     if (state.autoSaveInterval) clearInterval(state.autoSaveInterval);
-    
-    const interval = setInterval(() => {
-      this._saveProgress();
-    }, this._saveInterval);
-    
+    const interval = setInterval(() => this._saveProgress(), this._saveInterval);
     appState.set('autoSaveInterval', interval);
   }
 
@@ -629,9 +904,7 @@ export class GameEngine {
     const wrapper = document.getElementById('moonWrapper');
     if (wrapper) {
       wrapper.style.transform = 'scale(0.92)';
-      setTimeout(() => {
-        wrapper.style.transform = 'scale(1)';
-      }, 150);
+      setTimeout(() => wrapper.style.transform = 'scale(1)', 150);
     }
   }
 
@@ -668,23 +941,18 @@ export class GameEngine {
   }
 
   // ============================================================
-  // ПОКУПКА УРОНА - ТЕПЕРЬ +10 ЗА УРОВЕНЬ
+  // ПОКУПКИ
   // ============================================================
   async buyClickDamage() {
     if (this._isPurchaseProcessing) return;
-    if (!state.user) {
-      showToast('⚠️ Войдите в аккаунт', 'warning');
-      return;
-    }
+    if (!state.user) return showToast('⚠️ Войдите в аккаунт', 'warning');
+    
     const level = state.currentLevel || 1;
-    if (level < 5) {
-      showToast('🔒 Магазин доступен с 5 уровня', 'warning');
-      return;
-    }
+    if (level < 5) return showToast('🔒 Доступно с 5 уровня', 'warning');
+    
     const currentLevelUpgrade = state.playerData?.click_damage_level || 0;
     if (currentLevelUpgrade >= CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL) {
-      showToast('⚠️ Максимальный уровень улучшения', 'warning');
-      return;
+      return showToast('⚠️ Максимальный уровень', 'warning');
     }
     
     const cost = Math.floor(
@@ -693,14 +961,12 @@ export class GameEngine {
     );
     
     if (!state.testMode && (state.playerData?.shards || 0) < cost) {
-      showToast(`⚠️ Недостаточно осколков! Нужно ${cost}`, 'warning');
-      return;
+      return showToast(`⚠️ Нужно ${cost} 💎`, 'warning');
     }
     
     this._isPurchaseProcessing = true;
     
     try {
-      // НОВОЕ: +10 урона за улучшение вместо +1
       const upgradeValue = CONSTANTS.CLICK_DAMAGE_UPGRADE_VALUE;
       const newDamage = (state.playerData?.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE) + upgradeValue;
       const newLevel = currentLevelUpgrade + 1;
@@ -724,10 +990,10 @@ export class GameEngine {
       updateShopUI();
       updateProfileAndLeaders();
       this.checkAchievements();
-      showToast(`✅ Улучшение куплено! Урон: ${newDamage} (+${upgradeValue})`, 'success');
+      showToast(`✅ Урон: ${newDamage} (+${upgradeValue})`, 'success');
     } catch (error) {
       console.error('[Game] Ошибка покупки:', error);
-      showToast('⚠️ Ошибка при покупке', 'warning');
+      showToast('⚠️ Ошибка', 'warning');
     } finally {
       this._isPurchaseProcessing = false;
     }
@@ -735,20 +1001,15 @@ export class GameEngine {
 
   async buySlot() {
     if (this._isPurchaseProcessing) return;
-    if (!state.user) {
-      showToast('⚠️ Войдите в аккаунт', 'warning');
-      return;
-    }
+    if (!state.user) return showToast('⚠️ Войдите в аккаунт', 'warning');
     if (state.maxSlots >= CONSTANTS.MAX_SLOTS) {
-      showToast(`⚠️ Все ${CONSTANTS.MAX_SLOTS} слота уже открыты`, 'warning');
-      return;
+      return showToast(`⚠️ Все ${CONSTANTS.MAX_SLOTS} слота открыты`, 'warning');
     }
     
     const cost = getSlotUpgradeCost(state.maxSlots);
     
     if (!state.testMode && (state.playerData?.shards || 0) < cost) {
-      showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
-      return;
+      return showToast(`⚠️ Нужно ${cost} 💎`, 'warning');
     }
     
     this._isPurchaseProcessing = true;
@@ -772,8 +1033,8 @@ export class GameEngine {
       this.checkAchievements();
       showToast(`✅ Открыт ${state.maxSlots} слот!`, 'success');
     } catch (error) {
-      console.error('[Game] Ошибка покупки слота:', error);
-      showToast('⚠️ Ошибка при покупке', 'warning');
+      console.error('[Game] Ошибка:', error);
+      showToast('⚠️ Ошибка', 'warning');
     } finally {
       this._isPurchaseProcessing = false;
     }
@@ -781,23 +1042,16 @@ export class GameEngine {
 
   async buyMoon(moonId) {
     if (this._isPurchaseProcessing) return;
-    if (!state.user) {
-      showToast('⚠️ Войдите в аккаунт', 'warning');
-      return;
-    }
+    if (!state.user) return showToast('⚠️ Войдите', 'warning');
+    
     const moon = MOON_TYPES[moonId];
     if (!moon) return;
-    if (state.ownedMoons.includes(moonId)) {
-      showToast('⚠️ У вас уже есть эта луна', 'warning');
-      return;
-    }
+    if (state.ownedMoons.includes(moonId)) return showToast('⚠️ Уже есть', 'warning');
     if (state.currentLevel < (moon.unlockLevel || 1)) {
-      showToast(`🔒 Доступна с ${moon.unlockLevel} уровня`, 'warning');
-      return;
+      return showToast(`🔒 С ${moon.unlockLevel} уровня`, 'warning');
     }
     if (!state.testMode && (state.playerData?.shards || 0) < moon.cost) {
-      showToast(`⚠️ Недостаточно осколков! Нужно ${moon.cost}`, 'warning');
-      return;
+      return showToast(`⚠️ Нужно ${moon.cost} 💎`, 'warning');
     }
     
     this._isPurchaseProcessing = true;
@@ -811,13 +1065,11 @@ export class GameEngine {
       });
       
       appState.addOwnedMoon(moonId);
-      
       if (state.activeMoons.length < state.maxSlots) {
         appState.addActiveMoon(moonId);
       } else {
         appState.setActiveMoon(moonId);
       }
-      
       appState.set('playerData', { ...state.playerData, shards: newShards });
       
       updateUI();
@@ -827,10 +1079,10 @@ export class GameEngine {
       this.checkAchievements();
       
       const rarityName = RARITY_CONFIG[moon.rarity]?.name || '';
-      showToast(`✅ Куплена ${rarityName} луна "${moon.name}"!`, 'success');
+      showToast(`✅ ${rarityName} "${moon.name}" куплена!`, 'success');
     } catch (error) {
-      console.error('[Game] Ошибка покупки луны:', error);
-      showToast('⚠️ Ошибка при покупке', 'warning');
+      console.error('[Game] Ошибка:', error);
+      showToast('⚠️ Ошибка', 'warning');
     } finally {
       this._isPurchaseProcessing = false;
     }
@@ -844,23 +1096,27 @@ export class GameEngine {
     
     if (isActive) {
       if (state.activeMoons.length === 1) {
-        showToast('⚠️ Должна быть хотя бы одна активная луна', 'warning');
-        return;
+        return showToast('⚠️ Нужна хотя бы 1 луна', 'warning');
       }
       appState.removeActiveMoon(moonId);
-      showToast(`❌ Деактивирована луна "${MOON_TYPES[moonId].name}"`, 'info');
+      showToast(`❌ ${MOON_TYPES[moonId].name} деактивирована`, 'info');
     } else {
       if (state.activeMoons.length >= state.maxSlots) {
-        showToast(`⚠️ Нет свободных слотов (макс: ${state.maxSlots})`, 'warning');
-        return;
+        return showToast(`⚠️ Нет слотов (макс: ${state.maxSlots})`, 'warning');
       }
       appState.addActiveMoon(moonId);
-      showToast(`✅ Активирована луна "${MOON_TYPES[moonId].name}"`, 'success');
+      showToast(`✅ ${MOON_TYPES[moonId].name} активирована`, 'success');
     }
+    
+    this._newMoon = true;
+    this._firstStrikeUsed = false;
     
     this._comboClicks = 0;
     this._fireStacks = 0;
+    this._shadowCritStacks = 0;
     this._clickCounter = 0;
+    this._pityClicks = 0;
+    this._superconductorClicksLeft = 0;
     this._buffsAlreadyReset = false;
     
     updateUI();
@@ -872,30 +1128,19 @@ export class GameEngine {
 
   async upgradeMoon(moonId) {
     if (this._isPurchaseProcessing) return;
-    if (!state.user) {
-      showToast('⚠️ Войдите в аккаунт', 'warning');
-      return;
-    }
-    if (!state.ownedMoons.includes(moonId)) {
-      showToast('⚠️ У вас нет этой луны', 'warning');
-      return;
-    }
-    if (state.currentLevel < 10) {
-      showToast('🔒 Прокачка лун доступна с 10 уровня', 'warning');
-      return;
+    if (!state.user) return showToast('⚠️ Войдите', 'warning');
+    if (!state.ownedMoons.includes(moonId)) return showToast('⚠️ Нет луны', 'warning');
+    if (state.currentLevel < 10) return showToast('🔒 С 10 уровня', 'warning');
+    
+    const currentLevel = state.moonLevels[moonId] || 1;
+    if (currentLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
+      return showToast('⚠️ Макс. уровень', 'warning');
     }
     
-    const currentLevelMoon = appState.getMoonLevel(moonId);
-    if (currentLevelMoon >= CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
-      showToast('⚠️ Максимальный уровень луны (10)', 'warning');
-      return;
-    }
-    
-    const cost = getMoonUpgradeCost(moonId, currentLevelMoon);
+    const cost = getMoonUpgradeCostForLevel(moonId, currentLevel);
     
     if (!state.testMode && (state.playerData?.shards || 0) < cost) {
-      showToast(`⚠️ Нужно ${cost} осколков`, 'warning');
-      return;
+      return showToast(`⚠️ Нужно ${cost} 💎`, 'warning');
     }
     
     this._isPurchaseProcessing = true;
@@ -908,18 +1153,36 @@ export class GameEngine {
         updated_at: new Date().toISOString()
       });
       
-      appState.setMoonLevel(moonId, currentLevelMoon + 1);
+      appState.setMoonLevel(moonId, currentLevel + 1);
       appState.set('playerData', { ...state.playerData, shards: newShards });
+      
+      // Проверяем милестоун
+      const moon = MOON_TYPES[moonId];
+      const newLevel = currentLevel + 1;
+      const milestone = moon.milestones[newLevel];
+      
+      if (milestone) {
+        showToast(`🎯 ${milestone.icon} ${milestone.name} разблокирован!`, 'success', 3000);
+        
+        // Сверхновая (космическая ур. 10)
+        if (moonId === 'cosmic' && newLevel === 10) {
+          setTimeout(() => {
+            if (typeof window.showSupernovaModal === 'function') {
+              window.showSupernovaModal();
+            }
+          }, 500);
+        }
+      }
       
       updateUI();
       updateShopUI();
       updateProfileAndLeaders();
       this.recalcMoonBonuses();
       this.checkAchievements();
-      showToast(`✅ Луна "${MOON_TYPES[moonId].name}" улучшена до ${currentLevelMoon + 1} уровня!`, 'success');
+      showToast(`✅ ${moon.name} → Ур. ${newLevel}!`, 'success');
     } catch (error) {
-      console.error('[Game] Ошибка прокачки луны:', error);
-      showToast('⚠️ Ошибка при прокачке', 'warning');
+      console.error('[Game] Ошибка:', error);
+      showToast('⚠️ Ошибка', 'warning');
     } finally {
       this._isPurchaseProcessing = false;
     }
@@ -944,24 +1207,22 @@ export class GameEngine {
     }
     
     const newQuests = {};
-    const categories = ['clicker', 'hunter', 'collector', 'progress'];
-    
-    categories.forEach(category => {
+    ['clicker', 'hunter', 'collector', 'progress'].forEach(category => {
       const pool = questsByCategory[category] || [];
       if (pool.length === 0) return;
-      const randomQuest = pool[Math.floor(Math.random() * pool.length)];
-      newQuests[randomQuest.id] = {
-        progress: 0, target: randomQuest.target,
+      const rq = pool[Math.floor(Math.random() * pool.length)];
+      newQuests[rq.id] = {
+        progress: 0, target: rq.target,
         completed: false, claimed: false, createdAt: Date.now()
       };
     });
     
     const allQuests = Object.entries(QUESTS);
     for (let i = 0; i < 2; i++) {
-      const randomEntry = allQuests[Math.floor(Math.random() * allQuests.length)];
-      if (!newQuests[randomEntry[0]]) {
-        newQuests[randomEntry[0]] = {
-          progress: 0, target: randomEntry[1].target,
+      const re = allQuests[Math.floor(Math.random() * allQuests.length)];
+      if (!newQuests[re[0]]) {
+        newQuests[re[0]] = {
+          progress: 0, target: re[1].target,
           completed: false, claimed: false, createdAt: Date.now()
         };
       }
@@ -985,12 +1246,7 @@ export class GameEngine {
       
       if (newProgress >= questState.target && !questState.completed) {
         questState.completed = true;
-        showToast(`🎯 Квест выполнен: ${questData.name}`, 'success', 2500);
-        animations.createParticles(null, {
-          count: 25, color: questData.color, size: 5,
-          duration: 1200, spread: 150,
-          x: window.innerWidth / 2, y: window.innerHeight / 2
-        });
+        showToast(`🎯 ${questData.name} выполнен!`, 'success', 2500);
       }
       updated = true;
     }
@@ -1028,16 +1284,10 @@ export class GameEngine {
       updateShopUI();
       updateQuestUI();
       updateProfileAndLeaders();
-      showToast(`💎 +${reward} осколков за квест!`, 'success', 2500);
-      
-      animations.createParticles(null, {
-        count: 30, color: '#ffd700', size: 6,
-        duration: 1500, spread: 200,
-        x: window.innerWidth / 2, y: window.innerHeight / 2
-      });
+      showToast(`💎 +${reward} за квест!`, 'success', 2500);
     } catch (error) {
-      console.error('[Game] Ошибка получения награды:', error);
-      showToast('⚠️ Ошибка получения награды', 'warning');
+      console.error('[Game] Ошибка:', error);
+      showToast('⚠️ Ошибка', 'warning');
     }
   }
 
@@ -1050,17 +1300,10 @@ export class GameEngine {
       
       for (const tier of ach.tiers) {
         if (achievements[achId][tier.level]) continue;
-        
         if (ach.check(state, tier)) {
           achievements[achId][tier.level] = 'unclaimed';
           updated = true;
-          showToast(`🏆 Достижение: ${tier.name}`, 'success', 3000);
-          animations.createParticles(null, {
-            count: 35,
-            color: tier.level === 'gold' ? '#ffd700' : (tier.level === 'silver' ? '#c0c0c0' : '#cd7f32'),
-            size: 6, duration: 1800, spread: 250,
-            x: window.innerWidth / 2, y: window.innerHeight / 2
-          });
+          showToast(`🏆 ${tier.name}!`, 'success', 3000);
         }
       }
     }
@@ -1101,15 +1344,9 @@ export class GameEngine {
       updateAchievementUI();
       updateProfileAndLeaders();
       showToast(`💎 +${tier.reward} за "${tier.name}"!`, 'success', 2500);
-      
-      animations.createParticles(null, {
-        count: 40, color: '#ffd700', size: 7,
-        duration: 1500, spread: 200,
-        x: window.innerWidth / 2, y: window.innerHeight / 2
-      });
     } catch (error) {
-      console.error('[Game] Ошибка получения награды:', error);
-      showToast('⚠️ Ошибка получения награды', 'warning');
+      console.error('[Game] Ошибка:', error);
+      showToast('⚠️ Ошибка', 'warning');
     }
   }
 
@@ -1118,12 +1355,9 @@ export class GameEngine {
     
     try {
       await db.updatePlayer(state.user.id, {
-        total_clicks: 0,
-        total_seconds_played: 0,
-        level: 1,
-        moon_hp: Math.round(CONSTANTS.BASE_HP),
-        shards: 0,
-        click_damage: CONSTANTS.DEFAULTS.CLICK_DAMAGE,  // ← НОВОЕ значение
+        total_clicks: 0, total_seconds_played: 0, level: 1,
+        moon_hp: Math.round(CONSTANTS.BASE_HP), shards: 0,
+        click_damage: CONSTANTS.DEFAULTS.CLICK_DAMAGE,
         click_damage_level: 0,
         updated_at: new Date().toISOString()
       });
@@ -1142,16 +1376,12 @@ export class GameEngine {
       appState.clearAchievements();
       appState.resetQuests();
       
-      this._comboClicks = 0;
-      this._fireStacks = 0;
-      this._clickCounter = 0;
-      this._lastActivityTime = Date.now();
-      this._buffsAlreadyReset = false;
+      this._resetAllCounters();
       
       if (state.user) {
         const userId = state.user.id;
         ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel', 'levelLocked', 'testMode', 
-         `quests_last_reset_${userId}`, `activeMoons_${userId}`]
+         `quests_last_reset_${userId}`, `activeMoons_${userId}`, `moonLevels_${userId}`]
           .forEach(key => localStorage.removeItem(`${key}_${userId}`));
       }
       
@@ -1159,8 +1389,6 @@ export class GameEngine {
       appState.loadPlayerData(freshData);
       
       appState.set('levelLocked', false);
-      const lockBtn = document.getElementById('lockToggleMain');
-      if (lockBtn) setLockIcon(lockBtn, false);
       
       this.combat.clearBossTimer();
       
@@ -1185,15 +1413,14 @@ export class GameEngine {
       showToast('✅ Прогресс сброшен!', 'success');
       
     } catch (error) {
-      console.error('[Game] Ошибка сброса прогресса:', error);
-      showToast('⚠️ Ошибка сброса прогресса', 'warning');
+      console.error('[Game] Ошибка:', error);
+      showToast('⚠️ Ошибка сброса', 'warning');
     }
   }
 
   async rollbackLevel() {
     if (state.currentLevel <= 1) {
-      showToast('⚠️ Вы уже на 1 уровне', 'info');
-      return;
+      return showToast('⚠️ Уже 1 уровень', 'info');
     }
     
     const newLevel = state.currentLevel - 1;
@@ -1203,6 +1430,7 @@ export class GameEngine {
     appState.set('moonHP', newMax);
     
     this.combat.clearBossTimer();
+    this._resetAllCounters();
     this._forceSave();
     
     updateUI();
@@ -1212,32 +1440,26 @@ export class GameEngine {
     showToast(`↩️ Откат до ${newLevel} уровня`, 'info');
   }
 
+  _resetAllCounters() {
+    this._comboClicks = 0;
+    this._fireStacks = 0;
+    this._shadowCritStacks = 0;
+    this._clickCounter = 0;
+    this._pityClicks = 0;
+    this._superconductorClicksLeft = 0;
+    this._firstStrikeUsed = false;
+    this._newMoon = true;
+    this._lastActivityTime = Date.now();
+    this._buffsAlreadyReset = false;
+  }
+
   destroy() {
-    if (this._unsubscribeMain) {
-      this._unsubscribeMain();
-      this._unsubscribeMain = null;
-    }
-    if (this._unsubscribeTimer) {
-      this._unsubscribeTimer();
-      this._unsubscribeTimer = null;
-    }
-    if (this._unsubscribeTimerRunning) {
-      this._unsubscribeTimerRunning();
-      this._unsubscribeTimerRunning = null;
-    }
-    if (this._activityCheckInterval) {
-      clearInterval(this._activityCheckInterval);
-      this._activityCheckInterval = null;
-    }
-    if (state.timeUpdateInterval) {
-      clearInterval(state.timeUpdateInterval);
-      appState.set('timeUpdateInterval', null);
-    }
-    if (state.autoSaveInterval) {
-      clearInterval(state.autoSaveInterval);
-      appState.set('autoSaveInterval', null);
-    }
-    
+    if (this._unsubscribeMain) { this._unsubscribeMain(); this._unsubscribeMain = null; }
+    if (this._unsubscribeTimer) { this._unsubscribeTimer(); this._unsubscribeTimer = null; }
+    if (this._unsubscribeTimerRunning) { this._unsubscribeTimerRunning(); this._unsubscribeTimerRunning = null; }
+    if (this._activityCheckInterval) { clearInterval(this._activityCheckInterval); this._activityCheckInterval = null; }
+    if (state.timeUpdateInterval) { clearInterval(state.timeUpdateInterval); appState.set('timeUpdateInterval', null); }
+    if (state.autoSaveInterval) { clearInterval(state.autoSaveInterval); appState.set('autoSaveInterval', null); }
     this.combat.clearBossTimer();
     console.log('[Game] Движок уничтожен');
   }
