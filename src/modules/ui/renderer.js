@@ -163,25 +163,47 @@ export function updateTimerBar() {
 // ============================================================
 // НОВОЕ: ОТОБРАЖЕНИЕ АКТИВНЫХ БАФОВ
 // ============================================================
+// ============================================================
+// ОТОБРАЖЕНИЕ АКТИВНЫХ БАФОВ (БЕЗ МОРГАНИЙ)
+// ============================================================
 export function updateBuffsDisplay() {
   const container = document.getElementById('buffsContainer');
   if (!container) return;
   
   const buffs = window._activeBuffs || [];
   
+  // Если нет бафов - скрываем контейнер
   if (buffs.length === 0) {
-    container.innerHTML = '';
-    container.style.display = 'none';
+    if (!container.classList.contains('buffs-empty')) {
+      container.innerHTML = '';
+      container.classList.add('buffs-empty');
+      container.style.display = 'none';
+    }
+    window._lastBuffIds = new Set();
     return;
   }
   
+  container.classList.remove('buffs-empty');
   container.style.display = 'flex';
   
+  // Получаем текущие ID бафов
+  const currentBuffIds = new Set(buffs.map(b => b.id));
+  const lastBuffIds = window._lastBuffIds || new Set();
+  
+  // Определяем новые бафы (для анимации появления)
+  const newBuffIds = new Set();
+  currentBuffIds.forEach(id => {
+    if (!lastBuffIds.has(id)) newBuffIds.add(id);
+  });
+  
+  // Сохраняем для следующего раза
+  window._lastBuffIds = currentBuffIds;
+  
+  // Строим HTML
   let html = '';
   buffs.forEach(buff => {
     const progressPercent = (buff.progress / buff.progressMax) * 100;
     
-    // Определяем класс состояния
     let stateClass = 'buff-charging';
     if (buff.isPassive) {
       stateClass = 'buff-passive';
@@ -195,14 +217,12 @@ export function updateBuffsDisplay() {
       stateClass = 'buff-inactive';
     }
     
-    // Таймер для временных бафов
     let timerHtml = '';
     if (buff.timeLeft !== null && buff.timeLeft !== undefined) {
       const timerClass = buff.timeLeft <= 5 ? 'buff-timer-warning' : '';
       timerHtml = `<div class="buff-timer ${timerClass}">${buff.timeLeft}с</div>`;
     }
     
-    // Прогресс бар (только для не-пассивных)
     const progressHtml = !buff.isPassive ? `
       <div class="buff-progress">
         <div class="buff-progress-bar" style="width: ${progressPercent}%"></div>
@@ -210,8 +230,12 @@ export function updateBuffsDisplay() {
       <div class="buff-stacks">${buff.value}${buff.maxStacks ? '/' + buff.maxStacks : ''}</div>
     ` : '';
     
+    // НОВОЕ: добавляем класс 'buff-new' только для новых бафов
+    const isNew = newBuffIds.has(buff.id);
+    const newClass = isNew ? 'buff-new' : '';
+    
     html += `
-      <div class="buff-card ${stateClass}" data-buff-id="${buff.id}">
+      <div class="buff-card ${stateClass} ${newClass}" data-buff-id="${buff.id}">
         <div class="buff-header">
           <div class="buff-icon">${buff.icon}</div>
           <div class="buff-info">
@@ -225,7 +249,20 @@ export function updateBuffsDisplay() {
     `;
   });
   
-  container.innerHTML = html;
+  // Обновляем HTML только если он изменился (избегаем мерцания)
+  if (container._lastHTML !== html) {
+    container.innerHTML = html;
+    container._lastHTML = html;
+    
+    // Убираем класс 'buff-new' после анимации (через 500мс)
+    if (newBuffIds.size > 0) {
+      setTimeout(() => {
+        container.querySelectorAll('.buff-new').forEach(el => {
+          el.classList.remove('buff-new');
+        });
+      }, 500);
+    }
+  }
 }
 function _updateRollbackButton() {
   const btn = document.getElementById('rollbackBtnMain');
@@ -333,12 +370,14 @@ function _updateClickDamageShop() {
     CONSTANTS.UPGRADE_COSTS.clickDamage.base *
     Math.pow(CONSTANTS.UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade)
   );
-  const currentDamage = state.playerData?.click_damage || 1;
-  const nextDamage = currentDamage + 1;
+  const currentDamage = state.playerData?.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
+  // НОВОЕ: следующее значение = текущее + 10
+  const upgradeValue = CONSTANTS.CLICK_DAMAGE_UPGRADE_VALUE;
+  const nextDamage = currentDamage + upgradeValue;
   const displayCost = state.testMode ? 0 : cost;
 
-  priceEl.textContent = `${formatNumber(displayCost)} 💎`;
-  levelEl.innerHTML = `Ур. ${currentLevelUpgrade}: ${currentDamage} → ${nextDamage}`;
+  priceEl.textContent = `${displayCost} 💎`;
+  levelEl.innerHTML = `Ур. ${currentLevelUpgrade}: ${currentDamage} → ${nextDamage} <span style="color: #4caf50; font-size: 0.75rem;">(+${upgradeValue})</span>`;
 
   const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
   buyBtn.disabled = !isUnlocked || !hasEnoughShards || currentLevelUpgrade >= CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL;
