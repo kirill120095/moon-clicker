@@ -1971,3 +1971,277 @@
 .moon-wrapper.mega-strike {
   animation: megaStrikeFlash 0.5s ease-out;
 }
+
+
+/* ============================================================
+   ПАНЕЛЬ АКТИВНЫХ БАФОВ
+   ============================================================ */
+.buffs-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+  z-index: 5;
+}
+
+/* КАРТОЧКА БАФА */
+.buff-card {
+  flex: 0 1 calc(50% - 4px);
+  min-width: 150px;
+  max-width: 220px;
+  background: linear-gradient(135deg, rgba(21, 26, 46, 0.9), rgba(30, 36, 64, 0.85));
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: buffAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes buffAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Состояние: Заряжается */
+.buff-charging {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Состояние: Активен */
+.buff-active {
+  border-color: rgba(76, 175, 80, 0.4);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.15);
+}
+
+.buff-active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #4caf50, transparent);
+  animation: buffActivePulse 2s ease-in-out infinite;
+}
+
+@keyframes buffActivePulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Состояние: Максимум */
+.buff-maxed {
+  border-color: rgba(255, 215, 0, 0.5);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 152, 0, 0.08));
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.25);
+  animation: buffMaxedGlow 2s ease-in-out infinite;
+}
+
+@keyframes buffMaxedGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.5); }
+}
+
+.buff-maxed::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+}
+
+/* Состояние: Пассивный */
+.buff-passive {
+  border-color: rgba(156, 39, 176, 0.3);
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(63, 81, 181, 0.05));
+}
+
+.buff-passive .buff-icon {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.25), rgba(63, 81, 181, 0.15));
+}
+
+/* Состояние: Неактивен (условный - Кровавая луна) */
+.buff-inactive {
+  opacity: 0.55;
+  border-color: rgba(244, 67, 54, 0.2);
+}
+
+.buff-inactive .buff-icon {
+  filter: grayscale(0.5);
+}
+
+/* ШАПКА БАФА */
+.buff-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.buff-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 152, 0, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.buff-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.buff-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.buff-bonus {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.buff-maxed .buff-bonus {
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+.buff-active .buff-bonus {
+  color: #81c784;
+}
+
+/* ТАЙМЕР (для временных бафов) */
+.buff-timer {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: center;
+}
+
+.buff-timer-warning {
+  color: #ff6b6b;
+  background: rgba(244, 67, 54, 0.2);
+  animation: timerWarning 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes timerWarning {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+/* ПРОГРЕСС БАР */
+.buff-progress {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.buff-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #81c784);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.buff-charging .buff-progress-bar {
+  background: linear-gradient(90deg, #64b5f6, #42a5f5);
+}
+
+.buff-maxed .buff-progress-bar {
+  background: linear-gradient(90deg, #ffd700, #ffeb3b);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+.buff-inactive .buff-progress-bar {
+  background: linear-gradient(90deg, #ef5350, #f44336);
+}
+
+/* СТЕКИ */
+.buff-stacks {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right;
+  margin-top: 2px;
+  letter-spacing: -0.02em;
+}
+
+.buff-maxed .buff-stacks {
+  color: var(--accent-gold);
+}
+
+/* АДАПТИВНОСТЬ */
+@media (max-width: 500px) {
+  .buffs-container {
+    padding: 8px;
+    gap: 6px;
+  }
+  
+  .buff-card {
+    flex: 0 1 calc(50% - 3px);
+    min-width: 140px;
+    padding: 8px 10px;
+  }
+  
+  .buff-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+  
+  .buff-name {
+    font-size: 0.7rem;
+  }
+  
+  .buff-bonus {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .buff-card {
+    flex: 0 1 100%;
+    max-width: 100%;
+  }
+}
