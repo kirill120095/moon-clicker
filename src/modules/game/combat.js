@@ -9,8 +9,12 @@ export class CombatSystem {
     this._bossInterval = null;
     this._timeLeft = 0;
     this._onTimeout = null;
+    this._totalDuration = CONSTANTS.BOSS_TIMER;
   }
 
+  /**
+   * Расчёт урона (используется как fallback, основная логика в game.js)
+   */
   calculateDamage(baseDamage, options = {}) {
     const {
       moonDamageBonus = 0,
@@ -30,18 +34,17 @@ export class CombatSystem {
     return { damage: Math.max(1, damage), isCrit };
   }
 
-  calculateMaxHP(level, baseHP = CONSTANTS.BASE_HP, bossInterval = CONSTANTS.BOSS_INTERVAL) {
-    const isBoss = level % bossInterval === 0;
-    const hp = baseHP * Math.pow(1.15, level - 1);
-    if (isBoss) return Math.round(hp * 5);
-    return Math.round(hp);
-  }
-
+  /**
+   * Запуск таймера босса
+   * @param {Function} onTimeout - callback при истечении
+   * @param {number} customDuration - кастомная длительность (для Ледяной луны)
+   */
   startBossTimer(onTimeout, customDuration = null) {
     this.clearBossTimer();
 
     const duration = customDuration || CONSTANTS.BOSS_TIMER;
     this._timeLeft = duration;
+    this._totalDuration = duration;
     this._onTimeout = onTimeout;
 
     appState.set('bossTimer', this._timeLeft);
@@ -58,6 +61,9 @@ export class CombatSystem {
     }, 1000);
   }
 
+  /**
+   * Очистка таймера
+   */
   clearBossTimer() {
     if (this._bossInterval) {
       clearInterval(this._bossInterval);
@@ -72,6 +78,7 @@ export class CombatSystem {
   }
 
   getTimeLeft() { return this._timeLeft; }
+  getTotalDuration() { return this._totalDuration; }
   isTimerRunning() { return this._bossInterval !== null; }
 
   isBossLevel(level, bossInterval = CONSTANTS.BOSS_INTERVAL) {
@@ -92,6 +99,6 @@ export class CombatSystem {
 
   destroy() {
     this.clearBossTimer();
-    console.log('[Combat] Боевая система уничтожена');
+    console.log('[Combat] Уничтожена');
   }
 }
