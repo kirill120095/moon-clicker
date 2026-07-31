@@ -16,17 +16,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="css/galaxy.css?v=8">
-  <link rel="stylesheet" href="css/panel.css?v=8">
-  <link rel="stylesheet" href="css/modal.css?v=8">
-  <link rel="stylesheet" href="css/game.css?v=8">
-  <link rel="stylesheet" href="css/responsive.css?v=8">
+  <link rel="stylesheet" href="css/galaxy.css?v=9">
+  <link rel="stylesheet" href="css/panel.css?v=9">
+  <link rel="stylesheet" href="css/modal.css?v=9">
+  <link rel="stylesheet" href="css/game.css?v=9">
+  <link rel="stylesheet" href="css/responsive.css?v=9">
 </head>
 <body>
+  <!-- ЗВЁЗДНОЕ НЕБО -->
   <div id="stars"></div>
+  
+  <!-- TOAST УВЕДОМЛЕНИЯ -->
   <div id="toastContainer" class="toast-container"></div>
 
+  <!-- ============================================================ -->
   <!-- ЭКРАН АВТОРИЗАЦИИ -->
+  <!-- ============================================================ -->
   <div id="authScreen" class="auth-screen">
     <div class="auth-card">
       <div class="auth-logo">🌙</div>
@@ -46,10 +51,12 @@
     </div>
   </div>
 
-  <!-- ОСНОВНОЙ ЭКРАН -->
+  <!-- ============================================================ -->
+  <!-- ОСНОВНОЙ ЭКРАН ИГРЫ -->
+  <!-- ============================================================ -->
   <div id="app" class="app hidden">
     
-    <!-- ЛУНА -->
+    <!-- ЛУНА ПО ЦЕНТРУ -->
     <div id="moonContainer" class="moon-container">
       <div id="moonWrapper" class="moon-wrapper">
         <div id="moonInner" class="moon-inner"></div>
@@ -59,9 +66,31 @@
 
     <!-- ИНФО ПОД ЛУНОЙ -->
     <div class="moon-info-below">
+      <!-- НОВАЯ СТРОКА: Уровень + кнопки управления -->
+      <div class="level-controls-row">
+        <button id="rollbackLevelBtn" class="level-control-btn rollback-btn hidden" onclick="window.rollbackLevel()" title="Откатить уровень">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        
+        <div id="levelTitle" class="level-title">Уровень 1</div>
+        
+        <button id="lockLevelBtn" class="level-control-btn lock-btn" onclick="window.toggleLevelLock()" title="Закрепить уровень">
+          <svg id="lockIconOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <svg id="lockIconClosed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            <circle cx="12" cy="16" r="1"/>
+          </svg>
+        </button>
+      </div>
+      
       <div class="info-row-top">
         <div id="counter" class="counter">💎 0</div>
-        <div id="levelTitle" class="level-title">Уровень 1</div>
       </div>
       
       <div id="timerBarContainer" class="timer-bar-container">
@@ -71,11 +100,11 @@
       
       <div class="hp-bar-container">
         <div id="hpBar" class="hp-bar"></div>
-        <span id="hpPercent" class="hp-percent">100/100</span>
+        <span id="hpPercent" class="hp-percent">1000/1000</span>
       </div>
     </div>
 
-    <!-- НОВОЕ: ПАНЕЛЬ АКТИВНЫХ БАФОВ -->
+    <!-- ПАНЕЛЬ АКТИВНЫХ БАФОВ -->
     <div id="buffsContainer" class="buffs-container" style="display: none;"></div>
 
     <!-- БОКОВЫЕ КНОПКИ -->
@@ -115,7 +144,7 @@
         <div id="settingsTabContent" class="tab-content">
           <div class="settings-item">
             <label class="settings-label">Тестовый режим</label>
-            <button id="testModeToggle" class="btn-toggle" onclick="window.gameEngine.toggleTestMode()">ВЫКЛ</button>
+            <button id="testModeToggle" class="btn-toggle" onclick="window.showPasswordModal()">ВЫКЛ</button>
           </div>
         </div>
       </div>
@@ -145,8 +174,8 @@
             <h3 class="shop-section-title">⚔️ Урон клика</h3>
             <div class="shop-item">
               <div class="shop-item-info">
-                <div id="clickDamageLevel" class="shop-item-level">Ур. 0: 1 → 2</div>
-                <div id="clickDamagePrice" class="shop-item-price">30 💎</div>
+                <div id="clickDamageLevel" class="shop-item-level">Ур. 0: 10 → 20</div>
+                <div id="clickDamagePrice" class="shop-item-price">60 💎</div>
               </div>
               <button id="buyClickDamageBtn" class="btn-buy-shop" onclick="window.gameEngine.buyClickDamage()">Купить</button>
             </div>
@@ -157,7 +186,7 @@
             <div class="shop-item">
               <div class="shop-item-info">
                 <div id="slotLevel" class="shop-item-level">Слотов: 1/3</div>
-                <div id="slotPrice" class="shop-item-price">1500 💎</div>
+                <div id="slotPrice" class="shop-item-price">3000 💎</div>
               </div>
               <button id="buySlotBtn" class="btn-buy-shop" onclick="window.gameEngine.buySlot()">Купить</button>
             </div>
@@ -192,7 +221,9 @@
 
   </div>
 
-  <!-- МОДАЛКА -->
+  <!-- ============================================================ -->
+  <!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ -->
+  <!-- ============================================================ -->
   <div id="confirmModal" class="modal hidden">
     <div class="modal-backdrop" onclick="window.closeModal('confirmModal')"></div>
     <div class="modal-content">
@@ -205,7 +236,48 @@
     </div>
   </div>
 
+  <!-- ============================================================ -->
+  <!-- НОВОЕ: МОДАЛКА ВВОДА ПАРОЛЯ (для тестового режима) -->
+  <!-- ============================================================ -->
+  <div id="passwordModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="window.closePasswordModal()"></div>
+    <div class="modal-content password-modal-content">
+      <h3 class="modal-title">🔐 Доступ к тестовому режиму</h3>
+      <p class="modal-message">Введите пароль для активации тестового режима</p>
+      <div class="password-input-wrap">
+        <input type="password" id="testModePassword" placeholder="Пароль" autocomplete="off">
+        <div id="passwordError" class="password-error"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal btn-confirm" onclick="window.submitTestModePassword()">Подтвердить</button>
+        <button class="btn-modal btn-cancel" onclick="window.closePasswordModal()">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- НОВОЕ: МОДАЛКА СВЕРХНОВОЙ (для космической луны ур. 10) -->
+  <!-- ============================================================ -->
+  <div id="supernovaModal" class="modal hidden">
+    <div class="modal-backdrop supernova-backdrop" onclick="window.closeSupernovaModal()"></div>
+    <div class="modal-content supernova-modal-content">
+      <div class="supernova-icon">💥</div>
+      <h3 class="modal-title supernova-title">СВЕРХНОВАЯ!</h3>
+      <p class="modal-message supernova-message">
+        Вы взорвали вселенную!<br>
+        Но продолжаете кликать...<br>
+        <span class="supernova-subtitle">Потому что вы — настоящий кликер.</span>
+      </p>
+      <div class="modal-actions">
+        <button class="btn-modal btn-confirm supernova-btn" onclick="window.closeSupernovaModal()">Продолжить кликать</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPABASE CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.1/dist/umd/supabase.min.js"></script>
-  <script type="module" src="src/index.js?v=8"></script>
+  
+  <!-- ОСНОВНОЙ СКРИПТ -->
+  <script type="module" src="src/index.js?v=9"></script>
 </body>
 </html>
