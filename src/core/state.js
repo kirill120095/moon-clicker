@@ -479,41 +479,63 @@ class State {
   // ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE
   // ============================================================
   
-  loadPlayerData(data) {
-    if (!data) return;
+loadPlayerData(data) {
+  if (!data) return;
 
-    this.startBatch();
+  this.startBatch();
 
-    if (data.level !== undefined) {
-      this.set('currentLevel', data.level);
+  // ============================================================
+  // МИГРАЦИЯ: для старых игроков умножаем click_damage на 10
+  // ============================================================
+  let migratedClickDamage = data.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
+  if (migratedClickDamage < CONSTANTS.DEFAULTS.CLICK_DAMAGE) {
+    migratedClickDamage = migratedClickDamage * 10;
+    console.log(`[State] Миграция: click_damage ${data.click_damage} → ${migratedClickDamage}`);
+    
+    // Асинхронно сохраняем мигрированное значение в БД
+    if (data.id) {
+      import('../modules/network/supabase.js').then(({ db }) => {
+        db.updatePlayer(data.id, { click_damage: migratedClickDamage }).catch(err => {
+          console.error('[State] Migration save failed:', err);
+        });
+      }).catch(() => {});
     }
-    if (data.total_clicks !== undefined) {
-      this.set('clickCount', data.total_clicks);
-    }
-    if (data.total_seconds_played !== undefined) {
-      this.set('totalSecondsPlayed', data.total_seconds_played);
-    }
-    if (data.moon_hp !== undefined) {
-      this.set('moonHP', data.moon_hp);
-    }
-
-    this.set('playerData', {
-      shards: data.shards || 0,
-      click_damage: data.click_damage || 1,
-      click_damage_level: data.click_damage_level || 0,
-      crit_chance_level: data.crit_chance_level || 0,
-      crit_damage_level: data.crit_damage_level || 0,
-      level: data.level || 1,
-      total_clicks: data.total_clicks || 0,
-      total_seconds_played: data.total_seconds_played || 0,
-      moon_hp: data.moon_hp || 100,
-      username: data.username || ''
-    });
-
-    this.endBatch();
-
-    this.loadActiveMoons();
   }
+
+  // Миграция для moon_hp (если меньше нового BASE_HP)
+  let migratedMoonHP = data.moon_hp;
+  if (migratedMoonHP < CONSTANTS.BASE_HP) {
+    migratedMoonHP = CONSTANTS.BASE_HP;
+  }
+
+  if (data.level !== undefined) {
+    this.set('currentLevel', data.level);
+  }
+  if (data.total_clicks !== undefined) {
+    this.set('clickCount', data.total_clicks);
+  }
+  if (data.total_seconds_played !== undefined) {
+    this.set('totalSecondsPlayed', data.total_seconds_played);
+  }
+  
+  this.set('moonHP', migratedMoonHP);
+
+  this.set('playerData', {
+    shards: data.shards || 0,
+    click_damage: migratedClickDamage,
+    click_damage_level: data.click_damage_level || 0,
+    crit_chance_level: data.crit_chance_level || 0,
+    crit_damage_level: data.crit_damage_level || 0,
+    level: data.level || 1,
+    total_clicks: data.total_clicks || 0,
+    total_seconds_played: data.total_seconds_played || 0,
+    moon_hp: migratedMoonHP,
+    username: data.username || ''
+  });
+
+  this.endBatch();
+  this.loadActiveMoons();
+}
 
   // ============================================================
   // ИНИЦИАЛИЗАЦИЯ
