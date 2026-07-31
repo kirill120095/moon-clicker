@@ -1088,7 +1088,102 @@ export function updateQuestAndAchievementUI() {
   updateQuestUI();
   updateAchievementUI();
 }
-
+// ============================================================
+// ОТОБРАЖЕНИЕ АКТИВНЫХ БАФОВ (БЕЗ МОРГАНИЙ)
+// ============================================================
+export function updateBuffsDisplay() {
+  const container = document.getElementById('buffsContainer');
+  if (!container) return;
+  
+  const buffs = window._activeBuffs || [];
+  
+  if (buffs.length === 0) {
+    if (!container.classList.contains('buffs-empty')) {
+      container.innerHTML = '';
+      container.classList.add('buffs-empty');
+      container.style.display = 'none';
+    }
+    window._lastBuffIds = new Set();
+    return;
+  }
+  
+  container.classList.remove('buffs-empty');
+  container.style.display = 'flex';
+  
+  const currentBuffIds = new Set(buffs.map(b => b.id));
+  const lastBuffIds = window._lastBuffIds || new Set();
+  
+  const newBuffIds = new Set();
+  currentBuffIds.forEach(id => {
+    if (!lastBuffIds.has(id)) newBuffIds.add(id);
+  });
+  
+  window._lastBuffIds = currentBuffIds;
+  
+  let html = '';
+  buffs.forEach(buff => {
+    const progressPercent = buff.progressMax > 0 
+      ? (buff.progress / buff.progressMax) * 100 
+      : 0;
+    
+    let stateClass = 'buff-charging';
+    if (buff.isPassive) {
+      stateClass = 'buff-passive';
+    } else if (buff.isMaxed) {
+      stateClass = 'buff-maxed';
+    } else if (buff.isActive) {
+      stateClass = 'buff-active';
+    }
+    
+    if (buff.isConditional && !buff.isActive) {
+      stateClass = 'buff-inactive';
+    }
+    
+    let timerHtml = '';
+    if (buff.timeLeft !== null && buff.timeLeft !== undefined) {
+      const timerClass = buff.timeLeft <= 5 ? 'buff-timer-warning' : '';
+      timerHtml = `<div class="buff-timer ${timerClass}">${buff.timeLeft}с</div>`;
+    }
+    
+    const progressHtml = !buff.isPassive ? `
+      <div class="buff-progress">
+        <div class="buff-progress-bar" style="width: ${Math.min(100, progressPercent)}%"></div>
+      </div>
+      <div class="buff-stacks">${buff.value}/${buff.maxStacks}</div>
+    ` : '';
+    
+    const isNew = newBuffIds.has(buff.id);
+    const newClass = isNew ? 'buff-new' : '';
+    
+    html += `
+      <div class="buff-card ${stateClass} ${newClass}" data-buff-id="${buff.id}">
+        <div class="buff-header">
+          <div class="buff-icon">${buff.icon}</div>
+          <div class="buff-info">
+            <div class="buff-name">${buff.name}</div>
+            <div class="buff-bonus">${buff.bonus}</div>
+          </div>
+          ${timerHtml}
+        </div>
+        ${progressHtml}
+      </div>
+    `;
+  });
+  
+  // Обновляем DOM только если HTML изменился
+  if (container._lastHTML !== html) {
+    container.innerHTML = html;
+    container._lastHTML = html;
+    
+    if (newBuffIds.size > 0) {
+      setTimeout(() => {
+        container.querySelectorAll('.buff-new').forEach(el => {
+          el.classList.remove('buff-new');
+        });
+      }, 500);
+    }
+  }
+}
 // ============================================================
 // ЭКСПОРТ В WINDOW
 // ============================================================
