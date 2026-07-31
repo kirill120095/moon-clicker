@@ -4,10 +4,8 @@
 
 .modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
+  top: 0; left: 0;
+  width: 100%; height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,10 +15,8 @@
 
 .modal-backdrop {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -33,7 +29,7 @@
   padding: 32px;
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
   border: 1px solid rgba(255, 215, 0, 0.2);
   animation: slideUp 0.3s ease-out;
   z-index: 1;
@@ -98,16 +94,10 @@
   border-color: var(--border-medium);
 }
 
-/* ============================================================
-   МОДАЛКА ВВОДА ПАРОЛЯ (для тестового режима)
-   ============================================================ */
-.password-modal-content {
-  max-width: 360px;
-}
+/* МОДАЛКА ПАРОЛЯ */
+.password-modal-content { max-width: 360px; }
 
-.password-input-wrap {
-  margin-bottom: 20px;
-}
+.password-input-wrap { margin-bottom: 20px; }
 
 .password-input-wrap input {
   width: 100%;
@@ -148,9 +138,7 @@
   animation: shakeError 0.4s ease-out;
 }
 
-.password-error.show {
-  display: block;
-}
+.password-error.show { display: block; }
 
 @keyframes shakeError {
   0%, 100% { transform: translateX(0); }
@@ -158,9 +146,7 @@
   20%, 40%, 60%, 80% { transform: translateX(4px); }
 }
 
-/* ============================================================
-   МОДАЛКА СВЕРХНОВОЙ (для космической луны ур. 10)
-   ============================================================ */
+/* МОДАЛКА СВЕРХНОВОЙ */
 .supernova-backdrop {
   background: radial-gradient(circle at center, 
     rgba(233, 30, 99, 0.4) 0%, 
@@ -170,51 +156,24 @@
 }
 
 @keyframes supernovaBackdrop {
-  0% { 
-    background: radial-gradient(circle at center, 
-      rgba(255, 255, 255, 0.9) 0%, 
-      rgba(255, 255, 255, 0.5) 20%,
-      rgba(0, 0, 0, 0) 50%);
-  }
-  30% {
-    background: radial-gradient(circle at center, 
-      rgba(233, 30, 99, 0.8) 0%, 
-      rgba(156, 39, 176, 0.6) 30%,
-      rgba(0, 0, 0, 0.3) 60%);
-  }
-  100% { 
-    background: radial-gradient(circle at center, 
-      rgba(233, 30, 99, 0.4) 0%, 
-      rgba(156, 39, 176, 0.3) 30%,
-      rgba(0, 0, 0, 0.9) 70%);
-  }
+  0% { background: radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.5) 20%, rgba(0, 0, 0, 0) 50%); }
+  30% { background: radial-gradient(circle at center, rgba(233, 30, 99, 0.8) 0%, rgba(156, 39, 176, 0.6) 30%, rgba(0, 0, 0, 0.3) 60%); }
+  100% { background: radial-gradient(circle at center, rgba(233, 30, 99, 0.4) 0%, rgba(156, 39, 176, 0.3) 30%, rgba(0, 0, 0, 0.9) 70%); }
 }
 
 .supernova-modal-content {
-  background: linear-gradient(135deg, 
-    rgba(30, 36, 64, 0.98), 
-    rgba(74, 20, 140, 0.95));
+  background: linear-gradient(135deg, rgba(30, 36, 64, 0.98), rgba(74, 20, 140, 0.95));
   border: 2px solid rgba(233, 30, 99, 0.5);
-  box-shadow: 
-    0 0 60px rgba(233, 30, 99, 0.5),
-    0 0 120px rgba(156, 39, 176, 0.3);
+  box-shadow: 0 0 60px rgba(233, 30, 99, 0.5), 0 0 120px rgba(156, 39, 176, 0.3);
   text-align: center;
   max-width: 420px;
   animation: supernovaModalAppear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes supernovaModalAppear {
-  0% {
-    opacity: 0;
-    transform: scale(0.3) rotate(-10deg);
-  }
-  50% {
-    transform: scale(1.1) rotate(2deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0);
-  }
+  0% { opacity: 0; transform: scale(0.3) rotate(-10deg); }
+  50% { transform: scale(1.1) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
 }
 
 .supernova-icon {
@@ -225,14 +184,8 @@
 }
 
 @keyframes supernovaIconPulse {
-  0%, 100% { 
-    transform: scale(1) rotate(0);
-    filter: drop-shadow(0 0 30px rgba(233, 30, 99, 0.8));
-  }
-  50% { 
-    transform: scale(1.2) rotate(180deg);
-    filter: drop-shadow(0 0 50px rgba(255, 215, 0, 1));
-  }
+  0%, 100% { transform: scale(1) rotate(0); filter: drop-shadow(0 0 30px rgba(233, 30, 99, 0.8)); }
+  50% { transform: scale(1.2) rotate(180deg); filter: drop-shadow(0 0 50px rgba(255, 215, 0, 1)); }
 }
 
 .supernova-title {
@@ -242,19 +195,14 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: none;
   margin-bottom: 16px;
   letter-spacing: 0.05em;
   animation: supernovaTitleGlow 2s ease-in-out infinite;
 }
 
 @keyframes supernovaTitleGlow {
-  0%, 100% {
-    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
-  }
-  50% {
-    filter: drop-shadow(0 0 20px rgba(233, 30, 99, 0.8));
-  }
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5)); }
+  50% { filter: drop-shadow(0 0 20px rgba(233, 30, 99, 0.8)); }
 }
 
 .supernova-message {
@@ -275,9 +223,7 @@
 
 .supernova-btn {
   background: linear-gradient(135deg, #e91e63, #9c27b0, #673ab7);
-  box-shadow: 
-    0 4px 20px rgba(233, 30, 99, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(233, 30, 99, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   font-size: 1.1rem;
   padding: 14px 28px;
   letter-spacing: 0.05em;
@@ -285,21 +231,16 @@
 
 .supernova-btn:hover {
   background: linear-gradient(135deg, #f06292, #ba68c8, #9575cd);
-  box-shadow: 
-    0 6px 28px rgba(233, 30, 99, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 28px rgba(233, 30, 99, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transform: translateY(-3px) scale(1.02);
 }
 
-/* Эффект частиц вокруг модалки сверхновой */
 .supernova-modal-content::before,
 .supernova-modal-content::after {
   content: '';
   position: absolute;
-  width: 200%;
-  height: 200%;
-  top: -50%;
-  left: -50%;
+  width: 200%; height: 200%;
+  top: -50%; left: -50%;
   background: 
     radial-gradient(circle at 20% 30%, rgba(255, 215, 0, 0.3) 0%, transparent 2%),
     radial-gradient(circle at 80% 20%, rgba(233, 30, 99, 0.3) 0%, transparent 2%),
@@ -320,26 +261,10 @@
   to { transform: rotate(360deg); }
 }
 
-/* Адаптивность для модалок */
 @media (max-width: 480px) {
-  .modal-content {
-    padding: 24px;
-    max-width: 95%;
-  }
-  
-  .modal-title {
-    font-size: 1.3rem;
-  }
-  
-  .supernova-title {
-    font-size: 2rem;
-  }
-  
-  .supernova-icon {
-    font-size: 4rem;
-  }
-  
-  .supernova-message {
-    font-size: 1rem;
-  }
+  .modal-content { padding: 24px; max-width: 95%; }
+  .modal-title { font-size: 1.3rem; }
+  .supernova-title { font-size: 2rem; }
+  .supernova-icon { font-size: 4rem; }
+  .supernova-message { font-size: 1rem; }
 }
