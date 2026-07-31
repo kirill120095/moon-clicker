@@ -239,37 +239,36 @@ export const db = {
   // ============================================================
   // DB: СОЗДАНИЕ ИГРОКА
   // ============================================================
-  async createPlayer(userId) {
-    try {
-      const client = await initSupabase();
-      const newPlayer = {
-        id: userId,
-        level: 1,
-        total_clicks: 0,
-        total_seconds_played: 0,
-        moon_hp: 100,
-        shards: 0,
-        click_damage: 1,
-        click_damage_level: 0,
-        username: '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+async createPlayer(userId) {
+  try {
+    const client = await initSupabase();
+    const newPlayer = {
+      id: userId,
+      level: 1,
+      total_clicks: 0,
+      total_seconds_played: 0,
+      moon_hp: 1000,  // ← БЫЛО 100
+      shards: 0,
+      click_damage: 10,  // ← БЫЛО 1, СТАЛО 10
+      click_damage_level: 0,
+      username: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-      const { data, error } = await client
-        .from('players')
-        .insert(newPlayer)
-        .select()
-        .single();
+    const { data, error } = await client
+      .from('players')
+      .insert(newPlayer)
+      .select()
+      .single();
 
-      if (error) throw error;
-
-      return data;
-    } catch (error) {
-      console.error('[DB] createPlayer error:', error);
-      throw error;
-    }
-  },
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('[DB] createPlayer error:', error);
+    throw error;
+  }
+},
 
   // ============================================================
   // DB: ОБНОВЛЕНИЕ ИГРОКА
