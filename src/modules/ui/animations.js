@@ -1,5 +1,5 @@
 // ============================================================
-// АНИМАЦИИ - С ВСПЛЫВАЮЩИМ УРОНОМ
+// АНИМАЦИИ И ВИЗУАЛЬНЫЕ ЭФФЕКТЫ
 // ============================================================
 
 export class AnimationManager {
@@ -7,18 +7,18 @@ export class AnimationManager {
     this._animations = new Map();
     this._rafId = null;
     this._isRunning = false;
-    this._baseDamage = 1;
+    this._baseDamage = 10;
   }
 
   setBaseDamage(damage) {
-    this._baseDamage = damage || 1;
+    this._baseDamage = damage || 10;
   }
 
   // ============================================================
   // ЦВЕТ УРОНА В ЗАВИСИМОСТИ ОТ ВЕЛИЧИНЫ
   // ============================================================
   getDamageColor(damage, isCrit = false) {
-    const base = this._baseDamage || 1;
+    const base = this._baseDamage || 10;
     const ratio = damage / Math.max(1, base);
     
     if (ratio <= 1.5) return isCrit ? '#fff9c4' : '#f0e6d0';
@@ -29,7 +29,7 @@ export class AnimationManager {
   }
 
   getDamageGlow(damage, isCrit = false) {
-    const base = this._baseDamage || 1;
+    const base = this._baseDamage || 10;
     const ratio = damage / Math.max(1, base);
     
     if (ratio <= 1.5) return isCrit ? 'rgba(255,249,196,0.9)' : 'rgba(240,230,208,0.8)';
@@ -40,12 +40,12 @@ export class AnimationManager {
   }
 
   // ============================================================
-  // ЗВЁЗДЫ
+  // ЗВЁЗДЫ НА ФОНЕ
   // ============================================================
   createStars(count = 300) {
     const container = document.getElementById('stars');
     if (!container) return;
-
+    
     const fragment = document.createDocumentFragment();
     for (let i = 0; i < count; i++) {
       const star = document.createElement('div');
@@ -137,14 +137,17 @@ export class AnimationManager {
   // ЭФФЕКТ УБИЙСТВА БОССА
   // ============================================================
   playBossDeathEffect(x, y) {
+    // Тряска экрана
     document.body.classList.add('screen-shake');
     setTimeout(() => document.body.classList.remove('screen-shake'), 400);
     
+    // Белая вспышка
     const flash = document.createElement('div');
     flash.className = 'death-flash';
     document.body.appendChild(flash);
     setTimeout(() => { if (flash.parentNode) flash.remove(); }, 300);
     
+    // Золотые частицы
     this.createParticles(null, {
       count: 40,
       color: '#ffd700',
@@ -154,13 +157,14 @@ export class AnimationManager {
       x, y
     });
     
+    // Несколько ударных волн
     for (let i = 0; i < 3; i++) {
       setTimeout(() => this.createShockwave(x, y, 'boss'), i * 150);
     }
   }
 
   // ============================================================
-  // ПАРТИКЛЫ
+  // ЧАСТИЦЫ
   // ============================================================
   createParticles(container, options = {}) {
     const {
@@ -248,6 +252,272 @@ export class AnimationManager {
     });
   }
 
+  // ============================================================
+  // НОВОЕ: ЭФФЕКТ ПРОКАЧКИ ЛУНЫ (ВИЗУАЛЬНЫЙ)
+  // ============================================================
+  playMoonUpgradeEffect(moonId, newLevel, isMilestone = false) {
+    const moonWrapper = document.getElementById('moonWrapper');
+    if (!moonWrapper) return;
+    
+    const rect = moonWrapper.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // Базовые частицы при любой прокачке
+    const color = isMilestone ? '#ffd700' : '#4caf50';
+    const count = isMilestone ? 50 : 25;
+    const size = isMilestone ? 7 : 5;
+    
+    this.createParticles(null, {
+      count,
+      color,
+      size,
+      duration: isMilestone ? 1800 : 1200,
+      spread: isMilestone ? 250 : 150,
+      x: centerX,
+      y: centerY
+    });
+    
+    // Ударная волна для милестоунов
+    if (isMilestone) {
+      this.createShockwave(centerX, centerY, 'boss', color);
+      
+      // Вспышка
+      const flash = document.createElement('div');
+      flash.className = 'death-flash';
+      flash.style.background = `radial-gradient(circle, ${color}80, transparent)`;
+      document.body.appendChild(flash);
+      setTimeout(() => { if (flash.parentNode) flash.remove(); }, 400);
+    }
+    
+    // Пульсация луны
+    moonWrapper.style.transition = 'transform 0.3s ease';
+    moonWrapper.style.transform = 'scale(1.15)';
+    setTimeout(() => {
+      moonWrapper.style.transform = 'scale(1)';
+    }, 300);
+  }
+
+  // ============================================================
+  // НОВОЕ: ЭФФЕКТ ПОКУПКИ ЛУНЫ
+  // ============================================================
+  playMoonPurchaseEffect(moonId) {
+    const moonWrapper = document.getElementById('moonWrapper');
+    if (!moonWrapper) return;
+    
+    const rect = moonWrapper.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // Золотые частицы (покупка = праздник)
+    this.createParticles(null, {
+      count: 35,
+      color: '#ffd700',
+      size: 6,
+      duration: 1500,
+      spread: 200,
+      x: centerX,
+      y: centerY
+    });
+    
+    // Ударная волна
+    this.createShockwave(centerX, centerY, 'crit', '#ffd700');
+    
+    // Появление с эффектом
+    moonWrapper.style.animation = 'none';
+    void moonWrapper.offsetWidth;
+    moonWrapper.style.animation = 'moonPurchaseAppear 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    
+    setTimeout(() => {
+      moonWrapper.style.animation = '';
+    }, 800);
+  }
+
+  // ============================================================
+  // НОВОЕ: ЭФФЕКТ АКТИВАЦИИ СИНЕРГИИ
+  // ============================================================
+  playSynergyActivationEffect(synergyTier) {
+    const moonWrapper = document.getElementById('moonWrapper');
+    if (!moonWrapper) return;
+    
+    const rect = moonWrapper.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // Цвет зависит от тира синергии
+    const colors = {
+      1: '#8bc34a',  // Начальная - зелёный
+      2: '#03a9f4',  // Средняя - синий
+      3: '#ff9800',  // Продвинутая - оранжевый
+      4: '#e91e63',  // Легендарная - розовый
+      5: '#9c27b0'   // Мифическая - фиолетовый
+    };
+    
+    const color = colors[synergyTier] || '#ffd700';
+    const count = 20 + synergyTier * 10;
+    
+    this.createParticles(null, {
+      count,
+      color,
+      size: 5,
+      duration: 1200,
+      spread: 180,
+      x: centerX,
+      y: centerY
+    });
+    
+    // Кольцо энергии
+    this.createShockwave(centerX, centerY, 'normal', color);
+  }
+
+  // ============================================================
+  // НОВОЕ: ЭФФЕКТ ЗОЛОТОГО КЛИКА (от Золотой луны)
+  // ============================================================
+  playGoldenClickEffect(x, y) {
+    this.createParticles(null, {
+      count: 20,
+      color: '#ffd700',
+      size: 5,
+      duration: 1000,
+      spread: 100,
+      x, y
+    });
+    
+    // Показать текст "+💎"
+    const textEl = document.createElement('div');
+    textEl.className = 'damage-number';
+    textEl.textContent = '+💎';
+    textEl.style.color = '#ffd700';
+    textEl.style.textShadow = '0 0 15px rgba(255, 215, 0, 0.9), 0 2px 4px rgba(0,0,0,0.8)';
+    textEl.style.left = `${x}px`;
+    textEl.style.top = `${y - 20}px`;
+    textEl.style.fontSize = '2.5rem';
+    document.body.appendChild(textEl);
+    
+    requestAnimationFrame(() => textEl.classList.add('animate'));
+    
+    setTimeout(() => {
+      if (textEl.parentNode) textEl.remove();
+    }, 1200);
+  }
+
+  // ============================================================
+  // НОВОЕ: ЭФФЕКТ ЦЕПНОЙ МОЛНИИ (Электрическая луна)
+  // ============================================================
+  playChainLightningEffect(x, y, multiplier) {
+    const colors = {
+      2: '#fff176',
+      5: '#ffb74d',
+      10: '#ef5350'
+    };
+    const color = colors[multiplier] || '#fff176';
+    
+    // Яркие частицы молнии
+    this.createParticles(null, {
+      count: 30,
+      color,
+      size: 6,
+      duration: 1000,
+      spread: 180,
+      x, y
+    });
+    
+    // Несколько ударных волн
+    for (let i = 0; i < 2; i++) {
+      setTimeout(() => {
+        this.createShockwave(x, y, 'crit', color);
+      }, i * 100);
+    }
+    
+    // Вспышка для x10
+    if (multiplier === 10) {
+      const flash = document.createElement('div');
+      flash.className = 'death-flash';
+      flash.style.background = `radial-gradient(circle, ${color}aa, transparent)`;
+      document.body.appendChild(flash);
+      setTimeout(() => { if (flash.parentNode) flash.remove(); }, 300);
+      
+      // Тряска
+      document.body.classList.add('screen-shake');
+      setTimeout(() => document.body.classList.remove('screen-shake'), 300);
+    }
+  }
+
+  // ============================================================
+  // НОВОЕ: ЭФФЕКТ КРОВАВОЙ ЖАТВЫ (мгновенное убийство)
+  // ============================================================
+  playBloodExecuteEffect(x, y) {
+    // Красные частицы крови
+    this.createParticles(null, {
+      count: 50,
+      color: '#cc0000',
+      size: 7,
+      duration: 1500,
+      spread: 250,
+      x, y
+    });
+    
+    // Красная ударная волна
+    this.createShockwave(x, y, 'boss', '#cc0000');
+    
+    // Красная вспышка
+    const flash = document.createElement('div');
+    flash.className = 'death-flash';
+    flash.style.background = 'radial-gradient(circle, rgba(204, 0, 0, 0.7), transparent)';
+    document.body.appendChild(flash);
+    setTimeout(() => { if (flash.parentNode) flash.remove(); }, 400);
+    
+    // Тряска экрана
+    document.body.classList.add('screen-shake');
+    setTimeout(() => document.body.classList.remove('screen-shake'), 400);
+  }
+
+  // ============================================================
+  // НОВОЕ: ЭФФЕКТ СВЕРХНОВОЙ (Космическая луна ур. 10)
+  // ============================================================
+  playSupernovaEffect() {
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    // Белая вспышка
+    const flash = document.createElement('div');
+    flash.className = 'death-flash';
+    flash.style.background = 'radial-gradient(circle, white, rgba(233, 30, 99, 0.8), transparent)';
+    flash.style.animationDuration = '1s';
+    document.body.appendChild(flash);
+    setTimeout(() => { if (flash.parentNode) flash.remove(); }, 1000);
+    
+    // Множество разноцветных частиц
+    const colors = ['#ffd700', '#ff9800', '#e91e63', '#9c27b0', '#673ab7', '#fff176'];
+    colors.forEach((color, i) => {
+      setTimeout(() => {
+        this.createParticles(null, {
+          count: 30,
+          color,
+          size: 8,
+          duration: 2000,
+          spread: 400,
+          x: centerX,
+          y: centerY
+        });
+      }, i * 100);
+    });
+    
+    // Множество ударных волн
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        this.createShockwave(centerX, centerY, 'boss', colors[i % colors.length]);
+      }, i * 150);
+    }
+    
+    // Тряска
+    document.body.classList.add('screen-shake');
+    setTimeout(() => document.body.classList.remove('screen-shake'), 600);
+  }
+
+  // ============================================================
+  // УПРАВЛЕНИЕ АНИМАЦИЯМИ
+  // ============================================================
   start() {
     if (this._isRunning) return;
     this._isRunning = true;
