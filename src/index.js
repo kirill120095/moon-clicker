@@ -1,354 +1,205 @@
 // ============================================================
-// ЛУННЫЙ КЛИКЕР - ОСНОВНОЙ ФАЙЛ
+// ТОЧКА ВХОДА ПРИЛОЖЕНИЯ (С ДИАГНОСТИКОЙ)
 // ============================================================
 
-console.log('🌙 Moon Clicker Started');
+console.log('═══════════════════════════════════════════');
+console.log('🚀 [App] ЗАПУСК ПРИЛОЖЕНИЯ');
+console.log('═══════════════════════════════════════════');
+console.log('[App] URL:', window.location.href);
+console.log('[App] User Agent:', navigator.userAgent);
+console.log('[App] Document readyState:', document.readyState);
 
 // ============================================================
-// ЗВЕЗДЫ
+// ФУНКЦИЯ ДЛЯ ПРОВЕРКИ ДОСТУПНОСТИ ФАЙЛОВ
 // ============================================================
-function createStars(count = 300) {
-  const container = document.getElementById('stars');
-  if (!container) return;
-  
-  const fragment = document.createDocumentFragment();
-  for (let i = 0; i < count; i++) {
-    const star = document.createElement('div');
-    star.className = 'star';
-    const size = Math.random() * 2.5 + 0.5;
-    star.style.width = size + 'px';
-    star.style.height = size + 'px';
-    star.style.left = Math.random() * 100 + '%';
-    star.style.top = Math.random() * 100 + '%';
-    star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
-    star.style.animationDelay = Math.random() * 5 + 's';
-    fragment.appendChild(star);
-  }
-  container.appendChild(fragment);
-}
-
-// ============================================================
-// УПРАВЛЕНИЕ ПАНЕЛЯМИ
-// ============================================================
-window.togglePanel = (panelId) => {
-  const panel = document.getElementById(panelId);
-  if (!panel) return;
-
-  const isOpen = !panel.classList.contains('hidden');
-  
-  if (isOpen) {
-    panel.classList.add('hidden');
-    updateToggleButton(panelId, false);
-  } else {
-    // Закрываем другие панели
-    document.querySelectorAll('.panel').forEach(p => {
-      if (p.id !== panelId) {
-        p.classList.add('hidden');
-        updateToggleButton(p.id, false);
-      }
-    });
-    
-    panel.classList.remove('hidden');
-    updateToggleButton(panelId, true);
-  }
-};
-
-function updateToggleButton(panelId, isOpen) {
-  if (panelId === 'profilePanel') {
-    const btn = document.getElementById('profileToggleBtn');
-    if (btn) btn.classList.toggle('panel-open', isOpen);
-  } else if (panelId === 'shopPanel') {
-    const btn = document.getElementById('shopToggleBtn');
-    if (btn) btn.classList.toggle('panel-open', isOpen);
+async function checkFileExists(url) {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok;
+  } catch (e) {
+    return false;
   }
 }
 
-window.closePanel = (panelId) => {
-  window.togglePanel(panelId);
-};
-
-window.closeAllPanels = () => {
-  document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
-  document.querySelectorAll('.side-toggle-btn').forEach(btn => btn.classList.remove('panel-open'));
-};
-
 // ============================================================
-// ВКЛАДКИ
+// ДИАГНОСТИКА СТРУКТУРЫ ФАЙЛОВ
 // ============================================================
-window.switchProfileTab = (tabName) => {
-  const panel = document.getElementById('profilePanel');
-  if (!panel) return;
+async function diagnoseProjectStructure() {
+  console.log('═══════════════════════════════════════════');
+  console.log('🔍 [Diagnose] Проверка структуры проекта');
+  console.log('═══════════════════════════════════════════');
   
-  panel.querySelectorAll('.panel-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.tab === tabName);
-  });
+  const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+  console.log('[Diagnose] Base URL:', baseUrl);
   
-  panel.querySelectorAll('.tab-content').forEach(content => {
-    content.classList.remove('active');
-  });
+  const filesToCheck = [
+    'src/index.js',
+    'src/core/state.js',
+    'src/core/constants.js',
+    'src/modules/ui/events.js',
+    'src/modules/ui/renderer.js',
+    'src/modules/ui/animations.js',
+    'src/modules/events/events.js',  // ← старый путь
+    'src/modules/auth/auth.js',
+    'src/modules/game/game.js',
+    'src/modules/game/combat.js',
+    'src/modules/network/supabase.js',
+    'index.html',
+    'css/galaxy.css',
+    'css/game.css'
+  ];
   
-  const targetContent = document.getElementById(`${tabName}TabContent`);
-  if (targetContent) targetContent.classList.add('active');
-};
-
-window.switchShopTab = (tabName) => {
-  const panel = document.getElementById('shopPanel');
-  if (!panel) return;
-  
-  panel.querySelectorAll('.panel-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.tab === tabName);
-  });
-  
-  panel.querySelectorAll('.tab-content').forEach(content => {
-    content.classList.remove('active');
-  });
-  
-  const targetContent = document.getElementById(`${tabName}TabContent`);
-  if (targetContent) targetContent.classList.add('active');
-};
-
-// ============================================================
-// МОДАЛКИ
-// ============================================================
-window.closeModal = (modalId) => {
-  const modal = document.getElementById(modalId);
-  if (modal) modal.classList.add('hidden');
-};
-
-window.showPasswordModal = () => {
-  const modal = document.getElementById('passwordModal');
-  if (modal) modal.classList.remove('hidden');
-};
-
-window.closePasswordModal = () => {
-  const modal = document.getElementById('passwordModal');
-  if (modal) modal.classList.add('hidden');
-};
-
-window.submitTestModePassword = () => {
-  const input = document.getElementById('testModePassword');
-  const errorEl = document.getElementById('passwordError');
-  
-  if (!input || !errorEl) return;
-  
-  const password = input.value.trim();
-  
-  if (password === '1488') {
-    window.closePasswordModal();
-    showToast('🧪 Тестовый режим ВКЛЮЧЁН', 'success');
-  } else {
-    errorEl.textContent = '❌ Неверный пароль';
-    errorEl.classList.add('show');
-    input.value = '';
-    input.focus();
-  }
-};
-
-window.showSupernovaModal = () => {
-  const modal = document.getElementById('supernovaModal');
-  if (modal) modal.classList.remove('hidden');
-};
-
-window.closeSupernovaModal = () => {
-  const modal = document.getElementById('supernovaModal');
-  if (modal) modal.classList.add('hidden');
-};
-
-// ============================================================
-// АВТОРИЗАЦИЯ
-// ============================================================
-function handleLogin() {
-  const email = document.getElementById('authEmail').value;
-  const password = document.getElementById('authPassword').value;
-  const errorDiv = document.getElementById('authError');
-  
-  if (!email || !password) {
-    if (errorDiv) {
-      errorDiv.textContent = '⚠️ Введите email и пароль';
-      errorDiv.classList.add('show');
-    }
-    return;
+  for (const file of filesToCheck) {
+    const url = baseUrl + file;
+    const exists = await checkFileExists(url);
+    const icon = exists ? '✅' : '❌';
+    console.log(`${icon} ${file} - ${exists ? 'НАЙДЕН' : 'НЕ НАЙДЕН (404)'}`);
   }
   
-  console.log('🔐 Login:', email);
-  
-  const authScreen = document.getElementById('authScreen');
-  const app = document.getElementById('app');
-  
-  if (authScreen) authScreen.classList.add('hidden');
-  if (app) {
-    app.classList.remove('hidden');
-    initGame();
-  }
-}
-
-function handleRegister() {
-  const email = document.getElementById('authEmail').value;
-  const password = document.getElementById('authPassword').value;
-  const username = document.getElementById('authUsername').value;
-  const errorDiv = document.getElementById('authError');
-  
-  if (!email || !password || !username) {
-    if (errorDiv) {
-      errorDiv.textContent = '⚠️ Заполните все поля';
-      errorDiv.classList.add('show');
-    }
-    return;
-  }
-  
-  console.log('📝 Register:', email, username);
-  handleLogin();
+  console.log('═══════════════════════════════════════════');
 }
 
 // ============================================================
-// ИГРА
+// ОТЛОВ ВСЕХ ОШИБОК ЗАГРУЗКИ МОДУЛЕЙ
 // ============================================================
-let clickCount = 0;
-let playerLevel = 1;
-let playerShards = 0;
-
-function initGame() {
-  console.log('🎮 Game initialized');
-  
-  // Клик по луне
-  const moonWrapper = document.getElementById('moonWrapper');
-  if (moonWrapper) {
-    moonWrapper.addEventListener('click', handleMoonClick);
+window.addEventListener('error', (event) => {
+  if (event.message && event.message.includes('Failed to fetch dynamically imported module')) {
+    console.error('═══════════════════════════════════════════');
+    console.error('❌ [Module Error] ОШИБКА ЗАГРУЗКИ МОДУЛЯ');
+    console.error('═══════════════════════════════════════════');
+    console.error('Файл:', event.filename);
+    console.error('Строка:', event.lineno);
+    console.error('Сообщение:', event.message);
+    console.error('═══════════════════════════════════════════');
   }
-  
-  // Обновляем UI
-  updateUI();
-}
+});
 
-function handleMoonClick(e) {
-  clickCount++;
-  
-  const damage = 10 + Math.floor(clickCount / 10);
-  
-  showDamageNumber(e.clientX, e.clientY, damage);
-  
-  playerShards += damage;
-  
-  if (clickCount % 100 === 0) {
-    playerLevel++;
-    showToast(`🎉 Уровень ${playerLevel}!`, 'success');
-  }
-  
-  updateUI();
-  
-  // Эффекты
-  const clickEffect = document.getElementById('clickEffect');
-  if (clickEffect) {
-    clickEffect.classList.remove('active');
-    void clickEffect.offsetWidth;
-    clickEffect.classList.add('active');
-  }
-  
-  const moonWrapper = document.getElementById('moonWrapper');
-  if (moonWrapper) {
-    moonWrapper.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-      moonWrapper.style.transform = 'scale(1)';
-    }, 100);
-  }
-}
+// Отлов ошибок промисов (dynamic imports)
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('═══════════════════════════════════════════');
+  console.error('❌ [Promise Error] НЕОБРАБОТАННАЯ ОШИБКА ПРОМИСА');
+  console.error('═══════════════════════════════════════════');
+  console.error('Причина:', event.reason);
+  console.error('Стек:', event.reason?.stack);
+  console.error('═══════════════════════════════════════════');
+});
 
-function updateUI() {
-  const counter = document.getElementById('counter');
-  const levelTitle = document.getElementById('levelTitle');
+// ============================================================
+// ДИНАМИЧЕСКАЯ ЗАГРУЗКА С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ
+// ============================================================
+async function safeImport(modulePath, moduleName) {
+  console.log(`[Import] Попытка загрузить: ${moduleName} из ${modulePath}`);
+  const startTime = performance.now();
   
-  if (counter) counter.textContent = ` ${playerShards}`;
-  if (levelTitle) levelTitle.textContent = `Уровень ${playerLevel}`;
-}
-
-function showDamageNumber(x, y, damage) {
-  const damageEl = document.createElement('div');
-  damageEl.className = 'damage-number';
-  damageEl.textContent = `-${damage}`;
-  damageEl.style.left = `${x}px`;
-  damageEl.style.top = `${y - 50}px`;
-  document.body.appendChild(damageEl);
-  
-  requestAnimationFrame(() => {
-    damageEl.classList.add('animate');
-  });
-  
-  setTimeout(() => {
-    if (damageEl.parentNode) damageEl.remove();
-  }, 1200);
-}
-
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  if (!container) {
-    console.log('Toast:', message);
-    return;
+  try {
+    const module = await import(modulePath);
+    const loadTime = (performance.now() - startTime).toFixed(2);
+    console.log(`✅ [Import] ${moduleName} загружен за ${loadTime}ms`);
+    return module;
+  } catch (error) {
+    const loadTime = (performance.now() - startTime).toFixed(2);
+    console.error(`═══════════════════════════════════════════`);
+    console.error(`❌ [Import] ОШИБКА ЗАГРУЗКИ ${moduleName}`);
+    console.error(`═══════════════════════════════════════════`);
+    console.error(`Путь: ${modulePath}`);
+    console.error(`Время: ${loadTime}ms`);
+    console.error(`Ошибка:`, error);
+    console.error(`Тип: ${error.name}`);
+    console.error(`Сообщение: ${error.message}`);
+    console.error(`═══════════════════════════════════════════`);
+    throw error;
   }
-  
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  container.appendChild(toast);
-  
-  requestAnimationFrame(() => {
-    toast.classList.add('show');
-  });
-  
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => {
-      if (toast.parentNode) toast.remove();
-    }, 300);
-  }, 2000);
 }
 
 // ============================================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('✅ DOM loaded');
-  createStars(300);
-  
-  const authScreen = document.getElementById('authScreen');
-  const app = document.getElementById('app');
-  
-  if (authScreen) authScreen.classList.remove('hidden');
-  if (app) app.classList.add('hidden');
-  
-  // Кнопки
-  const loginBtn = document.getElementById('loginBtn');
-  const registerBtn = document.getElementById('registerBtn');
-  
-  if (loginBtn) loginBtn.addEventListener('click', handleLogin);
-  if (registerBtn) registerBtn.addEventListener('click', handleRegister);
-  
-  // Enter в форме
-  const authPassword = document.getElementById('authPassword');
-  if (authPassword) {
-    authPassword.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleLogin();
-      }
-    });
-  }
-  
-  // Enter в пароле
-  const passwordInput = document.getElementById('testModePassword');
-  if (passwordInput) {
-    passwordInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        window.submitTestModePassword();
-      }
-    });
-  }
-});
+async function init() {
+  console.log('═══════════════════════════════════════════');
+  console.log('⚙️  [App] НАЧАЛО ИНИЦИАЛИЗАЦИИ');
+  console.log('═══════════════════════════════════════════');
 
-// Экспорт
-if (typeof window !== 'undefined') {
-  window.createStars = createStars;
-  window.showToast = showToast;
-  window.handleLogin = handleLogin;
-  window.handleRegister = handleRegister;
+  try {
+    // 1. Диагностика структуры
+    await diagnoseProjectStructure();
+    
+    // 2. Загрузка state
+    console.log('[App] Шаг 1/4: Загрузка state.js...');
+    const stateModule = await safeImport('./core/state.js', 'State Manager');
+    const { appState } = stateModule;
+    
+    // 3. Загрузка UI модулей
+    console.log('[App] Шаг 2/4: Загрузка UI модулей...');
+    const rendererModule = await safeImport('./modules/ui/renderer.js', 'Renderer');
+    const { createStars } = rendererModule;
+    
+    // 4. Загрузка events (с fallback на старый путь)
+    console.log('[App] Шаг 3/4: Загрузка events...');
+    let eventsModule;
+    try {
+      eventsModule = await safeImport('./modules/ui/events.js', 'Events (новый путь)');
+    } catch (error) {
+      console.warn('[App] ⚠️  Новый путь не сработал, пробуем старый...');
+      eventsModule = await safeImport('./modules/events/events.js', 'Events (старый путь)');
+    }
+    const { initEvents } = eventsModule;
+    
+    // 5. Загрузка auth
+    console.log('[App] Шаг 4/4: Загрузка auth...');
+    const authModule = await safeImport('./modules/auth/auth.js', 'Auth');
+    const { checkAuth } = authModule;
+
+    // ============================================================
+    // ЗАПУСК ПРИЛОЖЕНИЯ
+    // ============================================================
+    console.log('═══════════════════════════════════════════');
+    console.log('🎮 [App] ЗАПУСК ИГРЫ');
+    console.log('═══════════════════════════════════════════');
+
+    // Инициализируем события
+    initEvents();
+
+    // Создаём звёзды
+    createStars(300);
+
+    // Проверяем авторизацию
+    await checkAuth();
+
+    console.log('═══════════════════════════════════════════');
+    console.log('✅ [App] ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНА УСПЕШНО');
+    console.log('═══════════════════════════════════════════');
+    
+  } catch (error) {
+    console.error('═══════════════════════════════════════════');
+    console.error('❌ [App] КРИТИЧЕСКАЯ ОШИБКА ИНИЦИАЛИЗАЦИИ');
+    console.error('═══════════════════════════════════════════');
+    console.error('Ошибка:', error);
+    console.error('Имя:', error.name);
+    console.error('Сообщение:', error.message);
+    console.error('Стек:', error.stack);
+    console.error('═══════════════════════════════════════════');
+    
+    // Показываем экран авторизации как fallback
+    const authScreen = document.getElementById('authScreen');
+    const app = document.getElementById('app');
+    
+    if (authScreen) authScreen.classList.remove('hidden');
+    if (app) app.classList.add('hidden');
+    
+    // Показываем понятное сообщение пользователю
+    alert(
+      '❌ Ошибка загрузки приложения!\n\n' +
+      'Откройте консоль (F12) и пришлите мне логи.\n\n' +
+      'Ошибка: ' + error.message
+    );
+  }
+}
+
+// ============================================================
+// ЗАПУСК
+// ============================================================
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
 }
