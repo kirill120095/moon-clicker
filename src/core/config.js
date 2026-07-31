@@ -1,84 +1,81 @@
 // ============================================================
-//  КОНФИГУРАЦИЯ
+// КОНФИГУРАЦИЯ ИГРЫ - РАСЧЁТНЫЕ ФУНКЦИИ
 // ============================================================
-import { CONSTANTS, MOON_TYPES } from './constants.js';
+import { CONSTANTS, MOON_UPGRADE_BASE_COSTS } from './constants.js';
 
-export const CONFIG = {
-    supabase: {
-        url: 'https://zllnsmztaakdwjpnijsk.supabase.co',
-        anonKey: 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt',
-        options: {
-            auth: {
-                persistSession: false,
-                autoRefreshToken: true,
-                detectSessionInUrl: true,
-                flowType: 'pkce'
-            }
-        }
-    },
+/**
+ * Расчёт максимального HP для уровня
+ * @param {number} level - текущий уровень
+ * @param {number} baseHP - базовое HP (1000)
+ * @param {number} bossInterval - интервал боссов (10)
+ * @returns {number}
+ */
+export function getMaxHPForLevel(level, baseHP = CONSTANTS.BASE_HP, bossInterval = CONSTANTS.BOSS_INTERVAL) {
+  const isBoss = level % bossInterval === 0 && level > 0;
+  const hp = baseHP * Math.pow(1.15, level - 1);
+  
+  if (isBoss) {
+    return Math.round(hp * 5);
+  }
+  
+  return Math.round(hp);
+}
 
-    game: {
-        testMode: false,
-        hpScale: 1,
-        bossInterval: CONSTANTS.BOSS_INTERVAL,
-        bossTimer: CONSTANTS.BOSS_TIMER,
-        baseHP: CONSTANTS.BASE_HP,
-        maxSlots: CONSTANTS.MAX_SLOTS,
-        maxClickDamageLevel: CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL,
-        maxMoonLevel: CONSTANTS.LIMITS.MAX_MOON_LEVEL,
-        minPasswordLength: 6,
-        saveInterval: CONSTANTS.INTERVALS.SAVE_TIME,
-        questResetInterval: CONSTANTS.INTERVALS.QUEST_RESET,
-        uiUpdateInterval: CONSTANTS.INTERVALS.UI_UPDATE,
-    },
+/**
+ * Проверка является ли уровень боссом
+ * @param {number} level - уровень
+ * @param {number} bossInterval - интервал
+ * @returns {boolean}
+ */
+export function isBossLevel(level, bossInterval = CONSTANTS.BOSS_INTERVAL) {
+  return level % bossInterval === 0 && level > 0;
+}
 
-    ui: {
-        toastDuration: CONSTANTS.INTERVALS.TOAST_DURATION,
-        maxStars: CONSTANTS.LIMITS.MAX_STARS,
-        maxLeaders: CONSTANTS.LIMITS.MAX_LEADERS,
-        animationDuration: 300,
-        levelUpDuration: 800,
-        clickCooldown: 50,
-    },
+/**
+ * Расчёт стоимости улучшения слотов
+ * @param {number} currentSlots - текущее количество слотов
+ * @returns {number}
+ */
+export function getSlotUpgradeCost(currentSlots) {
+  return Math.floor(
+    CONSTANTS.UPGRADE_COSTS.moonSlots.base *
+    Math.pow(CONSTANTS.UPGRADE_COSTS.moonSlots.multiplier, currentSlots - 1)
+  );
+}
 
-    endpoints: {
-        players: 'players',
-        profiles: 'profiles',
-        stats: 'stats',
-    }
-};
-
+/**
+ * Расчёт стоимости прокачки луны (старая функция для совместимости)
+ * @param {string} moonId - ID луны
+ * @param {number} currentLevel - текущий уровень луны
+ * @returns {number}
+ */
 export function getMoonUpgradeCost(moonId, currentLevel) {
-    const moon = MOON_TYPES[moonId];
-    if (!moon) return 100;
-    const baseCost = Math.max(100, moon.cost * 0.1);
-    return Math.floor(baseCost * Math.pow(1.5, currentLevel - 1));
+  const { MOON_TYPES } = require('./constants.js');
+  const moon = MOON_TYPES[moonId];
+  if (!moon) return Infinity;
+  
+  const baseCost = MOON_UPGRADE_BASE_COSTS[moon.rarity] || 200;
+  return Math.floor(baseCost * Math.pow(1.5, currentLevel));
 }
 
-export function getSlotUpgradeCost(slotIndex) {
-    return Math.floor(
-        CONSTANTS.UPGRADE_COSTS.moonSlots.base *
-        Math.pow(CONSTANTS.UPGRADE_COSTS.moonSlots.multiplier, slotIndex - 1)
-    );
-}
-
-export function getMaxHPForLevel(level, baseHP, bossInterval) {
-    if (level % bossInterval === 0) {
-        return baseHP * level;
-    }
-    return baseHP * (1 + (level - 1) * 0.1);
-}
-
-export function isBossLevel(level, bossInterval) {
-    return level % bossInterval === 0;
-}
-
+/**
+ * Получение титула по уровню
+ * @param {number} level - уровень
+ * @returns {string}
+ */
 export function getTitle(level) {
-    if (level < 10) return '🌱 Новичок';
-    if (level < 20) return '🚀 Исследователь';
-    if (level < 50) return '⚡ Мастер';
-    if (level < 100) return '🌟 Легенда';
-    if (level < 200) return '👑 Герой';
-    if (level < 500) return '🔥 Мифический';
-    return '💎 Бессмертный';
+  if (level >= 200) return '🌟 Легенда Галактики';
+  if (level >= 150) return '💫 Повелитель Звёзд';
+  if (level >= 100) return '☀️ Солнечный Странник';
+  if (level >= 75) return '🌌 Космический Рыцарь';
+  if (level >= 50) return '⭐ Звёздный Охотник';
+  if (level >= 40) return '🔮 Мистик';
+  if (level >= 30) return '👑 Золотой Воин';
+  if (level >= 25) return '⚡ Громовержец';
+  if (level >= 20) return '🔥 Огненный Мастер';
+  if (level >= 15) return '🌑 Теневой Клинок';
+  if (level >= 10) return '❄️ Ледяной Странник';
+  if (level >= 5) return '🩸 Кровавый Новичок';
+  if (level >= 3) return '🌙 Ученик Луны';
+  return '✨ Новичок';
 }
