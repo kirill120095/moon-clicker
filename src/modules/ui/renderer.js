@@ -160,7 +160,73 @@ export function updateTimerBar() {
     percent.textContent = `${CONSTANTS.BOSS_TIMER}с`;
   }
 }
-
+// ============================================================
+// НОВОЕ: ОТОБРАЖЕНИЕ АКТИВНЫХ БАФОВ
+// ============================================================
+export function updateBuffsDisplay() {
+  const container = document.getElementById('buffsContainer');
+  if (!container) return;
+  
+  const buffs = window._activeBuffs || [];
+  
+  if (buffs.length === 0) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'flex';
+  
+  let html = '';
+  buffs.forEach(buff => {
+    const progressPercent = (buff.progress / buff.progressMax) * 100;
+    
+    // Определяем класс состояния
+    let stateClass = 'buff-charging';
+    if (buff.isPassive) {
+      stateClass = 'buff-passive';
+    } else if (buff.isMaxed) {
+      stateClass = 'buff-maxed';
+    } else if (buff.isActive) {
+      stateClass = 'buff-active';
+    }
+    
+    if (buff.isConditional && !buff.isActive) {
+      stateClass = 'buff-inactive';
+    }
+    
+    // Таймер для временных бафов
+    let timerHtml = '';
+    if (buff.timeLeft !== null && buff.timeLeft !== undefined) {
+      const timerClass = buff.timeLeft <= 5 ? 'buff-timer-warning' : '';
+      timerHtml = `<div class="buff-timer ${timerClass}">${buff.timeLeft}с</div>`;
+    }
+    
+    // Прогресс бар (только для не-пассивных)
+    const progressHtml = !buff.isPassive ? `
+      <div class="buff-progress">
+        <div class="buff-progress-bar" style="width: ${progressPercent}%"></div>
+      </div>
+      <div class="buff-stacks">${buff.value}${buff.maxStacks ? '/' + buff.maxStacks : ''}</div>
+    ` : '';
+    
+    html += `
+      <div class="buff-card ${stateClass}" data-buff-id="${buff.id}">
+        <div class="buff-header">
+          <div class="buff-icon">${buff.icon}</div>
+          <div class="buff-info">
+            <div class="buff-name">${buff.name}</div>
+            <div class="buff-bonus">${buff.bonus}</div>
+          </div>
+          ${timerHtml}
+        </div>
+        ${progressHtml}
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
+}
 function _updateRollbackButton() {
   const btn = document.getElementById('rollbackBtnMain');
   if (!btn) return;
@@ -1081,6 +1147,7 @@ if (typeof window !== 'undefined') {
   window.updateAchievementUI = updateAchievementUI;
   window.updateQuestAndAchievementUI = updateQuestAndAchievementUI;
   window.updateTimerBar = updateTimerBar;
+  window.updateBuffsDisplay = updateBuffsDisplay; // НОВОЕ
   window.showToast = showToast;
   window._setQuestCategory = setQuestCategory;
   window._setAchievementCategory = setAchievementCategory;
