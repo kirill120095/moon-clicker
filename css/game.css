@@ -1974,25 +1974,44 @@
 
 
 /* ============================================================
-   ПАНЕЛЬ АКТИВНЫХ БАФОВ
+   ПАНЕЛЬ АКТИВНЫХ БАФОВ - ВСЕ 3 В ОДНУ СТРОКУ
    ============================================================ */
 .buffs-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;  /* ← НЕ ПЕРЕНОСИМ, всё в одну строку */
   justify-content: center;
-  gap: 8px;
+  align-items: stretch;
+  gap: 10px;
   padding: 12px;
-  max-width: 500px;
+  max-width: 700px;
   margin: 0 auto;
   width: 100%;
   z-index: 5;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* КАРТОЧКА БАФА */
+.buffs-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.buffs-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.buffs-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 2px;
+}
+
+/* КАРТОЧКА БАФА - ФИКСИРОВАННАЯ ШИРИНА ДЛЯ 3 В РЯД */
 .buff-card {
-  flex: 0 1 calc(50% - 4px);
-  min-width: 150px;
-  max-width: 220px;
+  flex: 1 1 0;  /* Равномерное распределение */
+  min-width: 180px;
+  max-width: 230px;
   background: linear-gradient(135deg, rgba(21, 26, 46, 0.9), rgba(30, 36, 64, 0.85));
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
@@ -2001,7 +2020,12 @@
   padding: 10px 12px;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+  /* НЕТ базовой анимации - применяется только для новых */
+}
+
+/* АНИМАЦИЯ ПОЯВЛЕНИЯ ТОЛЬКО ДЛЯ НОВЫХ БАФОВ */
+.buff-card.buff-new {
   animation: buffAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -2072,7 +2096,7 @@
   background: linear-gradient(135deg, rgba(156, 39, 176, 0.25), rgba(63, 81, 181, 0.15));
 }
 
-/* Состояние: Неактивен (условный - Кровавая луна) */
+/* Состояние: Неактивен */
 .buff-inactive {
   opacity: 0.55;
   border-color: rgba(244, 67, 54, 0.2);
@@ -2141,7 +2165,7 @@
   color: #81c784;
 }
 
-/* ТАЙМЕР (для временных бафов) */
+/* ТАЙМЕР */
 .buff-timer {
   font-size: 0.7rem;
   font-weight: 700;
@@ -2180,7 +2204,6 @@
   background: linear-gradient(90deg, #4caf50, #81c784);
   border-radius: 2px;
   transition: width 0.3s ease;
-  position: relative;
 }
 
 .buff-charging .buff-progress-bar {
@@ -2212,15 +2235,14 @@
 }
 
 /* АДАПТИВНОСТЬ */
-@media (max-width: 500px) {
+@media (max-width: 700px) {
   .buffs-container {
     padding: 8px;
-    gap: 6px;
+    gap: 8px;
   }
   
   .buff-card {
-    flex: 0 1 calc(50% - 3px);
-    min-width: 140px;
+    min-width: 150px;
     padding: 8px 10px;
   }
   
@@ -2239,9 +2261,8 @@
   }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 500px) {
   .buff-card {
-    flex: 0 1 100%;
-    max-width: 100%;
+    min-width: 140px;
   }
 }
