@@ -1,100 +1,44 @@
 // ============================================================
-//  СИСТЕМА НАГРАД
+// СИСТЕМА НАГРАД
 // ============================================================
-import { appState, state } from '../../core/state.js';
-import { CONSTANTS, ACHIEVEMENTS, QUESTS } from '../../core/constants.js';
+import { CONSTANTS } from '../../core/constants.js';
 
 export class RewardSystem {
-    constructor() {
-        this._shardMultiplier = 1;
-        this._xpMultiplier = 1;
-    }
+  /**
+   * Расчёт награды в осколках за убийство луны/босса
+   * @param {number} level - текущий уровень
+   * @param {boolean} isBoss - убит ли босс
+   * @param {number} shardBonus - бонус к осколкам (0.0 - 1.0+)
+   * @returns {number}
+   */
+  calculateShardReward(level, isBoss = false, shardBonus = 0) {
+    // Базовая награда растёт с уровнем
+    const baseReward = Math.floor(5 + level * 2 + Math.pow(level, 1.3) * 0.5);
+    
+    // Множитель за босса
+    const bossMultiplier = isBoss ? 5 : 1;
+    
+    // Бонус от лун и синергий
+    const bonusMultiplier = 1 + shardBonus;
+    
+    return Math.max(1, Math.round(baseReward * bossMultiplier * bonusMultiplier));
+  }
 
-    calculateShardReward(level, isBoss, shardBonus = 0) {
-        let baseReward;
-        
-        if (isBoss) {
-            baseReward = Math.floor(level / CONSTANTS.BOSS_INTERVAL) * 3 + 5;
-        } else {
-            baseReward = Math.floor(level / 5) + 1;
-        }
-        
-        const bonusMultiplier = 1 + shardBonus + this._shardMultiplier - 1;
-        return Math.floor(baseReward * bonusMultiplier);
-    }
+  /**
+   * Расчёт награды за квест
+   * @param {Object} questData - данные квеста
+   * @returns {number}
+   */
+  calculateQuestReward(questData) {
+    return (questData.reward || 0) + (questData.bonusReward || 0);
+  }
 
-    calculateXP(level, isBoss) {
-        let baseXP = level * 10;
-        if (isBoss) {
-            baseXP *= 3;
-        }
-        return Math.floor(baseXP * this._xpMultiplier);
-    }
-
-    async grantShards(amount) {
-        if (!state.playerData) return false;
-        
-        const newShards = (state.playerData.shards || 0) + amount;
-        appState.set('playerData', { ...state.playerData, shards: newShards });
-        
-        appState.updateQuestProgress('shard', amount);
-        
-        return true;
-    }
-
-    async grantAchievement(id) {
-        const ach = ACHIEVEMENTS[id];
-        if (!ach) return false;
-        
-        if (state.achievements[id]) {
-            return false;
-        }
-        
-        // Награда выдается внутри unlockAchievement в state.js
-        appState.unlockAchievement(id);
-        
-        return true;
-    }
-
-    async grantQuestReward(questId) {
-        const quest = QUESTS[questId];
-        if (!quest) return false;
-        
-        if (state.quests[questId]?.completed) {
-            return false;
-        }
-        
-        appState.updateQuestProgress(quest.type, quest.target);
-        return true;
-    }
-
-    setShardMultiplier(multiplier) {
-        this._shardMultiplier = Math.max(1, multiplier);
-    }
-
-    setXPMultiplier(multiplier) {
-        this._xpMultiplier = Math.max(1, multiplier);
-    }
-
-    checkAllAchievements() {
-        const currentState = {
-            ownedMoons: state.ownedMoons,
-            currentLevel: state.currentLevel,
-            bossKills: state.bossKills,
-            clickCount: state.clickCount,
-            moonLevels: state.moonLevels,
-            maxSlots: state.maxSlots
-        };
-        
-        for (const [id, ach] of Object.entries(ACHIEVEMENTS)) {
-            if (!state.achievements[id] && ach.check(currentState)) {
-                this.grantAchievement(id);
-            }
-        }
-    }
-
-    resetDailyQuests() {
-        appState.resetQuests();
-        return Object.keys(QUESTS).length;
-    }
+  /**
+   * Расчёт награды за достижение
+   * @param {Object} tier - уровень достижения
+   * @returns {number}
+   */
+  calculateAchievementReward(tier) {
+    return tier.reward || 0;
+  }
 }
