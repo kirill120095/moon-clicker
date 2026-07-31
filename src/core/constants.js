@@ -1,19 +1,19 @@
 // ============================================================
-// КОНСТАНТЫ - ЗНАЧЕНИЯ УВЕЛИЧЕНЫ В 10 РАЗ
+// КОНСТАНТЫ - ОБНОВЛЁННАЯ СИСТЕМА ЛУН И ПРОКАЧКИ
 // ============================================================
 
 export const CONSTANTS = {
   BOSS_INTERVAL: 10,
   BOSS_TIMER: 30,
-  BASE_HP: 1000,  // ← БЫЛО 100, СТАЛО 1000
+  BASE_HP: 1000,
   MAX_SLOTS: 3,
 
+  // Цены увеличены в 2 раза
   UPGRADE_COSTS: {
-    clickDamage: { base: 30, multiplier: 1.35 },
-    moonSlots: { base: 1500, multiplier: 2.8 }
+    clickDamage: { base: 60, multiplier: 1.35 },   // было 30
+    moonSlots: { base: 3000, multiplier: 2.8 }      // было 1500
   },
 
-  // НОВОЕ: Значение улучшения урона (было +1, стало +10)
   CLICK_DAMAGE_UPGRADE_VALUE: 10,
 
   INTERVALS: {
@@ -38,105 +38,590 @@ export const CONSTANTS = {
     SHARDS: 0,
     CLICKS: 0,
     TIME_PLAYED: 0,
-    MOON_HP: 1000,  // ← БЫЛО 100
+    MOON_HP: 1000,
     BOSS_KILLS: 0,
     SLOT_LEVEL: 1,
-    CLICK_DAMAGE: 10,  // ← НОВОЕ: базовый урон 10 (было 1)
+    CLICK_DAMAGE: 10,
     ACTIVE_MOON: 'normal',
     ACTIVE_MOONS: ['normal'],
     OWNED_MOONS: ['normal'],
     MOON_LEVELS: { normal: 1 },
-  }
+  },
+
+  // Пароль для тестового режима
+  TEST_MODE_PASSWORD: '1488'
 };
 
 // ============================================================
-// ТИПЫ ЛУН (без изменений)
+// ЦЕНЫ ПРОКАЧКИ ЛУН (зависят от редкости)
+// Формула: baseCost × 1.5^(level-1)
+// ============================================================
+export const MOON_UPGRADE_BASE_COSTS = {
+  common: 200,       // Обычная (было ~100, x2)
+  rare: 1000,        // Редкие (было ~500, x2)
+  epic: 5000,        // Эпические (было ~2500, x2)
+  legendary: 20000,  // Легендарная (было ~10000, x2)
+  mythic: 100000     // Мифическая (было ~50000, x2)
+};
+
+// ============================================================
+// ТИПЫ ЛУН - ПОЛНАЯ СИСТЕМА С МИЛЕСТОУНАМИ
 // ============================================================
 export const MOON_TYPES = {
+  // ============================================================
+  // 🌙 ОБЫЧНАЯ ЛУНА
+  // ============================================================
   normal: {
-    id: 'normal', name: 'Обычная', emoji: '🌙', cost: 0, unlockLevel: 1, rarity: 'common',
-    damageBonus: 0.05, shardBonus: 0, critChanceBonus: 0, critDamageBonus: 0,
-    specialMechanic: 'combo', specialName: 'Комбо-мастер',
-    specialDescription: 'Каждые 10 кликов подряд: +5% к урону (макс +50%)',
-    specialValue: 0.05, specialMaxStacks: 10,
-    description: 'Верный спутник, становящийся сильнее с каждым ударом',
+    id: 'normal',
+    name: 'Обычная',
+    emoji: '🌙',
+    cost: 0,
+    unlockLevel: 1,
+    rarity: 'common',
+    
+    // Начальные параметры при покупке
+    baseStats: {
+      damageBonus: 0.05,
+      shardBonus: 0,
+      critChanceBonus: 0,
+      critDamageBonus: 0
+    },
+    
+    // Базовая механика
+    specialMechanic: 'combo',
+    specialName: 'Комбо-мастер',
+    specialDescription: 'Каждые 10 кликов +5% урона (макс 10 стеков = +50%)',
+    
+    // Параметры механики (меняются с прокачкой)
+    mechanicParams: {
+      clicksPerStack: 10,
+      bonusPerStack: 0.05,
+      maxStacks: 10,
+      resetTimeout: 15000
+    },
+    
+    // Милестоуны прокачки
+    milestones: {
+      3: {
+        icon: '🎯',
+        name: 'Усиленное комбо',
+        description: 'Урон за стек: 5% → 7.5% (макс +75%)',
+        apply: (params) => { params.bonusPerStack = 0.075; }
+      },
+      5: {
+        icon: '🎯',
+        name: 'Быстрое комбо',
+        description: 'Требуется кликов на стек: 10 → 8',
+        apply: (params) => { params.clicksPerStack = 8; }
+      },
+      7: {
+        icon: '🎯',
+        name: 'Комбо-удача',
+        description: 'При полном стаке: +10% получаемых осколков',
+        apply: (params) => { params.shardBonusOnFullStack = 0.10; }
+      },
+      10: {
+        icon: '👑',
+        name: 'Мастер комбо',
+        description: 'Не сбрасывается 30с + Урон за стек: 7.5% → 10% (макс +100%)',
+        apply: (params) => { 
+          params.resetTimeout = 30000; 
+          params.bonusPerStack = 0.10; 
+        }
+      }
+    },
+    
+    // Описание для магазина
+    shopDescription: 'Верный спутник. Набирает силу с каждым ударом.',
+    
     gradient: 'radial-gradient(circle at 30% 30%, #f0e6d0, #d4af37)',
     shadow: '0 0 60px rgba(255,215,150,0.4), 0 0 120px rgba(255,215,150,0.2), inset -35px -35px 90px rgba(0,0,0,0.4), inset 35px 35px 90px rgba(255,255,255,0.3)',
     accentColor: '#d4af37'
   },
+
+  // ============================================================
+  // 🩸 КРОВАВАЯ ЛУНА
+  // ============================================================
   blood: {
-    id: 'blood', name: 'Кровавая', emoji: '🩸', cost: 800, unlockLevel: 5, rarity: 'rare',
-    damageBonus: 0.25, shardBonus: 0, critChanceBonus: 0.03, critDamageBonus: 0.15,
-    specialMechanic: 'bloodMoon', specialName: 'Кровавая луна',
-    specialDescription: 'Когда HP босса ниже 50%: +100% к урону',
-    specialValue: 1.00, specialThreshold: 0.50,
-    description: 'Питается слабостью раненых врагов',
+    id: 'blood',
+    name: 'Кровавая',
+    emoji: '🩸',
+    cost: 1600,        // x2 от 800
+    unlockLevel: 5,
+    rarity: 'rare',
+    
+    baseStats: {
+      damageBonus: 0.20,
+      shardBonus: 0,
+      critChanceBonus: 0.01,
+      critDamageBonus: 0.50
+    },
+    
+    specialMechanic: 'bloodMoon',
+    specialName: 'Кровавая луна',
+    specialDescription: 'При HP босса < 50%: +100% к урону',
+    
+    mechanicParams: {
+      hpThreshold: 0.50,
+      damageBonus: 1.00,
+      executeThreshold: 0
+    },
+    
+    milestones: {
+      3: {
+        icon: '🎯',
+        name: 'Жажда крови',
+        description: 'Бонус урона: +100% → +125%',
+        apply: (params) => { params.damageBonus = 1.25; }
+      },
+      5: {
+        icon: '🎯',
+        name: 'Кровавый нюх',
+        description: 'Порог активации: 50% → 75% HP (раньше!)',
+        apply: (params) => { params.hpThreshold = 0.75; }
+      },
+      7: {
+        icon: '🎯',
+        name: 'Добивание',
+        description: 'Бонус: +150%. При HP < 5% — мгновенная смерть',
+        apply: (params) => { 
+          params.damageBonus = 1.50; 
+          params.executeThreshold = 0.05; 
+        }
+      },
+      10: {
+        icon: '👑',
+        name: 'Кровавая жатва',
+        description: 'Бонус: +200%. При HP < 10% — мгновенная смерть',
+        apply: (params) => { 
+          params.damageBonus = 2.00; 
+          params.executeThreshold = 0.10; 
+        }
+      }
+    },
+    
+    shopDescription: 'Питается слабостью раненых врагов.',
+    
     gradient: 'radial-gradient(circle at 30% 30%, #8b0000, #4a0000)',
     shadow: '0 0 60px rgba(255,0,0,0.6), 0 0 120px rgba(255,0,0,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,0,0,0.2)',
     accentColor: '#cc0000'
   },
+
+  // ============================================================
+  // ❄️ ЛЕДЯНАЯ ЛУНА
+  // ============================================================
   ice: {
-    id: 'ice', name: 'Ледяная', emoji: '❄️', cost: 5000, unlockLevel: 10, rarity: 'rare',
-    damageBonus: 0.10, shardBonus: 0.35, critChanceBonus: 0.02, critDamageBonus: 0,
-    specialMechanic: 'freeze', specialName: 'Заморозка времени',
-    specialDescription: 'Таймер босса увеличивается на +25%',
-    specialValue: 0.25,
-    description: 'Замораживает время вокруг врагов',
+    id: 'ice',
+    name: 'Ледяная',
+    emoji: '❄️',
+    cost: 10000,       // x2 от 5000
+    unlockLevel: 10,
+    rarity: 'rare',
+    
+    baseStats: {
+      damageBonus: 0.10,
+      shardBonus: 0.20,
+      critChanceBonus: 0.02,
+      critDamageBonus: 0
+    },
+    
+    specialMechanic: 'freeze',
+    specialName: 'Заморозка времени',
+    specialDescription: '+25% к таймеру босса',
+    
+    mechanicParams: {
+      timerBonus: 0.25,
+      pierceInterval: 0,
+      pierceDamage: 0
+    },
+    
+    milestones: {
+      3: {
+        icon: '🎯',
+        name: 'Глубокая заморозка',
+        description: 'Бонус времени: +25% → +35%',
+        apply: (params) => { params.timerBonus = 0.35; }
+      },
+      5: {
+        icon: '🎯',
+        name: 'Ледяной покров',
+        description: 'Бонус времени: +35% → +50%',
+        apply: (params) => { params.timerBonus = 0.50; }
+      },
+      7: {
+        icon: '🎯',
+        name: 'Заморозка',
+        description: 'Каждый 20-й клик: +500% урона (лёд колет)',
+        apply: (params) => { 
+          params.pierceInterval = 20; 
+          params.pierceDamage = 5.00; 
+        }
+      },
+      10: {
+        icon: '👑',
+        name: 'Вечная мерзлота',
+        description: 'Каждый 10-й клик: +1000% урона',
+        apply: (params) => { 
+          params.pierceInterval = 10; 
+          params.pierceDamage = 10.00; 
+        }
+      }
+    },
+    
+    shopDescription: 'Замораживает время и пронзает врагов льдом.',
+    
     gradient: 'radial-gradient(circle at 30% 30%, #b3e5fc, #4fc3f7)',
     shadow: '0 0 60px rgba(79,195,247,0.6), 0 0 120px rgba(79,195,247,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(79,195,247,0.2)',
     accentColor: '#4fc3f7'
   },
+
+  // ============================================================
+  // 🌑 ТЕНЕВАЯ ЛУНА
+  // ============================================================
   shadow: {
-    id: 'shadow', name: 'Теневая', emoji: '🌑', cost: 25000, unlockLevel: 15, rarity: 'epic',
-    damageBonus: 0.20, shardBonus: 0.15, critChanceBonus: 0.04, critDamageBonus: 1.00,
-    specialMechanic: 'shadowCrit', specialName: 'Теневой удар',
-    specialDescription: '+100% к критическому урону',
-    specialValue: 1.00,
-    description: 'Бьёт из тени с удвоенной силой',
+    id: 'shadow',
+    name: 'Теневая',
+    emoji: '🌑',
+    cost: 50000,       // x2 от 25000
+    unlockLevel: 15,
+    rarity: 'epic',
+    
+    baseStats: {
+      damageBonus: 0.20,
+      shardBonus: 0.10,
+      critChanceBonus: 0.03,
+      critDamageBonus: 1.00
+    },
+    
+    specialMechanic: 'shadowCritStacks',
+    specialName: 'Теневой удар',
+    specialDescription: 'Каждые 10 кликов +25% крит урона (макс 10 стеков = +250%)',
+    
+    mechanicParams: {
+      clicksPerStack: 10,
+      critDamagePerStack: 0.25,
+      maxStacks: 10,
+      resetTimeout: 15000,
+      firstStrikeCrit: false,
+      doubleCritChance: 0,
+      fullStackCritChance: 0
+    },
+    
+    milestones: {
+      3: {
+        icon: '🎯',
+        name: 'Глубокая тень',
+        description: 'Урон за стек: 25% → 35% (макс +350%)',
+        apply: (params) => { params.critDamagePerStack = 0.35; }
+      },
+      5: {
+        icon: '🎯',
+        name: 'Первый удар',
+        description: 'Первый удар по любой луне = гарантированный крит',
+        apply: (params) => { params.firstStrikeCrit = true; }
+      },
+      7: {
+        icon: '🎯',
+        name: 'Теневой двойник',
+        description: '25% шанс что крит нанесёт ещё один удар',
+        apply: (params) => { params.doubleCritChance = 0.25; }
+      },
+      10: {
+        icon: '👑',
+        name: 'Критическая удача',
+        description: 'При полном стаке: +10% к шансу крита',
+        apply: (params) => { params.fullStackCritChance = 0.10; }
+      }
+    },
+    
+    shopDescription: 'Накапливает силу тени для сокрушительных критов.',
+    
     gradient: 'radial-gradient(circle at 30% 30%, #6a1b9a, #2a0a3a)',
     shadow: '0 0 60px rgba(106,27,154,0.6), 0 0 120px rgba(106,27,154,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(106,27,154,0.2)',
     accentColor: '#6a1b9a'
   },
+
+  // ============================================================
+  // 🔥 ОГНЕННАЯ ЛУНА
+  // ============================================================
   fire: {
-    id: 'fire', name: 'Огненная', emoji: '🔥', cost: 75000, unlockLevel: 20, rarity: 'epic',
-    damageBonus: 0.30, shardBonus: 0.05, critChanceBonus: 0.03, critDamageBonus: 0.20,
-    specialMechanic: 'fireStacks', specialName: 'Накопление жара',
-    specialDescription: 'Каждые 5 кликов: +10% к урону (макс +150%)',
-    specialValue: 0.10, specialInterval: 5, specialMaxStacks: 15,
-    description: 'Разогревается с каждым ударом, усиливая пламя',
+    id: 'fire',
+    name: 'Огненная',
+    emoji: '🔥',
+    cost: 150000,      // x2 от 75000
+    unlockLevel: 20,
+    rarity: 'epic',
+    
+    baseStats: {
+      damageBonus: 0.40,
+      shardBonus: 0.20,
+      critChanceBonus: 0.03,
+      critDamageBonus: 0.50
+    },
+    
+    specialMechanic: 'fireStacks',
+    specialName: 'Накопление жара',
+    specialDescription: 'Каждые 5 кликов +20% урона (макс 20 стеков = +400%)',
+    
+    mechanicParams: {
+      clicksPerStack: 5,
+      bonusPerStack: 0.20,
+      maxStacks: 20,
+      resetTimeout: 15000,
+      safeStacks: 0,
+      resetChance: 0
+    },
+    
+    milestones: {
+      3: {
+        icon: '🎯',
+        name: 'Адское пламя',
+        description: 'Макс стеков: 20 → 30 (макс +600%)',
+        apply: (params) => { params.maxStacks = 30; }
+      },
+      5: {
+        icon: '🎯',
+        name: 'Раскалённый металл',
+        description: 'Бонус за стек: +20% → +25% (макс +750%)',
+        apply: (params) => { params.bonusPerStack = 0.25; }
+      },
+      7: {
+        icon: '🎯',
+        name: 'Инферно',
+        description: 'Бонус за стек: +25% → +30% (макс +900%)',
+        apply: (params) => { params.bonusPerStack = 0.30; }
+      },
+      10: {
+        icon: '👑',
+        name: 'Атомная бомба',
+        description: 'Неограниченные стеки, но 2% шанс обнуления после 30 стеков',
+        apply: (params) => { 
+          params.maxStacks = Infinity; 
+          params.safeStacks = 30; 
+          params.resetChance = 0.02; 
+        }
+      }
+    },
+    
+    shopDescription: 'Разогревается до невероятных температур.',
+    
     gradient: 'radial-gradient(circle at 30% 30%, #ff6f00, #bf360c)',
     shadow: '0 0 60px rgba(255,100,0,0.6), 0 0 120px rgba(255,100,0,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,100,0,0.2)',
     accentColor: '#ff6f00'
   },
+
+  // ============================================================
+  // ⚡ ЭЛЕКТРИЧЕСКАЯ ЛУНА
+  // ============================================================
   electric: {
-    id: 'electric', name: 'Электрическая', emoji: '⚡', cost: 250000, unlockLevel: 25, rarity: 'epic',
-    damageBonus: 0.20, shardBonus: 0.20, critChanceBonus: 0.04, critDamageBonus: 0.15,
-    specialMechanic: 'megaStrike', specialName: 'Мега-разряд',
-    specialDescription: 'Каждый 20-й клик: x10 урон',
-    specialValue: 10, specialInterval: 20,
-    description: 'Накапливает заряд для разрушительного удара',
+    id: 'electric',
+    name: 'Электрическая',
+    emoji: '⚡',
+    cost: 500000,      // x2 от 250000
+    unlockLevel: 25,
+    rarity: 'epic',
+    
+    baseStats: {
+      damageBonus: 0.50,
+      shardBonus: 0.50,
+      critChanceBonus: 0.05,
+      critDamageBonus: 0.50
+    },
+    
+    specialMechanic: 'chainLightning',
+    specialName: 'Цепная молния',
+    specialDescription: 'Шанс вызвать молнию: 25%→x2, 5%→x5, 1%→x10',
+    
+    mechanicParams: {
+      chanceX2: 0.25,
+      chanceX5: 0.05,
+      chanceX10: 0.01,
+      pityBonus: 0,
+      pityMax: 0,
+      superconductorBonus: 0,
+      superconductorClicks: 0,
+      clickDamageBonusPerLevel: 1
+    },
+    
+    milestones: {
+      3: {
+        icon: '🎯',
+        name: 'Усиленный разряд',
+        description: 'Шансы: 30%→x2, 7%→x5, 2%→x10',
+        apply: (params) => { 
+          params.chanceX2 = 0.30; 
+          params.chanceX5 = 0.07; 
+          params.chanceX10 = 0.02; 
+        }
+      },
+      5: {
+        icon: '🎯',
+        name: 'Накопление заряда',
+        description: 'Каждый клик без молнии: +2% к шансу (макс +20%)',
+        apply: (params) => { 
+          params.pityBonus = 0.02; 
+          params.pityMax = 0.20; 
+        }
+      },
+      7: {
+        icon: '🎯',
+        name: 'Сверхпроводник',
+        description: 'При x5+: следующие 3 клика получают +50% к базовому урону',
+        apply: (params) => { 
+          params.superconductorBonus = 0.50; 
+          params.superconductorClicks = 3; 
+        }
+      },
+      10: {
+        icon: '👑',
+        name: 'Громовержец',
+        description: 'Шансы: 40%→x2, 10%→x5, 3%→x10',
+        apply: (params) => { 
+          params.chanceX2 = 0.40; 
+          params.chanceX5 = 0.10; 
+          params.chanceX10 = 0.03; 
+        }
+      }
+    },
+    
+    shopDescription: 'Хаотичные разряды огромной мощности.',
+    
     gradient: 'radial-gradient(circle at 30% 30%, #fff176, #fdd835)',
     shadow: '0 0 60px rgba(255,235,59,0.6), 0 0 120px rgba(255,235,59,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,235,59,0.2)',
     accentColor: '#fdd835'
   },
+
+  // ============================================================
+  // 👑 ЗОЛОТАЯ ЛУНА
+  // ============================================================
   gold: {
-    id: 'gold', name: 'Золотая', emoji: '👑', cost: 1000000, unlockLevel: 30, rarity: 'legendary',
-    damageBonus: 0.15, shardBonus: 0.70, critChanceBonus: 0.02, critDamageBonus: 0.10,
-    specialMechanic: 'goldRush', specialName: 'Золотой дождь',
+    id: 'gold',
+    name: 'Золотая',
+    emoji: '👑',
+    cost: 2000000,     // x2 от 1000000
+    unlockLevel: 30,
+    rarity: 'legendary',
+    
+    baseStats: {
+      damageBonus: 0.10,
+      shardBonus: 2.00,
+      critChanceBonus: 0.01,
+      critDamageBonus: 0.10
+    },
+    
+    specialMechanic: 'goldRush',
+    specialName: 'Золотой дождь',
     specialDescription: 'x2 осколков с обычных, x3 с боссов',
-    specialValueNormal: 2, specialValueBoss: 3,
-    description: 'Притягивает богатство из космоса',
+    
+    mechanicParams: {
+      normalMultiplier: 2,
+      bossMultiplier: 3,
+      goldenClickChance: 0,
+      goldenClickReward: 0,
+      shardToDamageRatio: 0
+    },
+    
+    milestones: {
+      3: {
+        icon: '🎯',
+        name: 'Золотой клик I',
+        description: '5% шанс получить +50 💎 за клик',
+        apply: (params) => { 
+          params.goldenClickChance = 0.05; 
+          params.goldenClickReward = 50; 
+        }
+      },
+      5: {
+        icon: '🎯',
+        name: 'Золотой клик II',
+        description: '5% шанс получить +100 💎 за клик',
+        apply: (params) => { 
+          params.goldenClickChance = 0.05; 
+          params.goldenClickReward = 100; 
+        }
+      },
+      7: {
+        icon: '🎯',
+        name: 'Щедрость',
+        description: 'Множители: x2/x3 → x3/x4',
+        apply: (params) => { 
+          params.normalMultiplier = 3; 
+          params.bossMultiplier = 4; 
+        }
+      },
+      10: {
+        icon: '👑',
+        name: 'Золотой дождь',
+        description: '+0.1% урона от текущего количества осколков',
+        apply: (params) => { params.shardToDamageRatio = 0.001; }
+      }
+    },
+    
+    shopDescription: 'Превращает клики в золото.',
+    
     gradient: 'radial-gradient(circle at 30% 30%, #fff9c4, #ffd700)',
     shadow: '0 0 60px rgba(255,215,0,0.6), 0 0 120px rgba(255,215,0,0.3), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(255,215,0,0.2)',
     accentColor: '#ffd700'
   },
+
+  // ============================================================
+  // ✨ КОСМИЧЕСКАЯ ЛУНА
+  // ============================================================
   cosmic: {
-    id: 'cosmic', name: 'Космическая', emoji: '✨', cost: 5000000, unlockLevel: 40, rarity: 'mythic',
-    damageBonus: 0.35, shardBonus: 0.40, critChanceBonus: 0.03, critDamageBonus: 0.20,
-    specialMechanic: 'scaling', specialName: 'Космическая мощь',
-    specialDescription: '+1% к урону и +0.25% к осколкам за каждый уровень игрока',
-    specialDamagePerLevel: 0.01, specialShardPerLevel: 0.0025,
-    description: 'Сила вселенной растет вместе с вами',
+    id: 'cosmic',
+    name: 'Космическая',
+    emoji: '✨',
+    cost: 50000000,    // 50 миллионов!
+    unlockLevel: 40,
+    rarity: 'mythic',
+    
+    baseStats: {
+      damageBonus: 0,
+      shardBonus: 0,
+      critChanceBonus: 0,
+      critDamageBonus: 0
+    },
+    
+    specialMechanic: 'scaling',
+    specialName: 'Космическая мощь',
+    specialDescription: '+1% урона, +0.25% осколков, +0.25% крит урона за уровень',
+    
+    mechanicParams: {
+      damagePerLevel: 0.01,
+      shardPerLevel: 0.0025,
+      critDamagePerLevel: 0.0025,
+      supernovaTriggered: false
+    },
+    
+    milestones: {
+      3: {
+        icon: '🎯',
+        name: 'Космический рост',
+        description: 'Бонус урона за уровень: +1% → +2%',
+        apply: (params) => { params.damagePerLevel = 0.02; }
+      },
+      5: {
+        icon: '🎯',
+        name: 'Космическое богатство',
+        description: 'Бонус осколков за уровень: +0.25% → +1%',
+        apply: (params) => { params.shardPerLevel = 0.01; }
+      },
+      7: {
+        icon: '🎯',
+        name: 'Космический резонанс',
+        description: 'Бонус крит урона за уровень: +0.25% → +1%',
+        apply: (params) => { params.critDamagePerLevel = 0.01; }
+      },
+      10: {
+        icon: '👑',
+        name: 'Сверхновая',
+        description: 'Визуальный взрыв вселенной! (шуточный финал)',
+        apply: (params) => { params.supernovaAvailable = true; }
+      }
+    },
+    
+    shopDescription: 'Сила самой вселенной. Растёт бесконечно.',
+    
     gradient: 'radial-gradient(circle at 30% 30%, #e1bee7, #4a148c, #1a237e)',
     shadow: '0 0 80px rgba(156,39,176,0.8), 0 0 160px rgba(63,81,181,0.4), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(233,30,99,0.3)',
     accentColor: '#9c27b0'
@@ -144,7 +629,7 @@ export const MOON_TYPES = {
 };
 
 // ============================================================
-// СИНЕРГИИ
+// СИНЕРГИИ (без изменений)
 // ============================================================
 export const SYNERGY_BONUSES = {
   'blood+fire': { name: 'Адское пламя', tier: 1, tierName: 'Начальная', tierColor: '#8bc34a', damageBonus: 0.25, shardBonus: 0, critChanceBonus: 0.02, critDamageBonus: 0.15, icon: '🔥', description: 'Огонь и кровь питают друг друга', auraCombo: ['aura-blood', 'aura-fire'] },
@@ -193,7 +678,7 @@ export const ACHIEVEMENTS = {
 };
 
 // ============================================================
-// КВЕСТЫ
+// КВЕСТЫ (без изменений)
 // ============================================================
 export const QUESTS = {
   clickDaily100: { id: 'clickDaily100', category: 'clicker', categoryName: 'Кликер', icon: '👆', name: 'Утренняя разминка', description: 'Сделайте 100 кликов за день', target: 100, reward: 20, bonusReward: 10, type: 'click', difficulty: 'easy', color: '#4caf50' },
@@ -228,3 +713,35 @@ export const RARITY_CONFIG = {
   legendary: { name: 'Легендарная', color: '#ff9800', gradient: 'linear-gradient(135deg, #ff9800, #e65100)' },
   mythic: { name: 'Мифическая', color: '#e91e63', gradient: 'linear-gradient(135deg, #e91e63, #880e4f)' }
 };
+
+// ============================================================
+// ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: Получить актуальные параметры механики
+// с учётом уровня прокачки луны
+// ============================================================
+export function getMoonMechanicParams(moonId, moonLevel) {
+  const moon = MOON_TYPES[moonId];
+  if (!moon) return null;
+  
+  // Клонируем базовые параметры
+  const params = { ...moon.mechanicParams };
+  
+  // Применяем все милестоуны до текущего уровня
+  for (let lvl = 1; lvl <= moonLevel; lvl++) {
+    if (moon.milestones[lvl]) {
+      moon.milestones[lvl].apply(params);
+    }
+  }
+  
+  return params;
+}
+
+// ============================================================
+// ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: Получить цену прокачки луны
+// ============================================================
+export function getMoonUpgradeCostForLevel(moonId, currentLevel) {
+  const moon = MOON_TYPES[moonId];
+  if (!moon || currentLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL) return Infinity;
+  
+  const baseCost = MOON_UPGRADE_BASE_COSTS[moon.rarity] || 100;
+  return Math.floor(baseCost * Math.pow(1.5, currentLevel));
+}
