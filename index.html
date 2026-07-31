@@ -16,17 +16,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="css/galaxy.css?v=6">
-  <link rel="stylesheet" href="css/panel.css?v=6">
-  <link rel="stylesheet" href="css/modal.css?v=6">
-  <link rel="stylesheet" href="css/game.css?v=6">
-  <link rel="stylesheet" href="css/responsive.css?v=6">
+  <link rel="stylesheet" href="css/galaxy.css?v=7">
+  <link rel="stylesheet" href="css/panel.css?v=7">
+  <link rel="stylesheet" href="css/modal.css?v=7">
+  <link rel="stylesheet" href="css/game.css?v=7">
+  <link rel="stylesheet" href="css/responsive.css?v=7">
 </head>
 <body>
-  <!-- ЗВЁЗДНОЕ НЕБО -->
+  <!-- ============================================================ -->
+  <!-- ЗВЁЗДНОЕ НЕБО (ФОН) -->
+  <!-- ============================================================ -->
   <div id="stars"></div>
   
+  <!-- ============================================================ -->
   <!-- TOAST УВЕДОМЛЕНИЯ -->
+  <!-- ============================================================ -->
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- ============================================================ -->
@@ -56,7 +60,9 @@
   <!-- ============================================================ -->
   <div id="app" class="app hidden">
     
-    <!-- ЛУНА ПО ЦЕНТРУ -->
+    <!-- ============================================================ -->
+    <!-- ЛУНА (ПО ЦЕНТРУ ЭКРАНА) -->
+    <!-- ============================================================ -->
     <div id="moonContainer" class="moon-container">
       <div id="moonWrapper" class="moon-wrapper">
         <div id="moonInner" class="moon-inner"></div>
@@ -64,7 +70,9 @@
       </div>
     </div>
 
-    <!-- ИНФО ПОД ЛУНОЙ -->
+    <!-- ============================================================ -->
+    <!-- ИНФО ПОД ЛУНОЙ (счётчик, уровень, таймер, HP) -->
+    <!-- ============================================================ -->
     <div class="moon-info-below">
       <div class="info-row-top">
         <div id="counter" class="counter">💎 0</div>
@@ -82,13 +90,17 @@
       </div>
     </div>
 
-    <!-- БОКОВАЯ КНОПКА: ПРОФИЛЬ (СЛЕВА) -->
+    <!-- ============================================================ -->
+    <!-- БОКОВАЯ КНОПКА: ПРОФИЛЬ (СЛЕВА) - TOGGLE -->
+    <!-- ============================================================ -->
     <button id="profileToggleBtn" class="side-toggle-btn side-toggle-left" onclick="window.togglePanel('profilePanel')">
       <span class="toggle-icon">👤</span>
       <span class="toggle-label">Профиль</span>
     </button>
 
-    <!-- БОКОВАЯ КНОПКА: МАГАЗИН (СПРАВА) -->
+    <!-- ============================================================ -->
+    <!-- БОКОВАЯ КНОПКА: МАГАЗИН (СПРАВА) - TOGGLE -->
+    <!-- ============================================================ -->
     <button id="shopToggleBtn" class="side-toggle-btn side-toggle-right" onclick="window.togglePanel('shopPanel')">
       <span class="toggle-icon">🛒</span>
       <span class="toggle-label">Магазин</span>
@@ -96,15 +108,9 @@
 
     <!-- ============================================================ -->
     <!-- ПАНЕЛЬ: ПРОФИЛЬ (СЛЕВА) -->
+    <!-- С вкладками: Профиль / Топ / Настройки -->
     <!-- ============================================================ -->
     <div id="profilePanel" class="panel panel-left hidden">
-      <!-- Кнопка закрытия сбоку от панели -->
-      <button class="panel-close-tab" onclick="window.closePanel('profilePanel')" title="Закрыть">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-      </button>
-      
       <div class="panel-header">
         <div class="panel-tabs">
           <button class="panel-tab active" data-tab="profile" onclick="window.switchProfileTab('profile')">👤 Профиль</button>
@@ -136,19 +142,20 @@
           </div>
         </div>
       </div>
+      
+      <!-- КНОПКА ЗАКРЫТИЯ НА КРАЮ ПАНЕЛИ (СПРАВА ОТ НЕЁ) -->
+      <button class="panel-edge-close panel-edge-close-left" onclick="window.closePanel('profilePanel')" title="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
     </div>
 
     <!-- ============================================================ -->
     <!-- ПАНЕЛЬ: МАГАЗИН (СПРАВА) -->
+    <!-- С вкладками: Магазин / Квесты / Ачивки -->
     <!-- ============================================================ -->
     <div id="shopPanel" class="panel panel-right hidden">
-      <!-- Кнопка закрытия сбоку от панели -->
-      <button class="panel-close-tab shop-close" onclick="window.closePanel('shopPanel')" title="Закрыть">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </button>
-      
       <div class="panel-header">
         <div class="panel-tabs">
           <button class="panel-tab active" data-tab="shop" onclick="window.switchShopTab('shop')">🛒 Магазин</button>
@@ -205,6 +212,13 @@
           <div id="achievementsList" class="achievements-list"></div>
         </div>
       </div>
+      
+      <!-- КНОПКА ЗАКРЫТИЯ НА КРАЮ ПАНЕЛИ (СЛЕВА ОТ НЕЁ) -->
+      <button class="panel-edge-close panel-edge-close-right" onclick="window.closePanel('shopPanel')" title="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
     </div>
 
   </div>
@@ -224,10 +238,14 @@
     </div>
   </div>
 
+  <!-- ============================================================ -->
   <!-- SUPABASE CDN -->
+  <!-- ============================================================ -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.1/dist/umd/supabase.min.js"></script>
   
-  <!-- ОСНОВНОЙ СКРИПТ -->
-  <script type="module" src="src/index.js?v=6"></script>
+  <!-- ============================================================ -->
+  <!-- ОСНОВНОЙ СКРИПТ ПРИЛОЖЕНИЯ -->
+  <!-- ============================================================ -->
+  <script type="module" src="src/index.js?v=7"></script>
 </body>
 </html>
