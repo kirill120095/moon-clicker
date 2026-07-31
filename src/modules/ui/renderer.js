@@ -98,6 +98,7 @@ export function updateUI() {
     _updateRollbackButton();
     _updateMoonStyle();
     _updateMoonAuras();
+    updateBuffsDisplay(); // НОВОЕ: обновляем бафы
   });
 }
 
