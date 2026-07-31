@@ -1860,3 +1860,114 @@
     transform: translateY(-50%) scale(1);
   }
 }
+
+
+/* ============================================================
+   КНОПКИ ЗАКРЫТИЯ НА КРАЮ ПАНЕЛЕЙ
+   ============================================================ */
+.panel-edge-close {
+  position: absolute;
+  top: 50%;
+  width: 32px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(21, 26, 46, 0.95), rgba(30, 36, 64, 0.95));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: none; /* Скрыта по умолчанию */
+  align-items: center;
+  justify-content: center;
+  z-index: 102;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  padding: 0;
+  transform: translateY(-50%);
+}
+
+/* Показываем только когда панель открыта */
+.panel:not(.hidden) .panel-edge-close {
+  display: flex;
+}
+
+.panel-edge-close:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 152, 0, 0.2));
+  border-color: rgba(255, 215, 0, 0.5);
+  color: var(--accent-gold);
+  width: 38px;
+}
+
+.panel-edge-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Для ЛЕВОЙ панели - кнопка закрытия СПРАВА от края */
+.panel-edge-close-left {
+  right: -32px;
+  border-radius: 0 10px 10px 0;
+  border-left: none;
+}
+
+.panel-edge-close-left:hover {
+  right: -38px;
+}
+
+/* Для ПРАВОЙ панели - кнопка закрытия СЛЕВА от края */
+.panel-edge-close-right {
+  left: -32px;
+  border-radius: 10px 0 0 10px;
+  border-right: none;
+}
+
+.panel-edge-close-right:hover {
+  left: -38px;
+}
+
+/* Анимация появления кнопки */
+.panel:not(.hidden) .panel-edge-close {
+  animation: edgeCloseAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+@keyframes edgeCloseAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+/* ============================================================
+   ИНДИКАТОРЫ МЕХАНИК ЛУН (опционально)
+   ============================================================ */
+.moon-mechanic-indicator {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Эффект МЕГА-РАЗРЯДА */
+@keyframes megaStrikeFlash {
+  0% { box-shadow: 0 0 60px rgba(255, 235, 59, 0.8); }
+  50% { box-shadow: 0 0 200px rgba(255, 235, 59, 1), 0 0 400px rgba(255, 235, 59, 0.5); }
+  100% { box-shadow: 0 0 60px rgba(255, 235, 59, 0.8); }
+}
+
+.moon-wrapper.mega-strike {
+  animation: megaStrikeFlash 0.5s ease-out;
+}
