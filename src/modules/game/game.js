@@ -1,5 +1,5 @@
 // ============================================================
-// ОСНОВНАЯ ИГРОВАЯ ЛОГИКА - ОПТИМИСТИЧНЫЙ UI
+// ОСНОВНАЯ ИГРОВАЯ ЛОГИКА - ОПТИМИСТИЧНЫЙ UI + СИСТЕМА БАФОВ
 // ============================================================
 import { appState, state } from '../../core/state.js';
 import { 
@@ -23,21 +23,24 @@ export class GameEngine {
     this.combat = new CombatSystem();
     this.rewards = new RewardSystem();
     
-    // УБРАЛИ isProcessing для кликов - теперь только для покупок
     this._isPurchaseProcessing = false;
-    
     this._lastSave = 0;
     this._saveInterval = CONSTANTS.INTERVALS.SAVE_TIME;
     this._lastClickEvent = null;
     
-    // Простой throttle через timestamp последнего клика
+    // Throttle
     this._lastClickTime = 0;
-    this._minClickInterval = 16; // ~60 кликов/сек (1 кадр при 60fps)
+    this._minClickInterval = 16;
     
-    // Счётчики для механик лун
-    this._comboClicks = 0;      // Обычная: сбрасывается каждые 10
-    this._fireStacks = 0;       // Огненная: растёт каждые 5, макс 15
-    this._clickCounter = 0;     // Электрическая: сбрасывается на 20
+    // Счётчики механик лун
+    this._comboClicks = 0;
+    this._fireStacks = 0;
+    this._clickCounter = 0;
+    
+    // НОВОЕ: Таймер активности для сброса временных бафов
+    this._lastActivityTime = Date.now();
+    this._activityCheckInterval = null;
+    this._ACTIVITY_TIMEOUT = 15000; // 15 секунд бездействия
     
     // Подписки
     this._unsubscribeMain = appState.subscribeMany(
@@ -59,10 +62,12 @@ export class GameEngine {
 
     this._startTimeTracking();
     this._startAutoSave();
+    this._startActivityCheck(); // НОВОЕ: запускаем проверку активности
     this._checkBoss();
     this.recalcMoonBonuses();
     this._ensureDailyQuests();
     this.checkAchievements();
+    this._updateBuffsDisplay(); // НОВОЕ: первичное отображение бафов
 
     updateUI();
     updateTimerBar();
@@ -74,14 +79,43 @@ export class GameEngine {
   }
 
   // ============================================================
-  // ОБРАБОТКА КЛИКА - ОПТИМИСТИЧНАЯ, БЕЗ БЛОКИРОВКИ
+  // НОВОЕ: ПРОВЕРКА АКТИВНОСТИ (сброс бафов через 15с бездействия)
+  // ============================================================
+  _startActivityCheck() {
+    if (this._activityCheckInterval) clearInterval(this._activityCheckInterval);
+    
+    this._activityCheckInterval = setInterval(() => {
+      const timeSinceLastClick = Date.now() - this._lastActivityTime;
+      
+      if (timeSinceLastClick >= this._ACTIVITY_TIMEOUT) {
+        let reset = false;
+        
+        if (this._comboClicks > 0) {
+          this._comboClicks = 0;
+          reset = true;
+        }
+        if (this._fireStacks > 0) {
+          this._fireStacks = 0;
+          reset = true;
+        }
+        
+        if (reset) {
+          // Визуальный эффект сброса
+          showToast('💨 Бафы сброшены (бездействие)', 'info', 1500);
+        }
+      }
+      
+      // Обновляем отображение бафов (таймеры, прогресс)
+      this._updateBuffsDisplay();
+    }, 500);
+  }
+
+  // ============================================================
+  // ОБРАБОТКА КЛИКА
   // ============================================================
   handleClick = (e) => {
-    // Простой throttle
     const now = performance.now();
-    if (now - this._lastClickTime < this._minClickInterval) {
-      return;
-    }
+    if (now - this._lastClickTime < this._minClickInterval) return;
     this._lastClickTime = now;
 
     if (!state.user) {
@@ -90,31 +124,24 @@ export class GameEngine {
     }
     if (state.moonHP <= 0) return;
 
-    // МГНОВЕННАЯ ОБРАБОТКА - без await, без блокировки
+    // НОВОЕ: Обновляем время последней активности
+    this._lastActivityTime = Date.now();
+
     this._processClickSync(e);
   };
 
-  /**
-   * СИНХРОННАЯ обработка клика - мгновенно
-   * Все сетевые операции в фоне
-   */
   _processClickSync(e) {
     const baseDamage = state.playerData?.click_damage || 1;
     const isBoss = isBossLevel(state.currentLevel, CONSTANTS.BOSS_INTERVAL);
     
-    // Рассчитываем все бонусы
     const bonuses = this._calculateAllBonuses();
-    
-    // Применяем механики лун
     const { finalDamage, isCrit, specialEffect } = this._applyMoonMechanics(
       baseDamage, bonuses, isBoss
     );
     
-    // Увеличиваем счётчик кликов
     appState.incrementClickCount();
     animations.setBaseDamage(baseDamage);
     
-    // Обновляем HP (синхронно)
     let killed = false;
     if (state.testMode) {
       appState.set('moonHP', 0);
@@ -125,12 +152,10 @@ export class GameEngine {
       killed = newHP === 0;
     }
     
-    // МГНОВЕННЫЙ ВИЗУАЛ
     this._lastClickEvent = e;
     if (e) {
       animations.playClickVisualFeedback(e, finalDamage, isCrit, isBoss);
       
-      // Спецэффект от механик
       if (specialEffect === 'megaStrike') {
         animations.createParticles(null, {
           count: 40, color: '#fdd835', size: 8,
@@ -147,26 +172,21 @@ export class GameEngine {
     }
     
     this._applyClickEffect();
-    
-    // Обновляем квесты по кликам
     this.updateQuestProgress('click', 1);
     
-    // Обновляем UI (мгновенно)
+    // НОВОЕ: Обновляем отображение бафов после клика
+    this._updateBuffsDisplay();
+    
     updateUI();
     updateQuestUI();
     
-    // СОХРАНЕНИЕ В ФОНЕ - не блокирует
     this._scheduleSave();
     
-    // Если убили - обрабатываем победу (асинхронно, но не блокирует клики)
     if (killed) {
       this._onMoonDefeated(isBoss);
     }
   }
 
-  /**
-   * Расчёт всех бонусов (детерминированный)
-   */
   _calculateAllBonuses() {
     let totalDamageBonus = 0;
     let totalShardBonus = 0;
@@ -175,7 +195,6 @@ export class GameEngine {
     
     const activeIds = (state.activeMoons || []).slice(0, state.maxSlots);
     
-    // Бонусы от активных лун
     activeIds.forEach(id => {
       const moon = MOON_TYPES[id];
       if (!moon) return;
@@ -183,7 +202,6 @@ export class GameEngine {
       const level = appState.getMoonLevel(id);
       const levelMultiplier = 1 + (level - 1) * 0.05;
       
-      // КОСМИЧЕСКАЯ: масштабирование от уровня игрока
       let cosmicDamageBonus = 0;
       let cosmicShardBonus = 0;
       if (moon.specialMechanic === 'scaling') {
@@ -197,7 +215,6 @@ export class GameEngine {
       totalCritDamageBonus += (moon.critDamageBonus || 0) * levelMultiplier;
     });
     
-    // Бонусы от синергий (детерминированно через сортировку)
     if (activeIds.length > 1 && state.maxSlots > 1) {
       const sortedActive = [...activeIds].sort();
       
@@ -211,7 +228,6 @@ export class GameEngine {
         }
       }
       
-      // Бонус за обычную луну с другими
       if (sortedActive.includes('normal') && sortedActive.length > 1) {
         totalDamageBonus += 0.05;
         totalShardBonus += 0.05;
@@ -226,16 +242,11 @@ export class GameEngine {
     };
   }
 
-  /**
-   * Применение механик лун
-   * @returns {{finalDamage, isCrit, specialEffect}}
-   */
   _applyMoonMechanics(baseDamage, bonuses, isBoss) {
     const mechanics = this._getActiveMechanics();
     let damageMultiplier = 1 + bonuses.totalDamageBonus;
     let specialEffect = null;
     
-    // ОБЫЧНАЯ: Комбо-мастер - каждые 10 кликов +5% (до +50%)
     if (mechanics.includes('combo')) {
       this._comboClicks++;
       const comboStacks = Math.min(Math.floor(this._comboClicks / 10), 10);
@@ -243,19 +254,16 @@ export class GameEngine {
       if (this._comboClicks >= 100) this._comboClicks = 0;
     }
     
-    // ОГНЕННАЯ: каждые 5 кликов +10% (макс 15 стеков = +150%)
     if (mechanics.includes('fireStacks')) {
-      this._fireStacks = Math.min(this._fireStacks + 1, 75); // 75 = 15 стеков * 5
+      this._fireStacks = Math.min(this._fireStacks + 1, 75);
       const fireStacks = Math.floor(this._fireStacks / 5);
       damageMultiplier += fireStacks * 0.10;
       
-      // Визуальный сигнал каждые 5 кликов
       if (this._fireStacks % 5 === 0 && this._fireStacks > 0 && this._fireStacks <= 75) {
         specialEffect = 'fireStack';
       }
     }
     
-    // ЭЛЕКТРИЧЕСКАЯ: каждый 20-й клик x10 урон
     if (mechanics.includes('megaStrike')) {
       this._clickCounter++;
       if (this._clickCounter >= 20) {
@@ -265,18 +273,15 @@ export class GameEngine {
       }
     }
     
-    // КРОВАВАЯ: при HP босса < 50%: +60% к урону
     if (mechanics.includes('bloodMoon') && isBoss) {
       const hpRatio = state.moonHP / state.maxHP;
       if (hpRatio < 0.5) {
-        damageMultiplier += 0.60;
+        damageMultiplier += 1.00;
       }
     }
     
-    // Применяем множитель к базовому урону
     let finalDamage = Math.max(1, Math.round(baseDamage * damageMultiplier));
     
-    // Критический удар
     const critChance = Math.min(0.95, 0.05 + bonuses.totalCritChanceBonus);
     const isCrit = Math.random() < critChance;
     
@@ -288,9 +293,6 @@ export class GameEngine {
     return { finalDamage, isCrit, specialEffect };
   }
 
-  /**
-   * Получение активных механик
-   */
   _getActiveMechanics() {
     const mechanics = [];
     const activeIds = (state.activeMoons || []).slice(0, state.maxSlots);
@@ -303,9 +305,184 @@ export class GameEngine {
     return mechanics;
   }
 
-  /**
-   * Победа над луной/боссом (асинхронно, не блокирует клики)
-   */
+  // ============================================================
+  // НОВОЕ: ПОЛУЧЕНИЕ СПИСКА АКТИВНЫХ БАФОВ ДЛЯ UI
+  // ============================================================
+  _getActiveBuffs() {
+    const buffs = [];
+    const mechanics = this._getActiveMechanics();
+    const isBoss = isBossLevel(state.currentLevel, CONSTANTS.BOSS_INTERVAL);
+    const timeLeft = Math.max(0, Math.ceil((this._ACTIVITY_TIMEOUT - (Date.now() - this._lastActivityTime)) / 1000));
+    
+    // 🌙 КОМБО-МАСТЕР (обычная луна) - СБРАСЫВАЕТСЯ ЧЕРЕЗ 15с
+    if (mechanics.includes('combo')) {
+      const comboProgress = this._comboClicks % 10;
+      const comboStacks = Math.min(Math.floor(this._comboClicks / 10), 10);
+      
+      buffs.push({
+        id: 'combo',
+        icon: '🌙',
+        name: 'Комбо',
+        value: comboStacks,
+        maxStacks: 10,
+        progress: comboProgress,
+        progressMax: 10,
+        bonus: `+${comboStacks * 5}% урон`,
+        timeLeft: this._comboClicks > 0 ? timeLeft : null,
+        isActive: comboStacks > 0,
+        isMaxed: comboStacks >= 10,
+        isTemporary: true
+      });
+    }
+    
+    // 🔥 НАКОПЛЕНИЕ ЖАРА (огненная) - СБРАСЫВАЕТСЯ ЧЕРЕЗ 15с
+    if (mechanics.includes('fireStacks')) {
+      const fireStacks = Math.floor(this._fireStacks / 5);
+      const fireProgress = this._fireStacks % 5;
+      
+      buffs.push({
+        id: 'fire',
+        icon: '🔥',
+        name: 'Жар',
+        value: fireStacks,
+        maxStacks: 15,
+        progress: fireProgress,
+        progressMax: 5,
+        bonus: `+${fireStacks * 10}% урон`,
+        timeLeft: this._fireStacks > 0 ? timeLeft : null,
+        isActive: fireStacks > 0,
+        isMaxed: fireStacks >= 15,
+        isTemporary: true
+      });
+    }
+    
+    // ⚡ МЕГА-РАЗРЯД (электрическая)
+    if (mechanics.includes('megaStrike')) {
+      const isReady = this._clickCounter >= 18;
+      buffs.push({
+        id: 'electric',
+        icon: '⚡',
+        name: 'Заряд',
+        value: this._clickCounter,
+        maxStacks: 20,
+        progress: this._clickCounter,
+        progressMax: 20,
+        bonus: isReady ? '⚡ ГОТОВ x10!' : `${20 - this._clickCounter} до x10`,
+        timeLeft: null,
+        isActive: this._clickCounter > 0,
+        isMaxed: isReady,
+        isTemporary: false
+      });
+    }
+    
+    // 🩸 КРОВАВАЯ ЖАТВА (активна при HP < 50% у босса)
+    if (mechanics.includes('bloodMoon') && isBoss) {
+      const hpRatio = state.moonHP / state.maxHP;
+      const isActive = hpRatio < 0.5;
+      const percentToActive = Math.max(0, Math.round((0.5 - hpRatio) * 200));
+      
+      buffs.push({
+        id: 'blood',
+        icon: '🩸',
+        name: 'Кровавая жатва',
+        value: isActive ? 100 : percentToActive,
+        maxStacks: 100,
+        progress: isActive ? 100 : percentToActive,
+        progressMax: 100,
+        bonus: isActive ? '💀 +100% УРОН' : `${Math.round(hpRatio * 100)}% HP`,
+        timeLeft: null,
+        isActive: isActive,
+        isMaxed: isActive,
+        isTemporary: false,
+        isConditional: true
+      });
+    }
+    
+    // ❄️ ЗАМОРОЗКА (ледяная - активна во время босса)
+    if (mechanics.includes('freeze') && isBoss) {
+      buffs.push({
+        id: 'freeze',
+        icon: '❄️',
+        name: 'Заморозка',
+        value: 25,
+        maxStacks: 25,
+        progress: 25,
+        progressMax: 25,
+        bonus: '+25% времени',
+        timeLeft: null,
+        isActive: true,
+        isMaxed: true,
+        isPassive: true
+      });
+    }
+    
+    // 🌑 ТЕНЕВОЙ УДАР (+100% крит урон)
+    if (mechanics.includes('shadowCrit')) {
+      buffs.push({
+        id: 'shadow',
+        icon: '🌑',
+        name: 'Теневой удар',
+        value: 100,
+        maxStacks: 100,
+        progress: 100,
+        progressMax: 100,
+        bonus: '+100% крит урон',
+        timeLeft: null,
+        isActive: true,
+        isMaxed: true,
+        isPassive: true
+      });
+    }
+    
+    // ✨ КОСМИЧЕСКАЯ МОЩЬ (+1% урон, +0.25% осколки за уровень)
+    if (mechanics.includes('scaling')) {
+      const level = state.currentLevel;
+      buffs.push({
+        id: 'cosmic',
+        icon: '✨',
+        name: 'Космос',
+        value: level,
+        maxStacks: 100,
+        progress: Math.min(level, 100),
+        progressMax: 100,
+        bonus: `+${level}% урон, +${(level * 0.25).toFixed(1)}% 💎`,
+        timeLeft: null,
+        isActive: true,
+        isMaxed: level >= 100,
+        isPassive: true
+      });
+    }
+    
+    // 👑 ЗОЛОТОЙ ДОЖДЬ (x2/x3 осколков)
+    if (mechanics.includes('goldRush')) {
+      buffs.push({
+        id: 'gold',
+        icon: '👑',
+        name: 'Золотой дождь',
+        value: 100,
+        maxStacks: 100,
+        progress: 100,
+        progressMax: 100,
+        bonus: 'x2 / x3 💎',
+        timeLeft: null,
+        isActive: true,
+        isMaxed: true,
+        isPassive: true
+      });
+    }
+    
+    return buffs;
+  }
+
+  _updateBuffsDisplay() {
+    const buffs = this._getActiveBuffs();
+    window._activeBuffs = buffs;
+    
+    if (typeof window.updateBuffsDisplay === 'function') {
+      window.updateBuffsDisplay();
+    }
+  }
+
   async _onMoonDefeated(isBoss) {
     if (state.levelLocked) {
       appState.set('moonHP', state.maxHP);
@@ -317,12 +494,10 @@ export class GameEngine {
     const bonuses = this._calculateAllBonuses();
     const mechanics = this._getActiveMechanics();
     
-    // Базовая награда
     let reward = this.rewards.calculateShardReward(
       state.currentLevel, isBoss, bonuses.totalShardBonus
     );
     
-    // ЗОЛОТАЯ: x2 с обычных, x3 с боссов
     if (mechanics.includes('goldRush')) {
       const goldMoon = MOON_TYPES.gold;
       const multiplier = isBoss ? goldMoon.specialValueBoss : goldMoon.specialValueNormal;
@@ -356,14 +531,12 @@ export class GameEngine {
     
     this._applyLevelUpEffect();
     
-    // СБРАСЫВАЕМ СЧЁТЧИКИ МЕХАНИК при смене уровня
+    // Сбрасываем все счётчики при смене уровня
     this._comboClicks = 0;
     this._fireStacks = 0;
     this._clickCounter = 0;
     
     this.checkAchievements();
-    
-    // СЕТЬ В ФОНЕ
     this._forceSave();
     
     updateUI();
@@ -372,6 +545,7 @@ export class GameEngine {
     updateProfileAndLeaders();
     updateQuestUI();
     updateAchievementUI();
+    this._updateBuffsDisplay();
     
     this._checkBoss();
     this.recalcMoonBonuses();
@@ -382,7 +556,6 @@ export class GameEngine {
       const mechanics = this._getActiveMechanics();
       let bossTimer = CONSTANTS.BOSS_TIMER;
       
-      // ЛЕДЯНАЯ: +25% к таймеру
       if (mechanics.includes('freeze')) {
         const iceMoon = MOON_TYPES.ice;
         const extraTime = Math.round(CONSTANTS.BOSS_TIMER * iceMoon.specialValue);
@@ -402,9 +575,6 @@ export class GameEngine {
     showToast('⏱️ Время вышло! Босс восстановил здоровье', 'warning');
   }
 
-  /**
-   * Публичный пересчёт бонусов для UI (сохраняем в window для синергий)
-   */
   recalcMoonBonuses() {
     const bonuses = this._calculateAllBonuses();
     const activeIds = (state.activeMoons || []).slice(0, state.maxSlots);
@@ -434,33 +604,28 @@ export class GameEngine {
       }
     }
     
-    // Сохраняем глобально для доступа из renderer
     window._totalDamageBonus = bonuses.totalDamageBonus;
     window._totalShardBonus = bonuses.totalShardBonus;
     window._totalCritChanceBonus = bonuses.totalCritChanceBonus;
     window._totalCritDamageBonus = bonuses.totalCritDamageBonus;
     window._activeSynergies = activeSynergies;
     
+    // Обновляем бафы (могли измениться пассивные)
+    this._updateBuffsDisplay();
+    
     return { ...bonuses, activeSynergies };
   }
 
-  /**
-   * Фоновое сохранение (не чаще раза в секунду)
-   */
   _scheduleSave() {
     const now = Date.now();
     if (now - this._lastSave < 1000) return;
     this._lastSave = now;
     
-    // Запускаем в фоне, не ждём
     this._saveProgress().catch(err => {
       console.error('[Game] Background save failed:', err);
     });
   }
 
-  /**
-   * Принудительное сохранение (при смене уровня)
-   */
   _forceSave() {
     this._lastSave = Date.now();
     this._saveProgress().catch(err => {
@@ -544,11 +709,9 @@ export class GameEngine {
     updateUI();
     updateProfileAndLeaders();
     this.recalcMoonBonuses();
+    this._updateBuffsDisplay();
   }
 
-  // ============================================================
-  // ТЕСТОВЫЙ РЕЖИМ
-  // ============================================================
   toggleTestMode() {
     const newMode = !state.testMode;
     appState.setTestMode(newMode);
@@ -566,9 +729,6 @@ export class GameEngine {
     updateProfileAndLeaders();
   }
 
-  // ============================================================
-  // ПОКУПКИ (С БЛОКИРОВКОЙ - сетевые операции)
-  // ============================================================
   async buyClickDamage() {
     if (this._isPurchaseProcessing) return;
     if (!state.user) {
@@ -755,7 +915,7 @@ export class GameEngine {
       showToast(`✅ Активирована луна "${MOON_TYPES[moonId].name}"`, 'success');
     }
     
-    // СБРАСЫВАЕМ СЧЁТЧИКИ МЕХАНИК при изменении активных лун
+    // Сбрасываем счётчики механик
     this._comboClicks = 0;
     this._fireStacks = 0;
     this._clickCounter = 0;
@@ -764,6 +924,7 @@ export class GameEngine {
     updateShopUI();
     updateProfileAndLeaders();
     this.recalcMoonBonuses();
+    this._updateBuffsDisplay();
   }
 
   async upgradeMoon(moonId) {
@@ -1052,6 +1213,7 @@ export class GameEngine {
       this._comboClicks = 0;
       this._fireStacks = 0;
       this._clickCounter = 0;
+      this._lastActivityTime = Date.now();
       
       if (state.user) {
         const userId = state.user.id;
@@ -1087,6 +1249,7 @@ export class GameEngine {
       updateShopUI();
       updateProfileAndLeaders();
       updateQuestAndAchievementUI();
+      this._updateBuffsDisplay();
       showToast('✅ Прогресс сброшен!', 'success');
       
     } catch (error) {
@@ -1113,6 +1276,7 @@ export class GameEngine {
     updateUI();
     updateTimerBar();
     updateProfileAndLeaders();
+    this._updateBuffsDisplay();
     showToast(`↩️ Откат до ${newLevel} уровня`, 'info');
   }
 
@@ -1128,6 +1292,11 @@ export class GameEngine {
     if (this._unsubscribeTimerRunning) {
       this._unsubscribeTimerRunning();
       this._unsubscribeTimerRunning = null;
+    }
+    
+    if (this._activityCheckInterval) {
+      clearInterval(this._activityCheckInterval);
+      this._activityCheckInterval = null;
     }
     
     if (state.timeUpdateInterval) {
