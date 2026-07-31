@@ -1,15 +1,19 @@
 // ============================================================
-// РЕНДЕРИНГ UI
+// РЕНДЕРИНГ UI - ОБНОВЛЁННАЯ СИСТЕМА ЛУН И ПРОКАЧКИ
 // ============================================================
 import { state, appState } from '../../core/state.js';
-import { CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, SYNERGY_BONUSES, RARITY_CONFIG } from '../../core/constants.js';
+import { 
+  CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, 
+  QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, 
+  SYNERGY_BONUSES, RARITY_CONFIG,
+  getMoonMechanicParams, getMoonUpgradeCostForLevel
+} from '../../core/constants.js';
 import { getMaxHPForLevel, getTitle } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
 import { uiScheduler } from '../../utils/performance.js';
 import { db } from '../network/supabase.js';
 
 let toastContainer = null;
-
 let currentQuestCategory = 'all';
 let currentAchievementCategory = 'all';
 
@@ -37,9 +41,7 @@ export function showToast(message, type = 'info', duration = 2000) {
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => {
-      if (toast.parentNode) {
-        toast.remove();
-      }
+      if (toast.parentNode) toast.remove();
     }, 300);
   }, duration);
 }
@@ -47,27 +49,15 @@ export function showToast(message, type = 'info', duration = 2000) {
 export function formatTime(seconds) {
   if (seconds < 0) seconds = 0;
   const totalSec = Math.round(seconds);
-
   const days = Math.floor(totalSec / 86400);
   const hours = Math.floor((totalSec % 86400) / 3600);
   const minutes = Math.floor((totalSec % 3600) / 60);
   const secs = totalSec % 60;
-
   let parts = [];
-
-  if (days > 0) {
-    parts.push(`${days}д`);
-    if (hours > 0) parts.push(`${hours}ч`);
-  } else if (hours > 0) {
-    parts.push(`${hours}ч`);
-    if (minutes > 0) parts.push(`${minutes}м`);
-  } else if (minutes > 0) {
-    parts.push(`${minutes}м`);
-    if (secs > 0) parts.push(`${secs}с`);
-  } else {
-    parts.push(`${secs}с`);
-  }
-
+  if (days > 0) { parts.push(`${days}д`); if (hours > 0) parts.push(`${hours}ч`); }
+  else if (hours > 0) { parts.push(`${hours}ч`); if (minutes > 0) parts.push(`${minutes}м`); }
+  else if (minutes > 0) { parts.push(`${minutes}м`); if (secs > 0) parts.push(`${secs}с`); }
+  else { parts.push(`${secs}с`); }
   return parts.join(' ') || '0с';
 }
 
@@ -89,16 +79,21 @@ export function setLockIcon(btn, locked) {
   btn.classList.toggle('locked', locked);
 }
 
+// ============================================================
+// ОСНОВНОЕ ОБНОВЛЕНИЕ UI
+// ============================================================
 export function updateUI() {
   uiScheduler.schedule(() => {
     _updateCounter();
     _updateLevelTitle();
+    _updateLevelControls();
     _updateHPBar();
     updateTimerBar();
-    _updateRollbackButton();
     _updateMoonStyle();
     _updateMoonAuras();
-    updateBuffsDisplay(); // НОВОЕ: обновляем бафы
+    if (typeof window.updateBuffsDisplay === 'function') {
+      window.updateBuffsDisplay();
+    }
   });
 }
 
@@ -113,6 +108,38 @@ function _updateLevelTitle() {
   const title = document.getElementById('levelTitle');
   if (!title) return;
   title.textContent = `Уровень ${state.currentLevel}`;
+}
+
+// ============================================================
+// НОВОЕ: ОБНОВЛЕНИЕ КНОПОК УПРАВЛЕНИЯ УРОВНЕМ
+// ============================================================
+function _updateLevelControls() {
+  const rollbackBtn = document.getElementById('rollbackLevelBtn');
+  const lockBtn = document.getElementById('lockLevelBtn');
+  
+  if (rollbackBtn) {
+    // Скрываем кнопку отката на 1 уровне
+    if (state.currentLevel <= 1) {
+      rollbackBtn.classList.add('hidden');
+    } else {
+      rollbackBtn.classList.remove('hidden');
+    }
+  }
+  
+  if (lockBtn) {
+    const isLocked = state.levelLocked || false;
+    lockBtn.classList.toggle('locked', isLocked);
+    
+    // Меняем иконку
+    const iconOpen = lockBtn.querySelector('#lockIconOpen');
+    const iconClosed = lockBtn.querySelector('#lockIconClosed');
+    if (iconOpen && iconClosed) {
+      iconOpen.style.display = isLocked ? 'none' : 'block';
+      iconClosed.style.display = isLocked ? 'block' : 'none';
+    }
+    
+    lockBtn.title = isLocked ? 'Открепить уровень' : 'Закрепить уровень';
+  }
 }
 
 function _updateHPBar() {
@@ -137,7 +164,7 @@ function _updateHPBar() {
 }
 
 // ============================================================
-// ОБНОВЛЕНИЕ ТАЙМЕРА БОССА (ЭКСПОРТИРУЕМАЯ ФУНКЦИЯ)
+// ТАЙМЕР БОССА (ЭКСПОРТИРУЕМЫЙ)
 // ============================================================
 export function updateTimerBar() {
   const container = document.getElementById('timerBarContainer');
@@ -158,119 +185,6 @@ export function updateTimerBar() {
     container.classList.remove('active');
     bar.style.width = '100%';
     percent.textContent = `${CONSTANTS.BOSS_TIMER}с`;
-  }
-}
-// ============================================================
-// НОВОЕ: ОТОБРАЖЕНИЕ АКТИВНЫХ БАФОВ
-// ============================================================
-// ============================================================
-// ОТОБРАЖЕНИЕ АКТИВНЫХ БАФОВ (БЕЗ МОРГАНИЙ)
-// ============================================================
-export function updateBuffsDisplay() {
-  const container = document.getElementById('buffsContainer');
-  if (!container) return;
-  
-  const buffs = window._activeBuffs || [];
-  
-  // Если нет бафов - скрываем контейнер
-  if (buffs.length === 0) {
-    if (!container.classList.contains('buffs-empty')) {
-      container.innerHTML = '';
-      container.classList.add('buffs-empty');
-      container.style.display = 'none';
-    }
-    window._lastBuffIds = new Set();
-    return;
-  }
-  
-  container.classList.remove('buffs-empty');
-  container.style.display = 'flex';
-  
-  // Получаем текущие ID бафов
-  const currentBuffIds = new Set(buffs.map(b => b.id));
-  const lastBuffIds = window._lastBuffIds || new Set();
-  
-  // Определяем новые бафы (для анимации появления)
-  const newBuffIds = new Set();
-  currentBuffIds.forEach(id => {
-    if (!lastBuffIds.has(id)) newBuffIds.add(id);
-  });
-  
-  // Сохраняем для следующего раза
-  window._lastBuffIds = currentBuffIds;
-  
-  // Строим HTML
-  let html = '';
-  buffs.forEach(buff => {
-    const progressPercent = (buff.progress / buff.progressMax) * 100;
-    
-    let stateClass = 'buff-charging';
-    if (buff.isPassive) {
-      stateClass = 'buff-passive';
-    } else if (buff.isMaxed) {
-      stateClass = 'buff-maxed';
-    } else if (buff.isActive) {
-      stateClass = 'buff-active';
-    }
-    
-    if (buff.isConditional && !buff.isActive) {
-      stateClass = 'buff-inactive';
-    }
-    
-    let timerHtml = '';
-    if (buff.timeLeft !== null && buff.timeLeft !== undefined) {
-      const timerClass = buff.timeLeft <= 5 ? 'buff-timer-warning' : '';
-      timerHtml = `<div class="buff-timer ${timerClass}">${buff.timeLeft}с</div>`;
-    }
-    
-    const progressHtml = !buff.isPassive ? `
-      <div class="buff-progress">
-        <div class="buff-progress-bar" style="width: ${progressPercent}%"></div>
-      </div>
-      <div class="buff-stacks">${buff.value}${buff.maxStacks ? '/' + buff.maxStacks : ''}</div>
-    ` : '';
-    
-    // НОВОЕ: добавляем класс 'buff-new' только для новых бафов
-    const isNew = newBuffIds.has(buff.id);
-    const newClass = isNew ? 'buff-new' : '';
-    
-    html += `
-      <div class="buff-card ${stateClass} ${newClass}" data-buff-id="${buff.id}">
-        <div class="buff-header">
-          <div class="buff-icon">${buff.icon}</div>
-          <div class="buff-info">
-            <div class="buff-name">${buff.name}</div>
-            <div class="buff-bonus">${buff.bonus}</div>
-          </div>
-          ${timerHtml}
-        </div>
-        ${progressHtml}
-      </div>
-    `;
-  });
-  
-  // Обновляем HTML только если он изменился (избегаем мерцания)
-  if (container._lastHTML !== html) {
-    container.innerHTML = html;
-    container._lastHTML = html;
-    
-    // Убираем класс 'buff-new' после анимации (через 500мс)
-    if (newBuffIds.size > 0) {
-      setTimeout(() => {
-        container.querySelectorAll('.buff-new').forEach(el => {
-          el.classList.remove('buff-new');
-        });
-      }, 500);
-    }
-  }
-}
-function _updateRollbackButton() {
-  const btn = document.getElementById('rollbackBtnMain');
-  if (!btn) return;
-  if (state.currentLevel <= 1) {
-    btn.classList.add('disabled');
-  } else {
-    btn.classList.remove('disabled');
   }
 }
 
@@ -299,15 +213,10 @@ function _updateMoonStyle() {
   }
 }
 
-// ============================================================
-// НОВОЕ: ОБНОВЛЕНИЕ АУР НА ЛУНЕ ОТ СИНЕРГИЙ
-// ============================================================
 function _updateMoonAuras() {
-  const moonInner = document.getElementById('moonInner');
   const moonContainer = document.getElementById('moonContainer');
-  if (!moonInner || !moonContainer) return;
+  if (!moonContainer) return;
   
-  // Убираем все старые ауры
   const auraClasses = [
     'aura-normal', 'aura-blood', 'aura-ice', 'aura-shadow',
     'aura-fire', 'aura-electric', 'aura-gold', 'aura-cosmic',
@@ -315,11 +224,9 @@ function _updateMoonAuras() {
   ];
   auraClasses.forEach(cls => moonContainer.classList.remove(cls));
   
-  // Получаем активные синергии
   const synergies = window._activeSynergies || [];
   if (synergies.length === 0) return;
   
-  // Собираем все ауры из всех активных синергий
   const allAuraClasses = new Set();
   synergies.forEach(syn => {
     if (syn.auraCombo && Array.isArray(syn.auraCombo)) {
@@ -327,10 +234,7 @@ function _updateMoonAuras() {
     }
   });
   
-  // Применяем ауры к луне
-  allAuraClasses.forEach(auraClass => {
-    moonContainer.classList.add(auraClass);
-  });
+  allAuraClasses.forEach(auraClass => moonContainer.classList.add(auraClass));
   
   if (allAuraClasses.size > 0) {
     moonContainer.classList.add('has-synergy-aura');
@@ -340,6 +244,9 @@ function _updateMoonAuras() {
   }
 }
 
+// ============================================================
+// ОБНОВЛЕНИЕ МАГАЗИНА
+// ============================================================
 export function updateShopUI() {
   uiScheduler.schedule(() => {
     _updateClickDamageShop();
@@ -371,12 +278,11 @@ function _updateClickDamageShop() {
     Math.pow(CONSTANTS.UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade)
   );
   const currentDamage = state.playerData?.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
-  // НОВОЕ: следующее значение = текущее + 10
   const upgradeValue = CONSTANTS.CLICK_DAMAGE_UPGRADE_VALUE;
   const nextDamage = currentDamage + upgradeValue;
   const displayCost = state.testMode ? 0 : cost;
 
-  priceEl.textContent = `${displayCost} 💎`;
+  priceEl.textContent = `${formatNumber(displayCost)} 💎`;
   levelEl.innerHTML = `Ур. ${currentLevelUpgrade}: ${currentDamage} → ${nextDamage} <span style="color: #4caf50; font-size: 0.75rem;">(+${upgradeValue})</span>`;
 
   const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
@@ -408,41 +314,128 @@ function _updateSlotShop() {
   buyBtn.textContent = canUpgrade ? 'Купить' : 'MAX';
 }
 
+// ============================================================
+// НОВЫЙ РЕНДЕР МАГАЗИНА ЛУН (с милестоунами)
+// ============================================================
 function _updateMoonShop() {
   const container = document.getElementById('moonShopItems');
   if (!container) return;
 
   let html = '';
+  
   for (const [id, moon] of Object.entries(MOON_TYPES)) {
     const owned = state.ownedMoons.includes(id);
     const isActive = state.activeMoons.includes(id);
     const isLockedByLevel = state.currentLevel < (moon.unlockLevel || 1);
+    const moonLevel = owned ? (state.moonLevels[id] || 1) : 0;
+    
     const canBuy = !owned && !isLockedByLevel &&
       (state.testMode || (state.playerData?.shards || 0) >= moon.cost) &&
       moon.cost > 0;
-
-    const level = owned ? (state.moonLevels[id] || 1) : 0;
-    const levelMultiplier = 1 + (level - 1) * 0.05;
-    const damageBonus = (moon.damageBonus || 0) * levelMultiplier;
-    const shardBonus = (moon.shardBonus || 0) * levelMultiplier;
-    const critChanceBonus = (moon.critChanceBonus || 0) * levelMultiplier;
-    const critDamageBonus = (moon.critDamageBonus || 0) * levelMultiplier;
-
-    let bonusDesc = [];
-    if (damageBonus > 0) bonusDesc.push(`⚔️ +${Math.round(damageBonus * 100)}%`);
-    if (shardBonus > 0) bonusDesc.push(`💎 +${Math.round(shardBonus * 100)}%`);
-    if (critChanceBonus > 0) bonusDesc.push(`🎯 +${Math.round(critChanceBonus * 100)}%`);
-    if (critDamageBonus > 0) bonusDesc.push(`💥 +${Math.round(critDamageBonus * 100)}%`);
-
+    
+    // Актуальные параметры с учётом прокачки
+    const currentParams = owned ? getMoonMechanicParams(id, moonLevel) : null;
+    const nextParams = owned && moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL 
+      ? getMoonMechanicParams(id, moonLevel + 1) 
+      : null;
+    
+    // Применяем уровень к базовым статам (+8% за уровень, но у нас +1% для обычной и т.д. - используем просто levelMultiplier)
+    const levelMultiplier = owned ? (1 + (moonLevel - 1) * 0.05) : 1;
+    
+    // Рендер базовых параметров
+    const baseStatsHtml = `
+      <div class="moon-shop-base-stats">
+        ${moon.baseStats.damageBonus > 0 ? `<div class="moon-shop-stat">⚔️ +${Math.round(moon.baseStats.damageBonus * levelMultiplier * 100)}%</div>` : ''}
+        ${moon.baseStats.shardBonus > 0 ? `<div class="moon-shop-stat">💎 +${Math.round(moon.baseStats.shardBonus * levelMultiplier * 100)}%</div>` : ''}
+        ${moon.baseStats.critChanceBonus > 0 ? `<div class="moon-shop-stat">🎯 +${Math.round(moon.baseStats.critChanceBonus * levelMultiplier * 100)}%</div>` : ''}
+        ${moon.baseStats.critDamageBonus > 0 ? `<div class="moon-shop-stat">💥 +${Math.round(moon.baseStats.critDamageBonus * levelMultiplier * 100)}%</div>` : ''}
+        ${moon.baseStats.damageBonus === 0 && moon.baseStats.shardBonus === 0 && moon.baseStats.critChanceBonus === 0 && moon.baseStats.critDamageBonus === 0 
+          ? `<div class="moon-shop-stat" style="opacity: 0.5;">Растёт с уровнем</div>` 
+          : ''}
+      </div>
+    `;
+    
+    // Рендер механики
+    let mechanicDescHtml = moon.specialDescription;
+    if (currentParams && owned) {
+      mechanicDescHtml = _getMechanicDescription(id, currentParams);
+    }
+    
+    const mechanicHtml = `
+      <div class="moon-shop-mechanic">
+        <div class="moon-shop-mechanic-name">✨ ${escapeHTML(moon.specialName)}</div>
+        <div class="moon-shop-mechanic-desc">${escapeHTML(mechanicDescHtml)}</div>
+      </div>
+    `;
+    
+    // Рендер милестоунов
+    let milestonesHtml = '';
+    if (owned || !isLockedByLevel) {
+      milestonesHtml = '<div class="moon-shop-milestones">';
+      
+      for (let lvl = 1; lvl <= CONSTANTS.LIMITS.MAX_MOON_LEVEL; lvl++) {
+        const milestone = moon.milestones[lvl];
+        if (!milestone) continue;
+        
+        let stateClass = 'locked';
+        if (owned && moonLevel >= lvl) {
+          stateClass = 'unlocked';
+        } else if (owned && moonLevel === lvl - 1) {
+          stateClass = 'current';
+        }
+        
+        milestonesHtml += `
+          <div class="moon-shop-milestone ${stateClass}">
+            <div class="milestone-icon">${milestone.icon}</div>
+            <div class="milestone-info">
+              <div class="milestone-level">Уровень ${lvl}</div>
+              <div class="milestone-name">${escapeHTML(milestone.name)}</div>
+              <div class="milestone-desc">${escapeHTML(milestone.description)}</div>
+            </div>
+          </div>
+        `;
+      }
+      
+      milestonesHtml += '</div>';
+    }
+    
+    // Цена прокачки
     const rarity = RARITY_CONFIG[moon.rarity] || RARITY_CONFIG.common;
-
-    const upgradeCost = owned ? Math.floor(Math.max(100, moon.cost * 0.1) * Math.pow(1.5, level - 1)) : 0;
+    const upgradeCost = owned ? getMoonUpgradeCostForLevel(id, moonLevel) : 0;
     const displayUpgradeCost = state.testMode ? 0 : upgradeCost;
-    const canUpgrade = owned && state.currentLevel >= 10 && level < 10 &&
+    const canUpgrade = owned && moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL &&
       (state.testMode || (state.playerData?.shards || 0) >= upgradeCost);
-
+    
     const displayCost = state.testMode ? 0 : moon.cost;
-
+    
+    // Кнопки действий
+    let actionsHtml = '';
+    if (owned) {
+      if (isActive) {
+        actionsHtml += `<button class="btn-moon-active" onclick="window.toggleMoonActive('${id}')">✓ Активна</button>`;
+      } else {
+        actionsHtml += `<button class="btn-moon-activate" onclick="window.toggleMoonActive('${id}')">Активировать</button>`;
+      }
+      
+      if (moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
+        actionsHtml += `<button class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}')">
+          ${canUpgrade ? `⬆️ ${formatNumber(displayUpgradeCost)} 💎` : (moonLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL ? 'MAX' : `Нужно ${formatNumber(displayUpgradeCost)} 💎`)}
+        </button>`;
+      } else {
+        actionsHtml += `<button class="btn-moon-upgrade cannot-afford" disabled>MAX УРОВЕНЬ</button>`;
+      }
+    } else {
+      if (moon.cost === 0) {
+        actionsHtml += '<button class="btn-moon-free" disabled>Доступна</button>';
+      } else if (isLockedByLevel) {
+        actionsHtml += '<button class="btn-moon-locked" disabled>🔒</button>';
+      } else {
+        actionsHtml += `<button class="btn-moon-buy ${canBuy ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.buyMoon('${id}')">
+          ${canBuy ? `Купить ${formatNumber(displayCost)} 💎` : `Нужно ${formatNumber(displayCost)} 💎`}
+        </button>`;
+      }
+    }
+    
     html += `
       <div class="moon-shop-card rarity-${moon.rarity}">
         <div class="moon-shop-header">
@@ -452,40 +445,83 @@ function _updateMoonShop() {
           </div>
         </div>
         <div class="moon-shop-name">${escapeHTML(moon.name)}</div>
-        <div class="moon-shop-desc">${escapeHTML(moon.description || '')}</div>
+        <div class="moon-shop-desc">${escapeHTML(moon.shopDescription || moon.description || '')}</div>
         
-        <div class="moon-shop-special">
-          <div class="special-name">✨ ${escapeHTML(moon.specialName || 'Особенность')}</div>
-          <div class="special-desc">${escapeHTML(moon.specialDescription || '')}</div>
-        </div>
+        ${owned ? `<div class="moon-shop-status"><div class="moon-level">⭐ Уровень: ${moonLevel} / ${CONSTANTS.LIMITS.MAX_MOON_LEVEL}</div></div>` : ''}
+        ${isLockedByLevel && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔒 Доступна с ${moon.unlockLevel} уровня</div></div>` : ''}
         
-        <div class="moon-shop-bonuses">
-          ${bonusDesc.length ? bonusDesc.join('<br>') : '<span class="no-bonus">Без бонусов</span>'}
-        </div>
-        <div class="moon-shop-status">
-          ${owned ? `<div class="moon-level">Уровень: ${level} / 10</div>` : ''}
-          ${isLockedByLevel ? `<div class="moon-locked">🔒 С ${moon.unlockLevel} ур.</div>` : ''}
-        </div>
+        ${baseStatsHtml}
+        ${mechanicHtml}
+        ${milestonesHtml}
+        
         <div class="moon-shop-actions">
-          ${owned ? 
-            (isActive ? 
-              '<button class="btn-moon-active" onclick="window.toggleMoonActive(\'' + id + '\')">✓ Активна</button>' :
-              `<button class="btn-moon-activate" onclick="window.toggleMoonActive('${id}')">Активировать</button>`)
-            : (moon.cost === 0 ? 
-              '<button class="btn-moon-free" disabled>Доступна</button>' :
-              (isLockedByLevel ? 
-                '<button class="btn-moon-locked" disabled>🔒</button>' :
-                `<button class="btn-moon-buy ${canBuy ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.buyMoon('${id}')">${canBuy ? `Купить ${formatNumber(displayCost)} 💎` : `Нужно ${formatNumber(displayCost)} 💎`}</button>`))
-          }
-          ${owned && level < 10 ? 
-            `<button class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}')">
-              ${canUpgrade ? `⬆️ ${formatNumber(displayUpgradeCost)} 💎` : 'MAX'}
-            </button>` : ''}
+          ${actionsHtml}
         </div>
       </div>
     `;
   }
+  
   container.innerHTML = html;
+}
+
+// ============================================================
+// ПОМОЩНИК: Описание механики с учётом текущих параметров
+// ============================================================
+function _getMechanicDescription(moonId, params) {
+  switch (moonId) {
+    case 'normal':
+      return `Каждые ${params.clicksPerStack} кликов +${Math.round(params.bonusPerStack * 100)}% урона (макс ${params.maxStacks} стеков = +${Math.round(params.bonusPerStack * params.maxStacks * 100)}%)`;
+    
+    case 'blood':
+      let desc = `При HP босса < ${Math.round(params.hpThreshold * 100)}%: +${Math.round(params.damageBonus * 100)}% к урону`;
+      if (params.executeThreshold > 0) {
+        desc += `. При HP < ${Math.round(params.executeThreshold * 100)}% — мгновенная смерть`;
+      }
+      return desc;
+    
+    case 'ice':
+      let iceDesc = `+${Math.round(params.timerBonus * 100)}% к таймеру босса`;
+      if (params.pierceInterval > 0) {
+        iceDesc += `. Каждый ${params.pierceInterval}-й клик: +${Math.round(params.pierceDamage * 100)}% урона`;
+      }
+      return iceDesc;
+    
+    case 'shadow':
+      let shadowDesc = `Каждые ${params.clicksPerStack} кликов +${Math.round(params.critDamagePerStack * 100)}% крит урона (макс ${params.maxStacks} стеков = +${Math.round(params.critDamagePerStack * params.maxStacks * 100)}%)`;
+      if (params.firstStrikeCrit) shadowDesc += `. Первый удар = гарантированный крит`;
+      if (params.doubleCritChance > 0) shadowDesc += `. ${Math.round(params.doubleCritChance * 100)}% шанс двойного крита`;
+      if (params.fullStackCritChance > 0) shadowDesc += `. При полном стаке +${Math.round(params.fullStackCritChance * 100)}% шанса крита`;
+      return shadowDesc;
+    
+    case 'fire':
+      let fireDesc = `Каждые ${params.clicksPerStack} кликов +${Math.round(params.bonusPerStack * 100)}% урона`;
+      if (params.maxStacks === Infinity) {
+        fireDesc += ` (неограниченно, но ${Math.round(params.resetChance * 100)}% шанс сброса после ${params.safeStacks} стеков)`;
+      } else {
+        fireDesc += ` (макс ${params.maxStacks} стеков = +${Math.round(params.bonusPerStack * params.maxStacks * 100)}%)`;
+      }
+      return fireDesc;
+    
+    case 'electric':
+      let elecDesc = `Шанс молнии: ${Math.round(params.chanceX2 * 100)}%→x2, ${Math.round(params.chanceX5 * 100)}%→x5, ${Math.round(params.chanceX10 * 100)}%→x10`;
+      if (params.pityMax > 0) elecDesc += `. Без срабатывания: +${Math.round(params.pityBonus * 100)}% к шансу (макс +${Math.round(params.pityMax * 100)}%)`;
+      if (params.superconductorBonus > 0) elecDesc += `. При x5+: +${Math.round(params.superconductorBonus * 100)}% урона на ${params.superconductorClicks} клика`;
+      return elecDesc;
+    
+    case 'gold':
+      let goldDesc = `x${params.normalMultiplier} осколков с обычных, x${params.bossMultiplier} с боссов`;
+      if (params.goldenClickChance > 0) goldDesc += `. ${Math.round(params.goldenClickChance * 100)}% шанс +${params.goldenClickReward} 💎`;
+      if (params.shardToDamageRatio > 0) goldDesc += `. +${Math.round(params.shardToDamageRatio * 100)}% урона от осколков`;
+      return goldDesc;
+    
+    case 'cosmic':
+      let cosmicDesc = `+${Math.round(params.damagePerLevel * 100)}% урона, +${Math.round(params.shardPerLevel * 100)}% осколков, +${Math.round(params.critDamagePerLevel * 100)}% крит урона за уровень игрока`;
+      if (params.supernovaAvailable) cosmicDesc += `. 🌟 Сверхновая доступна!`;
+      return cosmicDesc;
+    
+    default:
+      return '';
+  }
 }
 
 function _updateSynergiesDisplay() {
@@ -522,26 +558,25 @@ function _updateSynergiesDisplay() {
   container.innerHTML = html;
 }
 
+// ============================================================
+// ПРОФИЛЬ И ЛИДЕРЫ
+// ============================================================
 export function updateProfileAndLeaders() {
-  // ПРИНУДИТЕЛЬНО обновляем профиль каждый раз
-  _updateProfile();
-  _updateLeaders();
+  uiScheduler.schedule(() => {
+    _updateProfile();
+    _updateLeaders();
+  });
 }
 
-// ============================================================
-// НОВЫЙ КРАСИВЫЙ ПРОФИЛЬ
-// ============================================================
 function _updateProfile() {
   const profileContent = document.getElementById('profileContent');
   if (!profileContent) return;
   
-  // Если нет пользователя - показываем заглушку
   if (!state.user) {
     profileContent.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">👤</div>
         <div class="empty-state-text">Войдите в аккаунт</div>
-        <div class="empty-state-hint">Чтобы увидеть профиль</div>
       </div>
     `;
     return;
@@ -549,8 +584,113 @@ function _updateProfile() {
 
   const data = state.playerData || {};
   const title = getTitle(data.level || 1);
+  const activeMoons = state.activeMoons || [];
+  const ownedMoons = state.ownedMoons || [];
+  const maxSlots = state.maxSlots || 1;
+  const totalDamageBonus = window._totalDamageBonus || 0;
+  const totalShardBonus = window._totalShardBonus || 0;
+  const totalCritChanceBonus = window._totalCritChanceBonus || 0;
+  const totalCritDamageBonus = window._totalCritDamageBonus || 0;
+  const baseDamage = data.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
+  const finalDamage = Math.round(baseDamage * (1 + totalDamageBonus));
+  const finalCritChance = Math.round((0.05 + totalCritChanceBonus) * 100);
+  const finalCritDamage = Math.round((2 + totalCritDamageBonus) * 100);
 
-  const headerBlock = `
+  let activeMoonsHtml = '';
+  activeMoons.forEach(moonId => {
+    const moon = MOON_TYPES[moonId];
+    if (!moon) return;
+    const level = state.moonLevels[moonId] || 1;
+    activeMoonsHtml += `
+      <div class="profile-moon-card active rarity-${moon.rarity}">
+        <div class="profile-moon-emoji" style="background-image: ${moon.gradient}; box-shadow: ${moon.shadow}"></div>
+        <div class="profile-moon-info">
+          <div class="profile-moon-name">${escapeHTML(moon.name)}</div>
+          <div class="profile-moon-level">Ур. ${level}</div>
+          <div class="profile-moon-special">✨ ${escapeHTML(moon.specialName || '')}</div>
+        </div>
+        <button class="btn-moon-deactivate" onclick="window.toggleMoonActive('${moonId}')" title="Деактивировать">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    `;
+  });
+
+  const emptySlotsCount = Math.max(0, maxSlots - activeMoons.length);
+  for (let i = 0; i < emptySlotsCount; i++) {
+    activeMoonsHtml += `
+      <div class="profile-moon-card empty-slot">
+        <div class="profile-moon-emoji empty"></div>
+        <div class="profile-moon-info">
+          <div class="profile-moon-name empty-name">Пустой слот</div>
+        </div>
+      </div>
+    `;
+  }
+
+  let ownedMoonsHtml = '';
+  ownedMoons.forEach(moonId => {
+    const moon = MOON_TYPES[moonId];
+    if (!moon) return;
+    const isActive = activeMoons.includes(moonId);
+    const level = state.moonLevels[moonId] || 1;
+    const rarity = RARITY_CONFIG[moon.rarity] || RARITY_CONFIG.common;
+    
+    ownedMoonsHtml += `
+      <div class="owned-moon-card rarity-${moon.rarity} ${isActive ? 'is-active' : ''}" onclick="window.toggleMoonActive('${moonId}')">
+        <div class="owned-moon-visual">
+          <div class="owned-moon-emoji" style="background-image: ${moon.gradient}; box-shadow: ${moon.shadow}"></div>
+          <div class="owned-moon-level-badge">Ур. ${level}</div>
+        </div>
+        <div class="owned-moon-name">${escapeHTML(moon.name)}</div>
+        <div class="owned-moon-rarity" style="background: ${rarity.gradient}">${rarity.name}</div>
+        <button class="btn-owned-moon-toggle ${isActive ? 'active' : ''}">
+          ${isActive ? '✓' : '+'}
+        </button>
+      </div>
+    `;
+  });
+
+  const activeSynergies = window._activeSynergies || [];
+  let synergiesHtml = '';
+  if (activeSynergies.length > 0) {
+    activeSynergies.forEach(syn => {
+      const moons = syn.key.split('+');
+      const moonsHtml = moons.map(m => {
+        const moon = MOON_TYPES[m];
+        return moon ? `<span class="synergy-moon-emoji">${moon.emoji}</span>` : '';
+      }).join('');
+      
+      synergiesHtml += `
+        <div class="profile-synergy-card tier-${syn.tier}" style="--tier-color: ${syn.tierColor}">
+          <div class="synergy-card-header">
+            <div class="synergy-card-icon">${syn.icon}</div>
+            <div class="synergy-card-info">
+              <div class="synergy-card-name">${escapeHTML(syn.name)}</div>
+              <div class="synergy-card-tier">${syn.tierName}</div>
+            </div>
+          </div>
+          <div class="synergy-card-moons">${moonsHtml}</div>
+          <div class="synergy-card-desc">${escapeHTML(syn.description || '')}</div>
+          <div class="synergy-card-bonuses">
+            ${syn.damageBonus > 0 ? `<span>⚔️+${Math.round(syn.damageBonus*100)}%</span>` : ''}
+            ${syn.shardBonus > 0 ? `<span>💎+${Math.round(syn.shardBonus*100)}%</span>` : ''}
+            ${syn.critChanceBonus > 0 ? `<span>🎯+${Math.round(syn.critChanceBonus*100)}%</span>` : ''}
+            ${syn.critDamageBonus > 0 ? `<span>💥+${Math.round(syn.critDamageBonus*100)}%</span>` : ''}
+          </div>
+        </div>
+      `;
+    });
+  } else {
+    synergiesHtml = `
+      <div class="empty-state">
+        <div class="empty-state-text">Нет активных синергий</div>
+        <div class="empty-state-hint">Активируйте несколько лун</div>
+      </div>
+    `;
+  }
+
+  profileContent.innerHTML = `
     <div class="profile-block profile-header-block">
       <div class="profile-avatar-wrap">
         <div class="profile-avatar">👤</div>
@@ -562,18 +702,7 @@ function _updateProfile() {
         <div class="profile-title">${title}</div>
       </div>
     </div>
-  `;
 
-  const baseDamage = data.click_damage || 1;
-  const totalDamageBonus = window._totalDamageBonus || 0;
-  const totalShardBonus = window._totalShardBonus || 0;
-  const totalCritChanceBonus = window._totalCritChanceBonus || 0;
-  const totalCritDamageBonus = window._totalCritDamageBonus || 0;
-  const finalCritChance = Math.round((0.05 + totalCritChanceBonus) * 100);
-  const finalCritDamage = Math.round((2 + totalCritDamageBonus) * 100);
-  const finalDamage = Math.round(baseDamage * (1 + totalDamageBonus));
-
-  const combatBlock = `
     <div class="profile-block">
       <div class="profile-block-header">
         <span class="block-icon">⚔️</span>
@@ -610,9 +739,7 @@ function _updateProfile() {
         </div>
       </div>
     </div>
-  `;
 
-  const bonusesBlock = `
     <div class="profile-block">
       <div class="profile-block-header">
         <span class="block-icon">📊</span>
@@ -641,151 +768,34 @@ function _updateProfile() {
         </div>
       </div>
     </div>
-  `;
 
-  const activeMoons = state.activeMoons || [];
-  const maxSlots = state.maxSlots || 1;
-  const emptySlotsCount = Math.max(0, maxSlots - activeMoons.length);
-  
-  let activeMoonsHtml = '';
-  activeMoons.forEach(moonId => {
-    const moon = MOON_TYPES[moonId];
-    if (!moon) return;
-    const level = state.moonLevels[moonId] || 1;
-    activeMoonsHtml += `
-      <div class="profile-moon-card active rarity-${moon.rarity}">
-        <div class="profile-moon-emoji" style="background-image: ${moon.gradient}; box-shadow: ${moon.shadow}"></div>
-        <div class="profile-moon-info">
-          <div class="profile-moon-name">${escapeHTML(moon.name)}</div>
-          <div class="profile-moon-level">Ур. ${level}</div>
-          <div class="profile-moon-special">✨ ${escapeHTML(moon.specialName || '')}</div>
-        </div>
-        <button class="btn-moon-deactivate" onclick="window.toggleMoonActive('${moonId}')" title="Деактивировать">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    `;
-  });
-
-  for (let i = 0; i < emptySlotsCount; i++) {
-    activeMoonsHtml += `
-      <div class="profile-moon-card empty-slot">
-        <div class="profile-moon-emoji empty"></div>
-        <div class="profile-moon-info">
-          <div class="profile-moon-name empty-name">Пустой слот</div>
-          <div class="profile-moon-level empty-level">Выберите луну ниже</div>
-        </div>
-      </div>
-    `;
-  }
-
-  const activeMoonsBlock = `
     <div class="profile-block">
       <div class="profile-block-header">
         <span class="block-icon">⭐</span>
         <span class="block-title">Активные луны</span>
         <span class="block-counter">${activeMoons.length}/${maxSlots}</span>
       </div>
-      <div class="active-moons-list">
-        ${activeMoonsHtml}
-      </div>
+      <div class="active-moons-list">${activeMoonsHtml}</div>
     </div>
-  `;
 
-  const ownedMoons = state.ownedMoons || [];
-  let ownedMoonsHtml = '';
-  ownedMoons.forEach(moonId => {
-    const moon = MOON_TYPES[moonId];
-    if (!moon) return;
-    const isActive = activeMoons.includes(moonId);
-    const level = state.moonLevels[moonId] || 1;
-    const rarity = RARITY_CONFIG[moon.rarity] || RARITY_CONFIG.common;
-    
-    ownedMoonsHtml += `
-      <div class="owned-moon-card rarity-${moon.rarity} ${isActive ? 'is-active' : ''}">
-        <div class="owned-moon-visual">
-          <div class="owned-moon-emoji" style="background-image: ${moon.gradient}; box-shadow: ${moon.shadow}"></div>
-          <div class="owned-moon-level-badge">Ур. ${level}</div>
-        </div>
-        <div class="owned-moon-details">
-          <div class="owned-moon-name">${escapeHTML(moon.name)}</div>
-          <div class="owned-moon-rarity" style="background: ${rarity.gradient}">${rarity.name}</div>
-          <div class="owned-moon-special-small">✨ ${escapeHTML(moon.specialName || '')}</div>
-        </div>
-        <button class="btn-owned-moon-toggle ${isActive ? 'active' : ''}" onclick="window.toggleMoonActive('${moonId}')">
-          ${isActive ? '✓' : '+'}
-        </button>
-      </div>
-    `;
-  });
-
-  const ownedMoonsBlock = `
     <div class="profile-block">
       <div class="profile-block-header">
         <span class="block-icon">🌙</span>
         <span class="block-title">Коллекция лун</span>
         <span class="block-counter">${ownedMoons.length}/${Object.keys(MOON_TYPES).length}</span>
       </div>
-      <div class="owned-moons-grid">
-        ${ownedMoonsHtml || '<div class="empty-state">Нет купленных лун</div>'}
-      </div>
+      <div class="owned-moons-grid">${ownedMoonsHtml}</div>
     </div>
-  `;
 
-  const activeSynergies = window._activeSynergies || [];
-  let synergiesHtml = '';
-  if (activeSynergies.length > 0) {
-    activeSynergies.forEach(syn => {
-      const moons = syn.key.split('+');
-      const moonsHtml = moons.map(m => {
-        const moon = MOON_TYPES[m];
-        return moon ? `<span class="synergy-moon-emoji">${moon.emoji}</span>` : '';
-      }).join('');
-      
-      synergiesHtml += `
-        <div class="profile-synergy-card tier-${syn.tier}" style="--tier-color: ${syn.tierColor}">
-          <div class="synergy-card-header">
-            <div class="synergy-card-icon">${syn.icon}</div>
-            <div class="synergy-card-info">
-              <div class="synergy-card-name">${escapeHTML(syn.name)}</div>
-              <div class="synergy-card-tier">${syn.tierName}</div>
-            </div>
-          </div>
-          <div class="synergy-card-moons">${moonsHtml}</div>
-          <div class="synergy-card-desc">${escapeHTML(syn.description || '')}</div>
-          <div class="synergy-card-bonuses">
-            ${syn.damageBonus > 0 ? `<span>⚔️+${Math.round(syn.damageBonus*100)}%</span>` : ''}
-            ${syn.shardBonus > 0 ? `<span>💎+${Math.round(syn.shardBonus*100)}%</span>` : ''}
-            ${syn.critChanceBonus > 0 ? `<span>🎯+${Math.round(syn.critChanceBonus*100)}%</span>` : ''}
-            ${syn.critDamageBonus > 0 ? `<span>💥+${Math.round(syn.critDamageBonus*100)}%</span>` : ''}
-          </div>
-        </div>
-      `;
-    });
-  } else {
-    synergiesHtml = `
-      <div class="empty-state">
-        <div class="empty-state-icon">🔗</div>
-        <div class="empty-state-text">Нет активных синергий</div>
-        <div class="empty-state-hint">Активируйте несколько лун для синергии</div>
-      </div>
-    `;
-  }
-
-  const synergiesBlock = `
     <div class="profile-block">
       <div class="profile-block-header">
         <span class="block-icon">🔗</span>
         <span class="block-title">Активные синергии</span>
         <span class="block-counter">${activeSynergies.length}</span>
       </div>
-      <div class="synergies-list">
-        ${synergiesHtml}
-      </div>
+      <div class="synergies-list">${synergiesHtml}</div>
     </div>
-  `;
 
-  const statsBlock = `
     <div class="profile-block">
       <div class="profile-block-header">
         <span class="block-icon">📈</span>
@@ -825,61 +835,6 @@ function _updateProfile() {
       </div>
     </div>
   `;
-
-  const guideBlock = `
-    <div class="profile-block">
-      <div class="profile-block-header">
-        <span class="block-icon">💡</span>
-        <span class="block-title">Справочник</span>
-      </div>
-      <div class="guide-list">
-        <div class="guide-item">
-          <div class="guide-item-icon">⚔️</div>
-          <div class="guide-item-content">
-            <div class="guide-item-title">Урон клика</div>
-            <div class="guide-item-text">Увеличивает базовый урон на +1 за уровень. Финальный урон учитывает бонусы от лун и синергий.</div>
-          </div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-item-icon">🎰</div>
-          <div class="guide-item-content">
-            <div class="guide-item-title">Слоты лун (макс ${CONSTANTS.MAX_SLOTS})</div>
-            <div class="guide-item-text">Позволяет активировать несколько лун одновременно. Больше слотов — больше синергий!</div>
-          </div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-item-icon">🎯</div>
-          <div class="guide-item-content">
-            <div class="guide-item-title">Критический удар</div>
-            <div class="guide-item-text">Шанс нанести усиленный удар. Базово 5%, крит-урон ×2. Бонусы от лун и синергий увеличивают оба параметра.</div>
-          </div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-item-icon">✨</div>
-          <div class="guide-item-content">
-            <div class="guide-item-title">Уникальные механики</div>
-            <div class="guide-item-text">Каждая луна имеет свою уникальную особенность: вампиризм, заморозка, поджог, цепная молния и другие!</div>
-          </div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-item-icon">🔗</div>
-          <div class="guide-item-content">
-            <div class="guide-item-title">Синергии и ауры</div>
-            <div class="guide-item-text">Комбинации лун дают мощные бонусы и визуальные эффекты. Луна на экране меняется в зависимости от активных синергий!</div>
-          </div>
-        </div>
-        <div class="guide-item">
-          <div class="guide-item-icon">👹</div>
-          <div class="guide-item-content">
-            <div class="guide-item-title">Боссы</div>
-            <div class="guide-item-text">Появляются каждые 10 уровней. У вас 30 секунд, чтобы их убить. Дают много осколков!</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  profileContent.innerHTML = headerBlock + combatBlock + bonusesBlock + activeMoonsBlock + ownedMoonsBlock + synergiesBlock + statsBlock + guideBlock;
 }
 
 async function _updateLeaders() {
@@ -914,12 +869,13 @@ async function _updateLeaders() {
   }
 }
 
+// ============================================================
+// ЗВЁЗДЫ
+// ============================================================
 export function createStars(count = 300) {
   const container = document.getElementById('stars');
   if (!container) return;
-
   const fragment = document.createDocumentFragment();
-
   for (let i = 0; i < count; i++) {
     const star = document.createElement('div');
     star.className = 'star';
@@ -932,10 +888,12 @@ export function createStars(count = 300) {
     star.style.animationDelay = Math.random() * 5 + 's';
     fragment.appendChild(star);
   }
-
   container.appendChild(fragment);
 }
 
+// ============================================================
+// КВЕСТЫ
+// ============================================================
 export function setQuestCategory(category) {
   currentQuestCategory = category;
   updateQuestUI();
@@ -968,9 +926,7 @@ export function updateQuestUI() {
     const questData = QUESTS[id];
     if (!questData) continue;
     
-    if (currentQuestCategory !== 'all' && questData.category !== currentQuestCategory) {
-      continue;
-    }
+    if (currentQuestCategory !== 'all' && questData.category !== currentQuestCategory) continue;
     
     questCount++;
     const progress = q.progress || 0;
@@ -1026,6 +982,9 @@ export function updateQuestUI() {
   container.innerHTML = tabsHtml + listHtml;
 }
 
+// ============================================================
+// ДОСТИЖЕНИЯ
+// ============================================================
 export function setAchievementCategory(category) {
   currentAchievementCategory = category;
   updateAchievementUI();
@@ -1052,15 +1011,9 @@ export function updateAchievementUI() {
   
   const grouped = {};
   for (const [id, ach] of Object.entries(ACHIEVEMENTS)) {
-    if (currentAchievementCategory !== 'all' && ach.category !== currentAchievementCategory) {
-      continue;
-    }
+    if (currentAchievementCategory !== 'all' && ach.category !== currentAchievementCategory) continue;
     if (!grouped[ach.category]) {
-      grouped[ach.category] = {
-        name: ach.categoryName,
-        icon: ach.icon,
-        achievements: []
-      };
+      grouped[ach.category] = { name: ach.categoryName, icon: ach.icon, achievements: [] };
     }
     grouped[ach.category].achievements.push({ id, ...ach });
   }
@@ -1091,7 +1044,6 @@ export function updateAchievementUI() {
         const tierState = achState[tier.level];
         const isAchieved = tierState === 'claimed';
         const isUnclaimed = tierState === 'unclaimed';
-        const isLocked = !tierState;
         
         const tierIcon = isAchieved ? 
           (tier.level === 'gold' ? '🥇' : (tier.level === 'silver' ? '🥈' : '🥉')) : 
@@ -1137,45 +1089,6 @@ export function updateQuestAndAchievementUI() {
   updateAchievementUI();
 }
 
-if (typeof window !== 'undefined') {
-  window.setQuestCategory = setQuestCategory;
-  window.setAchievementCategory = setAchievementCategory;
-}
-
-
-// ============================================================
-// ОБНОВЛЕНИЕ UI ПРИ ОТКРЫТИИ ПАНЕЛЕЙ
-// ============================================================
-export function refreshPanelContent() {
-  // Обновляем контент всех открытых панелей
-  updateProfileAndLeaders();
-  updateShopUI();
-  updateQuestUI();
-  updateAchievementUI();
-}
-
-// Добавляем в window для доступа
-if (typeof window !== 'undefined') {
-  window.refreshPanelContent = refreshPanelContent;
-}
-
-// ============================================================
-// ЭКСПОРТ ФУНКЦИЙ В WINDOW (ДЛЯ onclick И ГЛОБАЛЬНЫХ ВЫЗОВОВ)
-// ============================================================
-if (typeof window !== 'undefined') {
-  window.updateProfileAndLeaders = updateProfileAndLeaders;
-  window.updateShopUI = updateShopUI;
-  window.updateQuestUI = updateQuestUI;
-  window.updateAchievementUI = updateAchievementUI;
-  window.updateQuestAndAchievementUI = updateQuestAndAchievementUI;
-  window.showToast = showToast;
-  
-  // Для кастомных категорий
-  window._setQuestCategory = setQuestCategory;
-  window._setAchievementCategory = setAchievementCategory;
-}
-
-
 // ============================================================
 // ЭКСПОРТ В WINDOW
 // ============================================================
@@ -1186,7 +1099,6 @@ if (typeof window !== 'undefined') {
   window.updateAchievementUI = updateAchievementUI;
   window.updateQuestAndAchievementUI = updateQuestAndAchievementUI;
   window.updateTimerBar = updateTimerBar;
-  window.updateBuffsDisplay = updateBuffsDisplay; // НОВОЕ
   window.showToast = showToast;
   window._setQuestCategory = setQuestCategory;
   window._setAchievementCategory = setAchievementCategory;
