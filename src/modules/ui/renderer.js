@@ -1194,6 +1194,7 @@ if (typeof window !== 'undefined') {
   window.updateAchievementUI = updateAchievementUI;
   window.updateQuestAndAchievementUI = updateQuestAndAchievementUI;
   window.updateTimerBar = updateTimerBar;
+  window.updateBuffsDisplay = updateBuffsDisplay;  // ← ЭТА СТРОКА ОБЯЗАТЕЛЬНА
   window.showToast = showToast;
   window._setQuestCategory = setQuestCategory;
   window._setAchievementCategory = setAchievementCategory;
