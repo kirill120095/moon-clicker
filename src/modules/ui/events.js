@@ -1,37 +1,32 @@
 // ============================================================
-// ОБРАБОТЧИКИ СОБЫТИЙ
+// ОБРАБОТЧИКИ СОБЫТИЙ - С НОВЫМИ ФУНКЦИЯМИ
 // ============================================================
 import { handleLogin, handleRegister, handleLogout, handleResetProgress } from '../auth/auth.js';
 import { gameEngine } from '../game/game.js';
+import { CONSTANTS } from '../../core/constants.js';
+import { appState, state } from '../../core/state.js';
+import { showToast } from './renderer.js';
 
 // ============================================================
-// 🌍 ГЛОБАЛЬНЫЕ ФУНКЦИИ
+// 🌍 ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ onclick В HTML
 // ============================================================
 
 if (typeof window !== 'undefined') {
   /**
-   * TOGGLE - открыть/закрыть панель независимо от других
+   * TOGGLE панели
    */
   window.togglePanel = (panelId) => {
     const panel = document.getElementById(panelId);
-    if (!panel) {
-      console.error('[Events] Panel not found:', panelId);
-      return;
-    }
+    if (!panel) return;
 
     const isOpen = !panel.classList.contains('hidden');
     
     if (isOpen) {
-      // Закрыть панель
       panel.classList.add('hidden');
       updateToggleButton(panelId, false);
     } else {
-      // ВАЖНО: НЕ закрываем другие панели!
-      // Просто открываем эту
       panel.classList.remove('hidden');
       updateToggleButton(panelId, true);
-      
-      // Обновляем контент при открытии
       refreshPanelOnOpen(panelId);
     }
   };
@@ -48,9 +43,7 @@ if (typeof window !== 'undefined') {
 
   function refreshPanelOnOpen(panelId) {
     if (panelId === 'profilePanel') {
-      if (window.updateProfileAndLeaders) {
-        window.updateProfileAndLeaders();
-      }
+      if (window.updateProfileAndLeaders) window.updateProfileAndLeaders();
     } else if (panelId === 'shopPanel') {
       if (window.updateShopUI) window.updateShopUI();
       if (window.updateQuestUI) window.updateQuestUI();
@@ -59,12 +52,8 @@ if (typeof window !== 'undefined') {
   }
 
   window.closeAllPanels = () => {
-    document.querySelectorAll('.panel').forEach(p => {
-      p.classList.add('hidden');
-    });
-    document.querySelectorAll('.side-toggle-btn').forEach(btn => {
-      btn.classList.remove('panel-open');
-    });
+    document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.side-toggle-btn').forEach(btn => btn.classList.remove('panel-open'));
   };
 
   window.closePanel = (panelId) => {
@@ -80,6 +69,9 @@ if (typeof window !== 'undefined') {
     if (modal) modal.classList.add('hidden');
   };
 
+  /**
+   * Переключение вкладок
+   */
   window.switchProfileTab = (tabName) => {
     const panel = document.getElementById('profilePanel');
     if (!panel) return;
@@ -93,9 +85,7 @@ if (typeof window !== 'undefined') {
     });
     
     const targetContent = document.getElementById(`${tabName}TabContent`);
-    if (targetContent) {
-      targetContent.classList.add('active');
-    }
+    if (targetContent) targetContent.classList.add('active');
     
     if (tabName === 'leaders' || tabName === 'profile') {
       if (window.updateProfileAndLeaders) window.updateProfileAndLeaders();
@@ -115,9 +105,7 @@ if (typeof window !== 'undefined') {
     });
     
     const targetContent = document.getElementById(`${tabName}TabContent`);
-    if (targetContent) {
-      targetContent.classList.add('active');
-    }
+    if (targetContent) targetContent.classList.add('active');
     
     if (tabName === 'shop') {
       if (window.updateShopUI) window.updateShopUI();
@@ -128,6 +116,9 @@ if (typeof window !== 'undefined') {
     }
   };
 
+  /**
+   * Активация/деактивация луны
+   */
   window.toggleMoonActive = (moonId) => {
     if (window.gameEngine && window.gameEngine.toggleMoonActive) {
       window.gameEngine.toggleMoonActive(moonId);
@@ -154,15 +145,112 @@ if (typeof window !== 'undefined') {
     if (window._setAchievementCategory) window._setAchievementCategory(category);
   };
 
+  // ============================================================
+  // НОВОЕ: Управление уровнем (фиксация и откат)
+  // ============================================================
+  window.toggleLevelLock = () => {
+    const isLocked = !state.levelLocked;
+    appState.set('levelLocked', isLocked);
+    
+    if (window.updateUI) window.updateUI();
+    
+    showToast(
+      isLocked ? '🔒 Уровень закреплён (фарм режим)' : '🔓 Уровень откреплен', 
+      'info'
+    );
+  };
+
+  window.rollbackLevel = async () => {
+    if (window.gameEngine && window.gameEngine.rollbackLevel) {
+      await window.gameEngine.rollbackLevel();
+    }
+  };
+
+  // ============================================================
+  // НОВОЕ: Тестовый режим с паролем
+  // ============================================================
+  window.showPasswordModal = () => {
+    if (state.testMode) {
+      // Если уже включён - просто выключаем
+      window.gameEngine.toggleTestMode();
+      return;
+    }
+    
+    const modal = document.getElementById('passwordModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      const input = document.getElementById('testModePassword');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+      const errorEl = document.getElementById('passwordError');
+      if (errorEl) errorEl.classList.remove('show');
+    }
+  };
+
+  window.closePasswordModal = () => {
+    const modal = document.getElementById('passwordModal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.submitTestModePassword = () => {
+    const input = document.getElementById('testModePassword');
+    const errorEl = document.getElementById('passwordError');
+    
+    if (!input || !errorEl) return;
+    
+    const password = input.value.trim();
+    
+    if (password === CONSTANTS.TEST_MODE_PASSWORD) {
+      window.closePasswordModal();
+      if (window.gameEngine && window.gameEngine.toggleTestMode) {
+        window.gameEngine.toggleTestMode();
+      }
+    } else {
+      errorEl.textContent = '❌ Неверный пароль';
+      errorEl.classList.add('show');
+      input.value = '';
+      input.focus();
+    }
+  };
+
+  // Обработка Enter в поле пароля
+  document.addEventListener('DOMContentLoaded', () => {
+    const passwordInput = document.getElementById('testModePassword');
+    if (passwordInput) {
+      passwordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          window.submitTestModePassword();
+        }
+      });
+    }
+  });
+
+  // ============================================================
+  // НОВОЕ: Модалка Сверхновой
+  // ============================================================
+  window.showSupernovaModal = () => {
+    const modal = document.getElementById('supernovaModal');
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.closeSupernovaModal = () => {
+    const modal = document.getElementById('supernovaModal');
+    if (modal) modal.classList.add('hidden');
+  };
+
   console.log('[Events] Global functions registered');
 }
 
 // ============================================================
-// 🎯 ИНИЦИАЛИЗАЦИЯ
+// 🎯 ИНИЦИАЛИЗАЦИЯ ADD EVENT LISTENER
 // ============================================================
 export function initEvents() {
   console.log('[Events] Инициализация...');
 
+  // Кнопки авторизации
   const loginBtn = document.getElementById('loginBtn');
   const registerBtn = document.getElementById('registerBtn');
   const logoutBtn = document.getElementById('logoutBtn');
@@ -196,8 +284,8 @@ export function initEvents() {
     });
   }
 
+  // Клик по луне
   const moonWrapper = document.getElementById('moonWrapper');
-
   if (moonWrapper) {
     moonWrapper.addEventListener('click', (e) => {
       if (gameEngine && gameEngine.handleClick) {
@@ -220,6 +308,7 @@ export function initEvents() {
     }, { passive: false });
   }
 
+  // Enter в форме авторизации
   const authPassword = document.getElementById('authPassword');
   if (authPassword) {
     authPassword.addEventListener('keypress', (e) => {
