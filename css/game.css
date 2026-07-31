@@ -1237,7 +1237,1125 @@
 }
 
 .btn-toggle:hover { transform: translateY(-1px); }
+/* ============================================================
+   ПРОФИЛЬ
+   ============================================================ */
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
+.profile-block {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+
+.profile-block-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.block-icon { font-size: 1.1rem; }
+
+.block-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.block-counter {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255, 215, 0, 0.1);
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Шапка профиля */
+.profile-header-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 152, 0, 0.04));
+  border-color: rgba(255, 215, 0, 0.2);
+}
+
+.profile-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 152, 0, 0.1));
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.profile-level-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-orange));
+  color: #0a0e1a;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.profile-info { flex: 1; min-width: 0; }
+
+.profile-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-email {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-title {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+/* Боевые статы */
+.combat-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.combat-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.combat-stat-icon { font-size: 1.2rem; flex-shrink: 0; }
+
+.combat-stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.combat-stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.combat-stat-value.highlight {
+  color: var(--accent-gold);
+}
+
+/* Бонусы */
+.bonuses-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.bonus-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.bonus-card-icon { font-size: 1.2rem; }
+
+.bonus-card-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bonus-card-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Активные луны в профиле */
+.active-moons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-moon-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.profile-moon-card.active {
+  border-color: rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 152, 0, 0.04));
+}
+
+.profile-moon-card.empty-slot {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+.profile-moon-emoji {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.profile-moon-emoji.empty {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed var(--border-medium);
+}
+
+.profile-moon-info { flex: 1; min-width: 0; }
+
+.profile-moon-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.profile-moon-name.empty-name {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.profile-moon-level {
+  font-size: 0.75rem;
+  color: var(--accent-gold);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+
+.profile-moon-special {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.btn-moon-deactivate {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: rgba(244, 67, 54, 0.15);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: var(--danger);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.btn-moon-deactivate:hover {
+  background: rgba(244, 67, 54, 0.3);
+  transform: scale(1.05);
+}
+
+.btn-moon-deactivate svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Коллекция лун */
+.owned-moons-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.owned-moon-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.owned-moon-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 215, 0, 0.3);
+  box-shadow: var(--shadow-md);
+}
+
+.owned-moon-card.is-active {
+  border-color: rgba(76, 175, 80, 0.4);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+  box-shadow: 0 0 12px rgba(76, 175, 80, 0.2);
+}
+
+.owned-moon-visual {
+  position: relative;
+}
+
+.owned-moon-emoji {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.owned-moon-level-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -6px;
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--accent-gold);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.owned-moon-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.owned-moon-rarity {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: white;
+  padding: 1px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.btn-owned-moon-toggle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  padding: 0;
+}
+
+.btn-owned-moon-toggle.active {
+  background: rgba(76, 175, 80, 0.25);
+  border-color: rgba(76, 175, 80, 0.5);
+  color: var(--success);
+}
+
+/* Синергии в профиле */
+.synergies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-synergy-card {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--tier-color, var(--border-soft));
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--tier-color, var(--border-soft));
+}
+
+.synergy-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.synergy-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  border: 1px solid var(--tier-color, var(--border-soft));
+  flex-shrink: 0;
+}
+
+.synergy-card-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.synergy-card-tier {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--tier-color, var(--accent-gold));
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.synergy-card-moons {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.synergy-moon-emoji { font-size: 1.1rem; }
+
+.synergy-card-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.synergy-card-bonuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.synergy-card-bonuses span {
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: var(--accent-gold);
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Статистика */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.stat-card-icon { font-size: 1.2rem; }
+
+.stat-card-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-card-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Кнопки профиля */
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-action {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-logout {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.btn-logout:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--border-medium);
+}
+
+.btn-reset {
+  background: rgba(244, 67, 54, 0.1);
+  color: var(--danger);
+  border-color: rgba(244, 67, 54, 0.25);
+}
+
+.btn-reset:hover {
+  background: rgba(244, 67, 54, 0.2);
+  border-color: rgba(244, 67, 54, 0.4);
+}
+
+/* Empty / error states */
+.empty-state {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.empty-state-hint {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+.no-data,
+.error-data,
+.no-quests,
+.no-achievements {
+  text-align: center;
+  padding: 28px 16px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.error-data { color: var(--danger); }
+
+/* ============================================================
+   ЛИДЕРБОРД
+   ============================================================ */
+.leaders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leader-item {
+  display: grid;
+  grid-template-columns: 40px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.leader-item:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  transform: translateX(2px);
+}
+
+.leader-item.is-me {
+  border-color: rgba(255, 215, 0, 0.35);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 152, 0, 0.05));
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
+}
+
+.leader-item.rank-gold {
+  border-color: rgba(255, 215, 0, 0.4);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(255, 152, 0, 0.06));
+}
+
+.leader-item.rank-silver {
+  border-color: rgba(192, 192, 192, 0.35);
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(160, 160, 160, 0.04));
+}
+
+.leader-item.rank-bronze {
+  border-color: rgba(205, 127, 50, 0.35);
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.1), rgba(180, 100, 30, 0.04));
+}
+
+.leader-rank {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--accent-gold);
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+}
+
+.rank-gold .leader-rank { color: #ffd700; }
+.rank-silver .leader-rank { color: #c0c0c0; }
+.rank-bronze .leader-rank { color: #cd7f32; }
+
+.leader-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leader-level {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.leader-clicks {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   ФИЛЬТР-ТАБЫ (квесты / ачивки)
+   ============================================================ */
+.filter-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.filter-tabs::-webkit-scrollbar { height: 3px; }
+.filter-tabs::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 2px;
+}
+
+.filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.filter-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+.filter-tab.active {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 152, 0, 0.1));
+  border-color: rgba(255, 215, 0, 0.35);
+  color: var(--accent-gold);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+}
+
+.filter-tab .tab-icon { font-size: 0.9rem; }
+.filter-tab .tab-name { letter-spacing: 0.02em; }
+
+/* ============================================================
+   КВЕСТЫ
+   ============================================================ */
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quest-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.quest-card:hover {
+  border-color: rgba(255, 215, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+.quest-card.completed {
+  border-color: rgba(76, 175, 80, 0.35);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(76, 175, 80, 0.02));
+}
+
+.quest-card.claimed {
+  opacity: 0.55;
+}
+
+.quest-card.difficulty-easy { border-left: 3px solid #4caf50; }
+.quest-card.difficulty-medium { border-left: 3px solid #ff9800; }
+.quest-card.difficulty-hard { border-left: 3px solid #f44336; }
+
+.quest-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.quest-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.quest-title-wrap { flex: 1; min-width: 0; }
+
+.quest-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.quest-category {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.quest-difficulty {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.quest-difficulty.difficulty-easy {
+  background: rgba(76, 175, 80, 0.15);
+  color: #81c784;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.quest-difficulty.difficulty-medium {
+  background: rgba(255, 152, 0, 0.15);
+  color: #ffb74d;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.quest-difficulty.difficulty-hard {
+  background: rgba(244, 67, 54, 0.15);
+  color: #ef5350;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.quest-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.quest-progress {
+  margin-bottom: 10px;
+}
+
+.quest-progress-bar {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.quest-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.quest-progress-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  text-align: right;
+}
+
+.quest-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.quest-reward {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.reward-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.reward-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.bonus-reward {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #81c784;
+  background: rgba(76, 175, 80, 0.15);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.quest-status {
+  flex-shrink: 0;
+}
+
+.status-claimed {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.status-progress {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.btn-claim {
+  padding: 7px 16px;
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.btn-claim:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(76, 175, 80, 0.45);
+}
+
+/* ============================================================
+   ДОСТИЖЕНИЯ
+   ============================================================ */
+.achievement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.achievement-category {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 4px;
+}
+
+.category-icon { font-size: 1.1rem; }
+
+.category-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.achievement-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  transition: all var(--transition-base);
+}
+
+.achievement-card:hover {
+  border-color: rgba(255, 215, 0, 0.2);
+}
+
+.achievement-header {
+  display: flex;
+  gap: 12px;
+}
+
+.achievement-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.achievement-info { flex: 1; min-width: 0; }
+
+.achievement-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.achievement-tier {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid transparent;
+  transition: all var(--transition-base);
+}
+
+.achievement-tier.tier-bronze { border-left-color: #cd7f32; }
+.achievement-tier.tier-silver { border-left-color: #c0c0c0; }
+.achievement-tier.tier-gold { border-left-color: #ffd700; }
+
+.achievement-tier.achieved {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.04));
+}
+
+.achievement-tier.unclaimed {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(255, 152, 0, 0.06));
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.15);
+  animation: claimPulse 2s ease-in-out infinite;
+}
+
+@keyframes claimPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.15); }
+  50% { box-shadow: 0 0 16px rgba(255, 215, 0, 0.3); }
+}
+
+.achievement-tier.locked {
+  opacity: 0.5;
+}
+
+.tier-medal {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tier-info { flex: 1; min-width: 0; }
+
+.tier-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.tier-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.tier-reward {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.btn-claim-tier {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: inherit;
+  flex-shrink: 0;
+  align-self: center;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.btn-claim-tier:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(76, 175, 80, 0.45);
+}
+
+/* ============================================================
+   АДАПТИВ ДЛЯ НОВЫХ БЛОКОВ
+   ============================================================ */
+@media (max-width: 500px) {
+  .combat-stats,
+  .bonuses-grid,
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .owned-moons-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .leader-item {
+    grid-template-columns: 32px 1fr auto;
+    gap: 6px;
+  }
+
+  .leader-clicks {
+    grid-column: 2 / -1;
+    font-size: 0.7rem;
+  }
+
+  .profile-header-block {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-avatar-wrap {
+    margin: 0 auto;
+  }
+}
 /* ============================================================
    АДАПТИВНОСТЬ
    ============================================================ */
