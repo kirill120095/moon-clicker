@@ -97,7 +97,7 @@ export function updateUI() {
     updateTimerBar();
     _updateRollbackButton();
     _updateMoonStyle();
-    _updateMoonAuras(); // НОВОЕ: обновление аур
+    _updateMoonAuras();
   });
 }
 
@@ -1071,7 +1071,7 @@ if (typeof window !== 'undefined') {
 
 
 // ============================================================
-// ЭКСПОРТ ФУНКЦИЙ В WINDOW
+// ЭКСПОРТ В WINDOW
 // ============================================================
 if (typeof window !== 'undefined') {
   window.updateProfileAndLeaders = updateProfileAndLeaders;
@@ -1081,7 +1081,6 @@ if (typeof window !== 'undefined') {
   window.updateQuestAndAchievementUI = updateQuestAndAchievementUI;
   window.updateTimerBar = updateTimerBar;
   window.showToast = showToast;
-  
   window._setQuestCategory = setQuestCategory;
   window._setAchievementCategory = setAchievementCategory;
 }
