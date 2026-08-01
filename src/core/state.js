@@ -228,6 +228,28 @@ class State {
    */
   _loadUserLocalStorage(userId) {
     try {
+      // Загружаем купленные луны (ВАЖНО: до activeMoons)
+      const ownedMoons = localStorage.getItem(`ownedMoons_${userId}`);
+      if (ownedMoons) {
+        try {
+          const moons = JSON.parse(ownedMoons);
+          if (Array.isArray(moons) && moons.length > 0) {
+            this._state.ownedMoons = moons;
+          }
+        } catch (e) {}
+      }
+
+      // Загружаем уровни лун
+      const moonLevels = localStorage.getItem(`moonLevels_${userId}`);
+      if (moonLevels) {
+        try {
+          const levels = JSON.parse(moonLevels);
+          if (levels && typeof levels === 'object') {
+            this._state.moonLevels = levels;
+          }
+        } catch (e) {}
+      }
+
       // Загружаем активные луны
       const activeMoons = localStorage.getItem(`activeMoons_${userId}`);
       if (activeMoons) {
@@ -235,7 +257,7 @@ class State {
         if (Array.isArray(moons) && moons.length > 0) {
           const validMoons = moons.filter(id => this._state.ownedMoons.includes(id));
           if (validMoons.length > 0) {
-            this._state.activeMoons = validMoons;
+            this._state.activeMoons = validMoons.slice(0, this._state.maxSlots || 1);
             this._state.activeMoon = validMoons[0];
           }
         }
@@ -335,18 +357,29 @@ class State {
   addOwnedMoon(moonId) {
     const owned = this._state.ownedMoons || [];
     if (!owned.includes(moonId)) {
-      this.set('ownedMoons', [...owned, moonId]);
+      const next = [...owned, moonId];
+      this.set('ownedMoons', next);
       
       const levels = this._state.moonLevels || {};
       if (!levels[moonId]) {
         this.set('moonLevels', { ...levels, [moonId]: 1 });
+      }
+
+      if (this._state.user?.id) {
+        localStorage.setItem(`ownedMoons_${this._state.user.id}`, JSON.stringify(next));
+        localStorage.setItem(`moonLevels_${this._state.user.id}`, JSON.stringify(this._state.moonLevels));
       }
     }
   }
 
   setMoonLevel(moonId, level) {
     const levels = this._state.moonLevels || {};
-    this.set('moonLevels', { ...levels, [moonId]: level });
+    const next = { ...levels, [moonId]: level };
+    this.set('moonLevels', next);
+
+    if (this._state.user?.id) {
+      localStorage.setItem(`moonLevels_${this._state.user.id}`, JSON.stringify(next));
+    }
   }
 
   getMoonLevel(moonId) {
