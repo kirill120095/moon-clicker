@@ -819,8 +819,8 @@ export class GameEngine {
     this._newMoon = true;
     this._firstStrikeUsed = false;
     updateUI();
+    updateTimerBar();
     showToast('⏱️ Время вышло! Босс начинается заново', 'warning');
-    // Перезапуск таймера босса
     this._checkBoss();
   }
 
@@ -889,6 +889,9 @@ export class GameEngine {
         localStorage.setItem(`ach_${user.id}`, JSON.stringify(state.achievements || {}));
         localStorage.setItem(`activeMoons_${user.id}`, JSON.stringify(state.activeMoons || []));
         localStorage.setItem(`moonLevels_${user.id}`, JSON.stringify(state.moonLevels || {}));
+        localStorage.setItem(`ownedMoons_${user.id}`, JSON.stringify(state.ownedMoons || ['normal']));
+        localStorage.setItem(`slotLevel_${user.id}`, String(state.maxSlots || 1));
+        localStorage.setItem(`bossKills_${user.id}`, String(state.bossKills || 0));
       }
     } catch (error) {
       console.error('[Game] Ошибка сохранения:', error);
@@ -964,9 +967,6 @@ export class GameEngine {
     if (this._isPurchaseProcessing) return;
     if (!state.user) return showToast('⚠️ Войдите в аккаунт', 'warning');
     
-    const level = state.currentLevel || 1;
-    if (level < 5) return showToast('🔒 Доступно с 5 уровня', 'warning');
-    
     const currentLevelUpgrade = state.playerData?.click_damage_level || 0;
     if (currentLevelUpgrade >= CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL) {
       return showToast('⚠️ Максимальный уровень', 'warning');
@@ -1003,6 +1003,7 @@ export class GameEngine {
         shards: newShards
       });
       
+      this._forceSave();
       updateUI();
       updateShopUI();
       updateProfileAndLeaders();
@@ -1043,6 +1044,7 @@ export class GameEngine {
       appState.setSlotLevel(newSlotLevel);
       appState.set('playerData', { ...state.playerData, shards: newShards });
       
+      this._forceSave();
       updateUI();
       updateShopUI();
       updateProfileAndLeaders();
@@ -1064,9 +1066,7 @@ export class GameEngine {
     const moon = MOON_TYPES[moonId];
     if (!moon) return;
     if (state.ownedMoons.includes(moonId)) return showToast('⚠️ Уже есть', 'warning');
-    if (state.currentLevel < (moon.unlockLevel || 1)) {
-      return showToast(`🔒 С ${moon.unlockLevel} уровня`, 'warning');
-    }
+    // Проверка уровня убрана — покупка доступна всегда
     if (!state.testMode && (state.playerData?.shards || 0) < moon.cost) {
       return showToast(`⚠️ Нужно ${moon.cost} 💎`, 'warning');
     }
@@ -1089,6 +1089,7 @@ export class GameEngine {
       }
       appState.set('playerData', { ...state.playerData, shards: newShards });
       
+      this._forceSave();
       updateUI();
       updateShopUI();
       updateProfileAndLeaders();
@@ -1112,17 +1113,21 @@ export class GameEngine {
     const isActive = state.activeMoons.includes(moonId);
     
     if (isActive) {
+      // Нельзя снять последнюю луну
       if (state.activeMoons.length === 1) {
         return showToast('⚠️ Нужна хотя бы 1 луна', 'warning');
       }
       appState.removeActiveMoon(moonId);
       showToast(`❌ ${MOON_TYPES[moonId].name} деактивирована`, 'info');
     } else {
+      // Если слоты заполнены — заменяем (особенно важно при 1 слоте)
       if (state.activeMoons.length >= state.maxSlots) {
-        return showToast(`⚠️ Нет слотов (макс: ${state.maxSlots})`, 'warning');
+        appState.setActiveMoon(moonId); // заменяет первую активную
+        showToast(`🔄 Активна: ${MOON_TYPES[moonId].name}`, 'success');
+      } else {
+        appState.addActiveMoon(moonId);
+        showToast(`✅ ${MOON_TYPES[moonId].name} активирована`, 'success');
       }
-      appState.addActiveMoon(moonId);
-      showToast(`✅ ${MOON_TYPES[moonId].name} активирована`, 'success');
     }
     
     this._newMoon = true;
@@ -1133,6 +1138,7 @@ export class GameEngine {
     this._pityClicks = 0;
     this._superconductorClicksLeft = 0;
     
+    this._forceSave();
     updateUI();
     updateShopUI();
     updateProfileAndLeaders();
@@ -1144,7 +1150,7 @@ export class GameEngine {
     if (this._isPurchaseProcessing) return;
     if (!state.user) return showToast('⚠️ Войдите', 'warning');
     if (!state.ownedMoons.includes(moonId)) return showToast('⚠️ Нет луны', 'warning');
-    if (state.currentLevel < 10) return showToast('🔒 С 10 уровня', 'warning');
+    // Проверка уровня убрана — прокачка доступна всегда
     
     const currentLevel = state.moonLevels[moonId] || 1;
     if (currentLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
@@ -1394,9 +1400,13 @@ export class GameEngine {
       
       if (state.user) {
         const userId = state.user.id;
-        ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel', 'levelLocked', 'testMode', 
-         `quests_last_reset_${userId}`, `activeMoons_${userId}`, `moonLevels_${userId}`]
-          .forEach(key => localStorage.removeItem(`${key}_${userId}`));
+        ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel', 'levelLocked', 'testMode',
+         `quests_last_reset_${userId}`, `activeMoons_${userId}`, `moonLevels_${userId}`, `ownedMoons_${userId}`]
+          .forEach(key => {
+            // keys already include userId suffix for some; handle both patterns
+            localStorage.removeItem(key);
+            localStorage.removeItem(`${key}_${userId}`);
+          });
       }
       
       const freshData = await db.getPlayer(state.user.id, false);
