@@ -14,7 +14,7 @@ export const CONSTANTS = {
     moonSlots: { base: 3000, multiplier: 2.8 }      // было 1500
   },
 
-  CLICK_DAMAGE_UPGRADE_VALUE: 10,
+  CLICK_DAMAGE_UPGRADE_VALUE: 100,
 
   INTERVALS: {
     SAVE_TIME: 30000,
