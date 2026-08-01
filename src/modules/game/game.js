@@ -318,10 +318,11 @@ export class GameEngine {
           params.maxStacks
         );
         damageMultiplier += stacks * params.bonusPerStack;
-        
-        // Сброс при достижении максимума
-        if (this._comboClicks >= params.clicksPerStack * params.maxStacks) {
-          this._comboClicks = 0;
+        // Комбо НЕ сбрасывается при макс. стеках — только по таймауту бездействия
+        // _comboClicks ограничен сверху, чтобы не рос бесконечно
+        const maxClicks = params.clicksPerStack * params.maxStacks;
+        if (this._comboClicks > maxClicks) {
+          this._comboClicks = maxClicks;
         }
       }
     }
@@ -374,9 +375,10 @@ export class GameEngine {
           critChance = Math.min(0.95, critChance + params.fullStackCritChance);
         }
         
-        // Сброс при достижении максимума
-        if (this._shadowCritStacks >= params.clicksPerStack * params.maxStacks) {
-          this._shadowCritStacks = 0;
+        // Тень НЕ сбрасывается при макс. стеках — только по таймауту бездействия
+        const maxShadowClicks = params.clicksPerStack * params.maxStacks;
+        if (this._shadowCritStacks > maxShadowClicks) {
+          this._shadowCritStacks = maxShadowClicks;
         }
       }
     }
@@ -696,13 +698,6 @@ export class GameEngine {
   // ПОБЕДА НАД ЛУНОЙ
   // ============================================================
   async _onMoonDefeated(isBoss) {
-    if (state.levelLocked) {
-      appState.set('moonHP', state.maxHP);
-      updateUI();
-      showToast('🔒 Уровень закреплён', 'info');
-      return;
-    }
-    
     const bonuses = this._calculateAllBonuses();
     const mechanics = this._getActiveMechanics();
     
@@ -737,7 +732,6 @@ export class GameEngine {
     appState.set('playerData', { ...state.playerData, shards: currentShards });
     
     this.updateQuestProgress('shard', reward);
-    this.updateQuestProgress('level', 1);
     
     if (isBoss) {
       appState.setBossKills(state.bossKills + 1);
@@ -747,6 +741,29 @@ export class GameEngine {
     
     showToast(`💎 +${reward} осколков!`, 'success', 2000);
     
+    // ── ЗАМОК: награда выдана, уровень не растёт, HP восстанавливается ──
+    if (state.levelLocked) {
+      appState.set('moonHP', state.maxHP);
+      this._newMoon = true;
+      this._firstStrikeUsed = false;
+      this._clickCounter = 0;
+      this._pityClicks = 0;
+      this._superconductorClicksLeft = 0;
+      // combo / fire / shadow — НЕ сбрасываем
+      
+      this._forceSave();
+      updateUI();
+      updateTimerBar();
+      updateShopUI();
+      updateProfileAndLeaders();
+      this._updateBuffsDisplay();
+      this._checkBoss(); // перезапуск таймера босса
+      showToast('🔒 Уровень закреплён — фармим дальше', 'info');
+      return;
+    }
+    
+    // ── Обычный прогресс ──
+    this.updateQuestProgress('level', 1);
     appState.incrementLevel();
     
     const newLevel = state.currentLevel;
@@ -756,16 +773,12 @@ export class GameEngine {
     
     this._applyLevelUpEffect();
     
-    // Сброс счётчиков
-    this._comboClicks = 0;
-    this._fireStacks = 0;
-    this._shadowCritStacks = 0;
+    // Сброс только «лунных» счётчиков — combo/fire/shadow НЕ трогаем
     this._clickCounter = 0;
     this._pityClicks = 0;
     this._superconductorClicksLeft = 0;
     this._firstStrikeUsed = false;
     this._newMoon = true;
-    this._buffsAlreadyReset = false;
     
     this.checkAchievements();
     this._forceSave();
@@ -803,8 +816,12 @@ export class GameEngine {
 
   _onBossTimeout() {
     appState.set('moonHP', state.maxHP);
+    this._newMoon = true;
+    this._firstStrikeUsed = false;
     updateUI();
-    showToast('⏱️ Время вышло!', 'warning');
+    showToast('⏱️ Время вышло! Босс начинается заново', 'warning');
+    // Перезапуск таймера босса
+    this._checkBoss();
   }
 
   recalcMoonBonuses() {
@@ -1111,13 +1128,10 @@ export class GameEngine {
     this._newMoon = true;
     this._firstStrikeUsed = false;
     
-    this._comboClicks = 0;
-    this._fireStacks = 0;
-    this._shadowCritStacks = 0;
+    // combo / fire / shadow — НЕ сбрасываем при смене луны
     this._clickCounter = 0;
     this._pityClicks = 0;
     this._superconductorClicksLeft = 0;
-    this._buffsAlreadyReset = false;
     
     updateUI();
     updateShopUI();
