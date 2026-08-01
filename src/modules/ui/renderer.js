@@ -265,10 +265,10 @@ function _updateClickDamageShop() {
   if (!buyBtn || !priceEl || !levelEl) return;
 
   const level = state.currentLevel || 1;
-  const isUnlocked = level >= 5;
+  const isUnlocked = true; // Магазин всегда доступен
 
   if (lockMsg) {
-    lockMsg.textContent = isUnlocked ? '✅ Магазин доступен' : `🔒 Доступно с 5 уровня (сейчас ${level})`;
+    lockMsg.style.display = 'none';
     lockMsg.style.color = isUnlocked ? 'rgba(80, 255, 150, 0.5)' : 'rgba(255, 255, 255, 0.3)';
   }
 
@@ -326,7 +326,7 @@ function _updateMoonShop() {
   for (const [id, moon] of Object.entries(MOON_TYPES)) {
     const owned = state.ownedMoons.includes(id);
     const isActive = state.activeMoons.includes(id);
-    const isLockedByLevel = state.currentLevel < (moon.unlockLevel || 1);
+    const isLockedByLevel = false; // Покупки доступны с любого уровня
     const moonLevel = owned ? (state.moonLevels[id] || 1) : 0;
     
     const canBuy = !owned && !isLockedByLevel &&
