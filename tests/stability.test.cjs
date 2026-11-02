@@ -91,3 +91,17 @@ test('reset restarts timers and clears test mode without losing the user', async
   h.run('gameEngine.destroy()');
   assert.equal(h.intervals.size, 0);
 });
+
+test('leaderboard request failures reach the UI instead of becoming an empty list', async () => {
+  const source = strip(fs.readFileSync(path.join(root, 'src/modules/network/supabase.js'), 'utf8'));
+  const failure = new Error('Network unavailable');
+  const query = { select() { return this; }, order() { return this; },
+    async limit() { return { data: null, error: failure }; } };
+  const context = { console: { log() {}, error() {} },
+    window: { localStorage: {}, supabase: { createClient() {
+      return { from() { return query; } };
+    } } } };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  await assert.rejects(vm.runInContext('db.getLeaders()', context), /Network unavailable/);
+});

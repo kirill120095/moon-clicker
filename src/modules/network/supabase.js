@@ -320,7 +320,7 @@ async createPlayer(userId) {
       return data || [];
     } catch (error) {
       console.error('[DB] getLeaders error:', error);
-      return [];
+      throw error;
     }
   }
 };
