@@ -1,0 +1,74 @@
+import { gameEngine } from './game.js';
+import { appState, state } from '../../core/state.js';
+import { CONSTANTS } from '../../core/constants.js';
+import { db } from '../network/supabase.js';
+import { animations } from '../ui/animations.js';
+import { audio } from '../ui/audio.js';
+import { showToast, updateUI,updateShopUI,updateProfileAndLeaders,updateQuestAndAchievementUI,updateTimerBar } from '../ui/renderer.js';
+let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false;
+function apply(result){
+ const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
+ offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
+ appState.setMany({currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
+ clickCount:s.clickCount,totalSecondsPlayed:s.totalSecondsPlayed,playerData:s.playerData,
+ activeMoon:s.activeMoon,activeMoons:s.activeMoons,ownedMoons:s.ownedMoons,moonLevels:s.moonLevels,
+ maxSlots:s.maxSlots,bossKills:s.bossKills,quests:s.quests,achievements:s.achievements,
+ levelLocked:s.levelLocked,testMode:false,bossTimerRunning:!!deadline,
+ bossTimer:deadline?Math.max(0,(deadline-result.serverNow)/1000):30});
+ Object.assign(gameEngine,s.runtime||{});
+ gameEngine.recalcMoonBonuses();updateUI();updateShopUI();updateQuestAndAchievementUI();
+ const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
+ const goal=document.getElementById('nextGoal');if(goal){const upgrade=s.playerData.click_damage_level;
+ const cost=Math.floor(CONSTANTS.UPGRADE_COSTS.clickDamage.base*Math.pow(CONSTANTS.UPGRADE_COSTS.clickDamage.multiplier,upgrade));goal.textContent=s.currentLevel%CONSTANTS.BOSS_INTERVAL===0?'Босс: победи за 30 секунд. Если сложно — вернись на уровень назад и закрепи его для фарма.':upgrade<CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL?'Следующее улучшение: '+cost.toLocaleString('ru-RU')+' 💎 · ещё '+Math.max(0,cost-s.playerData.shards).toLocaleString('ru-RU')+' 💎':'Урон улучшен полностью — собирай луны и синергии';}
+}
+async function send(action,payload={}){
+ const status=document.getElementById('saveStatus');if(status)status.textContent='Сохраняем…';
+ try{const result=await db.action(action,payload);if(active)apply(result);return result;}
+ catch(error){if(status)status.textContent='Нет связи — действие не подтверждено';showToast(error.message,'warning');throw error;}
+}
+async function flush(){
+ if(flushTimer){clearTimeout(flushTimer);flushTimer=null;}
+ if(!active||pendingClicks===0)return;
+ const count=Math.min(CONSTANTS.CLICK_BURST,pendingClicks);pendingClicks-=count;
+ try{await send('click',{count});}finally{if(pendingClicks&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),180);}
+}
+async function command(action,payload={},purchase=false){
+ if(!active||purchasing)return;
+ if(purchase)purchasing=true;
+ try{await flush();await send(action,payload);if(purchase)audio.purchase();updateProfileAndLeaders();}
+ finally{purchasing=false;}
+}
+const oldDestroy=gameEngine.destroy.bind(gameEngine);
+gameEngine.init=async()=>{
+ active=true;gameEngine._isRunning=true;
+ try{apply(await db.action('load'));}catch(error){active=false;gameEngine._isRunning=false;throw error;}
+ if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
+ ticker=setInterval(()=>{
+  if(!active)return;
+  if(deadline){appState.set('bossTimer',Math.max(0,(deadline-Date.now()-offset)/1000));updateTimerBar();
+   if(deadline<=Date.now()+offset&&!syncing){syncing=true;send('sync').catch(()=>{}).finally(()=>{syncing=false;});}}
+ },250);
+ ping=setInterval(()=>{if(active&&!document.hidden)send('sync').catch(()=>{});},20000);
+ updateProfileAndLeaders();
+};
+gameEngine.destroy=()=>{active=false;pendingClicks=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.handleClick=e=>{
+ if(!active||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
+ pendingClicks++;audio.click();
+ animations.playClickVisualFeedback(e,state.playerData.click_damage,false,state.currentLevel%10===0);
+ if(!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),180);
+};
+gameEngine._saveProgress=async()=>{await flush();if(active)await send('sync');};
+gameEngine.buyClickDamage=()=>command('buyDamage',{},true).catch(()=>{});
+gameEngine.buySlot=()=>command('buySlot',{},true).catch(()=>{});
+gameEngine.buyMoon=id=>command('buyMoon',{id},true).catch(()=>{});
+gameEngine.upgradeMoon=id=>command('upgradeMoon',{id},true).catch(()=>{});
+gameEngine.toggleMoonActive=id=>command('toggleMoon',{id}).catch(()=>{});
+gameEngine.rollbackLevel=()=>command('rollback').catch(()=>{});
+gameEngine.toggleLevelLock=()=>command('lock').catch(()=>{});
+gameEngine.claimQuestReward=id=>command('claimQuest',{id},true).catch(()=>{});
+gameEngine.claimAchievementReward=(id,tier)=>command('claimAchievement',{id,tier},true).catch(()=>{});
+gameEngine.resetProgress=()=>command('reset').catch(()=>{});
+gameEngine.toggleTestMode=()=>showToast('Тестовый режим отключён в защищённом сезоне','info');
+
+const moonButton=document.getElementById('moonWrapper');moonButton?.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Enter'){e.preventDefault();const r=moonButton.getBoundingClientRect();gameEngine.handleClick({clientX:r.x+r.width/2,clientY:r.y+r.height/2});}});

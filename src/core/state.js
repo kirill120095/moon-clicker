@@ -212,7 +212,7 @@ class State {
     
     // Если пользователь установлен - загружаем его данные из localStorage
     if (user?.id) {
-      this._loadUserLocalStorage(user.id);
+      // Season 2 progression is loaded from the authenticated server snapshot.
     }
   }
 

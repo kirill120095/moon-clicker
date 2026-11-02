@@ -12,6 +12,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 
 let _initPromise = null;
 let _writeQueue = Promise.resolve();
+let _actionQueue = Promise.resolve();
 
 /**
  * Ждёт загрузки библиотеки Supabase с CDN
@@ -82,6 +83,23 @@ function initSupabase() {
 // ============================================================
 
 export const db = {
+  action(action, payload = {}) {
+    const request_id = crypto.randomUUID();
+    const run = async () => {
+      const client = await initSupabase();
+      const result = await client.functions.invoke('game-actions', { body: { action, payload, request_id } });
+      if (result.error) {
+        let message = 'Сервер недоступен. Повторите действие.';
+        try { const body = await result.error.context.json(); message = body.error || message; } catch {}
+        throw new Error(message);
+      }
+      if (result.data?.error) throw new Error(result.data.error);
+      return result.data;
+    };
+    const pending = _actionQueue.then(run);
+    _actionQueue = pending.catch(() => {});
+    return pending;
+  },
   // ============================================================
   // AUTH: ПОЛУЧЕНИЕ СЕССИИ
   // ============================================================
@@ -146,13 +164,6 @@ export const db = {
         data: { username: username }
       });
       
-      // With email confirmation enabled signUp returns a user but no session.
-      // Create the player at the first authenticated login in that case.
-      if (result.user && result.session) {
-        await this.createPlayer(result.user.id);
-        await this.updatePlayer(result.user.id, { username });
-      }
-      
       return result;
     } catch (error) {
       console.error('[DB] register error:', error);
@@ -215,28 +226,12 @@ export const db = {
   // ============================================================
   // DB: ПОЛУЧЕНИЕ ИГРОКА
   // ============================================================
-  async getPlayer(userId, createIfNotExists = true) {
-    try {
-      const client = await initSupabase();
-      const { data, error } = await client
-        .from('players')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (!data && createIfNotExists) {
-        return await this.createPlayer(userId);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('[DB] getPlayer error:', error);
-      throw error;
-    }
+  async getPlayer() {
+    const result = await this.action('load');
+    const s = result.state;
+    return { id: (await this.getUser())?.id, ...s.playerData,
+      level:s.currentLevel, moon_hp:s.moonHP, total_clicks:s.clickCount,
+      total_seconds_played:s.totalSecondsPlayed, game_state:s };
   },
 
   // ============================================================
@@ -276,30 +271,8 @@ async createPlayer(userId) {
   // ============================================================
   // DB: ОБНОВЛЕНИЕ ИГРОКА
   // ============================================================
-  updatePlayer(userId, updates) {
-    const write = async () => {
-    try {
-      const client = await initSupabase();
-      updates.updated_at = new Date().toISOString();
-
-      const { data, error } = await client
-        .from('players')
-        .update(updates)
-        .eq('id', userId)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return data;
-    } catch (error) {
-      console.error('[DB] updatePlayer error:', error);
-      throw error;
-    }
-    };
-    const pending = _writeQueue.then(write);
-    _writeQueue = pending.catch(() => {});
-    return pending;
+  async updatePlayer() {
+    throw new Error('Обновите страницу: прогресс сохраняется сервером нового сезона.');
   },
 
   // ============================================================

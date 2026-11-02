@@ -12,7 +12,7 @@ import { CONSTANTS, MOON_UPGRADE_BASE_COSTS } from './constants.js';
  */
 export function getMaxHPForLevel(level, baseHP = CONSTANTS.BASE_HP, bossInterval = CONSTANTS.BOSS_INTERVAL) {
   const isBoss = level % bossInterval === 0 && level > 0;
-  const hp = baseHP * Math.pow(1.15, level - 1);
+  const hp = baseHP * Math.pow(CONSTANTS.HP_GROWTH, level - 1);
   
   if (isBoss) {
     return Math.round(hp * 5);

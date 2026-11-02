@@ -142,15 +142,14 @@ async function handleSuccessfulLogin(user) {
   appState.loadPlayerData(playerData);
 
   // Скрываем экран авторизации
-  hideAuthScreen();
-  
-  // Показываем основной экран
-  showApp();
+  // Wait for the authoritative game state before revealing the app.
 
   // Инициализируем игру
   if (gameEngine && gameEngine.init) {
-    gameEngine.init();
+    await gameEngine.init();
   }
+  hideAuthScreen();
+  showApp();
 
   showToast(`✅ Добро пожаловать, ${user.user_metadata?.username || 'Игрок'}!`, 'success');
 }

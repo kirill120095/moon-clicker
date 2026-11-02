@@ -326,7 +326,7 @@ function _updateMoonShop() {
   for (const [id, moon] of Object.entries(MOON_TYPES)) {
     const owned = state.ownedMoons.includes(id);
     const isActive = state.activeMoons.includes(id);
-    const isLockedByLevel = false; // Покупки доступны с любого уровня
+    const isLockedByLevel = state.currentLevel < moon.unlockLevel;
     const moonLevel = owned ? (state.moonLevels[id] || 1) : 0;
     
     const canBuy = !owned && !isLockedByLevel &&

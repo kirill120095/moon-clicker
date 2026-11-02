@@ -157,6 +157,8 @@ async function init() {
     console.log('═══════════════════════════════════════════');
 
     // Инициализируем события
+    // Load the server-authoritative controller before enabling gameplay.
+    await safeImport('./modules/game/secure-game.js', 'Secure game');
     initEvents();
 
     // Создаём звёзды

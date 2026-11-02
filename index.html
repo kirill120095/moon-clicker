@@ -22,8 +22,12 @@
   <link rel="stylesheet" href="css/game.css?v=9">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
+  <link rel="stylesheet" href="css/neon.css?v=season2">
 </head>
 <body>
+  <details id="audioSettings" class="audio-dock"><summary id="audioSummary">Звук</summary><div class="audio-dock-content"><h2>Звуковая атмосфера</h2><label class="sound-row"><span>Музыка</span><input type="range" min="0" max="100" step="1" data-audio-volume="music" aria-label="Громкость музыки"><output data-audio-output="music">14%</output></label>
+<label class="sound-row"><span>Эффекты</span><input type="range" min="0" max="100" step="1" data-audio-volume="effects" aria-label="Громкость эффектов"><output data-audio-output="effects">45%</output></label>
+<label class="sound-check"><input type="checkbox" data-audio-mute> Выключить весь звук</label><p>Тихий синтезаторный фон и мягкие игровые эффекты.</p></div></details>
   <!-- ЗВЁЗДНОЕ НЕБО -->
   <div id="stars"></div>
   
@@ -37,7 +41,7 @@
     <div class="auth-card">
       <div class="auth-logo">🌙</div>
       <h1 class="auth-title">Лунный Кликер</h1>
-      <p class="auth-subtitle">Покоряй галактику кликами</p>
+      <p class="auth-subtitle">Собирай луны. Находи синергии. Покоряй орбиту.</p>
       
       <div class="auth-form">
         <input type="email" id="authEmail" aria-label="Email" placeholder="Email" autocomplete="email">
@@ -56,10 +60,11 @@
   <!-- ОСНОВНОЙ ЭКРАН ИГРЫ -->
   <!-- ============================================================ -->
   <div id="app" class="app hidden">
+    <header class="mission-header"><span class="brand-orbit">MOON<span>CLICKER</span></span><span class="season-badge">СЕЗОН 02 · NEON ORBIT</span></header>
     
     <!-- ЛУНА ПО ЦЕНТРУ -->
     <div id="moonContainer" class="moon-container">
-      <div id="moonWrapper" class="moon-wrapper">
+      <div id="moonWrapper" class="moon-wrapper" role="button" tabindex="0" aria-label="Ударить по луне">
         <div id="moonInner" class="moon-inner"></div>
         <div id="clickEffect" class="click-effect"></div>
       </div>
@@ -67,6 +72,7 @@
 
     <!-- ИНФО ПОД ЛУНОЙ -->
     <div class="moon-info-below">
+      <p id="nextGoal" class="next-goal">Каждый удар приближает новую луну</p><p class="neon-help">Кликай по луне или нажимай пробел · ↩ возврат · 🔒 фарм уровня</p>
       <!-- НОВАЯ СТРОКА: Уровень + кнопки управления -->
       <div class="level-controls-row">
         <button id="rollbackLevelBtn" class="level-control-btn rollback-btn hidden" onclick="window.rollbackLevel()" title="Откатить уровень">
@@ -144,12 +150,12 @@
         </div>
         
         <div id="settingsTabContent" class="tab-content">
-          <div class="settings-item">
-            <label class="settings-label">Тестовый режим</label>
-            <button id="testModeToggle" class="btn-toggle" onclick="window.showPasswordModal()">ВЫКЛ</button>
-          </div>
-        </div>
-      </div>
+          <section class="sound-settings"><h3>Звук и атмосфера</h3><label class="sound-row"><span>Музыка</span><input type="range" min="0" max="100" step="1" data-audio-volume="music" aria-label="Громкость музыки"><output data-audio-output="music">14%</output></label>
+<label class="sound-row"><span>Эффекты</span><input type="range" min="0" max="100" step="1" data-audio-volume="effects" aria-label="Громкость эффектов"><output data-audio-output="effects">45%</output></label>
+<label class="sound-check"><input type="checkbox" data-audio-mute> Выключить весь звук</label>
+          <label class="sound-check"><input type="checkbox" id="reduceEffects"> Уменьшить анимацию</label>
+          <p class="settings-note">Настройки сохраняются на этом устройстве. Музыка останавливается в скрытой вкладке.</p></section>
+        </div>   </div>
       
       <button class="panel-edge-close panel-edge-close-left" onclick="window.closePanel('profilePanel')" title="Закрыть">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -281,27 +287,29 @@
   
   <!-- ОСНОВНОЙ СКРИПТ -->
   <script type="importmap">
-  {
-    "imports": {
-      "./src/core/config.js": "./src/core/config.js?v=20261102-stability",
-      "./src/core/constants.js": "./src/core/constants.js?v=20261102-stability",
-      "./src/core/state.js": "./src/core/state.js?v=20261102-stability",
-      "./src/index.js": "./src/index.js?v=20261102-stability",
-      "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=20261102-stability",
-      "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=20261102-stability",
-      "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=20261102-stability",
-      "./src/modules/game/game.js": "./src/modules/game/game.js?v=20261102-stability",
-      "./src/modules/game/rewards.js": "./src/modules/game/rewards.js?v=20261102-stability",
-      "./src/modules/network/cache.js": "./src/modules/network/cache.js?v=20261102-stability",
-      "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=20261102-private-leaderboard",
-      "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=20261102-stability",
-      "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=20261102-stability",
-      "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=20261102-stability",
-      "./src/utils/performance.js": "./src/utils/performance.js?v=20261102-stability",
-      "./src/utils/security.js": "./src/utils/security.js?v=20261102-stability"
-    }
+{
+  "imports": {
+    "./src/core/config.js": "./src/core/config.js?v=season2-neon-1",
+    "./src/core/constants.js": "./src/core/constants.js?v=season2-neon-1",
+    "./src/core/state.js": "./src/core/state.js?v=season2-neon-1",
+    "./src/index.js": "./src/index.js?v=season2-neon-1",
+    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=season2-neon-1",
+    "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
+    "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
+    "./src/modules/game/game.js": "./src/modules/game/game.js?v=season2-neon-1",
+    "./src/modules/game/rewards.js": "./src/modules/game/rewards.js?v=season2-neon-1",
+    "./src/modules/network/cache.js": "./src/modules/network/cache.js?v=season2-neon-1",
+    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=season2-neon-1",
+    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=season2-neon-1",
+    "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=season2-neon-1",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=season2-neon-1",
+    "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
+    "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=season2-neon-1",
+    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=season2-neon-1"
   }
+}
   </script>
-  <script type="module" src="src/index.js?v=20261102-stability"></script>
+  <script type="module" src="src/index.js?v=season2-neon-1"></script>
 </body>
 </html>

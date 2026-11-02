@@ -148,17 +148,7 @@ if (typeof window !== 'undefined') {
   // ============================================================
   // НОВОЕ: Управление уровнем (фиксация и откат)
   // ============================================================
-  window.toggleLevelLock = () => {
-    const isLocked = !state.levelLocked;
-    appState.set('levelLocked', isLocked);
-    
-    if (window.updateUI) window.updateUI();
-    
-    showToast(
-      isLocked ? '🔒 Уровень закреплён (фарм режим)' : '🔓 Уровень откреплен', 
-      'info'
-    );
-  };
+  window.toggleLevelLock = () => window.gameEngine?.toggleLevelLock();
 
   window.rollbackLevel = async () => {
     if (window.gameEngine && window.gameEngine.rollbackLevel) {

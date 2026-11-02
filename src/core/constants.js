@@ -10,11 +10,15 @@ export const CONSTANTS = {
 
   // Цены увеличены в 2 раза
   UPGRADE_COSTS: {
-    clickDamage: { base: 60, multiplier: 1.35 },   // было 30
+    clickDamage: { base: 60, multiplier: 1.22 },   // было 30
     moonSlots: { base: 3000, multiplier: 2.8 }      // было 1500
   },
 
-  CLICK_DAMAGE_UPGRADE_VALUE: 100,
+  CLICK_DAMAGE_UPGRADE_VALUE: 20,
+  HP_GROWTH: 1.08,
+  MAX_PLAYER_LEVEL: 200,
+  MAX_CLICKS_PER_SECOND: 12,
+  CLICK_BURST: 12,
 
   INTERVALS: {
     SAVE_TIME: 30000,
@@ -146,7 +150,7 @@ export const MOON_TYPES = {
     id: 'blood',
     name: 'Кровавая',
     emoji: '🩸',
-    cost: 1600,        // x2 от 800
+    cost: 1600,
     unlockLevel: 5,
     rarity: 'rare',
     
@@ -214,7 +218,7 @@ export const MOON_TYPES = {
     id: 'ice',
     name: 'Ледяная',
     emoji: '❄️',
-    cost: 10000,       // x2 от 5000
+    cost: 6000,
     unlockLevel: 10,
     rarity: 'rare',
     
@@ -282,7 +286,7 @@ export const MOON_TYPES = {
     id: 'shadow',
     name: 'Теневая',
     emoji: '🌑',
-    cost: 50000,       // x2 от 25000
+    cost: 18000,
     unlockLevel: 15,
     rarity: 'epic',
     
@@ -348,7 +352,7 @@ export const MOON_TYPES = {
     id: 'fire',
     name: 'Огненная',
     emoji: '🔥',
-    cost: 150000,      // x2 от 75000
+    cost: 50000,
     unlockLevel: 20,
     rarity: 'epic',
     
@@ -417,7 +421,7 @@ export const MOON_TYPES = {
     id: 'electric',
     name: 'Электрическая',
     emoji: '⚡',
-    cost: 500000,      // x2 от 250000
+    cost: 140000,
     unlockLevel: 25,
     rarity: 'epic',
     
@@ -498,7 +502,7 @@ export const MOON_TYPES = {
     id: 'gold',
     name: 'Золотая',
     emoji: '👑',
-    cost: 2000000,     // x2 от 1000000
+    cost: 400000,
     unlockLevel: 30,
     rarity: 'legendary',
     
@@ -571,7 +575,7 @@ export const MOON_TYPES = {
     id: 'cosmic',
     name: 'Космическая',
     emoji: '✨',
-    cost: 50000000,    // 50 миллионов!
+    cost: 1500000,
     unlockLevel: 40,
     rarity: 'mythic',
     
