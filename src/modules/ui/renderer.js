@@ -87,7 +87,7 @@ export function updateUI() {
     _updateCounter();
     _updateLevelTitle();
     _updateLevelControls();
-    _updateHPBar();
+    updateHPBar();
     updateTimerBar();
     _updateMoonStyle();
     _updateMoonAuras();
@@ -142,22 +142,26 @@ function _updateLevelControls() {
   }
 }
 
-function _updateHPBar() {
+function gameEnginePreviewDamage() { return Math.max(0, Number(window.gameEngine?._previewDamage) || 0); }
+
+export function updateHPBar() {
+  // Pending hits affect rendering only; rewards and game state remain server-owned.
+  const displayHP = Math.max(1, state.moonHP - (gameEnginePreviewDamage()));
   const hpBar = document.getElementById('hpBar');
   const hpPercent = document.getElementById('hpPercent');
   const moonInner = document.getElementById('moonInner');
 
   if (hpBar) {
-    const percent = Math.max(0, (state.moonHP / state.maxHP) * 100);
+    const percent = Math.max(0, (displayHP / state.maxHP) * 100);
     hpBar.style.width = Math.min(100, percent) + '%';
   }
 
   if (hpPercent) {
-    hpPercent.textContent = `${Math.round(state.moonHP)}/${Math.round(state.maxHP)}`;
+    hpPercent.textContent = `${Math.round(displayHP)}/${Math.round(state.maxHP)}`;
   }
 
   if (moonInner) {
-    const ratio = Math.max(0, Math.min(1, state.moonHP / state.maxHP));
+    const ratio = Math.max(0, Math.min(1, displayHP / state.maxHP));
     const scale = Math.pow(ratio, 0.4) * 0.95 + 0.05;
     moonInner.style.transform = `scale(${scale})`;
   }

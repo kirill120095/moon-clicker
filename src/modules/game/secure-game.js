@@ -4,8 +4,18 @@ import { CONSTANTS } from '../../core/constants.js';
 import { db } from '../network/supabase.js';
 import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
-import { showToast, updateUI,updateShopUI,updateProfileAndLeaders,updateQuestAndAchievementUI,updateTimerBar } from '../ui/renderer.js';
-let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null;
+import { showToast, updateUI,updateShopUI,updateProfileAndLeaders,updateQuestAndAchievementUI,updateTimerBar,updateHPBar } from '../ui/renderer.js';
+let previewHits=[];
+function refreshPreview(){gameEngine._previewDamage=previewHits.reduce((sum,damage)=>sum+damage,0);updateHPBar();}
+function previewDamage(){
+ const bonuses=gameEngine._calculateAllBonuses();let multiplier=1+bonuses.totalDamageBonus;
+ for(const [id,counter] of [['normal','_comboClicks'],['fire','_fireStacks']]){
+  const params=gameEngine._getMechanicParamsForActiveMoon(id);
+  if(params)multiplier+=Math.min(params.maxStacks,Math.floor(((gameEngine[counter]||0)+previewHits.length+1)/params.clicksPerStack))*params.bonusPerStack;
+ }
+ return Math.max(1,Math.round(state.playerData.click_damage*multiplier));
+}
+let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
 function apply(result){
  const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
@@ -16,15 +26,19 @@ function apply(result){
  levelLocked:s.levelLocked,testMode:false,bossTimerRunning:!!deadline,
  bossTimer:deadline?Math.max(0,(deadline-result.serverNow)/1000):30});
  Object.assign(gameEngine,s.runtime||{});
- gameEngine.recalcMoonBonuses();updateUI();updateShopUI();updateQuestAndAchievementUI();
+ gameEngine._lastActivityTime=s.lastClickAt?s.lastClickAt-offset:Date.now();
+ gameEngine.recalcMoonBonuses();gameEngine._updateBuffsDisplay();updateUI();updateShopUI();updateQuestAndAchievementUI();
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
  const goal=document.getElementById('nextGoal');if(goal){const upgrade=s.playerData.click_damage_level;
  const cost=Math.floor(CONSTANTS.UPGRADE_COSTS.clickDamage.base*Math.pow(CONSTANTS.UPGRADE_COSTS.clickDamage.multiplier,upgrade));goal.textContent=s.currentLevel%CONSTANTS.BOSS_INTERVAL===0?'Босс: победи за 30 секунд. Если сложно — вернись на уровень назад и закрепи его для фарма.':upgrade<CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL?'Следующее улучшение: '+cost.toLocaleString('ru-RU')+' 💎 · ещё '+Math.max(0,cost-s.playerData.shards).toLocaleString('ru-RU')+' 💎':'Урон улучшен полностью — собирай луны и синергии';}
 }
 async function send(action,payload={}){
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохраняем…';
- try{const result=await db.action(action,payload);if(active)apply(result);return result;}
- catch(error){if(status)status.textContent='Нет связи — действие не подтверждено';showToast(error.message,'warning');throw error;}
+ try{const result=await db.action(action,payload);
+  if(action==='click')previewHits.splice(0,payload.count);
+  gameEngine._previewDamage=previewHits.reduce((sum,damage)=>sum+damage,0);
+  if(active)apply(result);return result;}
+ catch(error){if(action==='click'){previewHits.splice(0,payload.count);refreshPreview();}if(status)status.textContent='Нет связи — действие не подтверждено';showToast(error.message,'warning');throw error;}
 }
 async function flush(){
  if(flushTimer){clearTimeout(flushTimer);flushTimer=null;}
@@ -33,7 +47,7 @@ async function flush(){
  const count=Math.min(CONSTANTS.CLICK_BURST,pendingClicks);pendingClicks-=count;
  clickFlight=send('click',{count}).finally(()=>{
   clickFlight=null;
-  if(active&&pendingClicks&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),180);
+  if(active&&pendingClicks&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),0);
  });
  return clickFlight;
 }
@@ -50,19 +64,25 @@ gameEngine.init=async()=>{
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
  ticker=setInterval(()=>{
   if(!active)return;
+  gameEngine._updateBuffsDisplay();
+  const expired=gameEngine._getActiveBuffs().some(buff=>buff.isTemporary&&buff.timeLeft===0);
+  if(expired&&!syncing&&Date.now()>=nextBuffSync){
+   nextBuffSync=Date.now()+2000;syncing=true;
+   send('sync').catch(()=>{}).finally(()=>{syncing=false;});
+  }
   if(deadline){appState.set('bossTimer',Math.max(0,(deadline-Date.now()-offset)/1000));updateTimerBar();
    if(deadline<=Date.now()+offset&&!syncing){syncing=true;send('sync').catch(()=>{}).finally(()=>{syncing=false;});}}
  },250);
  ping=setInterval(()=>{if(active&&!document.hidden)send('sync').catch(()=>{});},20000);
  updateProfileAndLeaders();
 };
-gameEngine.destroy=()=>{active=false;pendingClicks=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{active=false;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
  if(!active||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
- pendingClicks++;audio.click();
+ pendingClicks++;previewHits.push(previewDamage());refreshPreview();audio.click();
  animations.playClickVisualFeedback(e,state.playerData.click_damage,false,state.currentLevel%10===0);
- if(!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),180);
+ if(!clickFlight)flush().catch(()=>{});
 };
 gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks>0);if(active)await send('sync');};
 gameEngine.buyClickDamage=()=>command('buyDamage',{},true).catch(()=>{});
