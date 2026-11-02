@@ -13,7 +13,7 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 .panel{background:linear-gradient(155deg,#16213cf5,#0c1428fa)!important;border-color:#6d7daf55!important;box-shadow:0 16px 70px #0008!important}
 .panel-tabs{gap:5px}.panel-tab{border-radius:10px!important;min-height:42px}.panel-tab.active{background:#67e8f918!important;color:#a5f3fc!important;border-color:#67e8f944!important}
 .next-goal{max-width:380px;margin:0 auto 14px;padding:10px 16px;border:1px solid #67e8f925;border-radius:12px;background:#0f1a2a99;color:#a8dce6;font-size:12px;line-height:1.5;letter-spacing:.015em}
-.moon-wrapper{touch-action:manipulation}.counter{font-variant-numeric:tabular-nums}.info-row-top{display:flex;flex-direction:column;align-items:center;gap:7px}#saveStatus{font-size:11px!important;color:#9eb3c5!important}
+.moon-wrapper{touch-action:manipulation}.counter{font-variant-numeric:tabular-nums}.info-row-top{display:flex;flex-direction:column;align-items:center;gap:7px}
 .btn-buy-shop{min-height:40px;border-radius:10px!important}.shop-item,.quest-item,.achievement-item{border-color:#63789735!important}.shop-section-title{letter-spacing:.03em}
 .audio-dock{position:fixed;top:18px;right:20px;z-index:1000;font-size:13px}.audio-dock>summary{list-style:none;cursor:pointer;padding:10px 16px;border-radius:30px;background:#142037ed;border:1px solid #62769c;color:#d9e6ff;user-select:none}.audio-dock>summary:before{content:'♫';margin-right:8px;color:#67e8f9}.audio-dock>summary::-webkit-details-marker{display:none}
 .audio-dock-content{position:absolute;right:0;top:48px;width:min(320px,calc(100vw - 28px));padding:22px;border-radius:18px;background:#111c32;border:1px solid #66789e;box-shadow:0 20px 60px #0009}.audio-dock-content h2{font-size:15px;margin:0 0 18px}.audio-dock-content p,.settings-note{font-size:12px;line-height:1.6;color:#a4b4cf;margin-top:16px}
@@ -24,8 +24,35 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 .neon-help{font-size:12px;color:#a9b8d0;text-align:center;line-height:1.6;margin:12px auto;max-width:360px}
 
 /* Keep the whole combat HUD visible on shorter laptop screens. */
-.app{padding:78px 24px 24px;min-height:100svh}.moon-container{margin-bottom:14px}.moon-wrapper{width:clamp(190px,30svh,320px)!important;height:clamp(190px,30svh,320px)!important}
+.app{padding:78px 24px 24px;min-height:100svh}.moon-container{margin-bottom:14px}.moon-wrapper{width:clamp(280px,38svh,420px)!important;height:clamp(280px,38svh,420px)!important}
 .moon-info-below{gap:8px}.next-goal{margin-bottom:0;padding:8px 12px}.neon-help{margin:0 auto 2px;font-size:10px;line-height:1.4}.level-controls-row{padding:6px 12px}.info-row-top{flex-direction:row;justify-content:space-between;padding:8px 12px;gap:12px}.counter{font-size:16px}.panel-header{padding-right:96px!important}
 .moon-inner:before{content:'';position:absolute;inset:7%;border-radius:50%;pointer-events:none;opacity:.3;background:radial-gradient(circle at 30% 28%,#30231e66 0 8%,transparent 9%),radial-gradient(circle at 68% 62%,#30231e66 0 13%,transparent 14%),radial-gradient(circle at 44% 75%,#30231e55 0 6%,transparent 7%),radial-gradient(circle at 75% 28%,#30231e55 0 5%,transparent 6%);mix-blend-mode:multiply}
 .moon-wrapper:before{content:'';position:absolute;inset:-14px;border:1px dashed #67e8f940;border-radius:50%;pointer-events:none}.moon-wrapper:after{content:'';position:absolute;inset:-25px;border:1px solid #a78bfa1c;border-radius:50%;pointer-events:none}
-@media(max-width:700px){.app{padding:90px 18px 100px;justify-content:center}.moon-container{padding-top:0!important}.moon-wrapper{width:min(58vw,28svh)!important;height:min(58vw,28svh)!important}.moon-info-below{max-width:390px}.next-goal{font-size:10px}.neon-help{font-size:10px}.info-row-top{gap:8px}#saveStatus{font-size:10px!important}.panel-header{padding-right:86px!important}}
+@media(max-width:700px){.app{padding:90px 18px 100px;justify-content:center}.moon-container{padding-top:0!important}.moon-wrapper{width:min(78vw,38svh,360px)!important;height:min(78vw,38svh,360px)!important}.moon-info-below{max-width:390px}.next-goal{font-size:10px}.neon-help{font-size:10px}.info-row-top{gap:8px}.panel-header{padding-right:86px!important}}
+
+/* Larger, readable combat controls. Routine persistence status is not part of the HUD. */
+.moon-info-below{max-width:520px;gap:8px}
+.info-row-top{justify-content:center;padding:8px 16px}
+.counter{font-size:28px;padding:6px 22px}
+.level-title{font-size:24px}
+.level-controls-row{padding:6px 14px}
+.level-control-btn{width:46px;height:46px}
+.level-control-btn svg{width:24px;height:24px}
+.hp-bar-container{height:38px}
+.hp-percent{font-size:18px}
+.timer-bar-container{height:42px}
+.timer-percent{font-size:18px}
+.next-goal{max-width:520px;font-size:14px;line-height:1.4}
+.neon-help{max-width:520px;font-size:12px;line-height:1.4}
+.buffs-container{font-size:14px}
+.buff-name,.buff-bonus,.buff-stacks,.buff-timer{font-size:14px!important}
+.buff-icon{font-size:24px}
+@media(max-width:700px){
+ .moon-info-below{max-width:100%}
+ .counter{font-size:26px}
+ .level-title{font-size:22px}
+ .next-goal{font-size:13px}
+ .neon-help{font-size:12px}
+ .info-row-top{justify-content:center}
+ .hp-percent,.timer-percent{font-size:17px}
+}
