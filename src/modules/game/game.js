@@ -359,7 +359,7 @@ export class GameEngine {
         // Уровень 10: шанс сброса после safeStacks
         if (params.maxStacks === Infinity && this._fireStacks > params.safeStacks * params.clicksPerStack) {
           if (Math.random() < params.resetChance) {
-            this._fireStacks = 0;
+            this._fireStacks = params.safeStacks * params.clicksPerStack;
           }
         }
       }
@@ -575,10 +575,10 @@ export class GameEngine {
         
         buffs.push({
           id: 'fire', icon: '🔥', name: 'Жар',
-          value: stacks, maxStacks: params.maxStacks === Infinity ? 999 : params.maxStacks,
+          value: stacks, maxStacks: maxDisplay,
           progress, progressMax: params.clicksPerStack,
           bonus: params.maxStacks === Infinity 
-            ? `+${Math.round(stacks * params.bonusPerStack * 100)}%${this._fireStacks > params.safeStacks ? ' ⚠️' : ''}`
+            ? `+${Math.round(stacks * params.bonusPerStack * 100)}%${stacks > params.safeStacks ? ' ⚠️' : ''}`
             : `+${Math.round(stacks * params.bonusPerStack * 100)}% урон`,
           timeLeft, isActive: stacks > 0,
           isMaxed: params.maxStacks !== Infinity && stacks >= params.maxStacks,

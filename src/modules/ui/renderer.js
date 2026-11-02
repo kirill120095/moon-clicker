@@ -22,6 +22,7 @@ export function initToastContainer(container) {
 }
 
 export function showToast(message, type = 'info', duration = 2000) {
+  if(!toastContainer)toastContainer=document.getElementById('toastContainer');
   if (!toastContainer) {
     console.warn('[UI] Toast container not initialized');
     return;

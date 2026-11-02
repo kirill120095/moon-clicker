@@ -121,7 +121,7 @@ async function init() {
 
   try {
     // 1. Диагностика структуры
-    await diagnoseProjectStructure();
+    if(new URLSearchParams(window.location.search).has('debug'))diagnoseProjectStructure();
     
     // 2. Загрузка state
     console.log('[App] Шаг 1/4: Загрузка state.js...');

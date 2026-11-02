@@ -50,3 +50,8 @@ test('older acknowledgements cannot replace a newer HP state',async()=>{
  const s=setup();await s.engine.init();s.context.newer=s.result();s.context.newer.revision=3;s.context.newer.state.moonHP=60;vm.runInContext('apply(newer)',s.context);
  s.context.older=s.result();s.context.older.revision=2;s.context.older.state.moonHP=90;vm.runInContext('apply(older)',s.context);assert.equal(s.state.moonHP,60);
 });
+
+test('new quest and achievement completions notify once with a temporary duration',async()=>{
+ const s=setup();s.context.QUESTS={qa:{name:'QA quest'}};s.context.ACHIEVEMENTS={qa:{tiers:[{level:'bronze',name:'QA achievement'}]}};const notices=[];s.context.showToast=(...args)=>notices.push(args);await s.engine.init();
+ s.context.result=s.result();s.context.result.state.quests={qa:{completed:true}};s.context.result.state.achievements={qa:{bronze:'unclaimed'}};vm.runInContext('apply(result)',s.context);vm.runInContext('apply(result)',s.context);assert.equal(notices.length,2);assert.ok(notices.every(n=>n[2]===3500));
+});
