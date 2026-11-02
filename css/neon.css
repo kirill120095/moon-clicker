@@ -77,3 +77,5 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 @media(max-width:700px){.ufo-satellite,.ufo-ship{width:48px}.ufo-satellite{margin-left:-24px}.moon-reward{font-size:13px}}
 
 .ufo-moon-trait{font-size:12px;line-height:1.5;color:#a5f3fc;margin:10px 0;padding:8px 10px;background:#67e8f90b;border-radius:8px}
+
+.moon-container{margin-bottom:38px}
