@@ -309,8 +309,8 @@ async createPlayer(userId) {
     try {
       const client = await initSupabase();
       const { data, error } = await client
-        .from('players')
-        .select('username, level, total_clicks, shards')
+        .from('leaderboard')
+        .select('username, level, total_clicks')
         .order('level', { ascending: false })
         .order('total_clicks', { ascending: false })
         .limit(limit);
