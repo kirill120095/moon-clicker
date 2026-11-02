@@ -22,3 +22,10 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}.reduce-effects *,.reduce-effects *:before,.reduce-effects *:after{animation:none!important;transition:none!important}.reduce-effects #stars{opacity:.25}
 
 .neon-help{font-size:12px;color:#a9b8d0;text-align:center;line-height:1.6;margin:12px auto;max-width:360px}
+
+/* Keep the whole combat HUD visible on shorter laptop screens. */
+.app{padding:78px 24px 24px;min-height:100svh}.moon-container{margin-bottom:14px}.moon-wrapper{width:clamp(190px,30svh,320px)!important;height:clamp(190px,30svh,320px)!important}
+.moon-info-below{gap:8px}.next-goal{margin-bottom:0;padding:8px 12px}.neon-help{margin:0 auto 2px;font-size:10px;line-height:1.4}.level-controls-row{padding:6px 12px}.info-row-top{flex-direction:row;justify-content:space-between;padding:8px 12px;gap:12px}.counter{font-size:16px}.panel-header{padding-right:96px!important}
+.moon-inner:before{content:'';position:absolute;inset:7%;border-radius:50%;pointer-events:none;opacity:.3;background:radial-gradient(circle at 30% 28%,#30231e66 0 8%,transparent 9%),radial-gradient(circle at 68% 62%,#30231e66 0 13%,transparent 14%),radial-gradient(circle at 44% 75%,#30231e55 0 6%,transparent 7%),radial-gradient(circle at 75% 28%,#30231e55 0 5%,transparent 6%);mix-blend-mode:multiply}
+.moon-wrapper:before{content:'';position:absolute;inset:-14px;border:1px dashed #67e8f940;border-radius:50%;pointer-events:none}.moon-wrapper:after{content:'';position:absolute;inset:-25px;border:1px solid #a78bfa1c;border-radius:50%;pointer-events:none}
+@media(max-width:700px){.app{padding:90px 18px 100px;justify-content:center}.moon-container{padding-top:0!important}.moon-wrapper{width:min(58vw,28svh)!important;height:min(58vw,28svh)!important}.moon-info-below{max-width:390px}.next-goal{font-size:10px}.neon-help{font-size:10px}.info-row-top{gap:8px}#saveStatus{font-size:10px!important}.panel-header{padding-right:86px!important}}
