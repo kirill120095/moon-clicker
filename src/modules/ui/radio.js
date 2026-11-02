@@ -2,6 +2,11 @@ import { initSupabase } from '../network/supabase.js';
 import { audio } from './audio.js';
 import { showToast } from './renderer.js';
 
+function trackLabel(name){
+ const encoded=name.match(/^\d+-[a-f0-9-]{36}-u([a-f0-9]+)\.[a-z0-9]+$/);
+ if(encoded)try{return new TextDecoder('utf-8',{fatal:true}).decode(Uint8Array.from(encoded[1].match(/../g)||[],byte=>parseInt(byte,16)));}catch{}
+ return name.replace(/^\d+-[a-f0-9-]{36}-/,'');
+}
 class GameRadio {
  constructor(){this.client=null;this.channel=null;this.timer=null;this.userId=null;this.current=null;this.player=null;this.bound=false;this.admin=false;}
  async connect(user){
@@ -34,7 +39,7 @@ class GameRadio {
  async listTracks(){
   const {data,error}=await this.client.storage.from('game-radio').list('',{limit:100,sortBy:{column:'created_at',order:'desc'}});if(error)throw error;
   const select=document.getElementById('radioTracks');if(!select)return;
-  select.replaceChildren();for(const item of data||[]){if(!item.id)continue;const option=document.createElement('option');option.value=item.name;option.textContent=item.name.replace(/^\d+-[a-f0-9-]{36}-/,'');select.appendChild(option);}
+  select.replaceChildren();for(const item of data||[]){if(!item.id)continue;const option=document.createElement('option');option.value=item.name;option.textContent=trackLabel(item.name);select.appendChild(option);}
  }
  async publish(path,title){const {data,error}=await this.client.rpc('radio_publish',{p_path:path,p_title:title});if(error)throw error;this.accept(Array.isArray(data)?data[0]:data);this.status(path?'Трек включён для всех игроков.':'Общий трек остановлен.');}
  async upload(){
@@ -43,7 +48,7 @@ class GameRadio {
   const extensions={mp3:'audio/mpeg',ogg:'audio/ogg',wav:'audio/wav',m4a:'audio/mp4',aac:'audio/aac',flac:'audio/flac',webm:'audio/webm'};
   const ext=file.name.split('.').pop()?.toLowerCase();if(!extensions[ext]){this.status('Выберите MP3, OGG, WAV, M4A, AAC или FLAC.');return;}
   const button=document.getElementById('radioUpload');button.disabled=true;this.status('Загружаем трек…');
-  try{const name=Date.now()+'-'+crypto.randomUUID()+'-'+file.name.replace(/[^\p{L}\p{N}._ -]/gu,'_').slice(-100);
+  try{const name=Date.now()+'-'+crypto.randomUUID()+'-u'+Array.from(new TextEncoder().encode(file.name),byte=>byte.toString(16).padStart(2,'0')).join('')+'.'+ext;
    const {error}=await this.client.storage.from('game-radio').upload(name,file,{contentType:extensions[ext],upsert:false,cacheControl:'31536000'});if(error)throw error;
    await this.publish(name,file.name.replace(/\.[^.]+$/,''));await this.listTracks();input.value='';
   }catch(error){this.status('Не удалось загрузить трек. '+error.message);}finally{button.disabled=false;}
