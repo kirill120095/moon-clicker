@@ -11,14 +11,11 @@ import { CONSTANTS, MOON_UPGRADE_BASE_COSTS } from './constants.js';
  * @returns {number}
  */
 export function getMaxHPForLevel(level, baseHP = CONSTANTS.BASE_HP, bossInterval = CONSTANTS.BOSS_INTERVAL) {
-  const isBoss = level % bossInterval === 0 && level > 0;
-  const hp = baseHP * Math.pow(CONSTANTS.HP_GROWTH, level - 1);
-  
-  if (isBoss) {
-    return Math.round(hp * 5);
-  }
-  
-  return Math.round(hp);
+  const boss = level % bossInterval === 0 && level > 0;
+  const cap=CONSTANTS.SAFE_NUMBER_CAP, multiplier=boss?CONSTANTS.BOSS_HP_MULTIPLIER:1;
+  const maxExponent=Math.log(cap/baseHP/multiplier)/Math.log(CONSTANTS.HP_GROWTH);
+  if(level-1>=maxExponent)return cap;
+  return Math.min(cap,Math.round(baseHP*Math.pow(CONSTANTS.HP_GROWTH,level-1)*multiplier));
 }
 
 /**
@@ -78,4 +75,10 @@ export function getTitle(level) {
   if (level >= 5) return '🩸 Кровавый Новичок';
   if (level >= 3) return '🌙 Ученик Луны';
   return '✨ Новичок';
+}
+
+export function getClickUpgradeCost(level) {
+ const c=CONSTANTS.UPGRADE_COSTS.clickDamage,cap=CONSTANTS.SAFE_NUMBER_CAP;
+ if(level>=Math.log(cap/c.base)/Math.log(c.multiplier))return cap;
+ return Math.min(cap,Math.floor(c.base*Math.pow(c.multiplier,level)));
 }

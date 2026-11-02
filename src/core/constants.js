@@ -16,11 +16,14 @@ export const CONSTANTS = {
 
   CLICK_DAMAGE_UPGRADE_VALUE: 20,
   HP_GROWTH: 1.08,
-  MAX_PLAYER_LEVEL: 200,
+  SAFE_NUMBER_CAP: Number.MAX_SAFE_INTEGER,
+  BOSS_HP_MULTIPLIER: 5,
+  MAX_PLAYER_LEVEL: Infinity,
   MAX_CLICKS_PER_SECOND: 12,
   CLICK_BURST: 12,
   ROLLBACK_LEVELS: 5,
-  UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { reward: 0.15 }, cosmic: { damagePerLevel: 0.001 } } },
+  PRESTIGE: { DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 50 },
+  UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, UNIT_BASE_COST: 2400, UNIT_COST_MULTIPLIER: 2, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { rewardMultiplier: 0.5 }, cosmic: { damagePerLevel: 0.001 } } },
   MOON_REWARD: { BASE: 5, PER_LEVEL: 2, EXPONENT: 1.3, GROWTH: 0.5, BOSS_MULTIPLIER: 5 },
 
   INTERVALS: {
@@ -33,7 +36,7 @@ export const CONSTANTS = {
   },
 
   LIMITS: {
-    MAX_CLICK_DAMAGE_LEVEL: 50,
+    MAX_CLICK_DAMAGE_LEVEL: Infinity,
     MAX_MOON_LEVEL: 10,
     MAX_LEADERS: 10,
     MAX_STARS: 300,
@@ -401,11 +404,11 @@ export const MOON_TYPES = {
       10: {
         icon: '👑',
         name: 'Атомная бомба',
-        description: 'Неограниченные стеки, но 2% шанс обнуления после 30 стеков',
+        description: 'Неограниченные стеки: 0,5% шанс сброса до 30 стеков, если накоплено больше 30',
         apply: (params) => { 
           params.maxStacks = Infinity; 
           params.safeStacks = 30; 
-          params.resetChance = 0.02; 
+          params.resetChance = 0.005; 
         }
       }
     },
@@ -510,19 +513,19 @@ export const MOON_TYPES = {
     rarity: 'legendary',
     
     baseStats: {
-      damageBonus: 0.10,
-      shardBonus: 2.00,
-      critChanceBonus: 0.01,
-      critDamageBonus: 0.10
+      damageBonus: 0.05,
+      shardBonus: 1.00,
+      critChanceBonus: 0.005,
+      critDamageBonus: 0.05
     },
     
     specialMechanic: 'goldRush',
     specialName: 'Золотой дождь',
-    specialDescription: 'x2 осколков с обычных, x3 с боссов',
+    specialDescription: 'x1,5 осколков с обычных, x2 с боссов',
     
     mechanicParams: {
-      normalMultiplier: 2,
-      bossMultiplier: 3,
+      normalMultiplier: 1.5,
+      bossMultiplier: 2,
       goldenClickChance: 0,
       goldenClickReward: 0,
       shardToDamageRatio: 0
@@ -532,35 +535,35 @@ export const MOON_TYPES = {
       3: {
         icon: '🎯',
         name: 'Золотой клик I',
-        description: '5% шанс получить +50 💎 за клик',
+        description: '2,5% шанс получить +25 💎 за клик',
         apply: (params) => { 
-          params.goldenClickChance = 0.05; 
-          params.goldenClickReward = 50; 
+          params.goldenClickChance = 0.025; 
+          params.goldenClickReward = 25; 
         }
       },
       5: {
         icon: '🎯',
         name: 'Золотой клик II',
-        description: '5% шанс получить +100 💎 за клик',
+        description: '2,5% шанс получить +50 💎 за клик',
         apply: (params) => { 
-          params.goldenClickChance = 0.05; 
-          params.goldenClickReward = 100; 
+          params.goldenClickChance = 0.025; 
+          params.goldenClickReward = 50; 
         }
       },
       7: {
         icon: '🎯',
         name: 'Щедрость',
-        description: 'Множители: x2/x3 → x3/x4',
+        description: 'Множители: x1,5/x2 → x2/x2,5',
         apply: (params) => { 
-          params.normalMultiplier = 3; 
-          params.bossMultiplier = 4; 
+          params.normalMultiplier = 2; 
+          params.bossMultiplier = 2.5; 
         }
       },
       10: {
         icon: '👑',
         name: 'Золотой дождь',
-        description: '+0.1% урона от текущего количества осколков',
-        apply: (params) => { params.shardToDamageRatio = 0.001; }
+        description: '+0,0001% урона от текущего количества осколков',
+        apply: (params) => { params.shardToDamageRatio = 0.000001; }
       }
     },
     
@@ -688,17 +691,17 @@ export const ACHIEVEMENTS = {
 // КВЕСТЫ (без изменений)
 // ============================================================
 export const QUESTS = {
-  clickDaily100: { id: 'clickDaily100', category: 'clicker', categoryName: 'Кликер', icon: '👆', name: 'Утренняя разминка', description: 'Сделайте 100 кликов за день', target: 100, reward: 20, bonusReward: 10, type: 'click', difficulty: 'easy', color: '#4caf50' },
-  clickDaily500: { id: 'clickDaily500', category: 'clicker', categoryName: 'Кликер', icon: '🖱️', name: 'Марафон кликов', description: 'Сделайте 500 кликов за день', target: 500, reward: 60, bonusReward: 30, type: 'click', difficulty: 'medium', color: '#ff9800' },
-  clickDaily2000: { id: 'clickDaily2000', category: 'clicker', categoryName: 'Кликер', icon: '⚡', name: 'Кликомания', description: 'Сделайте 2000 кликов за день', target: 2000, reward: 200, bonusReward: 100, type: 'click', difficulty: 'hard', color: '#f44336' },
-  killBoss1: { id: 'killBoss1', category: 'hunter', categoryName: 'Охотник', icon: '👹', name: 'Первая кровь', description: 'Убейте 1 босса', target: 1, reward: 80, bonusReward: 40, type: 'bossKill', difficulty: 'easy', color: '#4caf50' },
-  killBoss3: { id: 'killBoss3', category: 'hunter', categoryName: 'Охотник', icon: '⚔️', name: 'Серия убийств', description: 'Убейте 3 боссов', target: 3, reward: 200, bonusReward: 100, type: 'bossKill', difficulty: 'medium', color: '#ff9800' },
-  killBoss10: { id: 'killBoss10', category: 'hunter', categoryName: 'Охотник', icon: '💀', name: 'Истребитель', description: 'Убейте 10 боссов', target: 10, reward: 600, bonusReward: 300, type: 'bossKill', difficulty: 'hard', color: '#f44336' },
-  shardDaily200: { id: 'shardDaily200', category: 'collector', categoryName: 'Коллекционер', icon: '💎', name: 'Скромная добыча', description: 'Соберите 200 осколков за день', target: 200, reward: 40, bonusReward: 20, type: 'shard', difficulty: 'easy', color: '#4caf50' },
-  shardDaily1000: { id: 'shardDaily1000', category: 'collector', categoryName: 'Коллекционер', icon: '💰', name: 'Хороший улов', description: 'Соберите 1000 осколков за день', target: 1000, reward: 120, bonusReward: 60, type: 'shard', difficulty: 'medium', color: '#ff9800' },
-  shardDaily5000: { id: 'shardDaily5000', category: 'collector', categoryName: 'Коллекционер', icon: '🏆', name: 'Богатая жатва', description: 'Соберите 5000 осколков за день', target: 5000, reward: 400, bonusReward: 200, type: 'shard', difficulty: 'hard', color: '#f44336' },
-  levelUp2: { id: 'levelUp2', category: 'progress', categoryName: 'Прогресс', icon: '📈', name: 'Быстрый рост', description: 'Повысьте уровень 2 раза за день', target: 2, reward: 50, bonusReward: 25, type: 'level', difficulty: 'easy', color: '#4caf50' },
-  levelUp5: { id: 'levelUp5', category: 'progress', categoryName: 'Прогресс', icon: '🚀', name: 'Взрывной рост', description: 'Повысьте уровень 5 раз за день', target: 5, reward: 150, bonusReward: 75, type: 'level', difficulty: 'medium', color: '#ff9800' }
+  clickDaily100: { id: 'clickDaily100', category: 'clicker', categoryName: 'Кликер', icon: '👆', name: 'Утренняя разминка', description: 'Сделайте 100 кликов за день', target: 100, reward: 100, bonusReward: 50, type: 'click', difficulty: 'easy', color: '#4caf50' },
+  clickDaily500: { id: 'clickDaily500', category: 'clicker', categoryName: 'Кликер', icon: '🖱️', name: 'Марафон кликов', description: 'Сделайте 500 кликов за день', target: 500, reward: 500, bonusReward: 250, type: 'click', difficulty: 'medium', color: '#ff9800' },
+  clickDaily2000: { id: 'clickDaily2000', category: 'clicker', categoryName: 'Кликер', icon: '⚡', name: 'Кликомания', description: 'Сделайте 2000 кликов за день', target: 2000, reward: 2500, bonusReward: 1250, type: 'click', difficulty: 'hard', color: '#f44336' },
+  killBoss1: { id: 'killBoss1', category: 'hunter', categoryName: 'Охотник', icon: '👹', name: 'Первая кровь', description: 'Убейте 1 босса', target: 1, reward: 300, bonusReward: 150, type: 'bossKill', difficulty: 'easy', color: '#4caf50' },
+  killBoss3: { id: 'killBoss3', category: 'hunter', categoryName: 'Охотник', icon: '⚔️', name: 'Серия убийств', description: 'Убейте 3 боссов', target: 3, reward: 1500, bonusReward: 750, type: 'bossKill', difficulty: 'medium', color: '#ff9800' },
+  killBoss10: { id: 'killBoss10', category: 'hunter', categoryName: 'Охотник', icon: '💀', name: 'Истребитель', description: 'Убейте 10 боссов', target: 10, reward: 7000, bonusReward: 3500, type: 'bossKill', difficulty: 'hard', color: '#f44336' },
+  shardDaily200: { id: 'shardDaily200', category: 'collector', categoryName: 'Коллекционер', icon: '💎', name: 'Скромная добыча', description: 'Соберите 200 осколков за день', target: 200, reward: 100, bonusReward: 50, type: 'shard', difficulty: 'easy', color: '#4caf50' },
+  shardDaily1000: { id: 'shardDaily1000', category: 'collector', categoryName: 'Коллекционер', icon: '💰', name: 'Хороший улов', description: 'Соберите 1000 осколков за день', target: 1000, reward: 500, bonusReward: 250, type: 'shard', difficulty: 'medium', color: '#ff9800' },
+  shardDaily5000: { id: 'shardDaily5000', category: 'collector', categoryName: 'Коллекционер', icon: '🏆', name: 'Богатая жатва', description: 'Соберите 5000 осколков за день', target: 5000, reward: 2500, bonusReward: 1250, type: 'shard', difficulty: 'hard', color: '#f44336' },
+  levelUp2: { id: 'levelUp2', category: 'progress', categoryName: 'Прогресс', icon: '📈', name: 'Быстрый рост', description: 'Повысьте уровень 2 раза за день', target: 2, reward: 200, bonusReward: 100, type: 'level', difficulty: 'easy', color: '#4caf50' },
+  levelUp5: { id: 'levelUp5', category: 'progress', categoryName: 'Прогресс', icon: '🚀', name: 'Взрывной рост', description: 'Повысьте уровень 5 раз за день', target: 5, reward: 1000, bonusReward: 500, type: 'level', difficulty: 'medium', color: '#ff9800' }
 };
 
 export const QUEST_CATEGORIES = {
@@ -755,7 +758,8 @@ export function getMoonUpgradeCostForLevel(moonId, currentLevel) {
 
 /** UFO-only traits combine across active moons; values grow with moon upgrades. */
 export function getUfoBonuses(state, runtime=state.runtime||{}) {
- const result={damage:0,haste:0,critChance:0,critMultiplier:1.5,reward:0,chainEvery:0,chainMultiplier:1};
+ const result={damage:0,haste:0,critChance:0,critMultiplier:1.5,rewardMultiplier:1,chainEvery:0,chainMultiplier:1};
+ const prestige=getPrestigeSummary(state);result.damage+=prestige.ufoDamage;result.haste+=prestige.ufoHaste;
  const active=(state.activeMoons||[]).slice(0,state.maxSlots||1),c=CONSTANTS.UFO;
  for(const id of active){
   const buff=c.MOON_BUFFS[id];if(!buff)continue;
@@ -765,7 +769,7 @@ export function getUfoBonuses(state, runtime=state.runtime||{}) {
   if(buff.bossDamage&&state.currentLevel%CONSTANTS.BOSS_INTERVAL===0)result.damage+=buff.bossDamage*scale;
   result.damage+=(buff.damagePerLevel||0)*(state.currentLevel||1)*scale;
   result.haste+=(buff.haste||0)*scale;result.critChance+=(buff.critChance||0)*scale;
-  result.reward+=(buff.reward||0)*scale;
+  if(buff.rewardMultiplier)result.rewardMultiplier=buff.rewardMultiplier;
   if(buff.critMultiplier)result.critMultiplier=buff.critMultiplier;
   if(buff.chainEvery){result.chainEvery=buff.chainEvery;result.chainMultiplier=1+(buff.chainMultiplier-1)*scale;}
  }
@@ -780,6 +784,27 @@ export function getUfoMoonDescription(id,level=1) {
  if(b.critChance)return '🛸 '+percent(b.critChance)+' шанс крита ×'+b.critMultiplier;
  if(b.damage)return '🛸 +'+percent(b.damage)+' урона тарелки';
  if(b.chainEvery)return '🛸 Каждый '+b.chainEvery+'-й выстрел: ×'+(1+(b.chainMultiplier-1)*scale).toLocaleString('ru-RU',{maximumFractionDigits:2})+' урона';
- if(b.reward)return '🛸 +'+percent(b.reward)+' осколков за убийство тарелкой';
+ if(b.rewardMultiplier)return '🛸 Убийство тарелкой: половина ручной награды';
  return '🛸 +'+(b.damagePerLevel*scale*100).toLocaleString('ru-RU',{maximumFractionDigits:2})+'% урона за уровень игрока';
+}
+
+export const PRESTIGE_UPGRADES={
+ reactor:{id:'reactor',name:'Вечный реактор',icon:'⚔️',description:'+10% урона за уровень',baseCost:1,multiplier:2,maxLevel:10,damage:0.10},
+ treasury:{id:'treasury',name:'Звёздная казна',icon:'💎',description:'+10% добычи кристаллов за уровень',baseCost:1,multiplier:2,maxLevel:10,shards:0.10},
+ fleet:{id:'fleet',name:'Бессмертная армада',icon:'🛸',description:'+5% урона тарелок за уровень',baseCost:2,multiplier:2,maxLevel:10,ufoDamage:0.05},
+ clock:{id:'clock',name:'Вечный хронометр',icon:'⏱️',description:'Интервал тарелок короче на 3% за уровень',baseCost:2,multiplier:2,maxLevel:5,ufoHaste:0.03},
+ critical:{id:'critical',name:'Звёздное прицеливание',icon:'🎯',description:'+1% шанса крита за уровень',baseCost:2,multiplier:2,maxLevel:10,crit:0.01}
+};
+export function getPrestigeSummary(state){
+ const p=state.prestige||{},up=p.upgrades||{},c=CONSTANTS.PRESTIGE;
+ const record=state.runMaxLevel??Math.max(state.maxLevel||1,state.currentLevel||1);
+ const damageSteps=(p.damageStepsTotal||0)+Math.max(0,Math.floor(record/c.DAMAGE_EVERY)-(p.runDamageSteps||0));
+ const shardSteps=(p.shardStepsTotal||0)+Math.max(0,Math.floor(record/c.SHARDS_EVERY)-(p.runShardSteps||0));
+ return {coins:p.coins||0,ascensions:p.ascensions||0,runRecord:record,
+ pendingCoins:Math.floor(record/c.COIN_EVERY),
+ damageBonus:damageSteps*c.DAMAGE_PER_STEP+(up.reactor||0)*PRESTIGE_UPGRADES.reactor.damage,
+ shardBonus:shardSteps*c.SHARDS_PER_STEP+(up.treasury||0)*PRESTIGE_UPGRADES.treasury.shards,
+ critBonus:(up.critical||0)*PRESTIGE_UPGRADES.critical.crit,
+ ufoDamage:(up.fleet||0)*PRESTIGE_UPGRADES.fleet.ufoDamage,
+ ufoHaste:(up.clock||0)*PRESTIGE_UPGRADES.clock.ufoHaste};
 }

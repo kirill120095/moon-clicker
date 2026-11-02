@@ -8,7 +8,7 @@ function setup(){
  const engine={combat:{},destroy(){},recalcMoonBonuses(){},_comboClicks:0,
  _calculateAllBonuses:()=>({totalDamageBonus:0}),_getMechanicParamsForActiveMoon:()=>null,
  _updateBuffsDisplay(){buffUpdates++;},_getActiveBuffs(){return[{isTemporary:true,timeLeft:this._comboClicks>0?Math.max(0,Math.ceil((10000-(now-this._lastActivityTime))/1000)):null}];}};
- const context={gameEngine:engine,state,appState:{setMany:s=>Object.assign(state,s),set:(k,v)=>state[k]=v},CONSTANTS:{MAX_CLICKS_PER_SECOND:12,CLICK_BURST:12,BOSS_TIMER:30,BOSS_INTERVAL:10,UPGRADE_COSTS:{clickDamage:{base:60,multiplier:1.22}},LIMITS:{MAX_CLICK_DAMAGE_LEVEL:200}},db:{action(action,payload){calls.push({action,payload});if(action==='load')return Promise.resolve(result());return new Promise((resolve,reject)=>calls.at(-1).settle={resolve,reject});}},document:{getElementById:()=>null},animations:{playClickVisualFeedback(){}},audio:{click(){},purchase(){}},showToast(){},updateUI(){},updateHPBar(){hpUpdates++;},updateShopUI(){},updateProfileAndLeaders(){},updateQuestAndAchievementUI(){},updateTimerBar(){},setInterval(fn,ms){ticks.push({fn,ms});return ticks.length;},clearInterval(){},setTimeout(){return 1;},clearTimeout(){},performance:{now:()=>perf},Date:{now:()=>now},console,Math};
+ const context={radio:{connect:()=>Promise.resolve(),disconnect(){}},gameEngine:engine,state,appState:{setMany:s=>Object.assign(state,s),set:(k,v)=>state[k]=v},CONSTANTS:{SAFE_NUMBER_CAP:Number.MAX_SAFE_INTEGER,MAX_CLICKS_PER_SECOND:12,CLICK_BURST:12,BOSS_TIMER:30,BOSS_INTERVAL:10,UPGRADE_COSTS:{clickDamage:{base:60,multiplier:1.22}},LIMITS:{MAX_CLICK_DAMAGE_LEVEL:200}},db:{action(action,payload){calls.push({action,payload});if(action==='load')return Promise.resolve(result());return new Promise((resolve,reject)=>calls.at(-1).settle={resolve,reject});}},document:{getElementById:()=>null},animations:{playClickVisualFeedback(){}},audio:{click(){},purchase(){}},showToast(){},updateUI(){},updateHPBar(){hpUpdates++;},updateShopUI(){},updateProfileAndLeaders(){},updateQuestAndAchievementUI(){},updateTimerBar(){},setInterval(fn,ms){ticks.push({fn,ms});return ticks.length;},clearInterval(){},setTimeout(){return 1;},clearTimeout(){},performance:{now:()=>perf},Date:{now:()=>now},console,Math};
  vm.createContext(context);vm.runInContext(source,context);
  return{context,engine,state,calls,result,ticks,get hpUpdates(){return hpUpdates;},get buffUpdates(){return buffUpdates;},advance(ms){now+=ms;perf+=ms;}};
 }
@@ -32,4 +32,21 @@ test('slow network keeps one click request in flight and preserves later hit pre
  const response=s.result();response.state.moonHP=90;s.calls.at(-1).settle.resolve(response);await new Promise(setImmediate);
  assert.equal(s.engine._previewDamage,50);assert.equal(s.state.moonHP,90);
  s.engine.destroy();assert.equal(s.engine._previewDamage,0);
+});
+
+test('temporary stack resets cannot make predicted HP rebound on confirmation',async()=>{
+ const s=setup();await s.engine.init();s.engine._calculateAllBonuses=()=>({totalDamageBonus:0.1});s.engine._comboClicks=100;s.engine._fireStacks=500;
+ s.engine._getMechanicParamsForActiveMoon=()=>({clicksPerStack:1,maxStacks:100,bonusPerStack:1});s.engine.handleClick({});
+ const predicted=s.state.moonHP-s.engine._previewDamage;assert.equal(predicted,89);
+ const response=s.result();response.state.moonHP=89;s.calls.at(-1).settle.resolve(response);await new Promise(setImmediate);assert.equal(s.state.moonHP,89);assert.equal(s.engine._previewDamage,0);
+});
+test('purchases wait until every earlier click packet is acknowledged',async()=>{
+ const s=setup();await s.engine.init();s.engine.handleClick({});s.advance(100);s.engine.handleClick({});s.advance(100);s.engine.handleClick({});
+ const purchase=s.engine.buyClickDamage();s.calls.at(-1).settle.resolve(s.result());await new Promise(setImmediate);
+ assert.equal(s.calls.at(-1).action,'click');assert.equal(s.calls.at(-1).payload.count,2);assert.equal(s.calls.some(c=>c.action==='buyDamage'),false);
+ s.calls.at(-1).settle.resolve(s.result());await new Promise(setImmediate);assert.equal(s.calls.at(-1).action,'buyDamage');s.calls.at(-1).settle.resolve(s.result());await purchase;
+});
+test('older acknowledgements cannot replace a newer HP state',async()=>{
+ const s=setup();await s.engine.init();s.context.newer=s.result();s.context.newer.revision=3;s.context.newer.state.moonHP=60;vm.runInContext('apply(newer)',s.context);
+ s.context.older=s.result();s.context.older.revision=2;s.context.older.state.moonHP=90;vm.runInContext('apply(older)',s.context);assert.equal(s.state.moonHP,60);
 });
