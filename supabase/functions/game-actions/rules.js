@@ -125,7 +125,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
     if (mechanics.includes('fireStacks')) {
       const params = this._getMechanicParamsForActiveMoon('fire');
       if (params) {
-        this._fireStacks = Math.min(this._fireStacks + 1, params.maxStacks);
+        this._fireStacks = Math.min(this._fireStacks + 1, params.maxStacks * params.clicksPerStack);
         const stacks = Math.floor(this._fireStacks / params.clicksPerStack);
         damageMultiplier += stacks * params.bonusPerStack;
         
@@ -135,7 +135,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
         }
         
         // Уровень 10: шанс сброса после safeStacks
-        if (params.maxStacks === Infinity && this._fireStacks > params.safeStacks) {
+        if (params.maxStacks === Infinity && this._fireStacks > params.safeStacks * params.clicksPerStack) {
           if (Math.random() < params.resetChance) {
             this._fireStacks = 0;
           }
@@ -164,7 +164,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
         
         // Уровень 10: при полном стаке +10% к шансу крита
         if (params.fullStackCritChance > 0 && stacks >= params.maxStacks) {
-          critChance = Math.min(0.95, critChance + params.fullStackCritChance);
+          critChance = Math.min(critChance === 1 ? 1 : 0.95, critChance + params.fullStackCritChance);
         }
         
         // Тень НЕ сбрасывается при макс. стеках — только по таймауту бездействия
@@ -405,7 +405,11 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  const elapsed=Math.max(0,(now-(state.lastActionAt||now))/1000);
  state.tokens=Math.min(CONSTANTS.CLICK_BURST,(state.tokens??0)+elapsed*CONSTANTS.MAX_CLICKS_PER_SECOND);
  state.totalSecondsPlayed+=Math.min(elapsed,30);
- if(elapsed>15){rules._comboClicks=0;rules._fireStacks=0;rules._shadowCritStacks=0;}
+ const idle=now-(state.lastClickAt||now);
+ for(const [id,counter] of [['normal','_comboClicks'],['fire','_fireStacks'],['shadow','_shadowCritStacks']]){
+  const timeout=rules._getMechanicParamsForActiveMoon(id)?.resetTimeout||15000;
+  if(idle>=timeout)rules[counter]=0;
+ }
  function startMoon(){state.maxHP=getMaxHPForLevel(state.currentLevel);state.moonHP=state.maxHP;
  rules._clickCounter=0;rules._pityClicks=0;rules._firstStrikeUsed=false;rules._newMoon=true;
  const ice=rules._getMechanicParamsForActiveMoon('ice');
@@ -417,7 +421,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   const count=payload.count;
   if(!Number.isInteger(count)||count<1||count>CONSTANTS.CLICK_BURST)throw Error('Некорректное количество кликов');
   if(count>Math.floor(state.tokens))throw Error('Слишком много кликов. Максимум 12 в секунду.');
-  state.tokens-=count;
+  state.tokens-=count;state.lastClickAt=now;
   for(let i=0;i<count;i++){
    const boss=state.currentLevel%CONSTANTS.BOSS_INTERVAL===0;const bonuses=rules._calculateAllBonuses();
    const result=rules._applyMoonMechanics(state.playerData.click_damage,bonuses,boss);

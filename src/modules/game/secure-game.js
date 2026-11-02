@@ -5,7 +5,7 @@ import { db } from '../network/supabase.js';
 import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
 import { showToast, updateUI,updateShopUI,updateProfileAndLeaders,updateQuestAndAchievementUI,updateTimerBar } from '../ui/renderer.js';
-let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false;
+let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null;
 function apply(result){
  const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
@@ -28,9 +28,14 @@ async function send(action,payload={}){
 }
 async function flush(){
  if(flushTimer){clearTimeout(flushTimer);flushTimer=null;}
+ if(clickFlight)return clickFlight;
  if(!active||pendingClicks===0)return;
  const count=Math.min(CONSTANTS.CLICK_BURST,pendingClicks);pendingClicks-=count;
- try{await send('click',{count});}finally{if(pendingClicks&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),180);}
+ clickFlight=send('click',{count}).finally(()=>{
+  clickFlight=null;
+  if(active&&pendingClicks&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),180);
+ });
+ return clickFlight;
 }
 async function command(action,payload={},purchase=false){
  if(!active||purchasing)return;
@@ -54,11 +59,12 @@ gameEngine.init=async()=>{
 gameEngine.destroy=()=>{active=false;pendingClicks=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
  if(!active||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
+ if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
  pendingClicks++;audio.click();
  animations.playClickVisualFeedback(e,state.playerData.click_damage,false,state.currentLevel%10===0);
  if(!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),180);
 };
-gameEngine._saveProgress=async()=>{await flush();if(active)await send('sync');};
+gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks>0);if(active)await send('sync');};
 gameEngine.buyClickDamage=()=>command('buyDamage',{},true).catch(()=>{});
 gameEngine.buySlot=()=>command('buySlot',{},true).catch(()=>{});
 gameEngine.buyMoon=id=>command('buyMoon',{id},true).catch(()=>{});

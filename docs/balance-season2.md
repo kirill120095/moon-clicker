@@ -18,3 +18,5 @@ Changes:
 A baseline simulation at five clicks per second, spending only on base damage, reached a boss wall around level 40. It deliberately omits farming, moon upgrades and synergies. The UI now explains rollback and level lock so players can earn upgrades before retrying a boss.
 
 This is a calculated initial tuning, not a claim that every late-game build has been playtested. Combat has random critical hits, and moon combinations need continued playtesting.
+
+Additional regression fixes: fire stacks now count stacks rather than capping raw clicks; the level-10 safety threshold uses stack units; guaranteed shadow first-strike critical hits remain guaranteed; background sync no longer keeps an idle combo alive.

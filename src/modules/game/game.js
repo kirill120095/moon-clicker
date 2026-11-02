@@ -347,7 +347,7 @@ export class GameEngine {
     if (mechanics.includes('fireStacks')) {
       const params = this._getMechanicParamsForActiveMoon('fire');
       if (params) {
-        this._fireStacks = Math.min(this._fireStacks + 1, params.maxStacks);
+        this._fireStacks = Math.min(this._fireStacks + 1, params.maxStacks * params.clicksPerStack);
         const stacks = Math.floor(this._fireStacks / params.clicksPerStack);
         damageMultiplier += stacks * params.bonusPerStack;
         
@@ -357,7 +357,7 @@ export class GameEngine {
         }
         
         // Уровень 10: шанс сброса после safeStacks
-        if (params.maxStacks === Infinity && this._fireStacks > params.safeStacks) {
+        if (params.maxStacks === Infinity && this._fireStacks > params.safeStacks * params.clicksPerStack) {
           if (Math.random() < params.resetChance) {
             this._fireStacks = 0;
           }
@@ -386,7 +386,7 @@ export class GameEngine {
         
         // Уровень 10: при полном стаке +10% к шансу крита
         if (params.fullStackCritChance > 0 && stacks >= params.maxStacks) {
-          critChance = Math.min(0.95, critChance + params.fullStackCritChance);
+          critChance = Math.min(critChance === 1 ? 1 : 0.95, critChance + params.fullStackCritChance);
         }
         
         // Тень НЕ сбрасывается при макс. стеках — только по таймауту бездействия

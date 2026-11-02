@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'');
-function setup(){const c={structuredClone,console,Date,Math};vm.createContext(c);vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(root,'supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return code=>vm.runInContext(code,c);}
+function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(root,'supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return code=>vm.runInContext(code,c);}
 test('client supplied currency and damage are ignored',()=>{const run=setup();assert.equal(run("applyAction(freshState(),'load',{shards:999999,click_damage:999999},100000).playerData.shards"),0);});
 test('clicks are counted by server and bursts rejected',()=>{const run=setup();assert.equal(run("applyAction(freshState(),'click',{count:3,total_clicks:9999},100000).clickCount"),3);assert.throws(()=>run("applyAction(freshState(),'click',{count:13},100000)"));});
 test('rapid repeated batches exhaust the server token budget',()=>{const run=setup();assert.throws(()=>run("var s=applyAction(freshState(),'click',{count:12},100000);applyAction(s,'click',{count:1},100000)"));});
@@ -12,3 +12,7 @@ test('state input is not modified by failed actions',()=>{const run=setup();asse
 test('HP and level cap stay within safe integer range',()=>{const run=setup();assert.equal(run('Number.isSafeInteger(getMaxHPForLevel(CONSTANTS.MAX_PLAYER_LEVEL))'),true);});
 
 test('browser and server balance definitions are identical',()=>{assert.equal(fs.readFileSync(path.join(root,'src/core/constants.js'),'utf8'),fs.readFileSync(path.join(root,'supabase/functions/game-actions/constants.js'),'utf8'));assert.equal(fs.readFileSync(path.join(root,'src/core/config.js'),'utf8'),fs.readFileSync(path.join(root,'supabase/functions/game-actions/config.js'),'utf8'));});
+
+test('background sync cannot keep idle combo stacks alive',()=>{const run=setup();assert.equal(run("var s=applyAction(freshState(),'click',{count:12},100000);s=applyAction(s,'sync',{},110000);s=applyAction(s,'sync',{},116000);s.runtime._comboClicks"),0);});
+test('fire moon reaches the twenty stacks described in the shop',()=>{const run=setup();assert.equal(run("var s=freshState();s.activeMoons=['fire'];s.ownedMoons.push('fire');s.moonLevels.fire=1;for(let i=1;i<=100;i++)s=applyAction(s,'click',{count:1},100000+i*100);s.runtime._fireStacks"),100);});
+test('full shadow stacks do not cancel guaranteed first-strike critical hits',()=>{const run=setup();assert.ok(run("Math.random=()=>0.97;var s=freshState();s.activeMoons=['shadow'];s.ownedMoons.push('shadow');s.moonLevels.shadow=10;s.moonHP=100000;s.maxHP=100000;s.runtime={_shadowCritStacks:10000,_firstStrikeUsed:false,_newMoon:true};applyAction(s,'click',{count:1},100000).moonHP")<99980);});
