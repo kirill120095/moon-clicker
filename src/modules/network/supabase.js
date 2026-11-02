@@ -118,13 +118,11 @@ export const db = {
   // ============================================================
   // AUTH: ВХОД С ПАРОЛЕМ
   // ============================================================
-  async signInWithPassword(email, password) {
+  async signInWithPassword(identifier, password) {
     try {
       const client = await initSupabase();
-      const { data, error } = await client.auth.signInWithPassword({
-        email,
-        password
-      });
+      const email = identifier.includes('@') ? identifier.trim() : identifier.trim().toLowerCase() + '@players.moon-clicker.invalid';
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw error;
       return data;
     } catch (error) {
@@ -158,17 +156,16 @@ export const db = {
   },
 
   // Алиас для совместимости
-  async register(email, password, username) {
-    try {
-      const result = await this.signUp(email, password, {
-        data: { username: username }
-      });
-      
-      return result;
-    } catch (error) {
-      console.error('[DB] register error:', error);
-      throw error;
+  async register(username, password) {
+    const client = await initSupabase();
+    const result = await client.functions.invoke('register-player', { body: { username, password } });
+    if (result.error) {
+      let message = 'Не удалось зарегистрироваться. Попробуйте ещё раз.';
+      try { message = (await result.error.context.json()).error || message; } catch {}
+      throw new Error(message);
     }
+    if (result.data?.error) throw new Error(result.data.error);
+    return this.signInWithPassword(username, password);
   },
 
   // ============================================================
@@ -321,7 +318,7 @@ export function handleDatabaseError(error) {
     return 'Запись не найдена';
   }
   if (error.message && error.message.includes('Invalid login credentials')) {
-    return 'Неверный email или пароль';
+    return 'Неверный логин или пароль';
   }
   if (error.message && error.message.includes('User already registered')) {
     return 'Пользователь уже зарегистрирован';

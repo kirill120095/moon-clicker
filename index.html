@@ -44,14 +44,14 @@
       <p class="auth-subtitle">Собирай луны. Находи синергии. Покоряй орбиту.</p>
       
       <div class="auth-form">
-        <input type="email" id="authEmail" aria-label="Email" placeholder="Email" autocomplete="email">
+        <input type="text" id="authEmail" aria-label="Логин или email старого аккаунта" placeholder="Логин" autocomplete="username" autocapitalize="none" spellcheck="false">
         <input type="password" id="authPassword" aria-label="Пароль" placeholder="Пароль" autocomplete="current-password">
-        <input type="text" id="authUsername" aria-label="Имя игрока" placeholder="Имя игрока" autocomplete="username" style="display:none;">
         
         <button id="loginBtn" class="btn-auth btn-login">Войти</button>
         <button id="registerBtn" class="btn-auth btn-register">Регистрация</button>
       </div>
       
+      <p class="neon-help">Временно без почты: логин и пароль. Старые аккаунты — вход по email.</p>
       <div id="authError" class="auth-error" role="alert"></div>
     </div>
   </div>
@@ -292,19 +292,19 @@
     "./src/core/constants.js": "./src/core/constants.js?v=season2-neon-1",
     "./src/core/state.js": "./src/core/state.js?v=season2-neon-1",
     "./src/index.js": "./src/index.js?v=season2-neon-1",
-    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=season2-neon-1",
+    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=username-combo-1",
     "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
     "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
     "./src/modules/game/game.js": "./src/modules/game/game.js?v=season2-neon-2",
     "./src/modules/game/rewards.js": "./src/modules/game/rewards.js?v=season2-neon-1",
     "./src/modules/network/cache.js": "./src/modules/network/cache.js?v=season2-neon-1",
-    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=email-limit-message",
+    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=username-combo-1",
     "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=season2-neon-1",
     "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=season2-neon-1",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=season2-neon-1",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=username-combo-1",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=season2-neon-2",
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=username-combo-1",
     "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=season2-neon-1"
   }
 }

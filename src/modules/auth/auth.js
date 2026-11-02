@@ -50,7 +50,7 @@ export async function handleLogin() {
   const password = passwordInput?.value;
 
   if (!email || !password) {
-    showError('Введите email и пароль');
+    showError('Введите логин и пароль');
     return;
   }
 
@@ -78,22 +78,14 @@ export async function handleLogin() {
 // ============================================================
 export async function handleRegister() {
   if (authBusy) return;
-  const nameField = document.getElementById('authUsername');
-  if (nameField && nameField.style.display === 'none') {
-    nameField.style.display = '';
-    nameField.focus();
+  const username = document.getElementById('authEmail')?.value?.trim();
+  const password = document.getElementById('authPassword')?.value;
+  if (!/^[a-zA-Z0-9_-]{3,30}$/.test(username || '')) {
+    showError('Логин: 3–30 латинских букв, цифр, _ или -');
     return;
   }
-  const emailInput = document.getElementById('authEmail');
-  const passwordInput = document.getElementById('authPassword');
-  const usernameInput = document.getElementById('authUsername');
-
-  const email = emailInput?.value?.trim();
-  const password = passwordInput?.value;
-  const username = usernameInput?.value?.trim() || email?.split('@')[0];
-
-  if (!email || !password) {
-    showError('Введите email и пароль');
+  if (!password) {
+    showError('Введите пароль');
     return;
   }
 
@@ -104,16 +96,11 @@ export async function handleRegister() {
 
   setAuthBusy(true);
   try {
-    const { user } = await db.register(email, password, username);
+    const { user } = await db.register(username, password);
 
     if (user) {
-      // Показываем сообщение о необходимости подтверждения email
-      showError('Проверьте email для подтверждения аккаунта');
-      
-      // Если email подтверждение выключено в Supabase, входим сразу
-      if (user.confirmed_at || user.email_confirmed_at) {
-        await handleSuccessfulLogin(user);
-      }
+      await handleSuccessfulLogin(user);
+      hideError();
     } else {
       showError('Не удалось зарегистрироваться');
     }
