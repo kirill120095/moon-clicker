@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="css/game.css?v=9">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
-  <link rel="stylesheet" href="css/neon.css?v=large-hud-1">
+  <link rel="stylesheet" href="css/neon.css?v=orbit-ufo-1">
 </head>
 <body>
   <details id="audioSettings" class="audio-dock"><summary id="audioSummary">Звук</summary><div class="audio-dock-content"><h2>Звуковая атмосфера</h2><label class="sound-row"><span>Музыка</span><input type="range" min="0" max="100" step="1" data-audio-volume="music" aria-label="Громкость музыки"><output data-audio-output="music">14%</output></label>
@@ -66,13 +66,14 @@
     <div id="moonContainer" class="moon-container">
       <div id="moonWrapper" class="moon-wrapper" role="button" tabindex="0" aria-label="Ударить по луне">
         <div id="moonInner" class="moon-inner"></div>
+        <div id="ufoOrbit" class="ufo-orbit hidden" aria-hidden="true"><div class="ufo-satellite"><svg viewBox="0 0 80 48" class="ufo-ship"><path d="M22 25c0-29 36-29 36 0" fill="#b4f7ff" stroke="#67e8f9" stroke-width="2"/><ellipse cx="40" cy="28" rx="36" ry="12" fill="#414574" stroke="#b4f7ff" stroke-width="2"/><path d="M12 30h56" stroke="#67e8f9" stroke-width="3"/><circle cx="25" cy="32" r="3" fill="#d8b4fe"/><circle cx="40" cy="35" r="3" fill="#67e8f9"/><circle cx="55" cy="32" r="3" fill="#d8b4fe"/></svg></div></div>
         <div id="clickEffect" class="click-effect"></div>
       </div>
     </div>
 
     <!-- ИНФО ПОД ЛУНОЙ -->
     <div class="moon-info-below">
-      <p id="nextGoal" class="next-goal">Каждый удар приближает новую луну</p><p class="neon-help">Кликай по луне или нажимай пробел · ↩ возврат · 🔒 фарм уровня</p>
+      
       <!-- НОВАЯ СТРОКА: Уровень + кнопки управления -->
       <div class="level-controls-row">
         <button id="rollbackLevelBtn" class="level-control-btn rollback-btn hidden" onclick="window.rollbackLevel()" title="Откатить уровень">
@@ -81,6 +82,7 @@
           </svg>
         </button>
         
+        <button id="rollbackFiveBtn" class="level-control-btn rollback-five hidden" onclick="window.gameEngine.rollbackFive()" title="Вернуться на 5 уровней" aria-label="Вернуться на 5 уровней">↶ 5</button>
         <div id="levelTitle" class="level-title">Уровень 1</div>
         
         <button id="lockLevelBtn" class="level-control-btn lock-btn" onclick="window.toggleLevelLock()" title="Закрепить уровень">
@@ -109,6 +111,7 @@
         <div id="hpBar" class="hp-bar"></div>
         <span id="hpPercent" class="hp-percent">1000/1000</span>
       </div>
+      <p id="moonReward" class="moon-reward">За луну: +7 💎</p>
     </div>
 
     <!-- ПАНЕЛЬ АКТИВНЫХ БАФОВ -->
@@ -175,6 +178,7 @@
       
       <div class="panel-content panel-scrollable">
         <div id="shopTabContent" class="tab-content active">
+          <p id="nextGoal" class="next-goal shop-goal">Следующее улучшение</p>
           <div id="shopLockMessage" class="shop-lock-message">🔒 Доступно с 5 уровня</div>
           
           <div class="shop-section">
@@ -188,6 +192,12 @@
             </div>
           </div>
           
+          <div class="shop-section">
+            <h3 class="shop-section-title">🛸 Орбитальная тарелка</h3>
+            <p class="ufo-description">Стреляет за вас с половиной финального урона. Не набирает комбо и не даёт клики для заданий. Работает, пока игра открыта.</p>
+            <p id="ufoBuffs" class="ufo-description"></p>
+            <div class="shop-item"><div class="shop-item-info"><div id="ufoInfo" class="shop-item-level"></div><div id="ufoPrice" class="shop-item-price"></div></div><button id="buyUfoBtn" class="btn-buy-shop" onclick="window.gameEngine.buyUfo()">Купить</button></div>
+          </div>
           <div class="shop-section">
             <h3 class="shop-section-title">🎰 Слоты лун</h3>
             <div class="shop-item">
@@ -289,7 +299,7 @@
 {
   "imports": {
     "./src/core/config.js": "./src/core/config.js?v=season2-neon-1",
-    "./src/core/constants.js": "./src/core/constants.js?v=season2-neon-1",
+    "./src/core/constants.js": "./src/core/constants.js?v=orbit-ufo-1",
     "./src/core/state.js": "./src/core/state.js?v=season2-neon-1",
     "./src/index.js": "./src/index.js?v=season2-neon-1",
     "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=username-combo-1",
@@ -298,14 +308,14 @@
     "./src/modules/game/game.js": "./src/modules/game/game.js?v=season2-neon-2",
     "./src/modules/game/rewards.js": "./src/modules/game/rewards.js?v=season2-neon-1",
     "./src/modules/network/cache.js": "./src/modules/network/cache.js?v=season2-neon-1",
-    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=username-combo-1",
-    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=season2-neon-1",
+    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=orbit-ufo-1",
+    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=orbit-ufo-1",
     "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=season2-neon-1",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=username-combo-2",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=orbit-ufo-1",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=username-combo-1",
-    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=season2-neon-1"
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=orbit-ufo-1",
+    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=orbit-ufo-1"
   }
 }
   </script>

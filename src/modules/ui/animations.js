@@ -227,14 +227,14 @@ export class AnimationManager {
   // ============================================================
   // КОМПЛЕКСНЫЙ ЭФФЕКТ КЛИКА
   // ============================================================
-  playClickVisualFeedback(event, damage, isCrit, isBoss = false) {
+  playClickVisualFeedback(event, damage, isCrit, isBoss = false, showNumber = true) {
     const x = event.clientX || event.pageX;
     const y = event.clientY || event.pageY;
     
     const color = this.getDamageColor(damage, isCrit);
     
     // 1. Всплывающий урон
-    this.showDamageNumber(x, y, damage, isCrit, isBoss);
+    if (showNumber) this.showDamageNumber(x, y, damage, isCrit, isBoss);
     
     // 2. Ударная волна
     const shockwaveIntensity = isCrit ? 'crit' : 'normal';
@@ -373,6 +373,24 @@ export class AnimationManager {
   // ============================================================
   // НОВОЕ: ЭФФЕКТ ЗОЛОТОГО КЛИКА (от Золотой луны)
   // ============================================================
+  showMoonReward(amount) {
+    const moon=document.getElementById('moonWrapper');if(!moon)return;
+    const rect=moon.getBoundingClientRect(),label=document.createElement('div');
+    label.className='moon-reward-popup';label.textContent='+'+amount.toLocaleString('ru-RU')+' 💎';
+    label.style.left=(rect.x+rect.width/2)+'px';label.style.top=(rect.y+rect.height/2)+'px';
+    document.body.appendChild(label);setTimeout(()=>label.remove(),1400);
+  }
+
+  playUfoShot() {
+    const ship=document.querySelector('.ufo-ship'),moon=document.getElementById('moonWrapper');
+    if(!ship||!moon||document.hidden)return;
+    const a=ship.getBoundingClientRect(),b=moon.getBoundingClientRect();
+    const x=a.x+a.width/2,y=a.y+a.height/2,dx=b.x+b.width/2-x,dy=b.y+b.height/2-y;
+    const beam=document.createElement('div');beam.className='ufo-laser';
+    beam.style.left=x+'px';beam.style.top=y+'px';beam.style.width=Math.hypot(dx,dy)+'px';beam.style.transform='rotate('+Math.atan2(dy,dx)+'rad)';
+    document.body.appendChild(beam);setTimeout(()=>beam.remove(),220);
+  }
+
   playGoldenClickEffect(x, y) {
     this.createParticles(null, {
       count: 20,

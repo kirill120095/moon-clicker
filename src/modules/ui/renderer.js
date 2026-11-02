@@ -6,7 +6,7 @@ import {
   CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, 
   QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, 
   SYNERGY_BONUSES, RARITY_CONFIG,
-  getMoonMechanicParams, getMoonUpgradeCostForLevel
+  getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoMoonDescription
 } from '../../core/constants.js';
 import { getMaxHPForLevel, getTitle } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
@@ -116,6 +116,8 @@ function _updateLevelTitle() {
 function _updateLevelControls() {
   const rollbackBtn = document.getElementById('rollbackLevelBtn');
   const lockBtn = document.getElementById('lockLevelBtn');
+  const fiveBtn=document.getElementById('rollbackFiveBtn');
+  fiveBtn?.classList.toggle('hidden',state.currentLevel<=1);
   
   if (rollbackBtn) {
     // Скрываем кнопку отката на 1 уровне
@@ -150,6 +152,8 @@ export function updateHPBar() {
   const hpBar = document.getElementById('hpBar');
   const hpPercent = document.getElementById('hpPercent');
   const moonInner = document.getElementById('moonInner');
+  const reward=document.getElementById('moonReward');
+  if(reward)reward.textContent='За луну: +'+(state.moonReward||0).toLocaleString('ru-RU')+' 💎'+(state.ufoMoonReward>state.moonReward?' · тарелка +'+state.ufoMoonReward.toLocaleString('ru-RU')+' 💎':'');
 
   if (hpBar) {
     const percent = Math.max(0, (displayHP / state.maxHP) * 100);
@@ -163,7 +167,7 @@ export function updateHPBar() {
   if (moonInner) {
     const ratio = Math.max(0, Math.min(1, displayHP / state.maxHP));
     const scale = Math.pow(ratio, 0.4) * 0.95 + 0.05;
-    moonInner.style.transform = `scale(${scale})`;
+    moonInner.style.scale = String(scale);
   }
 }
 
@@ -254,10 +258,23 @@ function _updateMoonAuras() {
 export function updateShopUI() {
   uiScheduler.schedule(() => {
     _updateClickDamageShop();
+    _updateUfoShop();
     _updateSlotShop();
     _updateMoonShop();
     _updateSynergiesDisplay();
   });
+}
+
+function _updateUfoShop() {
+  const button=document.getElementById('buyUfoBtn'),info=document.getElementById('ufoInfo'),price=document.getElementById('ufoPrice');
+  if(!button||!info||!price)return;
+  const c=CONSTANTS.UFO,level=state.ufoLevel||0,cost=Math.floor(c.BASE_COST*Math.pow(c.COST_MULTIPLIER,level));
+  const interval=state.ufoInterval||(c.BASE_INTERVAL-Math.max(0,level-1)*c.INTERVAL_REDUCTION);
+  const buffs=document.getElementById('ufoBuffs');if(buffs)buffs.textContent=(state.activeMoons||[]).slice(0,state.maxSlots||1).map(id=>getUfoMoonDescription(id,state.moonLevels?.[id]||1)).join(' · ');
+  info.textContent=level?'Ур. '+level+'/'+c.MAX_LEVEL+' · '+state.ufoDamage+' урона раз в '+(interval/1000).toLocaleString('ru-RU')+' с':'50% финального урона раз в '+(c.BASE_INTERVAL/1000)+' с';
+  price.textContent=level>=c.MAX_LEVEL?'Улучшена полностью':state.currentLevel<c.UNLOCK_LEVEL?'Откроется с '+c.UNLOCK_LEVEL+' уровня':cost.toLocaleString('ru-RU')+' 💎';
+  button.disabled=level>=c.MAX_LEVEL||state.currentLevel<c.UNLOCK_LEVEL||(state.playerData?.shards||0)<cost;
+  button.textContent=level>=c.MAX_LEVEL?'MAX':level?'Улучшить':'Купить';
 }
 
 function _updateClickDamageShop() {
@@ -281,6 +298,8 @@ function _updateClickDamageShop() {
     CONSTANTS.UPGRADE_COSTS.clickDamage.base *
     Math.pow(CONSTANTS.UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade)
   );
+  const goal=document.getElementById('nextGoal');
+  if(goal)goal.textContent=currentLevelUpgrade>=CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL?'Урон улучшен полностью':'Следующее улучшение: '+cost.toLocaleString('ru-RU')+' 💎 · ещё '+Math.max(0,cost-(state.playerData?.shards||0)).toLocaleString('ru-RU')+' 💎';
   const currentDamage = state.playerData?.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
   const upgradeValue = CONSTANTS.CLICK_DAMAGE_UPGRADE_VALUE;
   const nextDamage = currentDamage + upgradeValue;
@@ -451,6 +470,7 @@ function _updateMoonShop() {
         <div class="moon-shop-name">${escapeHTML(moon.name)}</div>
         <div class="moon-shop-desc">${escapeHTML(moon.shopDescription || moon.description || '')}</div>
         
+        <div class="ufo-moon-trait">${escapeHTML(getUfoMoonDescription(id,moonLevel||1))}</div>
         ${owned ? `<div class="moon-shop-status"><div class="moon-level">⭐ Уровень: ${moonLevel} / ${CONSTANTS.LIMITS.MAX_MOON_LEVEL}</div></div>` : ''}
         ${isLockedByLevel && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔒 Доступна с ${moon.unlockLevel} уровня</div></div>` : ''}
         
@@ -596,7 +616,7 @@ function _updateProfile() {
   const totalCritChanceBonus = window._totalCritChanceBonus || 0;
   const totalCritDamageBonus = window._totalCritDamageBonus || 0;
   const baseDamage = data.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
-  const finalDamage = Math.round(baseDamage * (1 + totalDamageBonus));
+  const finalDamage = state.finalDamage || Math.round(baseDamage * (1 + totalDamageBonus));
   const finalCritChance = Math.round((0.05 + totalCritChanceBonus) * 100);
   const finalCritDamage = Math.round((2 + totalCritDamageBonus) * 100);
 
@@ -870,7 +890,7 @@ async function _updateLeaders() {
         <div class="leader-item ${isMe ? 'is-me' : ''} ${rankClass}">
           <div class="leader-rank">#${i + 1}</div>
           <div class="leader-name">${escapeHTML(p.username || 'Аноним')}</div>
-          <div class="leader-level">Ур. ${p.level || 0}</div>
+          <div class="leader-level" title="Максимальный достигнутый уровень">Макс. ур. ${p.max_level || p.level || 0}</div>
           <div class="leader-clicks">👆 ${formatNumber(p.total_clicks || 0)}</div>
         </div>
       `;

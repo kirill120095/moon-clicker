@@ -6,7 +6,7 @@ import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
 import { showToast, updateUI,updateShopUI,updateProfileAndLeaders,updateQuestAndAchievementUI,updateTimerBar,updateHPBar } from '../ui/renderer.js';
 let previewHits=[];
-function refreshPreview(){gameEngine._previewDamage=previewHits.reduce((sum,damage)=>sum+damage,0);updateHPBar();}
+function refreshPreview(){gameEngine._previewDamage=previewHits.reduce((sum,hit)=>sum+hit.damage,0);updateHPBar();}
 function previewDamage(){
  const bonuses=gameEngine._calculateAllBonuses();let multiplier=1+bonuses.totalDamageBonus;
  for(const [id,counter] of [['normal','_comboClicks'],['fire','_fireStacks']]){
@@ -15,11 +15,12 @@ function previewDamage(){
  }
  return Math.max(1,Math.round(state.playerData.click_damage*multiplier));
 }
+let nextUfoSync=0;
 let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
-function apply(result){
+function apply(result,hits=[]){
  const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
- appState.setMany({currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
+ appState.setMany({maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
  clickCount:s.clickCount,totalSecondsPlayed:s.totalSecondsPlayed,playerData:s.playerData,
  activeMoon:s.activeMoon,activeMoons:s.activeMoons,ownedMoons:s.ownedMoons,moonLevels:s.moonLevels,
  maxSlots:s.maxSlots,bossKills:s.bossKills,quests:s.quests,achievements:s.achievements,
@@ -29,15 +30,24 @@ function apply(result){
  gameEngine._lastActivityTime=s.lastClickAt?s.lastClickAt-offset:Date.now();
  gameEngine.recalcMoonBonuses();gameEngine._updateBuffsDisplay();updateUI();updateShopUI();updateQuestAndAchievementUI();
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
- const goal=document.getElementById('nextGoal');if(goal){const upgrade=s.playerData.click_damage_level;
- const cost=Math.floor(CONSTANTS.UPGRADE_COSTS.clickDamage.base*Math.pow(CONSTANTS.UPGRADE_COSTS.clickDamage.multiplier,upgrade));goal.textContent=s.currentLevel%CONSTANTS.BOSS_INTERVAL===0?'Босс: победи за 30 секунд. Если сложно — вернись на уровень назад и закрепи его для фарма.':upgrade<CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL?'Следующее улучшение: '+cost.toLocaleString('ru-RU')+' 💎 · ещё '+Math.max(0,cost-s.playerData.shards).toLocaleString('ru-RU')+' 💎':'Урон улучшен полностью — собирай луны и синергии';}
+ const orbit=document.getElementById('ufoOrbit');orbit?.classList.toggle('hidden',!s.ufoLevel);
+ let index=0;
+ for(const event of s.effects||[]){
+  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
+  if(!rect)continue;
+  const position=event.source==='manual'?hits[index++]:null;
+  animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);
+  if(event.source==='ufo'){animations.playUfoShot();audio.shoot(true);}
+  if(event.reward>0)animations.showMoonReward(event.reward);
+ }
+
 }
 async function send(action,payload={}){
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохраняем…';
  try{const result=await db.action(action,payload);
-  if(action==='click')previewHits.splice(0,payload.count);
-  gameEngine._previewDamage=previewHits.reduce((sum,damage)=>sum+damage,0);
-  if(active)apply(result);return result;}
+  const hits=action==='click'?previewHits.splice(0,payload.count):[];
+  gameEngine._previewDamage=previewHits.reduce((sum,hit)=>sum+hit.damage,0);
+  if(active)apply(result,hits);return result;}
  catch(error){if(action==='click'){previewHits.splice(0,payload.count);refreshPreview();}if(status)status.textContent='Нет связи — действие не подтверждено';showToast(error.message,'warning');throw error;}
 }
 async function flush(){
@@ -65,6 +75,10 @@ gameEngine.init=async()=>{
  ticker=setInterval(()=>{
   if(!active)return;
   gameEngine._updateBuffsDisplay();
+  if(state.ufoLevel&&state.ufoNextShotAt<=Date.now()+offset&&!document.hidden&&!syncing&&!clickFlight&&Date.now()>=nextUfoSync){
+   nextUfoSync=Date.now()+1000;syncing=true;
+   send('sync').catch(()=>{}).finally(()=>{syncing=false;});
+  }
   const expired=gameEngine._getActiveBuffs().some(buff=>buff.isTemporary&&buff.timeLeft===0);
   if(expired&&!syncing&&Date.now()>=nextBuffSync){
    nextBuffSync=Date.now()+2000;syncing=true;
@@ -80,12 +94,14 @@ gameEngine.destroy=()=>{active=false;pendingClicks=0;previewHits=[];gameEngine._
 gameEngine.handleClick=e=>{
  if(!active||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
- pendingClicks++;previewHits.push(previewDamage());refreshPreview();audio.click();
- animations.playClickVisualFeedback(e,state.playerData.click_damage,false,state.currentLevel%10===0);
+ pendingClicks++;previewHits.push({damage:previewDamage(),x:e.clientX,y:e.clientY});refreshPreview();audio.click();
+ animations.playClickVisualFeedback(e,state.finalDamage||previewDamage(),false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,false);
  if(!clickFlight)flush().catch(()=>{});
 };
 gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks>0);if(active)await send('sync');};
 gameEngine.buyClickDamage=()=>command('buyDamage',{},true).catch(()=>{});
+gameEngine.buyUfo=()=>command('buyUfo',{},true).catch(()=>{});
+gameEngine.rollbackFive=()=>command('rollbackFive').catch(()=>{});
 gameEngine.buySlot=()=>command('buySlot',{},true).catch(()=>{});
 gameEngine.buyMoon=id=>command('buyMoon',{id},true).catch(()=>{});
 gameEngine.upgradeMoon=id=>command('upgradeMoon',{id},true).catch(()=>{});

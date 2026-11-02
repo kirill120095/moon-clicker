@@ -280,8 +280,8 @@ async createPlayer(userId) {
       const client = await initSupabase();
       const { data, error } = await client
         .from('leaderboard')
-        .select('username, level, total_clicks')
-        .order('level', { ascending: false })
+        .select('username, max_level, total_clicks')
+        .order('max_level', { ascending: false })
         .order('total_clicks', { ascending: false })
         .limit(limit);
 

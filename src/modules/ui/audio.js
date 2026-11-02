@@ -29,7 +29,15 @@ export class AudioEngine {
   osc.type=type;osc.frequency.setValueAtTime(frequency,t);gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(volume,t+Math.min(0.02,duration/4));gain.gain.exponentialRampToValueAtTime(0.0001,t+duration);
   osc.connect(gain);gain.connect(bus);osc.start(t);osc.stop(t+duration+0.02);osc.onended=()=>{osc.disconnect();gain.disconnect();};
  }
- click(){this.unlock();if(!this.ctx||this.ctx.currentTime-this.lastClick<0.05)return;this.lastClick=this.ctx.currentTime;this.tone(420+Math.random()*80,0.075,this.fxBus,0.22,'triangle');}
+ click(){this.shoot();}
+ shoot(soft=false){
+  this.unlock();if(!this.ctx||this.ctx.state!=='running'||this.settings.muted||this.settings.effects===0||this.ctx.currentTime-this.lastClick<0.045)return;
+  this.lastClick=this.ctx.currentTime;
+  const t=this.ctx.currentTime,osc=this.ctx.createOscillator(),gain=this.ctx.createGain();
+  osc.type='sawtooth';osc.frequency.setValueAtTime(soft?1100:1600,t);osc.frequency.exponentialRampToValueAtTime(90,t+0.12);
+  gain.gain.setValueAtTime(soft?0.055:0.11,t);gain.gain.exponentialRampToValueAtTime(0.0001,t+0.14);
+  osc.connect(gain);gain.connect(this.fxBus);osc.start(t);osc.stop(t+0.15);osc.onended=()=>{osc.disconnect();gain.disconnect();};
+ }
  ui(){this.unlock();this.tone(680,0.045,this.fxBus,0.08,'sine');}
  purchase(){this.unlock();[523.25,659.25,783.99].forEach((f,i)=>this.tone(f,0.22,this.fxBus,0.15,'triangle',i*0.07));}
  music(){if(!this.ctx||document.hidden||this.settings.music===0)return;

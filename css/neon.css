@@ -56,3 +56,24 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
  .info-row-top{justify-content:center}
  .hp-percent,.timer-percent{font-size:17px}
 }
+
+/* Orbit combat: scale composes with the moon's floating transform. */
+.moon-inner{transition:scale .12s ease-out,box-shadow .3s ease}
+.moon-wrapper{border-radius:50%;-webkit-tap-highlight-color:transparent;user-select:none}
+.moon-wrapper:focus,.moon-wrapper:focus-visible{outline:none!important}
+.moon-reward{text-align:center;color:#c4b5fd;font-size:14px;font-weight:600;margin:4px 0 0;font-variant-numeric:tabular-nums}
+.shop-goal{max-width:none;margin:0 0 18px;text-align:left}
+.rollback-five{min-width:52px;width:auto;font-size:15px;white-space:nowrap}
+.damage-number.crit{font-size:clamp(38px,5vw,56px)!important;font-weight:900!important;color:#fef08a!important;text-shadow:0 0 18px #fbbf24,0 2px 5px #000!important;z-index:1200}
+.moon-reward-popup{position:fixed;pointer-events:none;z-index:1200;font:800 26px Inter,sans-serif;color:#a7f3d0;text-shadow:0 0 16px #34d39980;animation:reward-rise 1.4s ease-out forwards}
+@keyframes reward-rise{from{opacity:1;transform:translate(-50%,-20%)}to{opacity:0;transform:translate(-50%,-160%)}}
+.ufo-description{font-size:12px;line-height:1.6;color:#b4c1d9;margin:0 0 12px}
+.ufo-orbit{position:absolute;inset:-24px;pointer-events:none;z-index:3;animation:ufo-orbit 14s linear infinite}
+.ufo-satellite{position:absolute;left:50%;top:-23px;margin-left:-30px;width:60px;animation:ufo-counter-orbit 14s linear infinite}
+.ufo-ship{width:60px;height:38px;overflow:visible;filter:drop-shadow(0 0 10px #67e8f980)}
+@keyframes ufo-orbit{to{transform:rotate(360deg)}}@keyframes ufo-counter-orbit{to{transform:rotate(-360deg)}}
+.ufo-laser{position:fixed;height:3px;background:#c4f9ff;box-shadow:0 0 8px #67e8f9,0 0 18px #a78bfa;transform-origin:0 50%;z-index:30;pointer-events:none;animation:laser-fade .2s ease-out forwards}
+@keyframes laser-fade{from{opacity:1}to{opacity:0}}
+@media(max-width:700px){.ufo-satellite,.ufo-ship{width:48px}.ufo-satellite{margin-left:-24px}.moon-reward{font-size:13px}}
+
+.ufo-moon-trait{font-size:12px;line-height:1.5;color:#a5f3fc;margin:10px 0;padding:8px 10px;background:#67e8f90b;border-radius:8px}
