@@ -22,12 +22,9 @@
   <link rel="stylesheet" href="css/game.css?v=9">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
-  <link rel="stylesheet" href="css/neon.css?v=orbit-ufo-2">
+  <link rel="stylesheet" href="css/neon.css?v=performance-radio-1">
 </head>
 <body>
-  <details id="audioSettings" class="audio-dock"><summary id="audioSummary">Звук</summary><div class="audio-dock-content"><h2>Звуковая атмосфера</h2><label class="sound-row"><span>Музыка</span><input type="range" min="0" max="100" step="1" data-audio-volume="music" aria-label="Громкость музыки"><output data-audio-output="music">14%</output></label>
-<label class="sound-row"><span>Эффекты</span><input type="range" min="0" max="100" step="1" data-audio-volume="effects" aria-label="Громкость эффектов"><output data-audio-output="effects">45%</output></label>
-<label class="sound-check"><input type="checkbox" data-audio-mute> Выключить весь звук</label><p>Тихий синтезаторный фон и мягкие игровые эффекты.</p></div></details>
   <!-- ЗВЁЗДНОЕ НЕБО -->
   <div id="stars"></div>
   
@@ -141,6 +138,7 @@
       <div class="panel-content panel-scrollable">
         <div id="profileTabContent" class="tab-content active">
           <div id="profileContent" class="profile-content"></div>
+          <section id="profilePrestige" class="profile-prestige"></section>
           <div class="profile-actions">
             <button id="logoutBtn" class="btn-action btn-logout">🚪 Выйти</button>
             <button id="resetBtn" class="btn-action btn-reset">♻️ Сбросить прогресс</button>
@@ -156,6 +154,8 @@
 <label class="sound-row"><span>Эффекты</span><input type="range" min="0" max="100" step="1" data-audio-volume="effects" aria-label="Громкость эффектов"><output data-audio-output="effects">45%</output></label>
 <label class="sound-check"><input type="checkbox" data-audio-mute> Выключить весь звук</label>
           <label class="sound-check"><input type="checkbox" id="reduceEffects"> Уменьшить анимацию</label>
+          <p id="radioNowPlaying" class="radio-now-playing">Космический фон</p>
+          <section id="radioAdmin" class="radio-admin hidden"><h3>Общее радио</h3><p>Выбранная музыка играет у всех. Каждый игрок сохраняет свою громкость.</p><label for="radioFile">Аудиофайл до 20 МБ</label><input id="radioFile" type="file" accept="audio/*"><button id="radioUpload" class="btn-action">Загрузить и включить всем</button><label for="radioTracks">Загруженные треки</label><select id="radioTracks"></select><div class="radio-actions"><button id="radioSwitch" class="btn-action">Включить всем</button><button id="radioStop" class="btn-action">Космический фон</button></div><p id="radioStatus" role="status"></p></section>
           <p class="settings-note">Настройки сохраняются на этом устройстве. Музыка останавливается в скрытой вкладке.</p></section>
         </div>   </div>
       
@@ -172,6 +172,7 @@
         <div class="panel-tabs">
           <button class="panel-tab active" data-tab="shop" onclick="window.switchShopTab('shop')">🛒 Магазин</button>
           <button class="panel-tab" data-tab="quests" onclick="window.switchShopTab('quests')">🎯 Квесты</button>
+          <button class="panel-tab" data-tab="prestige" onclick="window.switchShopTab('prestige')">🌟 Престиж</button>
           <button class="panel-tab" data-tab="achievements" onclick="window.switchShopTab('achievements')">🏆 Ачивки</button>
         </div>
       </div>
@@ -198,6 +199,7 @@
             <p id="ufoBuffs" class="ufo-description"></p>
             <div class="shop-item"><div class="shop-item-info"><div id="ufoInfo" class="shop-item-level"></div><div id="ufoPrice" class="shop-item-price"></div></div><button id="buyUfoBtn" class="btn-buy-shop" onclick="window.gameEngine.buyUfo()">Купить</button></div>
           </div>
+          <div class="shop-section"><h3 class="shop-section-title">🛸 Флот тарелок</h3><p id="ufoFleetInfo" class="ufo-description"></p><div class="shop-item"><div id="ufoUnitPrice" class="shop-item-price"></div><button id="buyUfoUnitBtn" class="btn-buy-shop" onclick="window.gameEngine.buyUfoUnit()">Ещё тарелка</button></div></div>
           <div class="shop-section">
             <h3 class="shop-section-title">🎰 Слоты лун</h3>
             <div class="shop-item">
@@ -220,6 +222,7 @@
           </div>
         </div>
         
+        <div id="prestigeTabContent" class="tab-content"><div id="prestigeShop"></div></div>
         <div id="questsTabContent" class="tab-content">
           <div id="questsList" class="quests-list"></div>
         </div>
@@ -279,14 +282,10 @@
     <div class="modal-backdrop supernova-backdrop" onclick="window.closeSupernovaModal()"></div>
     <div class="modal-content supernova-modal-content">
       <div class="supernova-icon">💥</div>
-      <h3 class="modal-title supernova-title">СВЕРХНОВАЯ!</h3>
-      <p class="modal-message supernova-message">
-        Вы взорвали вселенную!<br>
-        Но продолжаете кликать...<br>
-        <span class="supernova-subtitle">Потому что вы — настоящий кликер.</span>
-      </p>
+      <h3 class="modal-title supernova-title">ТЕКУЩАЯ ВЕРСИЯ ПРОЙДЕНА!</h3>
+      <p class="modal-message supernova-message">Вы открыли Сверхновую и завершили весь доступный контент!<br><span class="supernova-subtitle">Спасибо за игру. Ждите следующий патч — продолжение будет!</span>      </p>
       <div class="modal-actions">
-        <button class="btn-modal btn-confirm supernova-btn" onclick="window.closeSupernovaModal()">Продолжить кликать</button>
+        <button class="btn-modal btn-confirm supernova-btn" onclick="window.closeSupernovaModal()">Продолжить игру</button>
       </div>
     </div>
   </div>
@@ -298,24 +297,25 @@
   <script type="importmap">
 {
   "imports": {
-    "./src/core/config.js": "./src/core/config.js?v=season2-neon-1",
-    "./src/core/constants.js": "./src/core/constants.js?v=orbit-ufo-1",
+    "./src/core/config.js": "./src/core/config.js?v=performance-radio-1",
+    "./src/core/constants.js": "./src/core/constants.js?v=performance-radio-1",
     "./src/core/state.js": "./src/core/state.js?v=season2-neon-1",
     "./src/index.js": "./src/index.js?v=season2-neon-1",
-    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=username-combo-1",
+    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=performance-radio-1",
     "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
     "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
     "./src/modules/game/game.js": "./src/modules/game/game.js?v=season2-neon-2",
     "./src/modules/game/rewards.js": "./src/modules/game/rewards.js?v=season2-neon-1",
     "./src/modules/network/cache.js": "./src/modules/network/cache.js?v=season2-neon-1",
-    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=orbit-ufo-1",
-    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=orbit-ufo-1",
-    "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=season2-neon-1",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=orbit-ufo-1",
+    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=performance-radio-1",
+    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=performance-radio-1",
+    "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=performance-radio-1",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=performance-radio-1",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=orbit-ufo-2",
-    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=orbit-ufo-1"
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=performance-radio-1",
+    "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=performance-radio-1",
+    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=performance-radio-1"
   }
 }
   </script>

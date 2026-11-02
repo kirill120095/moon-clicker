@@ -119,22 +119,9 @@ export async function handleRegister() {
 async function handleSuccessfulLogin(user) {
   console.log('[Auth] Successful login:', user.email);
   
-  // Do not enable gameplay or autosave until the remote save is loaded.
-  let playerData = await db.getPlayer(user.id);
-  if (playerData && !playerData.username && user.user_metadata?.username) {
-    playerData = await db.updatePlayer(user.id, { username: user.user_metadata.username });
-  }
-  if (!playerData) throw new Error('Не удалось загрузить сохранение. Попробуйте войти ещё раз.');
   appState.setUser(user);
-  appState.loadPlayerData(playerData);
-
-  // Скрываем экран авторизации
-  // Wait for the authoritative game state before revealing the app.
-
-  // Инициализируем игру
-  if (gameEngine && gameEngine.init) {
-    await gameEngine.init();
-  }
+  // Secure init loads the full authoritative state once, without a second profile fetch.
+  await gameEngine.init();
   hideAuthScreen();
   showApp();
 

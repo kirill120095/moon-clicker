@@ -1,26 +1,44 @@
 import { gameEngine } from './game.js';
 import { appState, state } from '../../core/state.js';
-import { CONSTANTS } from '../../core/constants.js';
+import { CONSTANTS,QUESTS,ACHIEVEMENTS } from '../../core/constants.js';
 import { db } from '../network/supabase.js';
 import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
+import { radio } from '../ui/radio.js';
 import { showToast, updateUI,updateShopUI,updateProfileAndLeaders,updateQuestAndAchievementUI,updateTimerBar,updateHPBar } from '../ui/renderer.js';
 let previewHits=[];
 function refreshPreview(){gameEngine._previewDamage=previewHits.reduce((sum,hit)=>sum+hit.damage,0);updateHPBar();}
 function previewDamage(){
- const bonuses=gameEngine._calculateAllBonuses();let multiplier=1+bonuses.totalDamageBonus;
- for(const [id,counter] of [['normal','_comboClicks'],['fire','_fireStacks']]){
-  const params=gameEngine._getMechanicParamsForActiveMoon(id);
-  if(params)multiplier+=Math.min(params.maxStacks,Math.floor(((gameEngine[counter]||0)+previewHits.length+1)/params.clicksPerStack))*params.bonusPerStack;
- }
- return Math.max(1,Math.round(state.playerData.click_damage*multiplier));
+ // Only guaranteed passive damage is predicted. Random crits, heat resets and
+ // temporary stacks are applied on confirmation, so same-moon HP cannot rebound.
+ const bonus=gameEngine._calculateAllBonuses().totalDamageBonus+(state.prestigeSummary?.damageBonus||0);
+ return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(state.playerData.click_damage*(1+bonus))));
 }
+let lastRevision=0,lastBuffKey='',ready=false;
+function refreshBuffs(){
+ const key=JSON.stringify(gameEngine._getActiveBuffs());
+ if(key!==lastBuffKey){lastBuffKey=key;gameEngine._updateBuffsDisplay();}
+}
+function renderFleet(count){
+ const orbit=document.getElementById('ufoOrbit');if(!orbit)return;
+ orbit.classList.toggle('hidden',!count);
+ if(orbit.dataset.count===String(count))return;
+ const ship=orbit.querySelector('.ufo-ship')?.outerHTML||gameEngine._ufoSvg;
+ if(!ship)return;gameEngine._ufoSvg=ship;
+ orbit.innerHTML=Array.from({length:count},(_,i)=>'<div class="ufo-position" style="--orbit-angle:'+i*360/count+'deg;transform:rotate('+i*360/count+'deg)"><div class="ufo-satellite">'+ship+'</div></div>').join('');
+ orbit.dataset.count=String(count);
+}
+
 let nextUfoSync=0;
 let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
 function apply(result,hits=[]){
  const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
+ if(result.revision&&result.revision<=lastRevision)return;
+ lastRevision=result.revision||lastRevision;
+ const previousQuests=state.quests||{},previousAchievements=state.achievements||{};
+ const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
- appState.setMany({maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
+ appState.setMany({prestige:s.prestige,prestigeSummary:s.prestigeSummary,runMaxLevel:s.runMaxLevel,moonSerial:s.moonSerial,ufoCount:s.ufoCount||0,gameCompleted:s.gameCompleted,maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
  clickCount:s.clickCount,totalSecondsPlayed:s.totalSecondsPlayed,playerData:{...s.playerData,level:s.currentLevel,total_clicks:s.clickCount,total_seconds_played:s.totalSecondsPlayed},
  activeMoon:s.activeMoon,activeMoons:s.activeMoons,ownedMoons:s.ownedMoons,moonLevels:s.moonLevels,
  maxSlots:s.maxSlots,bossKills:s.bossKills,quests:s.quests,achievements:s.achievements,
@@ -28,16 +46,24 @@ function apply(result,hits=[]){
  bossTimer:deadline?Math.max(0,(deadline-result.serverNow)/1000):30});
  Object.assign(gameEngine,s.runtime||{});
  gameEngine._lastActivityTime=s.lastClickAt?s.lastClickAt-offset:Date.now();
- gameEngine.recalcMoonBonuses();gameEngine._updateBuffsDisplay();updateUI();updateShopUI();updateQuestAndAchievementUI();
+ gameEngine.recalcMoonBonuses();refreshBuffs();updateUI();updateShopUI();updateQuestAndAchievementUI();
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
- const orbit=document.getElementById('ufoOrbit');orbit?.classList.toggle('hidden',!s.ufoLevel);
+ renderFleet(s.ufoCount||(s.ufoLevel?1:0));
+ if(ready){
+  for(const [id,q]of Object.entries(s.quests||{}))if(q.completed&&!previousQuests[id]?.completed)showToast('🎯 Квест выполнен: '+(QUESTS[id]?.name||id),'success',3500);
+  for(const [id,tiers]of Object.entries(s.achievements||{}))for(const [tier,status]of Object.entries(tiers))if(status==='unclaimed'&&!previousAchievements[id]?.[tier])showToast('🏆 '+(ACHIEVEMENTS[id]?.tiers.find(t=>t.level===tier)?.name||id),'success',3500);
+ }
+ ready=true;
+ if(s.gameCompleted){
+  const key='moon_completed_'+state.user?.id;
+  try{if(!localStorage.getItem(key)){localStorage.setItem(key,'1');window.showSupernovaModal?.();}}catch{}
+ }
  let index=0;
  for(const event of s.effects||[]){
-  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
   if(!rect)continue;
   const position=event.source==='manual'?hits[index++]:null;
   animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);
-  if(event.source==='ufo'){animations.playUfoShot();audio.shoot(true);}
+  if(event.source==='ufo'){animations.playUfoShot(event.ufoIndex||0);audio.shoot(true);}
   if(event.reward>0)animations.showMoonReward(event.reward);
  }
 
@@ -63,36 +89,37 @@ async function flush(){
 }
 async function command(action,payload={},purchase=false){
  if(!active||purchasing)return;
- if(purchase)purchasing=true;
- try{await flush();await send(action,payload);if(purchase)audio.purchase();updateProfileAndLeaders();}
+ purchasing=true;
+ try{do{await flush();}while(active&&pendingClicks>0);await send(action,payload);if(purchase)audio.purchase();updateProfileAndLeaders();}
  finally{purchasing=false;}
 }
 const oldDestroy=gameEngine.destroy.bind(gameEngine);
 gameEngine.init=async()=>{
- active=true;gameEngine._isRunning=true;
+ active=true;ready=false;lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
  try{apply(await db.action('load'));}catch(error){active=false;gameEngine._isRunning=false;throw error;}
+ radio.connect(state.user).catch(()=>{});
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
  ticker=setInterval(()=>{
   if(!active)return;
-  gameEngine._updateBuffsDisplay();
-  if(state.ufoLevel&&state.ufoNextShotAt<=Date.now()+offset&&!document.hidden&&!syncing&&!clickFlight&&Date.now()>=nextUfoSync){
-   nextUfoSync=Date.now()+1000;syncing=true;
+  refreshBuffs();
+  if(state.ufoLevel&&state.ufoNextShotAt<=Date.now()+offset&&!document.hidden&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextUfoSync){
+   nextUfoSync=Date.now()+250;syncing=true;
    send('sync').catch(()=>{}).finally(()=>{syncing=false;});
   }
   const expired=gameEngine._getActiveBuffs().some(buff=>buff.isTemporary&&buff.timeLeft===0);
-  if(expired&&!syncing&&Date.now()>=nextBuffSync){
+  if(expired&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextBuffSync){
    nextBuffSync=Date.now()+2000;syncing=true;
    send('sync').catch(()=>{}).finally(()=>{syncing=false;});
   }
   if(deadline){appState.set('bossTimer',Math.max(0,(deadline-Date.now()-offset)/1000));updateTimerBar();
-   if(deadline<=Date.now()+offset&&!syncing){syncing=true;send('sync').catch(()=>{}).finally(()=>{syncing=false;});}}
+   if(deadline<=Date.now()+offset&&!syncing&&!clickFlight&&!pendingClicks){syncing=true;send('sync').catch(()=>{}).finally(()=>{syncing=false;});}}
  },250);
- ping=setInterval(()=>{if(active&&!document.hidden)send('sync').catch(()=>{});},20000);
+ ping=setInterval(()=>{if(active&&!document.hidden&&!clickFlight&&!pendingClicks&&!syncing)send('sync').catch(()=>{});},20000);
  updateProfileAndLeaders();
 };
-gameEngine.destroy=()=>{active=false;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{radio.disconnect();active=false;ready=false;lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
- if(!active||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
+ if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
  pendingClicks++;previewHits.push({damage:previewDamage(),x:e.clientX,y:e.clientY});refreshPreview();audio.click();
  animations.playClickVisualFeedback(e,state.finalDamage||previewDamage(),false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,false);
@@ -100,6 +127,9 @@ gameEngine.handleClick=e=>{
 };
 gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks>0);if(active)await send('sync');};
 gameEngine.buyClickDamage=()=>command('buyDamage',{},true).catch(()=>{});
+gameEngine.ascend=()=>{const count=state.prestigeSummary?.pendingCoins||0;if(confirm('Вознестись за '+count+' монет престижа? Весь обычный прогресс будет сброшен. Вечные бонусы, монеты и покупки сохранятся.'))command('ascend').catch(()=>{});};
+gameEngine.buyPrestige=id=>command('buyPrestige',{id},true).catch(()=>{});
+gameEngine.buyUfoUnit=()=>command('buyUfoUnit',{},true).catch(()=>{});
 gameEngine.buyUfo=()=>command('buyUfo',{},true).catch(()=>{});
 gameEngine.rollbackFive=()=>command('rollbackFive').catch(()=>{});
 gameEngine.buySlot=()=>command('buySlot',{},true).catch(()=>{});

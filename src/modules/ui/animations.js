@@ -381,8 +381,8 @@ export class AnimationManager {
     document.body.appendChild(label);setTimeout(()=>label.remove(),1400);
   }
 
-  playUfoShot() {
-    const ship=document.querySelector('.ufo-ship'),moon=document.getElementById('moonWrapper');
+  playUfoShot(index=0) {
+    const ships=document.querySelectorAll('.ufo-ship'),ship=ships[index%Math.max(1,ships.length)],moon=document.getElementById('moonWrapper');
     if(!ship||!moon||document.hidden)return;
     const a=ship.getBoundingClientRect(),b=moon.getBoundingClientRect();
     const x=a.x+a.width/2,y=a.y+a.height/2,dx=b.x+b.width/2-x,dy=b.y+b.height/2-y;

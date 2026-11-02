@@ -13,6 +13,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 let _initPromise = null;
 let _writeQueue = Promise.resolve();
 let _actionQueue = Promise.resolve();
+let _snapshot=null,_snapshotRevision=0;
 
 /**
  * Ждёт загрузки библиотеки Supabase с CDN
@@ -44,7 +45,7 @@ function waitForSupabase() {
  * Инициализирует Supabase клиент (singleton)
  * Все параллельные вызовы получат один и тот же Promise
  */
-function initSupabase() {
+export function initSupabase() {
   // Если уже есть Promise инициализации - возвращаем его
   if (_initPromise) {
     return _initPromise;
@@ -87,13 +88,14 @@ export const db = {
     const request_id = crypto.randomUUID();
     const run = async () => {
       const client = await initSupabase();
-      const result = await client.functions.invoke('game-actions', { body: { action, payload, request_id } });
+      const result = await client.functions.invoke('game-actions', { body: { action, payload, request_id, snapshot:_snapshot } });
       if (result.error) {
         let message = 'Сервер недоступен. Повторите действие.';
         try { const body = await result.error.context.json(); message = body.error || message; } catch {}
         throw new Error(message);
       }
       if (result.data?.error) throw new Error(result.data.error);
+      if(result.data.snapshot&&result.data.revision>=_snapshotRevision){_snapshot=result.data.snapshot;_snapshotRevision=result.data.revision;}
       return result.data;
     };
     const pending = _actionQueue.then(run);
@@ -119,6 +121,7 @@ export const db = {
   // AUTH: ВХОД С ПАРОЛЕМ
   // ============================================================
   async signInWithPassword(identifier, password) {
+    _snapshot=null;_snapshotRevision=0;
     try {
       const client = await initSupabase();
       const email = identifier.includes('@') ? identifier.trim() : identifier.trim().toLowerCase() + '@players.moon-clicker.invalid';
@@ -172,6 +175,7 @@ export const db = {
   // AUTH: ВЫХОД
   // ============================================================
   async signOut() {
+    _snapshot=null;_snapshotRevision=0;
     try {
       const client = await initSupabase();
       const { error } = await client.auth.signOut();

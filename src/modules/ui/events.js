@@ -109,6 +109,8 @@ if (typeof window !== 'undefined') {
     
     if (tabName === 'shop') {
       if (window.updateShopUI) window.updateShopUI();
+    } else if (tabName === 'prestige') {
+      if(window.updatePrestigeUI)window.updatePrestigeUI();
     } else if (tabName === 'quests') {
       if (window.updateQuestUI) window.updateQuestUI();
     } else if (tabName === 'achievements') {
@@ -238,6 +240,7 @@ if (typeof window !== 'undefined') {
 // 🎯 ИНИЦИАЛИЗАЦИЯ ADD EVENT LISTENER
 // ============================================================
 export function initEvents() {
+  document.addEventListener('click',e=>{const button=e.target.closest?.('[data-prestige-upgrade],[data-ascend]');if(!button||button.disabled)return;if(button.hasAttribute('data-ascend'))gameEngine.ascend();else gameEngine.buyPrestige(button.dataset.prestigeUpgrade);});
   console.log('[Events] Инициализация...');
 
   // Кнопки авторизации

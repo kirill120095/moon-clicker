@@ -550,7 +550,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  } else if(!['load','sync'].includes(action))throw Error('Неизвестное действие');
  rules.checkAchievements();
  state.finalDamage=finalDamage();state.moonReward=moonReward();
- state.ufoDamage=state.ufoLevel?Math.max(1,Math.round(state.finalDamage*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+getUfoBonuses(state,rules).damage))):0;
+ state.ufoDamage=state.ufoLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(state.finalDamage*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+getUfoBonuses(state,rules).damage)))):0;
  state.ufoMoonReward=state.ufoLevel?Math.max(1,Math.floor(state.moonReward*getUfoBonuses(state,rules).rewardMultiplier)):0;
  state.ufoInterval=state.ufoLevel?ufoInterval():0;
  state.ufoNextShotAt=state.ufoLevel?state.ufoLastShotAt+state.ufoInterval/Math.max(1,state.ufoCount):null;

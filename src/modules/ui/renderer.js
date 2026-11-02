@@ -6,9 +6,9 @@ import {
   CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, 
   QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, 
   SYNERGY_BONUSES, RARITY_CONFIG,
-  getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoMoonDescription
+  getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, PRESTIGE_UPGRADES
 } from '../../core/constants.js';
-import { getMaxHPForLevel, getTitle } from '../../core/config.js';
+import { getMaxHPForLevel, getTitle, getClickUpgradeCost } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
 import { uiScheduler } from '../../utils/performance.js';
 import { db } from '../network/supabase.js';
@@ -27,7 +27,7 @@ export function showToast(message, type = 'info', duration = 2000) {
     return;
   }
 
-  toastContainer.innerHTML = '';
+  while(toastContainer.children.length>=3)toastContainer.firstElementChild.remove();
 
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
@@ -196,7 +196,9 @@ export function updateTimerBar() {
   }
 }
 
+let lastMoonStyle='';
 function _updateMoonStyle() {
+  if(lastMoonStyle===state.activeMoon)return;lastMoonStyle=state.activeMoon;
   const moonInner = document.getElementById('moonInner');
   const container = document.getElementById('app');
   if (!moonInner || !container) return;
@@ -257,6 +259,9 @@ function _updateMoonAuras() {
 // ============================================================
 export function updateShopUI() {
   uiScheduler.schedule(() => {
+    if(document.getElementById('shopPanel')?.classList.contains('hidden'))return;
+    updatePrestigeUI();
+    if(!document.getElementById('shopTabContent')?.classList.contains('active'))return;
     _updateClickDamageShop();
     _updateUfoShop();
     _updateSlotShop();
@@ -265,10 +270,23 @@ export function updateShopUI() {
   });
 }
 
+export function updatePrestigeUI(){
+ const p=getPrestigeSummary(state),container=document.getElementById('prestigeShop'),profile=document.getElementById('profilePrestige');
+ if(profile&&!document.getElementById('profilePanel')?.classList.contains('hidden'))profile.innerHTML='<h3>🌟 Вечный престиж</h3><p>Монеты: <b>'+p.coins+'</b> · Вознесений: '+p.ascensions+'</p><p>Урон +'+Math.round(p.damageBonus*100)+'% · Добыча +'+Math.round(p.shardBonus*100)+'% · Крит +'+Math.round(p.critBonus*100)+'%</p><p>Тарелки: урон +'+Math.round(p.ufoDamage*100)+'% · интервал короче на '+Math.round(p.ufoHaste*100)+'%</p><p>Рекорд этого прохождения: '+p.runRecord+' · При вознесении: '+p.pendingCoins+' монет</p>';
+ if(!container||!document.getElementById('prestigeTabContent')?.classList.contains('active'))return;
+ container.innerHTML='<h3>🌟 Магазин вечных улучшений</h3><p class="prestige-summary">Монеты престижа: <b>'+p.coins+'</b></p><p class="ufo-description">В этом прохождении: '+p.runRecord+' уровней. При вознесении получите '+p.pendingCoins+' монет. Обычный прогресс сбросится; вечные бонусы и покупки сохранятся. В новом прохождении рубежи снова доступны.</p><button class="btn-action ascend-button" data-ascend '+(p.pendingCoins?'':'disabled')+'>Вознестись · +'+p.pendingCoins+' 🌟</button>'+
+ Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=Math.floor(d.baseCost*Math.pow(d.multiplier,level));return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+level+'/'+d.maxLevel+'</p><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(level>=d.maxLevel||p.coins<cost?'disabled':'')+'>'+(level>=d.maxLevel?'MAX':cost+' 🌟')+'</button></div>';}).join('');
+}
+
 function _updateUfoShop() {
   const button=document.getElementById('buyUfoBtn'),info=document.getElementById('ufoInfo'),price=document.getElementById('ufoPrice');
   if(!button||!info||!price)return;
   const c=CONSTANTS.UFO,level=state.ufoLevel||0,cost=Math.floor(c.BASE_COST*Math.pow(c.COST_MULTIPLIER,level));
+  const fleet=document.getElementById('ufoFleetInfo'),unitButton=document.getElementById('buyUfoUnitBtn'),unitPrice=document.getElementById('ufoUnitPrice');
+  const count=state.ufoCount||0,limit=state.ownedMoons?.length||1,unitCost=Math.floor(c.UNIT_BASE_COST*Math.pow(c.UNIT_COST_MULTIPLIER,Math.max(0,count-1)));
+  if(fleet)fleet.textContent='Тарелки: '+count+' / '+limit+' · каждую новую луну можно сопровождать ещё одной тарелкой';
+  if(unitPrice)unitPrice.textContent=count>=limit?'Купите ещё одну луну':!count?'Сначала купите первую тарелку':unitCost.toLocaleString('ru-RU')+' 💎';
+  if(unitButton)unitButton.disabled=!count||count>=limit||(state.playerData?.shards||0)<unitCost;
   const interval=state.ufoInterval||(c.BASE_INTERVAL-Math.max(0,level-1)*c.INTERVAL_REDUCTION);
   const buffs=document.getElementById('ufoBuffs');if(buffs)buffs.textContent=(state.activeMoons||[]).slice(0,state.maxSlots||1).map(id=>getUfoMoonDescription(id,state.moonLevels?.[id]||1)).join(' · ');
   info.textContent=level?'Ур. '+level+'/'+c.MAX_LEVEL+' · '+state.ufoDamage+' урона раз в '+(interval/1000).toLocaleString('ru-RU')+' с':'50% финального урона раз в '+(c.BASE_INTERVAL/1000)+' с';
@@ -294,10 +312,7 @@ function _updateClickDamageShop() {
   }
 
   const currentLevelUpgrade = state.playerData?.click_damage_level || 0;
-  const cost = Math.floor(
-    CONSTANTS.UPGRADE_COSTS.clickDamage.base *
-    Math.pow(CONSTANTS.UPGRADE_COSTS.clickDamage.multiplier, currentLevelUpgrade)
-  );
+  const cost = getClickUpgradeCost(currentLevelUpgrade);
   const goal=document.getElementById('nextGoal');
   if(goal)goal.textContent=currentLevelUpgrade>=CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL?'Урон улучшен полностью':'Следующее улучшение: '+cost.toLocaleString('ru-RU')+' 💎 · ещё '+Math.max(0,cost-(state.playerData?.shards||0)).toLocaleString('ru-RU')+' 💎';
   const currentDamage = state.playerData?.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
@@ -340,9 +355,14 @@ function _updateSlotShop() {
 // ============================================================
 // НОВЫЙ РЕНДЕР МАГАЗИНА ЛУН (с милестоунами)
 // ============================================================
+let moonShopKey='';
 function _updateMoonShop() {
   const container = document.getElementById('moonShopItems');
   if (!container) return;
+  const money=state.playerData?.shards||0;
+  const affordability=Object.entries(MOON_TYPES).map(([id,m])=>[state.currentLevel>=m.unlockLevel,money>=m.cost,money>=getMoonUpgradeCostForLevel(id,state.moonLevels[id]||1)]);
+  const key=JSON.stringify([state.activeMoons,state.ownedMoons,state.moonLevels,state.maxSlots,affordability]);
+  if(key===moonShopKey&&container.childElementCount)return;moonShopKey=key;
 
   let html = '';
   
@@ -370,7 +390,7 @@ function _updateMoonShop() {
       <div class="moon-shop-base-stats">
         ${moon.baseStats.damageBonus > 0 ? `<div class="moon-shop-stat">⚔️ +${Math.round(moon.baseStats.damageBonus * levelMultiplier * 100)}%</div>` : ''}
         ${moon.baseStats.shardBonus > 0 ? `<div class="moon-shop-stat">💎 +${Math.round(moon.baseStats.shardBonus * levelMultiplier * 100)}%</div>` : ''}
-        ${moon.baseStats.critChanceBonus > 0 ? `<div class="moon-shop-stat">🎯 +${Math.round(moon.baseStats.critChanceBonus * levelMultiplier * 100)}%</div>` : ''}
+        ${moon.baseStats.critChanceBonus > 0 ? `<div class="moon-shop-stat">🎯 +${(moon.baseStats.critChanceBonus * levelMultiplier * 100).toLocaleString('ru-RU',{maximumFractionDigits:2})}%</div>` : ''}
         ${moon.baseStats.critDamageBonus > 0 ? `<div class="moon-shop-stat">💥 +${Math.round(moon.baseStats.critDamageBonus * levelMultiplier * 100)}%</div>` : ''}
         ${moon.baseStats.damageBonus === 0 && moon.baseStats.shardBonus === 0 && moon.baseStats.critChanceBonus === 0 && moon.baseStats.critDamageBonus === 0 
           ? `<div class="moon-shop-stat" style="opacity: 0.5;">Растёт с уровнем</div>` 
@@ -520,7 +540,7 @@ function _getMechanicDescription(moonId, params) {
     case 'fire':
       let fireDesc = `Каждые ${params.clicksPerStack} кликов +${Math.round(params.bonusPerStack * 100)}% урона`;
       if (params.maxStacks === Infinity) {
-        fireDesc += ` (неограниченно, но ${Math.round(params.resetChance * 100)}% шанс сброса после ${params.safeStacks} стеков)`;
+        fireDesc += ` (неограниченно, но ${(params.resetChance * 100).toLocaleString('ru-RU')}% шанс сброса до ${params.safeStacks} стеков, если их больше)`;
       } else {
         fireDesc += ` (макс ${params.maxStacks} стеков = +${Math.round(params.bonusPerStack * params.maxStacks * 100)}%)`;
       }
@@ -534,8 +554,8 @@ function _getMechanicDescription(moonId, params) {
     
     case 'gold':
       let goldDesc = `x${params.normalMultiplier} осколков с обычных, x${params.bossMultiplier} с боссов`;
-      if (params.goldenClickChance > 0) goldDesc += `. ${Math.round(params.goldenClickChance * 100)}% шанс +${params.goldenClickReward} 💎`;
-      if (params.shardToDamageRatio > 0) goldDesc += `. +${Math.round(params.shardToDamageRatio * 100)}% урона от осколков`;
+      if (params.goldenClickChance > 0) goldDesc += `. ${(params.goldenClickChance * 100).toLocaleString('ru-RU')}% шанс +${params.goldenClickReward} 💎`;
+      if (params.shardToDamageRatio > 0) goldDesc += `. +${(params.shardToDamageRatio * 100).toLocaleString('ru-RU',{maximumFractionDigits:6})}% урона от осколков`;
       return goldDesc;
     
     case 'cosmic':
@@ -586,6 +606,7 @@ function _updateSynergiesDisplay() {
 // ПРОФИЛЬ И ЛИДЕРЫ
 // ============================================================
 export function updateProfileAndLeaders() {
+  updatePrestigeUI();
   uiScheduler.schedule(() => {
     _updateProfile();
     _updateLeaders();
@@ -617,7 +638,7 @@ function _updateProfile() {
   const totalCritDamageBonus = window._totalCritDamageBonus || 0;
   const baseDamage = data.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
   const finalDamage = state.finalDamage || Math.round(baseDamage * (1 + totalDamageBonus));
-  const finalCritChance = Math.round((0.05 + totalCritChanceBonus) * 100);
+  const finalCritChance = Math.round((0.05 + totalCritChanceBonus + (state.prestigeSummary?.critBonus||0)) * 100);
   const finalCritDamage = Math.round((2 + totalCritDamageBonus) * 100);
 
   let activeMoonsHtml = '';
@@ -934,7 +955,10 @@ export function setQuestCategory(category) {
   updateQuestUI();
 }
 
+let questPaintAt=0,questCategory='';
 export function updateQuestUI() {
+  if(document.getElementById('shopPanel')?.classList.contains('hidden')||!document.getElementById('questsTabContent')?.classList.contains('active'))return;
+  if(Date.now()-questPaintAt<250&&questCategory===currentQuestCategory)return;questPaintAt=Date.now();questCategory=currentQuestCategory;
   const container = document.getElementById('questsList');
   if (!container) return;
 
@@ -1025,7 +1049,10 @@ export function setAchievementCategory(category) {
   updateAchievementUI();
 }
 
+let achievementPaintAt=0,achievementCategory='';
 export function updateAchievementUI() {
+  if(document.getElementById('shopPanel')?.classList.contains('hidden')||!document.getElementById('achievementsTabContent')?.classList.contains('active'))return;
+  if(Date.now()-achievementPaintAt<250&&achievementCategory===currentAchievementCategory)return;achievementPaintAt=Date.now();achievementCategory=currentAchievementCategory;
   const container = document.getElementById('achievementsList');
   if (!container) return;
 
@@ -1227,6 +1254,7 @@ if (typeof window !== 'undefined') {
   window.updateShopUI = updateShopUI;
   window.updateQuestUI = updateQuestUI;
   window.updateAchievementUI = updateAchievementUI;
+  window.updatePrestigeUI = updatePrestigeUI;
   window.updateQuestAndAchievementUI = updateQuestAndAchievementUI;
   window.updateTimerBar = updateTimerBar;
   window.updateBuffsDisplay = updateBuffsDisplay;  // ← ЭТА СТРОКА ОБЯЗАТЕЛЬНА
