@@ -55,8 +55,9 @@ export class CombatSystem {
       appState.set('bossTimer', Math.max(0, this._timeLeft));
 
       if (this._timeLeft <= 0) {
+        const onTimeout = this._onTimeout;
         this.clearBossTimer();
-        if (this._onTimeout) this._onTimeout();
+        if (onTimeout) onTimeout();
       }
     }, 1000);
   }

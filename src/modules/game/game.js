@@ -48,10 +48,19 @@ export class GameEngine {
     this._ACTIVITY_TIMEOUT = 15000;
     this._buffsAlreadyReset = false;
     
-    // Подписки
+    this._timeUpdateInterval = null;
+    this._autoSaveInterval = null;
+    this._saveInFlight = null;
+    this._saveRequested = false;
+    this._isRunning = false;
+    this._saveFailed = false;
+  }
+
+  _subscribe() {
+    if (this._unsubscribeMain) return;
     this._unsubscribeMain = appState.subscribeMany(
       ['currentLevel', 'moonHP', 'maxHP', 'activeMoons', 'maxSlots'],
-      () => this._onStateChange()
+      (_value, _oldValue, property) => this._onStateChange(property)
     );
     
     this._unsubscribeTimer = appState.subscribe('bossTimer', () => updateTimerBar());
@@ -59,12 +68,16 @@ export class GameEngine {
   }
 
   init() {
+    this._isRunning = true;
+    this._subscribe();
+    this._resetAllCounters();
+    this._lastActivityTime = Date.now();
     const level = state.currentLevel;
     const newMax = getMaxHPForLevel(level, CONSTANTS.BASE_HP, CONSTANTS.BOSS_INTERVAL);
     appState.set('maxHP', newMax);
 
     if (state.moonHP > newMax) appState.set('moonHP', newMax);
-    if (state.moonHP < 0) appState.set('moonHP', 0);
+    if (!Number.isFinite(state.moonHP) || state.moonHP <= 0) appState.set('moonHP', newMax);
 
     this._startTimeTracking();
     this._startAutoSave();
@@ -145,6 +158,7 @@ export class GameEngine {
   }
 
   handleClick = (e) => {
+    if (!this._isRunning) return;
     const now = performance.now();
     if (now - this._lastClickTime < this._minClickInterval) return;
     this._lastClickTime = now;
@@ -870,46 +884,74 @@ export class GameEngine {
     this._saveProgress().catch(err => console.error('[Game] Force save failed:', err));
   }
 
-  async _saveProgress() {
-    const user = state.user;
-    if (!user) return;
-    
-    try {
-      await db.updatePlayer(user.id, {
-        total_clicks: state.clickCount,
-        total_seconds_played: state.totalSecondsPlayed,
-        level: state.currentLevel,
-        moon_hp: Math.round(state.moonHP),
-        shards: state.playerData?.shards || 0,
-        updated_at: new Date().toISOString()
-      });
-      
-      if (user.id) {
-        localStorage.setItem(`quests_${user.id}`, JSON.stringify(state.quests || {}));
-        localStorage.setItem(`ach_${user.id}`, JSON.stringify(state.achievements || {}));
-        localStorage.setItem(`activeMoons_${user.id}`, JSON.stringify(state.activeMoons || []));
-        localStorage.setItem(`moonLevels_${user.id}`, JSON.stringify(state.moonLevels || {}));
-        localStorage.setItem(`ownedMoons_${user.id}`, JSON.stringify(state.ownedMoons || ['normal']));
-        localStorage.setItem(`slotLevel_${user.id}`, String(state.maxSlots || 1));
-        localStorage.setItem(`bossKills_${user.id}`, String(state.bossKills || 0));
+  _saveProgress() {
+    if (!state.user || !this._isRunning) return Promise.resolve();
+    this._saveRequested = true;
+    if (this._isPurchaseProcessing) return this._saveInFlight || Promise.resolve();
+    if (this._saveInFlight) return this._saveInFlight;
+    const userId = state.user.id;
+    this._saveInFlight = (async () => {
+      while (this._saveRequested && this._isRunning && !this._isPurchaseProcessing && state.user?.id === userId) {
+        this._saveRequested = false;
+        const updates = {
+          total_clicks: state.clickCount,
+          total_seconds_played: state.totalSecondsPlayed,
+          level: state.currentLevel,
+          moon_hp: Math.round(state.moonHP),
+          shards: state.playerData?.shards || 0
+        };
+        // Store the matching local snapshot before any network await.
+        try {
+          const local = {
+            quests: state.quests || {}, ach: state.achievements || {},
+            activeMoons: state.activeMoons || [], moonLevels: state.moonLevels || {},
+            ownedMoons: state.ownedMoons || ['normal'], slotLevel: state.maxSlots || 1,
+            bossKills: state.bossKills || 0
+          };
+          for (const [key, value] of Object.entries(local)) {
+            localStorage.setItem(key + '_' + userId, JSON.stringify(value));
+          }
+        } catch (error) {
+          console.error('[Game] Local save failed:', error);
+        }
+        try {
+          await db.updatePlayer(userId, updates);
+          if (state.user?.id !== userId) break;
+          this._saveFailed = false;
+          this._setSaveStatus('Сохранено');
+        } catch (error) {
+          console.error('[Game] Save failed:', error);
+          if (state.user?.id !== userId) break;
+          this._setSaveStatus('Не сохранено — повторим автоматически');
+          if (!this._saveFailed) showToast('⚠️ Не удалось сохранить прогресс', 'warning');
+          this._saveFailed = true;
+          break;
+        }
       }
-    } catch (error) {
-      console.error('[Game] Ошибка сохранения:', error);
-    }
+    })().finally(() => { this._saveInFlight = null; });
+    this._setSaveStatus('Сохраняем…');
+    return this._saveInFlight;
+  }
+
+  _setSaveStatus(message) {
+    const element = document.getElementById('saveStatus');
+    if (element) element.textContent = message;
   }
 
   _startTimeTracking() {
-    if (state.timeUpdateInterval) clearInterval(state.timeUpdateInterval);
+    if (this._timeUpdateInterval) clearInterval(this._timeUpdateInterval);
     const interval = setInterval(() => {
       appState.set('totalSecondsPlayed', state.totalSecondsPlayed + 1);
       if (state.totalSecondsPlayed % 60 === 0) this.checkAchievements();
     }, 1000);
+    this._timeUpdateInterval = interval;
     appState.set('timeUpdateInterval', interval);
   }
 
   _startAutoSave() {
-    if (state.autoSaveInterval) clearInterval(state.autoSaveInterval);
+    if (this._autoSaveInterval) clearInterval(this._autoSaveInterval);
     const interval = setInterval(() => this._saveProgress(), this._saveInterval);
+    this._autoSaveInterval = interval;
     appState.set('autoSaveInterval', interval);
   }
 
@@ -936,11 +978,13 @@ export class GameEngine {
     }
   }
 
-  _onStateChange() {
+  _onStateChange(property) {
     updateUI();
-    updateProfileAndLeaders();
-    this.recalcMoonBonuses();
-    this._updateBuffsDisplay();
+    if (property !== 'moonHP') {
+      updateProfileAndLeaders();
+      this.recalcMoonBonuses();
+      this._updateBuffsDisplay();
+    }
   }
 
   toggleTestMode() {
@@ -1014,6 +1058,7 @@ export class GameEngine {
       showToast('⚠️ Ошибка', 'warning');
     } finally {
       this._isPurchaseProcessing = false;
+      if (this._saveRequested) this._forceSave();
     }
   }
 
@@ -1056,6 +1101,7 @@ export class GameEngine {
       showToast('⚠️ Ошибка', 'warning');
     } finally {
       this._isPurchaseProcessing = false;
+      if (this._saveRequested) this._forceSave();
     }
   }
 
@@ -1103,6 +1149,7 @@ export class GameEngine {
       showToast('⚠️ Ошибка', 'warning');
     } finally {
       this._isPurchaseProcessing = false;
+      if (this._saveRequested) this._forceSave();
     }
   }
 
@@ -1205,6 +1252,7 @@ export class GameEngine {
       showToast('⚠️ Ошибка', 'warning');
     } finally {
       this._isPurchaseProcessing = false;
+      if (this._saveRequested) this._forceSave();
     }
   }
 
@@ -1371,74 +1419,30 @@ export class GameEngine {
   }
 
   async resetProgress() {
-    if (!state.user) return;
-    
+    if (!state.user || this._isPurchaseProcessing || !this._isRunning) return;
+    const user = state.user;
+    this.destroy();
     try {
-      await db.updatePlayer(state.user.id, {
+      if (this._saveInFlight) await this._saveInFlight;
+      const freshData = await db.updatePlayer(user.id, {
         total_clicks: 0, total_seconds_played: 0, level: 1,
-        moon_hp: Math.round(CONSTANTS.BASE_HP), shards: 0,
-        click_damage: CONSTANTS.DEFAULTS.CLICK_DAMAGE,
-        click_damage_level: 0,
-        updated_at: new Date().toISOString()
+        moon_hp: CONSTANTS.BASE_HP, shards: 0,
+        click_damage: CONSTANTS.DEFAULTS.CLICK_DAMAGE, click_damage_level: 0
       });
-      
-      appState.set('clickCount', 0);
-      appState.set('totalSecondsPlayed', 0);
-      appState.set('currentLevel', 1);
-      appState.set('moonHP', CONSTANTS.BASE_HP);
-      appState.set('maxHP', CONSTANTS.BASE_HP);
-      appState.set('activeMoon', 'normal');
-      appState.set('activeMoons', ['normal']);
-      appState.set('ownedMoons', ['normal']);
-      appState.set('moonLevels', { normal: 1 });
-      appState.setBossKills(0);
-      appState.setSlotLevel(1);
-      appState.clearAchievements();
-      appState.resetQuests();
-      
-      this._resetAllCounters();
-      
-      if (state.user) {
-        const userId = state.user.id;
-        ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel', 'levelLocked', 'testMode',
-         `quests_last_reset_${userId}`, `activeMoons_${userId}`, `moonLevels_${userId}`, `ownedMoons_${userId}`]
-          .forEach(key => {
-            // keys already include userId suffix for some; handle both patterns
-            localStorage.removeItem(key);
-            localStorage.removeItem(`${key}_${userId}`);
-          });
+      if (state.user?.id !== user.id) return;
+      for (const key of ['moon_data', 'ach', 'quests', 'bossKills', 'slotLevel',
+        'levelLocked', 'testMode', 'quests_last_reset', 'activeMoons', 'moonLevels', 'ownedMoons']) {
+        localStorage.removeItem(key + '_' + user.id);
       }
-      
-      const freshData = await db.getPlayer(state.user.id, false);
+      appState.reset();
+      appState.setUser(user);
       appState.loadPlayerData(freshData);
-      
-      appState.set('levelLocked', false);
-      
-      this.combat.clearBossTimer();
-      
-      if (state.timeUpdateInterval) {
-        clearInterval(state.timeUpdateInterval);
-        appState.set('timeUpdateInterval', null);
-      }
-      if (state.autoSaveInterval) {
-        clearInterval(state.autoSaveInterval);
-        appState.set('autoSaveInterval', null);
-      }
-      
-      this.recalcMoonBonuses();
-      this._generateDailyQuests();
-      
-      updateUI();
-      updateTimerBar();
-      updateShopUI();
-      updateProfileAndLeaders();
-      updateQuestAndAchievementUI();
-      this._updateBuffsDisplay();
+      this.init();
       showToast('✅ Прогресс сброшен!', 'success');
-      
     } catch (error) {
-      console.error('[Game] Ошибка:', error);
-      showToast('⚠️ Ошибка сброса', 'warning');
+      console.error('[Game] Reset failed:', error);
+      if (state.user?.id === user.id) this.init();
+      showToast('⚠️ Ошибка сброса прогресса', 'warning');
     }
   }
 
@@ -1478,12 +1482,19 @@ export class GameEngine {
   }
 
   destroy() {
+    this._isRunning = false;
     if (this._unsubscribeMain) { this._unsubscribeMain(); this._unsubscribeMain = null; }
     if (this._unsubscribeTimer) { this._unsubscribeTimer(); this._unsubscribeTimer = null; }
     if (this._unsubscribeTimerRunning) { this._unsubscribeTimerRunning(); this._unsubscribeTimerRunning = null; }
     if (this._activityCheckInterval) { clearInterval(this._activityCheckInterval); this._activityCheckInterval = null; }
-    if (state.timeUpdateInterval) { clearInterval(state.timeUpdateInterval); appState.set('timeUpdateInterval', null); }
-    if (state.autoSaveInterval) { clearInterval(state.autoSaveInterval); appState.set('autoSaveInterval', null); }
+    if (this._timeUpdateInterval) clearInterval(this._timeUpdateInterval);
+    if (this._autoSaveInterval) clearInterval(this._autoSaveInterval);
+    this._timeUpdateInterval = null;
+    this._autoSaveInterval = null;
+    this._saveRequested = false;
+    this._resetAllCounters();
+    appState.set('timeUpdateInterval', null);
+    appState.set('autoSaveInterval', null);
     this.combat.clearBossTimer();
     console.log('[Game] Движок уничтожен');
   }

@@ -4,6 +4,7 @@
 // ============================================================
 
 import { CONSTANTS, MOON_TYPES } from './constants.js';
+import { getMaxHPForLevel } from './config.js';
 
 // ============================================================
 // НАЧАЛЬНОЕ СОСТОЯНИЕ
@@ -536,10 +537,11 @@ loadPlayerData(data) {
   }
 
   // Миграция для moon_hp (если меньше нового BASE_HP)
-  let migratedMoonHP = data.moon_hp;
-  if (migratedMoonHP < CONSTANTS.BASE_HP) {
-    migratedMoonHP = CONSTANTS.BASE_HP;
-  }
+  // Preserve damage to the current moon. Missing HP uses the current level's maximum.
+  const level = Math.max(1, data.level || 1);
+  const maxHP = getMaxHPForLevel(level);
+  const migratedMoonHP = Number.isFinite(data.moon_hp)
+    ? Math.max(0, Math.min(data.moon_hp, maxHP)) : maxHP;
 
   if (data.level !== undefined) {
     this.set('currentLevel', data.level);
@@ -594,7 +596,7 @@ loadPlayerData(data) {
   reset() {
     this.startBatch();
     Object.entries(initialState).forEach(([key, value]) => {
-      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      if (typeof value === 'object' && value !== null) {
         this.set(key, JSON.parse(JSON.stringify(value)));
       } else {
         this.set(key, value);

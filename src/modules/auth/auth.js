@@ -6,6 +6,15 @@ import { appState, state } from '../../core/state.js';
 import { showToast } from '../ui/renderer.js';
 import { gameEngine } from '../game/game.js';
 
+let authBusy = false;
+function setAuthBusy(busy) {
+  authBusy = busy;
+  for (const id of ['loginBtn', 'registerBtn']) {
+    const button = document.getElementById(id);
+    if (button) button.disabled = busy;
+  }
+}
+
 // ============================================================
 // ПРОВЕРКА АВТОРИЗАЦИИ
 // ============================================================
@@ -23,6 +32,8 @@ export async function checkAuth() {
   } catch (error) {
     console.error('[Auth] Check auth error:', error);
     showAuthScreen();
+    hideApp();
+    showError('Не удалось загрузить сохранение. Попробуйте войти ещё раз.');
   }
 }
 
@@ -30,6 +41,7 @@ export async function checkAuth() {
 // ВХОД
 // ============================================================
 export async function handleLogin() {
+  if (authBusy) return;
   const emailInput = document.getElementById('authEmail');
   const passwordInput = document.getElementById('authPassword');
   const errorDiv = document.getElementById('authError');
@@ -42,8 +54,8 @@ export async function handleLogin() {
     return;
   }
 
+  setAuthBusy(true);
   try {
-    console.log('[Auth] Attempting login for:', email);
     const { user, session } = await db.signInWithPassword(email, password);
 
     if (user) {
@@ -56,6 +68,8 @@ export async function handleLogin() {
     console.error('[Auth] Login error:', error);
     const errorMessage = handleDatabaseError(error);
     showError(errorMessage);
+  } finally {
+    setAuthBusy(false);
   }
 }
 
@@ -63,13 +77,20 @@ export async function handleLogin() {
 // РЕГИСТРАЦИЯ
 // ============================================================
 export async function handleRegister() {
+  if (authBusy) return;
+  const nameField = document.getElementById('authUsername');
+  if (nameField && nameField.style.display === 'none') {
+    nameField.style.display = '';
+    nameField.focus();
+    return;
+  }
   const emailInput = document.getElementById('authEmail');
   const passwordInput = document.getElementById('authPassword');
   const usernameInput = document.getElementById('authUsername');
 
   const email = emailInput?.value?.trim();
   const password = passwordInput?.value;
-  const username = usernameInput?.value?.trim() || email.split('@')[0];
+  const username = usernameInput?.value?.trim() || email?.split('@')[0];
 
   if (!email || !password) {
     showError('Введите email и пароль');
@@ -81,8 +102,8 @@ export async function handleRegister() {
     return;
   }
 
+  setAuthBusy(true);
   try {
-    console.log('[Auth] Attempting registration for:', email);
     const { user } = await db.register(email, password, username);
 
     if (user) {
@@ -100,6 +121,8 @@ export async function handleRegister() {
     console.error('[Auth] Register error:', error);
     const errorMessage = handleDatabaseError(error);
     showError(errorMessage);
+  } finally {
+    setAuthBusy(false);
   }
 }
 
@@ -109,18 +132,14 @@ export async function handleRegister() {
 async function handleSuccessfulLogin(user) {
   console.log('[Auth] Successful login:', user.email);
   
-  // Устанавливаем пользователя в state
-  appState.setUser(user);
-
-  // Загружаем данные игрока из БД
-  try {
-    const playerData = await db.getPlayer(user.id);
-    if (playerData) {
-      appState.loadPlayerData(playerData);
-    }
-  } catch (error) {
-    console.error('[Auth] Load player data error:', error);
+  // Do not enable gameplay or autosave until the remote save is loaded.
+  let playerData = await db.getPlayer(user.id);
+  if (playerData && !playerData.username && user.user_metadata?.username) {
+    playerData = await db.updatePlayer(user.id, { username: user.user_metadata.username });
   }
+  if (!playerData) throw new Error('Не удалось загрузить сохранение. Попробуйте войти ещё раз.');
+  appState.setUser(user);
+  appState.loadPlayerData(playerData);
 
   // Скрываем экран авторизации
   hideAuthScreen();
@@ -140,17 +159,21 @@ async function handleSuccessfulLogin(user) {
 // ВЫХОД
 // ============================================================
 export async function handleLogout() {
+  if (authBusy) return;
+  setAuthBusy(true);
   try {
+    await gameEngine._saveProgress();
+    if (gameEngine._saveFailed) throw new Error('Сначала дождитесь сохранения прогресса');
+    gameEngine.destroy();
     await db.signOut();
     
     // Очищаем state
-    appState.clearUser();
-    appState.reset();
-
-    // Уничтожаем game engine
+    // Stop intervals before resetting the state that stores their handles.
     if (gameEngine && gameEngine.destroy) {
       gameEngine.destroy();
     }
+    appState.clearUser();
+    appState.reset();
 
     // Показываем экран авторизации
     showAuthScreen();
@@ -159,7 +182,10 @@ export async function handleLogout() {
     showToast('👋 Вы вышли из аккаунта', 'info');
   } catch (error) {
     console.error('[Auth] Logout error:', error);
-    showToast('⚠️ Ошибка выхода', 'warning');
+    if (state.user && !gameEngine._isRunning) gameEngine.init();
+    showToast('⚠️ Ошибка выхода. Проверьте соединение и сохранение.', 'warning');
+  } finally {
+    setAuthBusy(false);
   }
 }
 

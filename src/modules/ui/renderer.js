@@ -837,12 +837,21 @@ function _updateProfile() {
   `;
 }
 
+let leadersUpdatedAt = 0;
+let leadersInFlight = false;
+
 async function _updateLeaders() {
+  const panel = document.getElementById('profilePanel');
+  const tab = document.getElementById('leadersTabContent');
+  if (!panel || panel.classList.contains('hidden') || !tab?.classList.contains('active')) return;
+  if (leadersInFlight || Date.now() - leadersUpdatedAt < 30000) return;
   const leadersList = document.getElementById('leadersList');
   if (!leadersList) return;
 
   try {
+    leadersInFlight = true;
     const leaders = await db.getLeaders(CONSTANTS.LIMITS.MAX_LEADERS || 10);
+    leadersUpdatedAt = Date.now();
 
     if (!leaders || leaders.length === 0) {
       leadersList.innerHTML = '<div class="no-data">Нет данных</div>';
@@ -866,6 +875,8 @@ async function _updateLeaders() {
   } catch (error) {
     console.error('[UI] Leaders error:', error);
     leadersList.innerHTML = '<div class="error-data">Ошибка загрузки</div>';
+  } finally {
+    leadersInFlight = false;
   }
 }
 

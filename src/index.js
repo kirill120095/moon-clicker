@@ -5,7 +5,7 @@
 console.log('═══════════════════════════════════════════');
 console.log('🚀 [App] ЗАПУСК ПРИЛОЖЕНИЯ');
 console.log('═══════════════════════════════════════════');
-console.log('[App] URL:', window.location.href);
+console.log('[App] Path:', window.location.pathname);
 console.log('[App] User Agent:', navigator.userAgent);
 console.log('[App] Document readyState:', document.readyState);
 

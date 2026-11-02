@@ -11,6 +11,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 // ============================================================
 
 let _initPromise = null;
+let _writeQueue = Promise.resolve();
 
 /**
  * Ждёт загрузки библиотеки Supabase с CDN
@@ -145,7 +146,9 @@ export const db = {
         data: { username: username }
       });
       
-      if (result.user) {
+      // With email confirmation enabled signUp returns a user but no session.
+      // Create the player at the first authenticated login in that case.
+      if (result.user && result.session) {
         await this.createPlayer(result.user.id);
         await this.updatePlayer(result.user.id, { username });
       }
@@ -273,7 +276,8 @@ async createPlayer(userId) {
   // ============================================================
   // DB: ОБНОВЛЕНИЕ ИГРОКА
   // ============================================================
-  async updatePlayer(userId, updates) {
+  updatePlayer(userId, updates) {
+    const write = async () => {
     try {
       const client = await initSupabase();
       updates.updated_at = new Date().toISOString();
@@ -292,6 +296,10 @@ async createPlayer(userId) {
       console.error('[DB] updatePlayer error:', error);
       throw error;
     }
+    };
+    const pending = _writeQueue.then(write);
+    _writeQueue = pending.catch(() => {});
+    return pending;
   },
 
   // ============================================================

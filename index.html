@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0a0e1a">
   <meta name="description" content="Лунный кликер - космическая idle игра">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -40,15 +40,15 @@
       <p class="auth-subtitle">Покоряй галактику кликами</p>
       
       <div class="auth-form">
-        <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
-        <input type="password" id="authPassword" placeholder="Пароль" autocomplete="current-password">
-        <input type="text" id="authUsername" placeholder="Имя игрока" autocomplete="username" style="display:none;">
+        <input type="email" id="authEmail" aria-label="Email" placeholder="Email" autocomplete="email">
+        <input type="password" id="authPassword" aria-label="Пароль" placeholder="Пароль" autocomplete="current-password">
+        <input type="text" id="authUsername" aria-label="Имя игрока" placeholder="Имя игрока" autocomplete="username" style="display:none;">
         
         <button id="loginBtn" class="btn-auth btn-login">Войти</button>
         <button id="registerBtn" class="btn-auth btn-register">Регистрация</button>
       </div>
       
-      <div id="authError" class="auth-error"></div>
+      <div id="authError" class="auth-error" role="alert"></div>
     </div>
   </div>
 
@@ -92,6 +92,7 @@
       
       <div class="info-row-top">
         <div id="counter" class="counter">💎 0</div>
+        <span id="saveStatus" role="status" aria-live="polite" style="font-size:0.75rem;color:#aab3c5">Ожидаем сохранения</span>
       </div>
       
       <div id="timerBarContainer" class="timer-bar-container">
