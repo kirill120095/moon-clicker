@@ -23,13 +23,13 @@ class GameRadio {
  accept(row){
   if(!row||this.current?.version===row.version)return;this.current=row;
   const title=document.getElementById('radioNowPlaying');if(title)title.textContent=row.track_path?'В эфире: '+row.title:'Космический фон';
-  if(!row.track_path){this.player.pause();this.player.removeAttribute('src');audio.radioActive=false;return;}
+  if(!row.track_path){this.player.pause();this.player.removeAttribute('src');audio.radioActive=false;audio.apply();return;}
   audio.radioActive=true;this.player.src=this.client.storage.from('game-radio').getPublicUrl(row.track_path).data.publicUrl;
   audio.apply();this.player.load();this.play();
  }
  seek(){if(!this.current?.track_path||!Number.isFinite(this.player.duration)||!this.player.duration)return;this.player.currentTime=Math.max(0,(Date.now()-Date.parse(this.current.started_at))/1000)%this.player.duration;}
  play(){if(!this.player?.src||document.hidden)return;this.seek();this.player.play().catch(()=>{});}
- disconnect(){clearInterval(this.timer);this.timer=null;if(this.channel)this.client?.removeChannel(this.channel);this.channel=null;this.player?.pause();this.current=null;this.userId=null;this.admin=false;audio.radioActive=false;audio.radioElement=null;document.getElementById('radioAdmin')?.classList.add('hidden');}
+ disconnect(){clearInterval(this.timer);this.timer=null;if(this.channel)this.client?.removeChannel(this.channel);this.channel=null;this.player?.pause();this.current=null;this.userId=null;this.admin=false;audio.radioActive=false;audio.radioElement=null;audio.apply();document.getElementById('radioAdmin')?.classList.add('hidden');}
  status(text){const el=document.getElementById('radioStatus');if(el)el.textContent=text;}
  async listTracks(){
   const {data,error}=await this.client.storage.from('game-radio').list('',{limit:100,sortBy:{column:'created_at',order:'desc'}});if(error)throw error;

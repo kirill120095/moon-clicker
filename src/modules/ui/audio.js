@@ -17,7 +17,7 @@ export class AudioEngine {
  }
  apply(){
   if(this.radioElement){this.radioElement.volume=this.settings.music;this.radioElement.muted=this.settings.muted;}
-  if(this.ctx){const t=this.ctx.currentTime;this.master.gain.setTargetAtTime(this.settings.muted?0:1,t,0.025);this.musicBus.gain.setTargetAtTime(this.settings.music,t,0.04);this.fxBus.gain.setTargetAtTime(this.settings.effects,t,0.025);}
+  if(this.ctx){const t=this.ctx.currentTime;this.master.gain.setTargetAtTime(this.settings.muted?0:1,t,0.025);this.musicBus.gain.setTargetAtTime(this.radioActive?0:this.settings.music,t,0.04);this.fxBus.gain.setTargetAtTime(this.settings.effects,t,0.025);}
   document.querySelectorAll('[data-audio-volume]').forEach(el=>{el.value=Math.round(this.settings[el.dataset.audioVolume]*100);});
   document.querySelectorAll('[data-audio-output]').forEach(el=>{el.textContent=Math.round(this.settings[el.dataset.audioOutput]*100)+'%';});
   document.querySelectorAll('[data-audio-mute]').forEach(el=>{el.checked=this.settings.muted;});

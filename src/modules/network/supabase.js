@@ -45,7 +45,7 @@ function waitForSupabase() {
  * Инициализирует Supabase клиент (singleton)
  * Все параллельные вызовы получат один и тот же Promise
  */
-export function initSupabase() {
+function initSupabase() {
   // Если уже есть Promise инициализации - возвращаем его
   if (_initPromise) {
     return _initPromise;
