@@ -307,6 +307,11 @@ export { initSupabase };
 // ERROR HANDLER
 // ============================================================
 export function handleDatabaseError(error) {
+  const message = String(error?.message || '').toLowerCase();
+  if (error?.code === 'over_email_send_rate_limit' || message.includes('email rate limit')) {
+    return 'Лимит отправки писем исчерпан. Проверьте уже полученное письмо подтверждения или попробуйте позже.';
+  }
+
   console.error('[DB] Error:', error);
   
   if (error.code === '23505') {
