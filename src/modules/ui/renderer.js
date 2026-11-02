@@ -702,7 +702,7 @@ function _updateProfile() {
       </div>
       <div class="profile-info">
         <div class="profile-name">${escapeHTML(state.user.user_metadata?.username || 'Игрок')}</div>
-        <div class="profile-email">${escapeHTML(state.user.email || '-')}</div>
+        <div class="profile-email">${state.user.app_metadata?.login_mode === 'username' ? 'Вход по логину' : escapeHTML(state.user.email || '-')}</div>
         <div class="profile-title">${title}</div>
       </div>
     </div>
