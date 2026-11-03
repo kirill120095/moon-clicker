@@ -585,7 +585,7 @@ export const MOON_TYPES = {
     name: 'Космическая',
     emoji: '✨',
     cost: 1500000,
-    unlockLevel: 200,
+    unlockLevel: 150,
     rarity: 'mythic',
     
     baseStats: {
