@@ -8,7 +8,7 @@ import {
   CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, 
   QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, 
   SYNERGY_BONUSES, RARITY_CONFIG,
-  getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, getPrestigeUpgradeCost, getCombatStats, PRESTIGE_UPGRADES
+  getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, getPrestigeUpgradeCost, getMoonPurchaseAccess, MOON_ORDER, getCombatStats, PRESTIGE_UPGRADES
 } from '../../core/constants.js';
 import { getMaxHPForLevel, getTitle, getClickUpgradeCost } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
@@ -363,19 +363,21 @@ function _updateMoonShop() {
   const container = document.getElementById('moonShopItems');
   if (!container) return;
   const money=state.playerData?.shards||0;
-  const affordability=Object.entries(MOON_TYPES).map(([id,m])=>[state.currentLevel>=m.unlockLevel,money>=m.cost,money>=getMoonUpgradeCostForLevel(id,state.moonLevels[id]||1)]);
+  const affordability=Object.entries(MOON_TYPES).map(([id,m])=>[getMoonPurchaseAccess(state,id).unlocked,money>=m.cost,money>=getMoonUpgradeCostForLevel(id,state.moonLevels[id]||1)]);
   const key=JSON.stringify([state.activeMoons,state.ownedMoons,state.moonLevels,state.maxSlots,affordability]);
   if(key===moonShopKey&&container.childElementCount)return;moonShopKey=key;
 
   let html = '';
   
-  for (const [id, moon] of Object.entries(MOON_TYPES)) {
+  for (const id of MOON_ORDER) {
+    const moon=MOON_TYPES[id];
     const owned = state.ownedMoons.includes(id);
     const isActive = state.activeMoons.includes(id);
-    const isLockedByLevel = state.currentLevel < moon.unlockLevel;
+    const access=getMoonPurchaseAccess(state,id);
+    const isLockedByLevel=!access.levelUnlocked,isLockedByMoon=!!access.requiredMoon;
     const moonLevel = owned ? (state.moonLevels[id] || 1) : 0;
     
-    const canBuy = !owned && !isLockedByLevel &&
+    const canBuy = !owned && !isLockedByLevel && !isLockedByMoon &&
       (state.testMode || (state.playerData?.shards || 0) >= moon.cost) &&
       moon.cost > 0;
     
@@ -473,7 +475,7 @@ function _updateMoonShop() {
     } else {
       if (moon.cost === 0) {
         actionsHtml += '<button class="btn-moon-free" disabled>Доступна</button>';
-      } else if (isLockedByLevel) {
+      } else if (isLockedByLevel||isLockedByMoon) {
         actionsHtml += '<button class="btn-moon-locked" disabled>🔒</button>';
       } else {
         actionsHtml += `<button class="btn-moon-buy ${canBuy ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.buyMoon('${id}')">
@@ -495,7 +497,8 @@ function _updateMoonShop() {
         
         <div class="ufo-moon-trait">${escapeHTML(getUfoMoonDescription(id,moonLevel||1))}</div>
         ${owned ? `<div class="moon-shop-status"><div class="moon-level">⭐ Уровень: ${moonLevel} / ${CONSTANTS.LIMITS.MAX_MOON_LEVEL}</div></div>` : ''}
-        ${isLockedByLevel && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔒 Доступна с ${moon.unlockLevel} уровня</div></div>` : ''}
+        ${isLockedByLevel && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔒 Нужен рекорд ${moon.unlockLevel} ур.</div></div>` : ''}
+        ${isLockedByMoon && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔗 Сначала купите: ${escapeHTML(MOON_TYPES[access.requiredMoon].name)}</div></div>` : ''}
         
         ${baseStatsHtml}
         ${mechanicHtml}
@@ -1166,7 +1169,8 @@ export function updateAchievementUI() {
   container.innerHTML = tabsHtml + listHtml;
 }
 
-export function updateQuestAndAchievementUI() {
+export function updateQuestAndAchievementUI(force=false) {
+  if(force){questPaintAt=0;achievementPaintAt=0;}
   updateQuestUI();
   updateAchievementUI();
 }

@@ -97,7 +97,7 @@ async function flush(){
 async function command(action,payload={},purchase=false){
  if(!active||purchasing)return;
  purchasing=true;
- try{do{await flush();}while(active&&pendingClicks>0);await send(action,payload);if(purchase)audio.purchase();updateProfileAndLeaders();}
+ try{do{await flush();}while(active&&pendingClicks>0);await send(action,payload);if(action==='ascend'){updateQuestAndAchievementUI(true);try{localStorage.removeItem('moon_completed_'+state.user?.id);}catch{}}if(purchase)audio.purchase();updateProfileAndLeaders();}
  finally{purchasing=false;}
 }
 let initializing=null,initGeneration=0;

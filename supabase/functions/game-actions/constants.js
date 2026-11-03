@@ -4,6 +4,7 @@
 
 export const CONSTANTS = {
   BOSS_INTERVAL: 10,
+  MOON_UPGRADE_COST_RATIO: 0.6,
   BOSS_TIMER: 30,
   BASE_HP: 1000,
   MAX_SLOTS: 3,
@@ -226,7 +227,7 @@ export const MOON_TYPES = {
     name: 'Ледяная',
     emoji: '❄️',
     cost: 6000,
-    unlockLevel: 10,
+    unlockLevel: 20,
     rarity: 'rare',
     
     baseStats: {
@@ -294,7 +295,7 @@ export const MOON_TYPES = {
     name: 'Теневая',
     emoji: '🌑',
     cost: 18000,
-    unlockLevel: 15,
+    unlockLevel: 40,
     rarity: 'epic',
     
     baseStats: {
@@ -359,8 +360,8 @@ export const MOON_TYPES = {
     id: 'fire',
     name: 'Огненная',
     emoji: '🔥',
-    cost: 50000,
-    unlockLevel: 20,
+    cost: 350000,
+    unlockLevel: 90,
     rarity: 'epic',
     
     baseStats: {
@@ -429,7 +430,7 @@ export const MOON_TYPES = {
     name: 'Электрическая',
     emoji: '⚡',
     cost: 140000,
-    unlockLevel: 25,
+    unlockLevel: 60,
     rarity: 'epic',
     
     baseStats: {
@@ -509,8 +510,8 @@ export const MOON_TYPES = {
     id: 'gold',
     name: 'Золотая',
     emoji: '👑',
-    cost: 400000,
-    unlockLevel: 30,
+    cost: 600000,
+    unlockLevel: 120,
     rarity: 'legendary',
     
     baseStats: {
@@ -583,7 +584,7 @@ export const MOON_TYPES = {
     name: 'Космическая',
     emoji: '✨',
     cost: 1500000,
-    unlockLevel: 40,
+    unlockLevel: 200,
     rarity: 'mythic',
     
     baseStats: {
@@ -753,7 +754,8 @@ export function getMoonUpgradeCostForLevel(moonId, currentLevel) {
   const moon = MOON_TYPES[moonId];
   if (!moon || currentLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL) return Infinity;
   
-  const baseCost = MOON_UPGRADE_BASE_COSTS[moon.rarity] || 100;
+  const rarityCost=MOON_UPGRADE_BASE_COSTS[moon.rarity]||100;
+  const baseCost=MOON_ORDER.indexOf(moonId)>=MOON_ORDER.indexOf('ice')?Math.max(rarityCost,moon.cost*CONSTANTS.MOON_UPGRADE_COST_RATIO):rarityCost;
   return Math.floor(baseCost * Math.pow(1.5, currentLevel));
 }
 
@@ -873,4 +875,12 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  const ufo=getUfoBonuses(state,runtime),interval=Math.max(CONSTANTS.UFO.MIN_INTERVAL,Math.round((CONSTANTS.UFO.BASE_INTERVAL-Math.max(0,(state.ufoLevel||0)-1)*CONSTANTS.UFO.INTERVAL_REDUCTION)*(1-ufo.haste)));
  return {passive,sources,runtime,baseDamage:base,finalDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,finalDamage),damageBonus:damage,shardBonus:rewardMultiplier-1,critChance:chance,critChanceBonus:chance-.05,critDamageBonus:critDamage,critMultiplier,critTier:tier,extraCritChance:extraChance,critDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*tier/2)),nextCritDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*(tier+1)/2)),nextPierce,firstStrike,execute,
  moonReward:Math.min(CONSTANTS.SAFE_NUMBER_CAP,reward),ufoDamage:state.ufoLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(steadyDamage*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+ufo.damage)))):0,ufoInterval:interval,ufoCount:state.ufoCount||0,goldMultiplier,fullCombo,ufoCritChance:ufo.critChance,ufoCritMultiplier:ufo.critMultiplier,ufoChainEvery:ufo.chainEvery,ufoDamageBonus:ufo.damage,ufoHaste:ufo.haste,ufoRewardMultiplier:ufo.rewardMultiplier,superconductorHits:runtime._superconductorClicksLeft||0};
+}
+
+export const MOON_ORDER=Object.freeze(['normal','blood','ice','shadow','electric','fire','gold','cosmic']);
+export function getMoonPurchaseAccess(state,id){
+ const moon=MOON_TYPES[id],index=MOON_ORDER.indexOf(id),record=Math.max(state.maxLevel||1,state.currentLevel||1);
+ const requiredMoon=index>0?MOON_ORDER.slice(0,index).find(previous=>!(state.ownedMoons||[]).includes(previous)):null;
+ const levelUnlocked=!!moon&&record>=moon.unlockLevel;
+ return {record,requiredMoon:requiredMoon||null,levelUnlocked,unlocked:levelUnlocked&&!requiredMoon};
 }

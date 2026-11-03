@@ -1,4 +1,4 @@
-import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, PRESTIGE_UPGRADES } from './constants.js';
+import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, PRESTIGE_UPGRADES } from './constants.js';
 import { getMaxHPForLevel, getSlotUpgradeCost, getClickUpgradeCost } from './config.js';
 const showToast=()=>{},updateQuestUI=()=>{},updateAchievementUI=()=>{},updateProfileAndLeaders=()=>{};
 export function freshState(username='Игрок') {
@@ -531,7 +531,9 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   const moon=MOON_TYPES[payload.id];if(!moon)throw Error('Неизвестная луна');
   if(action==='buyMoon'){
    if(state.ownedMoons.includes(moon.id))throw Error('Луна уже куплена');
-   if(state.currentLevel<moon.unlockLevel)throw Error('Недостаточный уровень игрока');
+   const access=getMoonPurchaseAccess(state,moon.id);
+   if(access.requiredMoon)throw Error('Сначала купите луну «'+MOON_TYPES[access.requiredMoon].name+'»');
+   if(!access.levelUnlocked)throw Error('Нужен максимальный достигнутый уровень '+moon.unlockLevel);
    spend(moon.cost);state.ownedMoons.push(moon.id);state.moonLevels[moon.id]=1;
   }else{
    const level=state.moonLevels[moon.id];

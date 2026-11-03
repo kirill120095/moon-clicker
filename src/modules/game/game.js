@@ -4,7 +4,7 @@
 import { appState, state } from '../../core/state.js';
 import { 
   CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS, RARITY_CONFIG,
-  rollCritical, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel
+  rollCritical, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
 } from '../../core/constants.js';
 import { 
   getMaxHPForLevel, isBossLevel, getSlotUpgradeCost 
@@ -1113,7 +1113,9 @@ export class GameEngine {
     const moon = MOON_TYPES[moonId];
     if (!moon) return;
     if (state.ownedMoons.includes(moonId)) return showToast('⚠️ Уже есть', 'warning');
-    // Проверка уровня убрана — покупка доступна всегда
+    const access=getMoonPurchaseAccess(state,moonId);
+    if(access.requiredMoon)return showToast('Сначала купите: '+MOON_TYPES[access.requiredMoon].name,'warning');
+    if(!access.levelUnlocked)return showToast('Нужен рекорд '+moon.unlockLevel+' уровня','warning');
     if (!state.testMode && (state.playerData?.shards || 0) < moon.cost) {
       return showToast(`⚠️ Нужно ${moon.cost} 💎`, 'warning');
     }
