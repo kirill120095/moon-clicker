@@ -5,7 +5,7 @@
 export const CONSTANTS = {
   BOSS_INTERVAL: 10,
   MOON_UPGRADE_COST_RATIO: 0.6,
-  MOON_UPGRADE_PRICE_DIVISORS: { gold: 2, fire: 1.5 },
+  MOON_UPGRADE_PRICE_DIVISORS: { gold: 4, fire: 3 },
   BOSS_TIMER: 30,
   BASE_HP: 1000,
   MAX_SLOTS: 3,
@@ -407,11 +407,11 @@ export const MOON_TYPES = {
       10: {
         icon: '👑',
         name: 'Атомная бомба',
-        description: 'Неограниченные стеки: 0,5% шанс сброса до 30 стеков, если накоплено больше 30',
+        description: 'Неограниченные стеки: 0,01% шанс сброса до 30 стеков, если накоплено больше 30',
         apply: (params) => { 
           params.maxStacks = Infinity; 
           params.safeStacks = 30; 
-          params.resetChance = 0.005; 
+          params.resetChance = 0.0001; 
         }
       }
     },
@@ -565,8 +565,8 @@ export const MOON_TYPES = {
       10: {
         icon: '👑',
         name: 'Золотой дождь',
-        description: '+0,0001% урона от текущего количества осколков',
-        apply: (params) => { params.shardToDamageRatio = 0.000001; }
+        description: '+0,0005% урона от текущего количества осколков',
+        apply: (params) => { params.shardToDamageRatio = 0.000005; }
       }
     },
     
