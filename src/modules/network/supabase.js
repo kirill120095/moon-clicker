@@ -1,3 +1,4 @@
+import { recordDiagnostic } from '../../utils/diagnostics.js';
 // ============================================================
 // SUPABASE DATABASE CLIENT
 // Singleton-паттерн для предотвращения множественных инстансов
@@ -13,7 +14,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_AHp63XmOZhgE2xYmhxFvsw_cB1urGrt';
 let _initPromise = null;
 let _writeQueue = Promise.resolve();
 let _actionQueue = Promise.resolve();
-let _snapshot=null,_snapshotRevision=0;
+let _snapshot=null,_snapshotRevision=0,_retryAt=0,_failures=0;
 
 /**
  * Ждёт загрузки библиотеки Supabase с CDN
@@ -58,6 +59,11 @@ function initSupabase() {
       const { createClient } = supabase;
       
       const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global:{fetch:async(input,options={})=>{
+          const url=String(input?.url||input),ms=url.includes('/storage/')?120000:20000;
+          const signal=options.signal&&typeof AbortSignal.any==='function'?AbortSignal.any([options.signal,AbortSignal.timeout(ms)]):options.signal||AbortSignal.timeout(ms);
+          return fetch(input,{...options,signal});
+        }},
         auth: {
           autoRefreshToken: true,
           persistSession: true,
@@ -87,14 +93,20 @@ export const db = {
   action(action, payload = {}) {
     const request_id = crypto.randomUUID();
     const run = async () => {
+      if(Date.now()<_retryAt){const error=new Error('Сервер временно недоступен. Повторим соединение через несколько секунд.');error.code='SERVICE_UNAVAILABLE';throw error;}
       const client = await initSupabase();
       const result = await client.functions.invoke('game-actions', { body: { action, payload, request_id, snapshot:_snapshot } });
       if (result.error) {
         let message = 'Сервер недоступен. Повторите действие.';
-        try { const body = await result.error.context.json(); message = body.error || message; } catch {}
-        throw new Error(message);
+        let code='NETWORK_ERROR',status=result.error.context?.status||0;
+        try { const body = await result.error.context.json(); message = body.error || message;code=body.code||code; } catch {}
+        if(status>=500||!status){_failures++;_retryAt=Date.now()+Math.min(30000,2000*Math.pow(2,_failures-1));}
+        recordDiagnostic('game',action,code,message);
+        const error=new Error(message);error.code=code;error.status=status;throw error;
       }
-      if (result.data?.error) throw new Error(result.data.error);
+      if (result.data?.error){const error=new Error(result.data.error);error.code=result.data.code;recordDiagnostic('game',action,error.code,error);throw error;}
+      _retryAt=0;_failures=0;
+      if(action==='load')recordDiagnostic('game','load','OK','Сохранение загружено');
       if(result.data.snapshot&&result.data.revision>=_snapshotRevision){_snapshot=result.data.snapshot;_snapshotRevision=result.data.revision;}
       return result.data;
     };
@@ -121,14 +133,16 @@ export const db = {
   // AUTH: ВХОД С ПАРОЛЕМ
   // ============================================================
   async signInWithPassword(identifier, password) {
-    _snapshot=null;_snapshotRevision=0;
+    _snapshot=null;_snapshotRevision=0;_retryAt=0;_failures=0;
     try {
       const client = await initSupabase();
       const email = identifier.includes('@') ? identifier.trim() : identifier.trim().toLowerCase() + '@players.moon-clicker.invalid';
       const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      recordDiagnostic('auth','login','OK','Авторизация успешна');
       return data;
     } catch (error) {
+      recordDiagnostic('auth','login',error.code||'AUTH_ERROR',error);
       console.error('[DB] signInWithPassword error:', error);
       throw error;
     }

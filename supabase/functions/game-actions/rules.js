@@ -421,7 +421,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  const day=new Date(now).toDateString();
  if(state.lastQuestDay!==day){rules._generateDailyQuests();state.lastQuestDay=day;}
  const elapsed=Math.max(0,(now-(state.lastActionAt||now))/1000);
- state.tokens=Math.min(CONSTANTS.CLICK_BURST,(state.tokens??0)+elapsed*CONSTANTS.MAX_CLICKS_PER_SECOND);
+ state.tokens=Math.min(CONSTANTS.CLICK_TOKEN_CAPACITY,(state.tokens??0)+elapsed*CONSTANTS.MAX_CLICKS_PER_SECOND);
  state.totalSecondsPlayed+=Math.min(elapsed,30);
  const idle=now-(state.lastClickAt||now);
  for(const [id,counter] of [['normal','_comboClicks'],['fire','_fireStacks'],['shadow','_shadowCritStacks']]){
@@ -477,7 +477,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   if(!state.ufoLastShotAt||action==='load'||now-(state.lastActionAt||now)>CONSTANTS.UFO.MAX_IDLE_MS)state.ufoLastShotAt=now;
   else{
    const interval=ufoInterval()/Math.max(1,state.ufoCount);
-   const shots=Math.max(0,Math.floor((now-state.ufoLastShotAt)/interval));
+   const shots=Math.min(CONSTANTS.UFO.MAX_SHOTS_PER_ACTION,Math.max(0,Math.floor((now-state.ufoLastShotAt)/interval)));
    for(let i=0;i<shots;i++){
     const buff=getUfoBonuses(state,rules);state.ufoShots=(state.ufoShots||0)+1;
     const critical=rollCritical(buff.critChance,buff.critMultiplier),crit=critical.isCrit,chain=buff.chainEvery&&state.ufoShots%buff.chainEvery===0;
@@ -491,7 +491,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  if(action==='click'){
   const count=payload.count;
   if(!Number.isInteger(count)||count<1||count>CONSTANTS.CLICK_BURST)throw Error('Некорректное количество кликов');
-  if(count>Math.floor(state.tokens))throw Error('Слишком много кликов. Максимум 12 в секунду.');
+  if(count>Math.floor(state.tokens))throw Object.assign(Error('Слишком много кликов. Максимум 18 в секунду.'),{code:'RATE_LIMIT'});
   state.tokens-=count;state.lastClickAt=now;
   for(let i=0;i<count;i++){
    const boss=state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,bonuses=rules._calculateAllBonuses();
