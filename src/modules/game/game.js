@@ -4,7 +4,7 @@
 import { appState, state } from '../../core/state.js';
 import { 
   CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS, RARITY_CONFIG,
-  rollCritical, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
+  rollCritical, getBaseDamage, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
 } from '../../core/constants.js';
 import { 
   getMaxHPForLevel, isBossLevel, getSlotUpgradeCost 
@@ -176,7 +176,7 @@ export class GameEngine {
   };
 
   _processClickSync(e) {
-    const baseDamage = state.playerData?.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
+    const baseDamage = getBaseDamage(state);
     const isBoss = isBossLevel(state.currentLevel, CONSTANTS.BOSS_INTERVAL);
     
     const bonuses = this._calculateAllBonuses();
@@ -677,7 +677,7 @@ export class GameEngine {
           id: 'cosmic', icon: '✨', name: 'Космос',
           value: level, maxStacks: 100,
           progress: Math.min(level, 100), progressMax: 100,
-          bonus: `+${Math.round(params.damagePerLevel * level * 100)}% урон`,
+          bonus: `+${params.baseDamagePerLevel * level} баз. урона · +${Math.round(params.damagePerLevel * level * 100)}% урон`,
           timeLeft: null, isActive: true, isMaxed: level >= 100, isPassive: true
         });
       }

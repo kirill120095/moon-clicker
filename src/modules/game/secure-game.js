@@ -1,7 +1,7 @@
 import { gameAdmin } from '../ui/admin.js';
 import { gameEngine } from './game.js';
 import { appState, state } from '../../core/state.js';
-import { CONSTANTS,QUESTS,ACHIEVEMENTS } from '../../core/constants.js';
+import { CONSTANTS,QUESTS,ACHIEVEMENTS,getBaseDamage } from '../../core/constants.js';
 import { db } from '../network/supabase.js';
 import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
@@ -13,7 +13,7 @@ function previewDamage(){
  // Only guaranteed passive damage is predicted. Random crits, heat resets and
  // temporary stacks are applied on confirmation, so same-moon HP cannot rebound.
  const bonus=gameEngine._calculateAllBonuses().totalDamageBonus+(state.prestigeSummary?.damageBonus||0);
- return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(state.playerData.click_damage*(1+bonus))));
+ return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(getBaseDamage(state)*(1+bonus))));
 }
 let lastRevision=0,lastBuffKey='',ready=false;
 function refreshBuffs(){

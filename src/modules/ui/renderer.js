@@ -569,7 +569,7 @@ function _getMechanicDescription(moonId, params) {
       return goldDesc;
     
     case 'cosmic':
-      let cosmicDesc = `+${Math.round(params.damagePerLevel * 100)}% урона, +${Math.round(params.shardPerLevel * 100)}% осколков, +${Math.round(params.critDamagePerLevel * 100)}% крит урона за уровень игрока`;
+      let cosmicDesc = `+${params.baseDamagePerLevel} базового урона, +${Math.round(params.damagePerLevel * 100)}% урона, +${Math.round(params.shardPerLevel * 100)}% осколков, +${Math.round(params.critDamagePerLevel * 100)}% крит урона за уровень игрока`;
       if (params.supernovaAvailable) cosmicDesc += `. 🌟 Сверхновая доступна!`;
       return cosmicDesc;
     
@@ -897,6 +897,7 @@ export function updateLiveCombatProfile(){
  damageBonus:'+'+pct(s.damageBonus),shardBonus:'+'+pct(s.shardBonus),critChanceBonus:'+'+pct(s.critChanceBonus),critDamageBonus:'+'+pct(s.critDamageBonus)};
  for(const [key,text]of Object.entries(values)){const el=document.querySelector('[data-live-stat="'+key+'"]');if(el&&el.textContent!==text)el.textContent=text;}
  const rows=s.sources.filter(b=>b.damage||b.shards||b.crit||b.critDamage).map(b=>b.name+': '+[['урон',b.damage],['добыча',b.shards],['шанс крита',b.crit],['крит. урон',b.critDamage]].filter(([,v])=>v).map(([label,v])=>label+' +'+pct(v)).join(' · '));
+ if(s.baseDamageBonus)rows.push('Космическая луна: +'+formatNumber(s.baseDamageBonus)+' базового урона');
  if(s.goldMultiplier!==1)rows.push('Золотая луна: награда ×'+s.goldMultiplier);
  if(s.fullCombo)rows.push('Полное комбо: бонус добычи активен');
  if(s.firstStrike)rows.push('Тень: первый удар — гарантированный крит');

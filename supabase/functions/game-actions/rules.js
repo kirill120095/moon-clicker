@@ -1,4 +1,4 @@
-import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, PRESTIGE_UPGRADES } from './constants.js';
+import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, getBaseDamage, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, PRESTIGE_UPGRADES } from './constants.js';
 import { getMaxHPForLevel, getSlotUpgradeCost, getClickUpgradeCost } from './config.js';
 const showToast=()=>{},updateQuestUI=()=>{},updateAchievementUI=()=>{},updateProfileAndLeaders=()=>{};
 export function freshState(username='Игрок') {
@@ -445,7 +445,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   }
   const blood=rules._getMechanicParamsForActiveMoon('blood');
   if(blood&&state.currentLevel%CONSTANTS.BOSS_INTERVAL===0&&state.moonHP/state.maxHP<blood.hpThreshold)multiplier+=blood.damageBonus;
-  return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(state.playerData.click_damage*multiplier)));
+  return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(getBaseDamage(state)*multiplier)));
  };
  function moonReward(bonuses=rules._calculateAllBonuses()){
   const c=CONSTANTS.MOON_REWARD,boss=state.currentLevel%CONSTANTS.BOSS_INTERVAL===0;
@@ -495,7 +495,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   state.tokens-=count;state.lastClickAt=now;
   for(let i=0;i<count;i++){
    const boss=state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,bonuses=rules._calculateAllBonuses();
-   const result=rules._applyMoonMechanics(state.playerData.click_damage,bonuses,boss);
+   const result=rules._applyMoonMechanics(getBaseDamage(state),bonuses,boss);
    state.clickCount++;rules.updateQuestProgress('click',1);
    hit(result.finalDamage,result.isCrit,'manual',bonuses);
   }

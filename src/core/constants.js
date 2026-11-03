@@ -597,9 +597,10 @@ export const MOON_TYPES = {
     
     specialMechanic: 'scaling',
     specialName: 'Космическая мощь',
-    specialDescription: '+1% урона, +0.25% осколков, +0.25% крит урона за уровень',
+    specialDescription: '+10 базового урона, +1% урона, +0.25% осколков, +0.25% крит урона за уровень',
     
     mechanicParams: {
+      baseDamagePerLevel: 10,
       damagePerLevel: 0.01,
       shardPerLevel: 0.0025,
       critDamagePerLevel: 0.0025,
@@ -828,6 +829,14 @@ export function getPrestigeUpgradeCost(id,level){
 }
 
 /** Pure live view of the same passive and temporary combat modifiers used by the server. */
+/** Temporary flat damage is recalculated, never written into purchased click damage. */
+export function getBaseDamage(state){
+ const base=state.playerData?.click_damage||CONSTANTS.DEFAULTS.CLICK_DAMAGE;
+ if(!(state.activeMoons||[]).slice(0,state.maxSlots||1).includes('cosmic'))return base;
+ const params=getMoonMechanicParams('cosmic',state.moonLevels?.cosmic||1);
+ return Math.min(CONSTANTS.SAFE_NUMBER_CAP,base+params.baseDamagePerLevel*(state.currentLevel||1));
+}
+
 export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)){
  const p=getPrestigeSummary(state),active=[...new Set((state.activeMoons||[]).slice(0,state.maxSlots||1))],runtime={...(state.runtime||{})},sources=[];
  let damage=p.damageBonus,shards=p.shardBonus,crit=p.critBonus,critDamage=0;
@@ -857,7 +866,7 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  if(shadow?.fullStackCritChance>0&&shadowStacks>=shadow.maxStacks)add('shadow-full','Полные стаки тени',0,0,shadow.fullStackCritChance);
  const boss=(state.currentLevel||1)%CONSTANTS.BOSS_INTERVAL===0,ratio=state.moonHP/state.maxHP;
  if(boss&&blood&&ratio<blood.hpThreshold)add('blood-boss','Кровавая ярость',blood.damageBonus);
- const base=state.playerData?.click_damage||CONSTANTS.DEFAULTS.CLICK_DAMAGE;
+ const base=getBaseDamage(state),baseDamageBonus=base-(state.playerData?.click_damage||CONSTANTS.DEFAULTS.CLICK_DAMAGE);
  const steadyDamage=Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(base*(1+damage))));
  if(electric&&(runtime._superconductorClicksLeft||0)>0)add('superconductor','Сверхпроводник · '+runtime._superconductorClicksLeft+' ударов',electric.superconductorBonus);
  const nextPierce=!!(ice?.pierceInterval>0&&((runtime._clickCounter||0)+1)%ice.pierceInterval===0);
@@ -874,7 +883,7 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  let reward=Math.max(1,Math.round(Math.floor(c.BASE+level*c.PER_LEVEL+Math.pow(level,c.EXPONENT)*c.GROWTH)*(boss?c.BOSS_MULTIPLIER:1)*(1+shards)));
  if(gold)reward=Math.round(reward*goldMultiplier);if(fullCombo)reward=Math.round(reward*(1+normal.shardBonusOnFullStack));
  const ufo=getUfoBonuses(state,runtime),interval=Math.max(CONSTANTS.UFO.MIN_INTERVAL,Math.round((CONSTANTS.UFO.BASE_INTERVAL-Math.max(0,(state.ufoLevel||0)-1)*CONSTANTS.UFO.INTERVAL_REDUCTION)*(1-ufo.haste)));
- return {passive,sources,runtime,baseDamage:base,finalDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,finalDamage),damageBonus:damage,shardBonus:rewardMultiplier-1,critChance:chance,critChanceBonus:chance-.05,critDamageBonus:critDamage,critMultiplier,critTier:tier,extraCritChance:extraChance,critDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*tier/2)),nextCritDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*(tier+1)/2)),nextPierce,firstStrike,execute,
+ return {passive,sources,runtime,baseDamage:base,baseDamageBonus,finalDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,finalDamage),damageBonus:damage,shardBonus:rewardMultiplier-1,critChance:chance,critChanceBonus:chance-.05,critDamageBonus:critDamage,critMultiplier,critTier:tier,extraCritChance:extraChance,critDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*tier/2)),nextCritDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*(tier+1)/2)),nextPierce,firstStrike,execute,
  moonReward:Math.min(CONSTANTS.SAFE_NUMBER_CAP,reward),ufoDamage:state.ufoLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(steadyDamage*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+ufo.damage)))):0,ufoInterval:interval,ufoCount:state.ufoCount||0,goldMultiplier,fullCombo,ufoCritChance:ufo.critChance,ufoCritMultiplier:ufo.critMultiplier,ufoChainEvery:ufo.chainEvery,ufoDamageBonus:ufo.damage,ufoHaste:ufo.haste,ufoRewardMultiplier:ufo.rewardMultiplier,superconductorHits:runtime._superconductorClicksLeft||0};
 }
 
