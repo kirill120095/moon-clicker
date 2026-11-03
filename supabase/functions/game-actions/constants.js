@@ -5,6 +5,7 @@
 export const CONSTANTS = {
   BOSS_INTERVAL: 10,
   MOON_UPGRADE_COST_RATIO: 0.6,
+  MOON_UPGRADE_PRICE_DIVISORS: { gold: 2, fire: 1.5 },
   BOSS_TIMER: 30,
   BASE_HP: 1000,
   MAX_SLOTS: 3,
@@ -756,7 +757,7 @@ export function getMoonUpgradeCostForLevel(moonId, currentLevel) {
   
   const rarityCost=MOON_UPGRADE_BASE_COSTS[moon.rarity]||100;
   const baseCost=MOON_ORDER.indexOf(moonId)>=MOON_ORDER.indexOf('ice')?Math.max(rarityCost,moon.cost*CONSTANTS.MOON_UPGRADE_COST_RATIO):rarityCost;
-  return Math.floor(baseCost * Math.pow(1.5, currentLevel));
+  return Math.floor(baseCost * Math.pow(1.5, currentLevel) / (CONSTANTS.MOON_UPGRADE_PRICE_DIVISORS[moonId]||1));
 }
 
 /** UFO-only traits combine across active moons; values grow with moon upgrades. */

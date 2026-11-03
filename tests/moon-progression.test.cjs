@@ -18,13 +18,13 @@ test('blood unlock stays at five while every later moon has a higher threshold',
 test('upgrade costs from ice scale with moon purchase prices while early moons stay unchanged',()=>{
  const run=setup();assert.equal(run("getMoonUpgradeCostForLevel('normal',1)"),300);assert.equal(run("getMoonUpgradeCostForLevel('blood',1)"),1500);
  for(const id of ['ice','shadow','electric','fire','gold','cosmic']){
-  assert.equal(run("getMoonUpgradeCostForLevel('"+id+"',1)"),run("Math.floor(MOON_TYPES."+id+".cost*.6*1.5)"));
+  assert.equal(run("getMoonUpgradeCostForLevel('"+id+"',1)"),run("Math.floor(MOON_TYPES."+id+".cost*.6*1.5/(CONSTANTS.MOON_UPGRADE_PRICE_DIVISORS['"+id+"']||1))"));
   assert.ok(run("getMoonUpgradeCostForLevel('"+id+"',9)>getMoonUpgradeCostForLevel('"+id+"',1)"));
  }
- assert.equal(run("getMoonUpgradeCostForLevel('gold',1)"),540000);
+ assert.equal(run("getMoonUpgradeCostForLevel('gold',1)"),270000);
 });
 test('a server upgrade charges the new price once and ignores client-supplied prices',()=>{
- const run=setup();assert.equal(run("var s=freshState();s.ownedMoons.push('gold');s.moonLevels.gold=1;s.playerData.shards=1e6;s=applyAction(s,'upgradeMoon',{id:'gold',cost:0},100000);s.playerData.shards"),460000);assert.equal(run('s.moonLevels.gold'),2);
+ const run=setup();assert.equal(run("var s=freshState();s.ownedMoons.push('gold');s.moonLevels.gold=1;s.playerData.shards=1e6;s=applyAction(s,'upgradeMoon',{id:'gold',cost:0},100000);s.playerData.shards"),730000);assert.equal(run('s.moonLevels.gold'),2);
 });
 test('ascension refreshes quests and achievements, preserving only eternal progress and lifetime record',()=>{
  const run=setup();assert.equal(run("var s=freshState();s.currentLevel=200;s.maxLevel=200;s.clickCount=10000;s.playerData.shards=1e6;s.prestige.upgrades.reactor=2;s=applyAction(s,'load',{},100000);for(var q of Object.values(s.quests)){q.completed=true;q.claimed=true;q.progress=99999;}s.achievements.clickNovice={bronze:'claimed',silver:'claimed'};s=applyAction(s,'ascend',{},100100);Object.values(s.quests).every(q=>!q.completed&&!q.claimed&&q.progress===0)"),true);
