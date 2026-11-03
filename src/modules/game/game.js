@@ -550,7 +550,7 @@ export class GameEngine {
         );
         const progress = this._comboClicks % params.clicksPerStack;
         const timeLeft = this._comboClicks > 0 ? 
-          Math.max(0, Math.ceil((params.resetTimeout - timeSinceLastClick) / 1000)) : null;
+          Math.max(0, Math.ceil((params.resetTimeout - (Date.now()-Math.max(this._lastActivityTime,this._lastComboTime||0))) / 1000)) : null;
         
         buffs.push({
           id: 'combo', icon: '🌙', name: 'Комбо',

@@ -38,7 +38,7 @@ function apply(result,hits=[]){
  const previousQuests=state.quests||{},previousAchievements=state.achievements||{};
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
- appState.setMany({prestige:s.prestige,prestigeSummary:s.prestigeSummary,runMaxLevel:s.runMaxLevel,moonSerial:s.moonSerial,ufoCount:s.ufoCount||0,gameCompleted:s.gameCompleted,maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,finalCritChance:s.finalCritChance,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
+ appState.setMany({prestige:s.prestige,prestigeSummary:s.prestigeSummary,runMaxLevel:s.runMaxLevel,moonSerial:s.moonSerial,ufoCount:s.ufoCount||0,ufoComboRelay:!!s.ufoComboRelay,gameCompleted:s.gameCompleted,maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,finalCritChance:s.finalCritChance,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
  clickCount:s.clickCount,totalSecondsPlayed:s.totalSecondsPlayed,playerData:{...s.playerData,level:s.currentLevel,total_clicks:s.clickCount,total_seconds_played:s.totalSecondsPlayed},
  activeMoon:s.activeMoon,activeMoons:s.activeMoons,ownedMoons:s.ownedMoons,moonLevels:s.moonLevels,
  maxSlots:s.maxSlots,bossKills:s.bossKills,quests:s.quests,achievements:s.achievements,
@@ -46,6 +46,7 @@ function apply(result,hits=[]){
  bossTimer:deadline?Math.max(0,(deadline-result.serverNow)/1000):30});
  Object.assign(gameEngine,s.runtime||{});
  gameEngine._lastActivityTime=s.lastClickAt?s.lastClickAt-offset:Date.now();
+ gameEngine._lastComboTime=Math.max(s.lastClickAt||0,s.lastComboAt||0)-offset;
  gameEngine.recalcMoonBonuses();refreshBuffs();updateUI();updateShopUI();updateQuestAndAchievementUI();
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
  renderFleet(s.ufoCount||(s.ufoLevel?1:0));
@@ -129,6 +130,7 @@ gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks
 gameEngine.buyClickDamage=()=>command('buyDamage',{},true).catch(()=>{});
 gameEngine.ascend=()=>{const count=state.prestigeSummary?.pendingCoins||0;if(confirm('Вознестись за '+count+' монет престижа? Весь обычный прогресс будет сброшен. Вечные бонусы, монеты и покупки сохранятся.'))command('ascend').catch(()=>{});};
 gameEngine.buyPrestige=id=>command('buyPrestige',{id},true).catch(()=>{});
+gameEngine.buyUfoComboRelay=()=>command('buyUfoComboRelay',{},true).catch(()=>{});
 gameEngine.buyUfoUnit=()=>command('buyUfoUnit',{},true).catch(()=>{});
 gameEngine.buyUfo=()=>command('buyUfo',{},true).catch(()=>{});
 gameEngine.rollbackFive=()=>command('rollbackFive').catch(()=>{});

@@ -2,7 +2,7 @@ import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCriti
 import { getMaxHPForLevel, getSlotUpgradeCost, getClickUpgradeCost } from './config.js';
 const showToast=()=>{},updateQuestUI=()=>{},updateAchievementUI=()=>{},updateProfileAndLeaders=()=>{};
 export function freshState(username='Игрок') {
- return {runMaxLevel:1,prestige:{coins:0,claimedCoinSteps:0,ascensions:0,upgrades:{}},moonSerial:1,maxLevel:1,ufoCount:0,ufoLevel:0,ufoLastShotAt:0,effects:[],currentLevel:1,moonHP:CONSTANTS.BASE_HP,maxHP:CONSTANTS.BASE_HP,clickCount:0,totalSecondsPlayed:0,
+ return {runMaxLevel:1,prestige:{coins:0,claimedCoinSteps:0,ascensions:0,upgrades:{}},moonSerial:1,maxLevel:1,ufoCount:0,ufoLevel:0,ufoComboRelay:false,lastComboAt:0,ufoLastShotAt:0,effects:[],currentLevel:1,moonHP:CONSTANTS.BASE_HP,maxHP:CONSTANTS.BASE_HP,clickCount:0,totalSecondsPlayed:0,
  playerData:{username,shards:0,click_damage:CONSTANTS.DEFAULTS.CLICK_DAMAGE,click_damage_level:0},
  activeMoon:'normal',activeMoons:['normal'],ownedMoons:['normal'],moonLevels:{normal:1},
  maxSlots:1,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
@@ -426,7 +426,8 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  const idle=now-(state.lastClickAt||now);
  for(const [id,counter] of [['normal','_comboClicks'],['fire','_fireStacks'],['shadow','_shadowCritStacks']]){
   const timeout=rules._getMechanicParamsForActiveMoon(id)?.resetTimeout||15000;
-  if(idle>=timeout)rules[counter]=0;
+  const mechanicIdle=id==='normal'?now-Math.max(state.lastClickAt||now,state.lastComboAt||0):idle;
+  if(mechanicIdle>=timeout)rules[counter]=0;
  }
  function startMoon(){state.moonSerial++;state.maxHP=getMaxHPForLevel(state.currentLevel);state.moonHP=state.maxHP;
  rules._clickCounter=0;rules._pityClicks=0;rules._firstStrikeUsed=false;rules._newMoon=true;
@@ -482,6 +483,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
     const critical=rollCritical(buff.critChance,buff.critMultiplier),crit=critical.isCrit,chain=buff.chainEvery&&state.ufoShots%buff.chainEvery===0;
     const damage=Math.max(1,Math.round(finalDamage()*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+buff.damage)*critical.multiplier*(chain?buff.chainMultiplier:1)));
     hit(damage,crit,'ufo');
+    if(state.ufoComboRelay&&state.activeMoons.includes('normal')&&rules._comboClicks>0)state.lastComboAt=state.ufoLastShotAt+(i+1)*interval;
    }
    state.ufoLastShotAt+=shots*interval;
   }
@@ -513,6 +515,11 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   if(state.ufoLevel>=CONSTANTS.UFO.MAX_LEVEL)throw Error('Тарелка улучшена полностью');
   spend(Math.floor(CONSTANTS.UFO.BASE_COST*Math.pow(CONSTANTS.UFO.COST_MULTIPLIER,state.ufoLevel)));
   state.ufoLevel++;state.ufoCount=Math.max(1,state.ufoCount);state.ufoLastShotAt=now;
+ } else if(action==='buyUfoComboRelay'){
+  if(state.ufoComboRelay)throw Error('Комбо-ретранслятор уже куплен');
+  if(!state.ownedMoons.includes('cosmic'))throw Error('Сначала купите Космическую луну');
+  if(!state.ufoLevel)throw Error('Сначала купите тарелку');
+  spend(CONSTANTS.UFO.COMBO_RELAY_COST);state.ufoComboRelay=true;
  } else if(action==='buyUfoUnit'){
   if(!state.ufoLevel)throw Error('Сначала купите первую тарелку');
   if(state.ufoCount>=state.ownedMoons.length)throw Error('Купите ещё одну луну, чтобы открыть место для тарелки');

@@ -1,3 +1,5 @@
+import { formatNumber } from '../../utils/numbers.js';
+export { formatNumber };
 // ============================================================
 // РЕНДЕРИНГ UI - ОБНОВЛЁННАЯ СИСТЕМА ЛУН И ПРОКАЧКИ
 // ============================================================
@@ -62,14 +64,6 @@ export function formatTime(seconds) {
   return parts.join(' ') || '0с';
 }
 
-export function formatNumber(num) {
-  if (num === undefined || num === null) return '0';
-  num = Math.floor(num);
-  if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-  if (num >= 10000) return (num / 1000).toFixed(1) + 'K';
-  return num.toLocaleString('ru-RU');
-}
 
 const lockOpenSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 const lockClosedSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>`;
@@ -154,7 +148,7 @@ export function updateHPBar() {
   const hpPercent = document.getElementById('hpPercent');
   const moonInner = document.getElementById('moonInner');
   const reward=document.getElementById('moonReward');
-  if(reward)reward.textContent='За луну: +'+(state.moonReward||0).toLocaleString('ru-RU')+' 💎'+(state.ufoMoonReward>state.moonReward?' · тарелка +'+state.ufoMoonReward.toLocaleString('ru-RU')+' 💎':'');
+  if(reward)reward.textContent='За луну: +'+formatNumber(state.moonReward||0)+' 💎'+(state.ufoMoonReward>state.moonReward?' · тарелка +'+formatNumber(state.ufoMoonReward)+' 💎':'');
 
   if (hpBar) {
     const percent = Math.max(0, (displayHP / state.maxHP) * 100);
@@ -162,7 +156,7 @@ export function updateHPBar() {
   }
 
   if (hpPercent) {
-    hpPercent.textContent = `${Math.round(displayHP)}/${Math.round(state.maxHP)}`;
+    hpPercent.textContent = `${formatNumber(displayHP)}/${formatNumber(state.maxHP)}`;
   }
 
   if (moonInner) {
@@ -290,9 +284,13 @@ function _updateUfoShop() {
   if(fleet)fleet.textContent='Тарелки: '+count+' / '+limit+' · каждую новую луну можно сопровождать ещё одной тарелкой';
   if(unitPrice)unitPrice.textContent=count>=limit?'Купите ещё одну луну':!count?'Сначала купите первую тарелку':unitCost.toLocaleString('ru-RU')+' 💎';
   if(unitButton)unitButton.disabled=!count||count>=limit||(state.playerData?.shards||0)<unitCost;
+  const relay=document.getElementById('buyUfoComboRelayBtn'),relayPrice=document.getElementById('ufoComboRelayPrice');
+  const relayUnlocked=(state.ownedMoons||[]).includes('cosmic')&&level>0;
+  if(relay){relay.disabled=!!state.ufoComboRelay||!relayUnlocked||(state.playerData?.shards||0)<c.COMBO_RELAY_COST;relay.textContent=state.ufoComboRelay?'Куплено':'Купить';}
+  if(relayPrice)relayPrice.textContent=state.ufoComboRelay?'Тарелки поддерживают набранное комбо':!relayUnlocked?'После покупки Космической луны и тарелки':formatNumber(c.COMBO_RELAY_COST)+' 💎';
   const interval=state.ufoInterval||(c.BASE_INTERVAL-Math.max(0,level-1)*c.INTERVAL_REDUCTION);
   const buffs=document.getElementById('ufoBuffs');if(buffs)buffs.textContent=(state.activeMoons||[]).slice(0,state.maxSlots||1).map(id=>getUfoMoonDescription(id,state.moonLevels?.[id]||1)).join(' · ');
-  info.textContent=level?'Ур. '+level+'/'+c.MAX_LEVEL+' · '+state.ufoDamage+' урона раз в '+(interval/1000).toLocaleString('ru-RU')+' с':'50% финального урона раз в '+(c.BASE_INTERVAL/1000)+' с';
+  info.textContent=level?'Ур. '+level+'/'+c.MAX_LEVEL+' · '+formatNumber(state.ufoDamage)+' урона раз в '+(interval/1000).toLocaleString('ru-RU')+' с':'50% финального урона раз в '+(c.BASE_INTERVAL/1000)+' с';
   price.textContent=level>=c.MAX_LEVEL?'Улучшена полностью':state.currentLevel<c.UNLOCK_LEVEL?'Откроется с '+c.UNLOCK_LEVEL+' уровня':cost.toLocaleString('ru-RU')+' 💎';
   button.disabled=level>=c.MAX_LEVEL||state.currentLevel<c.UNLOCK_LEVEL||(state.playerData?.shards||0)<cost;
   button.textContent=level>=c.MAX_LEVEL?'MAX':level?'Улучшить':'Купить';

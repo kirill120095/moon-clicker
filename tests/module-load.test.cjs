@@ -1,4 +1,4 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:child_process');
-for(const file of ['src/index.js','src/modules/game/game.js','src/core/constants.js','src/core/config.js','src/modules/network/supabase.js','src/modules/game/secure-game.js','src/modules/ui/renderer.js','src/modules/ui/audio.js','src/modules/ui/radio.js','src/modules/ui/events.js','src/modules/auth/auth.js']){
+for(const file of ['src/utils/numbers.js','src/modules/ui/animations.js','src/index.js','src/modules/game/game.js','src/core/constants.js','src/core/config.js','src/modules/network/supabase.js','src/modules/game/secure-game.js','src/modules/ui/renderer.js','src/modules/ui/audio.js','src/modules/ui/radio.js','src/modules/ui/events.js','src/modules/auth/auth.js']){
  test('ES module parses including its exports: '+file,()=>{const result=spawnSync('node',['--check','--input-type=module'],{input:fs.readFileSync(path.join(__dirname,'..',file),'utf8'),encoding:'utf8'});assert.equal(result.status,0,result.stderr||result.error?.message);});
 }

@@ -1,3 +1,4 @@
+import { formatNumber } from '../../utils/numbers.js';
 // ============================================================
 // АНИМАЦИИ И ВИЗУАЛЬНЫЕ ЭФФЕКТЫ
 // ============================================================
@@ -72,7 +73,7 @@ export class AnimationManager {
     const color = this.getDamageColor(damage, isCrit);
     const glow = this.getDamageGlow(damage, isCrit);
     
-    damageEl.textContent = `-${damage}`;
+    damageEl.textContent = `-${formatNumber(damage)}`;
     
     if (isCrit) damageEl.classList.add('crit');
     if (isBoss) damageEl.classList.add('boss-damage');
