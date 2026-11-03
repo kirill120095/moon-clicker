@@ -20,3 +20,9 @@ function formatCurrency(value,round){
 export function formatMoney(value){return formatCurrency(value,Math.floor);}
 export function formatPrice(value){return formatCurrency(value,Math.ceil);}
 export function formatExact(value){return Math.max(0,Math.floor(Number(value)||0)).toLocaleString('ru-RU');}
+
+/** Cosmic base damage can contain tenths before final damage is rounded. */
+export function formatBaseDamage(value){
+ const num=Number(value);if(!Number.isFinite(num))return '0';
+ return Math.abs(num)<1e4?num.toLocaleString('ru-RU',{maximumFractionDigits:1}):formatNumber(num);
+}

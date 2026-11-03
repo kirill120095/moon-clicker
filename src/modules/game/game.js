@@ -677,7 +677,7 @@ export class GameEngine {
           id: 'cosmic', icon: '✨', name: 'Космос',
           value: level, maxStacks: 100,
           progress: Math.min(level, 100), progressMax: 100,
-          bonus: `+${params.baseDamagePerLevel * level} баз. урона · +${Math.round(params.damagePerLevel * level * 100)}% урон`,
+          bonus: `+${(params.baseDamagePerLevel * level + params.baseDamagePerKill * (state.moonKills||0)).toLocaleString('ru-RU',{maximumFractionDigits:1})} баз. урона · +${Math.round(params.damagePerLevel * level * 100)}% урон`,
           timeLeft: null, isActive: true, isMaxed: level >= 100, isPassive: true
         });
       }

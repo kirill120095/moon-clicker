@@ -43,6 +43,8 @@ const initialState = {
   // Слоты
   maxSlots: CONSTANTS.DEFAULTS.SLOT_LEVEL,
   
+  moonKills: 0,
+
   // Боссы
   bossKills: CONSTANTS.DEFAULTS.BOSS_KILLS,
   bossTimer: CONSTANTS.BOSS_TIMER,

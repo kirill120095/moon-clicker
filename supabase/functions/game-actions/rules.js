@@ -5,7 +5,7 @@ export function freshState(username='Игрок') {
  return {runMaxLevel:1,prestige:{coins:0,claimedCoinSteps:0,ascensions:0,upgrades:{}},moonSerial:1,maxLevel:1,ufoCount:0,ufoLevel:0,ufoComboRelay:false,lastComboAt:0,ufoLastShotAt:0,effects:[],currentLevel:1,moonHP:CONSTANTS.BASE_HP,maxHP:CONSTANTS.BASE_HP,clickCount:0,totalSecondsPlayed:0,
  playerData:{username,shards:0,click_damage:CONSTANTS.DEFAULTS.CLICK_DAMAGE,click_damage_level:0},
  activeMoon:'normal',activeMoons:['normal'],ownedMoons:['normal'],moonLevels:{normal:1},
- maxSlots:1,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
+ maxSlots:1,moonKills:0,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
  tokens:CONSTANTS.CLICK_BURST,lastActionAt:0,bossDeadline:null,lastQuestDay:''};
 }
 export function applyAction(raw, action, payload={}, now=Date.now()) {
@@ -24,6 +24,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  state.ufoLevel=state.ufoLevel||0;
  state.ufoCount=Math.min(state.ownedMoons.length,state.ufoCount||(state.ufoLevel?1:0));
  state.moonSerial=state.moonSerial||1;
+ state.moonKills=Number.isSafeInteger(state.moonKills)&&state.moonKills>=0?Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills):0;
  state.activeMoon=state.activeMoons[state.activeMoons.length-1];
  state.effects=[];
  const credit=(amount)=>{const before=state.playerData.shards;state.playerData.shards=Math.min(CONSTANTS.SAFE_NUMBER_CAP,before+Math.max(0,Math.round(amount)));return state.playerData.shards-before;};
@@ -461,6 +462,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   damage=Math.min(CONSTANTS.SAFE_NUMBER_CAP,damage);event.damage=damage;
   state.moonHP=Math.max(0,state.moonHP-damage);
   if(state.moonHP===0){
+   state.moonKills=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills+1);
    event.reward=moonReward(bonuses);
    if(source==='ufo')event.reward=Math.max(1,Math.floor(event.reward*getUfoBonuses(state,rules).rewardMultiplier));
    event.reward=credit(event.reward);rules.updateQuestProgress('shard',event.reward);

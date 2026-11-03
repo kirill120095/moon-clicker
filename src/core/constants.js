@@ -597,10 +597,11 @@ export const MOON_TYPES = {
     
     specialMechanic: 'scaling',
     specialName: 'Космическая мощь',
-    specialDescription: '+10 базового урона, +1% урона, +0.25% осколков, +0.25% крит урона за уровень',
+    specialDescription: '+10 базового урона за уровень и +0,1 за убитую луну, +1% урона, +0.25% осколков, +0.25% крит урона за уровень',
     
     mechanicParams: {
       baseDamagePerLevel: 10,
+      baseDamagePerKill: 0.1,
       damagePerLevel: 0.01,
       shardPerLevel: 0.0025,
       critDamagePerLevel: 0.0025,
@@ -834,7 +835,7 @@ export function getBaseDamage(state){
  const base=state.playerData?.click_damage||CONSTANTS.DEFAULTS.CLICK_DAMAGE;
  if(!(state.activeMoons||[]).slice(0,state.maxSlots||1).includes('cosmic'))return base;
  const params=getMoonMechanicParams('cosmic',state.moonLevels?.cosmic||1);
- return Math.min(CONSTANTS.SAFE_NUMBER_CAP,base+params.baseDamagePerLevel*(state.currentLevel||1));
+ return Math.min(CONSTANTS.SAFE_NUMBER_CAP,base+params.baseDamagePerLevel*(state.currentLevel||1)+params.baseDamagePerKill*(state.moonKills||0));
 }
 
 export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)){

@@ -25,3 +25,32 @@ test('server manual hits, displayed final damage and UFO damage use the same cos
  assert.equal(run("var shot=applyAction(s,'sync',{},103000);shot.effects.find(e=>e.source==='ufo').damage"),run('s.ufoDamage'));
  assert.equal(run('s.playerData.click_damage'),10);
 });
+
+test('only actual deaths increment moonKills, including locked-level farming and UFO kills',()=>{
+ const run=setup();run("Math.random=()=>0.99;var s=freshState();s.levelLocked=true;s.playerData.click_damage=1000000;s=applyAction(s,'click',{count:3,moonKills:999999},100000);");
+ assert.equal(run('s.moonKills'),3);assert.equal(run('s.currentLevel'),1);
+ run("s.ufoLevel=1;s.ufoCount=1;s=applyAction(s,'load',{},101000);s=applyAction(s,'sync',{},104000);");
+ assert.equal(run('s.moonKills'),4);assert.equal(run("s.effects[0].source"),'ufo');
+ run("s.currentLevel=10;s.moonHP=1;s=applyAction(s,'click',{count:1},104100);");
+ assert.equal(run('s.moonKills'),5);assert.equal(run('s.bossKills'),1);
+});
+test('navigation, boss timeout, nonlethal hits and forged payload counters do not award kills',()=>{
+ const run=setup();run("Math.random=()=>0.99;var s=freshState();delete s.moonKills;s=applyAction(s,'load',{moonKills:999999},100000);");
+ assert.equal(run('s.moonKills'),0);
+ run("s.moonHP=1000;s.maxHP=1000;s=applyAction(s,'click',{count:1},100100);");assert.equal(run('s.moonKills'),0);
+ run("s.currentLevel=10;s.moonKills=12;s.bossDeadline=100101;s=applyAction(s,'sync',{},100200);");assert.equal(run('s.moonKills'),12);
+ run("s=applyAction(s,'rollbackFive',{},100300);");assert.equal(run('s.moonKills'),12);
+ run("s=applyAction(JSON.parse(JSON.stringify(s)),'load',{},100400);");assert.equal(run('s.moonKills'),12);
+});
+test('kill bonus retains tenths, applies before multipliers and requires active cosmic moon',()=>{
+ const run=setup();run("var s=freshState();s.currentLevel=1;s.activeMoons=['cosmic'];s.ownedMoons=['normal','cosmic'];s.moonLevels.cosmic=1;s.moonKills=3;");
+ assert.equal(run('getBaseDamage(s)'),20.3);assert.equal(run('getCombatStats(s,100000).baseDamageBonus'),10.3);
+ run('s.moonKills=1000;s.currentLevel=100;');assert.equal(run('getBaseDamage(s)'),1110);
+ run("s.activeMoons=['normal'];");assert.equal(run('getBaseDamage(s)'),10);assert.equal(run('s.moonKills'),1000);
+ run("s.activeMoons=['cosmic'];s=applyAction(s,'ascend',{},100000);");assert.equal(run('s.moonKills'),0);assert.equal(run('getBaseDamage(s)'),10);
+});
+test('fractional cosmic base is visible without changing rounded hit labels',()=>{
+ const c={};vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/utils/numbers.js'),'utf8')),c);
+ assert.equal(vm.runInContext('formatBaseDamage(20.3)',c),'20,3');assert.equal(vm.runInContext('formatBaseDamage(1100)',c).replace(/\s/g,''),'1100');
+ const ui=fs.readFileSync(path.join(__dirname,'../src/modules/ui/renderer.js'),'utf8');assert.match(ui,/data-live-stat="moonKills"/);assert.match(ui,/formatBaseDamage\(s.baseDamageBonus\)/);
+});
