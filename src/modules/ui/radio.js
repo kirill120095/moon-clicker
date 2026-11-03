@@ -32,20 +32,38 @@ function readDuration(source){
  });
 }
 class GameRadio{
- constructor(){this.client=null;this.channel=null;this.timer=null;this.tickTimer=null;this.userId=null;this.current=null;this.player=null;this.bound=false;this.admin=false;this.playlists=[];this.selectedId=null;this.library=[];this.playingKey=null;this.busy=false;this.generation=0;this.refreshPending=null;this.nextRefreshAt=0;}
+ constructor(){this.client=null;this.channel=null;this.timer=null;this.tickTimer=null;this.userId=null;this.current=null;this.player=null;this.bound=false;this.admin=false;this.playlists=[];this.selectedId=null;this.library=[];this.playingKey=null;this.busy=false;this.generation=0;this.refreshPending=null;this.nextRefreshAt=0;this.ownerPending=null;this.nextOwnerCheck=0;this.ownerReady=false;this.collapsed=false;}
  async connect(user){
   if(this.userId===user?.id)return;
   this.disconnect();this.userId=user?.id;if(!this.userId)return;const generation=this.generation;
   const client=await initSupabase();if(generation!==this.generation)return;this.client=client;
   if(!this.player){this.player=new Audio();this.player.preload='metadata';this.player.addEventListener('loadedmetadata',()=>this.tick());this.player.addEventListener('ended',()=>this.tick());this.player.addEventListener('error',()=>{audio.radioActive=false;audio.apply();this.status('Не удалось воспроизвести трек.');});}
   audio.radioElement=this.player;this.bind();
-  await this.refresh();if(generation!==this.generation)return;
-  const {data,error}=await this.client.rpc('is_radio_admin');if(generation!==this.generation)return;if(error)throw error;
-  this.admin=data===true;document.getElementById('radioAdmin')?.classList.toggle('hidden',!this.admin);
-  if(this.admin){await this.listPlaylists();if(generation!==this.generation)return;await this.listTracks();if(generation!==this.generation)return;}
+  try{this.collapsed=localStorage.getItem('moon-radio-collapsed:'+this.userId)==='true';}catch{}
+  this.renderMini();
   this.channel=this.client.channel('moon-radio').on('postgres_changes',{event:'UPDATE',schema:'public',table:'game_radio',filter:'id=eq.1'},event=>{if(generation===this.generation)this.accept(event.new);}).subscribe(status=>{if(status==='SUBSCRIBED'&&generation===this.generation)this.refresh().catch(()=>{});});
-  this.timer=setInterval(()=>{if(!document.hidden)this.refresh().catch(()=>{});},15000);
+  this.timer=setInterval(()=>{if(!document.hidden){this.refresh().catch(()=>{});this.refreshOwner().catch(()=>{});}},15000);
   this.tickTimer=setInterval(()=>{if(!document.hidden)this.tick();},500);
+  await Promise.allSettled([this.refresh(),this.refreshOwner()]);
+
+ }
+ async refreshOwner(){
+  if(!this.client||this.ownerReady||Date.now()<this.nextOwnerCheck)return;
+  if(this.ownerPending)return this.ownerPending;
+  const generation=this.generation,client=this.client;
+  const pending=(async()=>{
+   const {data,error}=await client.rpc('is_radio_admin');if(generation!==this.generation)return;if(error)throw error;
+   this.admin=data===true;document.getElementById('radioAdmin')?.classList.toggle('hidden',!this.admin);this.renderMini();
+   if(this.admin){
+    const results=await Promise.allSettled([this.listPlaylists(),this.listTracks()]);if(generation!==this.generation)return;
+    const failed=results.find(r=>r.status==='rejected');if(failed)throw failed.reason;
+    this.status('Библиотека загружена. Управление эфиром доступно.');
+   }
+   this.ownerReady=true;
+  })();
+  this.ownerPending=pending;
+  try{await pending;}catch(error){if(generation===this.generation){this.nextOwnerCheck=Date.now()+60000;this.status('Не удалось загрузить управление радио. Повторим автоматически; можно нажать «Обновить».');}throw error;}
+  finally{if(this.ownerPending===pending)this.ownerPending=null;}
  }
  async refresh(){
   if(!this.client||Date.now()<this.nextRefreshAt)return;
@@ -58,6 +76,7 @@ class GameRadio{
  tick(){
   if(!this.player)return;
   const track=radioPlayback(this.current);
+  this.renderMini(track);
   const label=document.getElementById('radioNowPlaying');if(label)label.textContent=track?'В эфире: '+track.title:'Космический фон';
   if(!track){if(this.playingKey!==null||this.player.getAttribute('src')){this.player.pause();this.player.removeAttribute('src');this.player.load();}this.playingKey=null;audio.radioActive=false;audio.apply();return;}
   audio.radioActive=true;audio.apply();
@@ -73,11 +92,11 @@ class GameRadio{
   if(!document.hidden&&this.player.paused)this.player.play().catch(()=>{});
  }
  play(){this.tick();}
- disconnect(){this.generation++;this.refreshPending=null;this.nextRefreshAt=0;clearInterval(this.timer);clearInterval(this.tickTimer);this.timer=null;this.tickTimer=null;if(this.channel)Promise.resolve(this.client?.removeChannel(this.channel)).catch(()=>{});this.channel=null;this.player?.pause();this.current=null;this.playingKey=null;this.userId=null;this.admin=false;this.playlists=[];this.selectedId=null;audio.radioActive=false;audio.radioElement=null;audio.apply();document.getElementById('radioAdmin')?.classList.add('hidden');}
- status(text){const el=document.getElementById('radioStatus');if(el)el.textContent=text;}
+ disconnect(){this.generation++;this.ownerPending=null;this.nextOwnerCheck=0;this.ownerReady=false;this.refreshPending=null;this.nextRefreshAt=0;clearInterval(this.timer);clearInterval(this.tickTimer);this.timer=null;this.tickTimer=null;if(this.channel)Promise.resolve(this.client?.removeChannel(this.channel)).catch(()=>{});this.channel=null;this.player?.pause();this.current=null;this.playingKey=null;this.userId=null;this.admin=false;this.playlists=[];this.selectedId=null;audio.radioActive=false;audio.radioElement=null;audio.apply();document.getElementById('radioAdmin')?.classList.add('hidden');document.getElementById('radioMini')?.classList.add('hidden');}
+ status(text){for(const id of ['radioStatus','radioMiniStatus']){const el=document.getElementById(id);if(el)el.textContent=text;}}
  async run(task){
   if(this.busy)return;this.busy=true;
-  const buttons=[...document.querySelectorAll('#radioAdmin button')];buttons.forEach(b=>b.disabled=true);
+  const buttons=[...document.querySelectorAll('#radioAdmin button, #radioMini button:not(#radioMiniCollapse)')];buttons.forEach(b=>b.disabled=true);
   try{await task();}catch(error){this.status(error.message||'Не удалось изменить радио.');}finally{this.busy=false;buttons.forEach(b=>b.disabled=false);this.renderPlaylist();this.renderModes();}
  }
  selected(){return this.playlists.find(p=>p.id===this.selectedId);}
@@ -91,6 +110,7 @@ class GameRadio{
   if(!this.playlists.length){const option=document.createElement('option');option.textContent='Создайте первый плейлист';option.value='';select.appendChild(option);}
   for(const p of this.playlists){const option=document.createElement('option');option.value=p.id;option.textContent=p.title+' · '+p.tracks.length+' треков';select.appendChild(option);}
   select.value=this.selectedId||'';
+  const mini=document.getElementById('radioMiniPlaylists');if(mini){mini.replaceChildren(...[...select.options].map(o=>o.cloneNode(true)));mini.value=this.selectedId||'';}
   const playlist=this.selected(),list=document.getElementById('radioPlaylistItems');if(!list)return;list.replaceChildren();
   for(const [index,track] of (playlist?.tracks||[]).entries()){
    const row=document.createElement('li'),title=document.createElement('span');title.textContent=(index+1)+'. '+track.title;row.appendChild(title);
@@ -100,7 +120,13 @@ class GameRadio{
   if(!playlist?.tracks.length){const li=document.createElement('li');li.textContent='Добавьте аудиофайлы или выберите треки из библиотеки.';list.appendChild(li);}
  }
  renderModes(){
-  for(const [id,active] of [['radioRepeatTrack',this.current?.repeat_track],['radioRepeatPlaylist',this.current?.repeat_playlist]]){const b=document.getElementById(id);if(b){b.setAttribute('aria-pressed',String(!!active));b.classList.toggle('active',!!active);}}
+  for(const [id,active] of [['radioRepeatTrack',this.current?.repeat_track],['radioRepeatPlaylist',this.current?.repeat_playlist],['radioMiniRepeatTrack',this.current?.repeat_track],['radioMiniRepeatPlaylist',this.current?.repeat_playlist]]){const b=document.getElementById(id);if(b){b.setAttribute('aria-pressed',String(!!active));b.classList.toggle('active',!!active);}}
+ }
+ renderMini(track=radioPlayback(this.current)){
+  const root=document.getElementById('radioMini');if(!root)return;
+  root.classList.toggle('hidden',!this.admin);root.classList.toggle('collapsed',this.collapsed);
+  const label=document.getElementById('radioMiniTitle');if(label){label.textContent=track?.title||'Космический фон';label.title=label.textContent;}
+  const collapse=document.getElementById('radioMiniCollapse');if(collapse){collapse.textContent=this.collapsed?'⌄':'⌃';collapse.setAttribute('aria-expanded',String(!this.collapsed));collapse.setAttribute('aria-label',this.collapsed?'Развернуть проигрыватель':'Свернуть проигрыватель');}
  }
  async savePlaylist(playlist){
   const {data,error}=await this.client.rpc('radio_playlist_save',{p_id:playlist.id||null,p_title:playlist.title,p_tracks:playlist.tracks});if(error)throw error;
@@ -174,7 +200,12 @@ class GameRadio{
   bind('radioCreate',()=>this.createPlaylist());bind('radioDelete',()=>this.deletePlaylist());bind('radioAddTracks',()=>this.addLibrary());bind('radioUpload',()=>this.upload());
   bind('radioSwitch',()=>this.control('play',{p_playlist:this.selectedId}));bind('radioStop',()=>this.control('stop'));
   bind('radioPrev',()=>this.step(-1));bind('radioNext',()=>this.step(1));bind('radioRepeatTrack',()=>this.repeat('track'));bind('radioRepeatPlaylist',()=>this.repeat('playlist'));
-  document.getElementById('radioPlaylists')?.addEventListener('change',event=>{if(this.busy){this.renderPlaylist();return;}this.selectedId=event.target.value;this.renderPlaylist();});
+  bind('radioRefresh',async()=>{this.ownerReady=false;this.nextOwnerCheck=0;await this.refreshOwner();});
+  bind('radioMiniPlay',()=>this.control('play',{p_playlist:this.selectedId}));
+  bind('radioMiniPrev',()=>this.step(-1));bind('radioMiniNext',()=>this.step(1));
+  bind('radioMiniRepeatTrack',()=>this.repeat('track'));bind('radioMiniRepeatPlaylist',()=>this.repeat('playlist'));
+  for(const id of ['radioPlaylists','radioMiniPlaylists'])document.getElementById(id)?.addEventListener('change',event=>{if(this.busy){this.renderPlaylist();return;}this.selectedId=event.target.value;this.renderPlaylist();});
+  document.getElementById('radioMiniCollapse')?.addEventListener('click',()=>{this.collapsed=!this.collapsed;try{localStorage.setItem('moon-radio-collapsed:'+this.userId,String(this.collapsed));}catch{}this.renderMini();});
   document.getElementById('radioPlaylistItems')?.addEventListener('click',event=>{const b=event.target.closest('[data-radio-edit]');if(b)this.run(()=>this.editPlaylist(Number(b.dataset.index),b.dataset.radioEdit));});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)this.player?.pause();else if(this.userId){this.refresh().catch(()=>{});this.play();}});
  }

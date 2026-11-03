@@ -1,4 +1,4 @@
-import { formatNumber } from '../../utils/numbers.js';
+import { formatNumber, formatMoney, formatPrice, formatExact } from '../../utils/numbers.js';
 export { formatNumber };
 // ============================================================
 // РЕНДЕРИНГ UI - ОБНОВЛЁННАЯ СИСТЕМА ЛУН И ПРОКАЧКИ
@@ -96,7 +96,8 @@ function _updateCounter() {
   const counter = document.getElementById('counter');
   if (!counter) return;
   const shards = state.playerData?.shards || 0;
-  counter.textContent = `💎 ${formatNumber(shards)}`;
+  counter.textContent = `💎 ${formatMoney(shards)}`;
+  counter.title = formatExact(shards)+' 💎';
 }
 
 function _updateLevelTitle() {
@@ -148,7 +149,7 @@ export function updateHPBar() {
   const hpPercent = document.getElementById('hpPercent');
   const moonInner = document.getElementById('moonInner');
   const reward=document.getElementById('moonReward');
-  if(reward)reward.textContent='За луну: +'+formatNumber(state.moonReward||0)+' 💎'+(state.ufoMoonReward>state.moonReward?' · тарелка +'+formatNumber(state.ufoMoonReward)+' 💎':'');
+  if(reward)reward.textContent='За луну: +'+formatMoney(state.moonReward||0)+' 💎'+(state.ufoMoonReward>state.moonReward?' · тарелка +'+formatMoney(state.ufoMoonReward)+' 💎':'');
 
   if (hpBar) {
     const percent = Math.max(0, (displayHP / state.maxHP) * 100);
@@ -274,7 +275,7 @@ export function updatePrestigeUI(){
  ].map(([icon,label,value])=>'<div class="stat-card"><div class="stat-card-icon">'+icon+'</div><div class="stat-card-label">'+label+'</div><div class="stat-card-value">'+value+'</div></div>').join('')+'</div></div>';
  if(!container||!document.getElementById('prestigeTabContent')?.classList.contains('active'))return;
  container.innerHTML='<h3>🌟 Магазин вечных улучшений</h3><p class="prestige-summary">Монеты престижа: <b>'+p.coins+'</b></p><p class="ufo-description">В этом прохождении: '+p.runRecord+' уровней. При вознесении получите '+p.pendingCoins+' монет. Обычный прогресс сбросится; вечные бонусы и покупки сохранятся. В новом прохождении рубежи снова доступны.</p><button class="btn-action ascend-button" data-ascend '+(p.pendingCoins?'':'disabled')+'>Вознестись · +'+p.pendingCoins+' 🌟</button>'+
- Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level);return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+level+' / ∞'+'</p><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(p.coins<cost?'disabled':'')+'>'+(formatNumber(cost)+' 🌟')+'</button></div>';}).join('');
+ Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level);return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+level+' / ∞'+'</p><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(p.coins<cost?'disabled':'')+'>'+(formatPrice(cost)+' 🌟')+'</button></div>';}).join('');
 }
 
 function _updateUfoShop() {
@@ -284,16 +285,17 @@ function _updateUfoShop() {
   const fleet=document.getElementById('ufoFleetInfo'),unitButton=document.getElementById('buyUfoUnitBtn'),unitPrice=document.getElementById('ufoUnitPrice');
   const count=state.ufoCount||0,limit=state.ownedMoons?.length||1,unitCost=Math.floor(c.UNIT_BASE_COST*Math.pow(c.UNIT_COST_MULTIPLIER,Math.max(0,count-1)));
   if(fleet)fleet.textContent='Тарелки: '+count+' / '+limit+' · каждую новую луну можно сопровождать ещё одной тарелкой';
-  if(unitPrice)unitPrice.textContent=count>=limit?'Купите ещё одну луну':!count?'Сначала купите первую тарелку':unitCost.toLocaleString('ru-RU')+' 💎';
+  if(unitPrice)unitPrice.textContent=count>=limit?'Купите ещё одну луну':!count?'Сначала купите первую тарелку':formatPrice(unitCost)+' 💎';
   if(unitButton)unitButton.disabled=!count||count>=limit||(state.playerData?.shards||0)<unitCost;
   const relay=document.getElementById('buyUfoComboRelayBtn'),relayPrice=document.getElementById('ufoComboRelayPrice');
-  const relayUnlocked=(state.ownedMoons||[]).includes('cosmic')&&level>0;
+  const relayUnlocked=(state.ownedMoons||[]).includes('electric')&&level>0;
   if(relay){relay.disabled=!!state.ufoComboRelay||!relayUnlocked||(state.playerData?.shards||0)<c.COMBO_RELAY_COST;relay.textContent=state.ufoComboRelay?'Куплено':'Купить';}
-  if(relayPrice)relayPrice.textContent=state.ufoComboRelay?'Тарелки поддерживают набранное комбо':!relayUnlocked?'После покупки Космической луны и тарелки':formatNumber(c.COMBO_RELAY_COST)+' 💎';
+  if(relayPrice)relayPrice.textContent=state.ufoComboRelay?'Тарелки поддерживают набранное комбо':!relayUnlocked?'После покупки Электрической луны и тарелки':formatPrice(c.COMBO_RELAY_COST)+' 💎';
   const interval=state.ufoInterval||(c.BASE_INTERVAL-Math.max(0,level-1)*c.INTERVAL_REDUCTION);
   const buffs=document.getElementById('ufoBuffs');if(buffs)buffs.textContent=(state.activeMoons||[]).slice(0,state.maxSlots||1).map(id=>getUfoMoonDescription(id,state.moonLevels?.[id]||1)).join(' · ');
   info.textContent=level?'Ур. '+level+'/'+c.MAX_LEVEL+' · '+formatNumber(state.ufoDamage)+' урона раз в '+(interval/1000).toLocaleString('ru-RU')+' с':'50% финального урона раз в '+(c.BASE_INTERVAL/1000)+' с';
-  price.textContent=level>=c.MAX_LEVEL?'Улучшена полностью':state.currentLevel<c.UNLOCK_LEVEL?'Откроется с '+c.UNLOCK_LEVEL+' уровня':cost.toLocaleString('ru-RU')+' 💎';
+  price.textContent=level>=c.MAX_LEVEL?'Улучшена полностью':state.currentLevel<c.UNLOCK_LEVEL?'Откроется с '+c.UNLOCK_LEVEL+' уровня':formatPrice(cost)+' 💎';
+  price.title=formatExact(cost)+' 💎';if(unitPrice)unitPrice.title=formatExact(unitCost)+' 💎';if(relayPrice)relayPrice.title=formatExact(c.COMBO_RELAY_COST)+' 💎';
   button.disabled=level>=c.MAX_LEVEL||state.currentLevel<c.UNLOCK_LEVEL||(state.playerData?.shards||0)<cost;
   button.textContent=level>=c.MAX_LEVEL?'MAX':level?'Улучшить':'Купить';
 }
@@ -323,7 +325,8 @@ function _updateClickDamageShop() {
   const nextDamage = currentDamage + upgradeValue;
   const displayCost = state.testMode ? 0 : cost;
 
-  priceEl.textContent = `${formatNumber(displayCost)} 💎`;
+  priceEl.textContent = `${formatPrice(displayCost)} 💎`;
+  priceEl.title = formatExact(displayCost)+' 💎';
   levelEl.innerHTML = `Ур. ${currentLevelUpgrade}: ${currentDamage} → ${nextDamage} <span style="color: #4caf50; font-size: 0.75rem;">(+${upgradeValue})</span>`;
 
   const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
@@ -347,7 +350,8 @@ function _updateSlotShop() {
   ) : 0;
   const displayCost = state.testMode ? 0 : cost;
 
-  priceEl.textContent = canUpgrade ? `${formatNumber(displayCost)} 💎` : 'MAX';
+  priceEl.textContent = canUpgrade ? `${formatPrice(displayCost)} 💎` : 'MAX';
+  priceEl.title = canUpgrade ? formatExact(displayCost)+' 💎' : '';
   levelEl.textContent = `Слотов: ${currentSlots}/${CONSTANTS.MAX_SLOTS}`;
 
   const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
@@ -466,8 +470,8 @@ function _updateMoonShop() {
       }
       
       if (moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
-        actionsHtml += `<button class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}')">
-          ${canUpgrade ? `⬆️ ${formatNumber(displayUpgradeCost)} 💎` : (moonLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL ? 'MAX' : `Нужно ${formatNumber(displayUpgradeCost)} 💎`)}
+        actionsHtml += `<button title="${formatExact(displayUpgradeCost)} 💎" class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}')">
+          ${canUpgrade ? `⬆️ ${formatPrice(displayUpgradeCost)} 💎` : (moonLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL ? 'MAX' : `Нужно ${formatPrice(displayUpgradeCost)} 💎`)}
         </button>`;
       } else {
         actionsHtml += `<button class="btn-moon-upgrade cannot-afford" disabled>MAX УРОВЕНЬ</button>`;
@@ -478,8 +482,8 @@ function _updateMoonShop() {
       } else if (isLockedByLevel||isLockedByMoon) {
         actionsHtml += '<button class="btn-moon-locked" disabled>🔒</button>';
       } else {
-        actionsHtml += `<button class="btn-moon-buy ${canBuy ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.buyMoon('${id}')">
-          ${canBuy ? `Купить ${formatNumber(displayCost)} 💎` : `Нужно ${formatNumber(displayCost)} 💎`}
+        actionsHtml += `<button title="${formatExact(displayCost)} 💎" class="btn-moon-buy ${canBuy ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.buyMoon('${id}')">
+          ${canBuy ? `Купить ${formatPrice(displayCost)} 💎` : `Нужно ${formatPrice(displayCost)} 💎`}
         </button>`;
       }
     }
@@ -872,7 +876,7 @@ function _updateProfile() {
         <div class="stat-card">
           <div class="stat-card-icon">💎</div>
           <div class="stat-card-label">Всего осколков</div>
-          <div class="stat-card-value">${formatNumber(data.shards || 0)}</div>
+          <div class="stat-card-value">${formatMoney(data.shards || 0)}</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-icon">⏱️</div>
@@ -898,7 +902,7 @@ export function updateLiveCombatProfile(){
  if(s.firstStrike)rows.push('Тень: первый удар — гарантированный крит');
  if(s.nextPierce)rows.push('Лёд: следующий удар — пронзающий');
  if(s.execute)rows.push('Кровь: добивание босса активно');
- rows.push('За текущую луну: '+formatNumber(s.moonReward)+' 💎');
+ rows.push('За текущую луну: '+formatMoney(s.moonReward)+' 💎');
  if(state.ufoLevel)rows.push('Флот: '+s.ufoCount+' тарелок · '+formatNumber(s.ufoDamage)+' урона · интервал '+(s.ufoInterval/1000).toLocaleString('ru-RU')+' с · урон +'+pct(s.ufoDamageBonus)+' · крит '+pct(s.ufoCritChance)+(s.ufoChainEvery?' · цепь каждые '+s.ufoChainEvery+' выстрелов':''));
  const electric=(state.activeMoons||[]).includes('electric')?getMoonMechanicParams('electric',state.moonLevels?.electric||1):null;
  if(electric)rows.push('Молнии: случайные ×2 / ×5 / ×10; накопление неудач '+(state.runtime?._pityClicks||0));

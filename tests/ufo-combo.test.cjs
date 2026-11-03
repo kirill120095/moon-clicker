@@ -1,9 +1,9 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'');
 function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return code=>vm.runInContext(code,c);}
-test('combo relay requires the cosmic moon and a UFO, uses server price and cannot be bought twice',()=>{
+test('combo relay requires the electric moon and a UFO, uses server price and cannot be bought twice',()=>{
  const run=setup();assert.throws(()=>run("var s=freshState();s.playerData.shards=1e6;applyAction(s,'buyUfoComboRelay',{cost:0},100000)"));
- assert.throws(()=>run("s.ownedMoons.push('cosmic');applyAction(s,'buyUfoComboRelay',{},100000)"));
+ assert.throws(()=>run("s.ownedMoons.push('electric');applyAction(s,'buyUfoComboRelay',{},100000)"));
  assert.equal(run("s.ufoLevel=1;s=applyAction(s,'buyUfoComboRelay',{cost:0},100000);s.playerData.shards"),0);
  assert.equal(run("s.ufoComboRelay"),true);assert.throws(()=>run("applyAction(s,'buyUfoComboRelay',{},100001)"));
 });

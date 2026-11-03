@@ -517,7 +517,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   state.ufoLevel++;state.ufoCount=Math.max(1,state.ufoCount);state.ufoLastShotAt=now;
  } else if(action==='buyUfoComboRelay'){
   if(state.ufoComboRelay)throw Error('Комбо-ретранслятор уже куплен');
-  if(!state.ownedMoons.includes('cosmic'))throw Error('Сначала купите Космическую луну');
+  if(!state.ownedMoons.includes('electric'))throw Error('Сначала купите Электрическую луну');
   if(!state.ufoLevel)throw Error('Сначала купите тарелку');
   spend(CONSTANTS.UFO.COMBO_RELAY_COST);state.ufoComboRelay=true;
  } else if(action==='buyUfoUnit'){

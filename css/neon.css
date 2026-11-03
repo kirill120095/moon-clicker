@@ -131,3 +131,28 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 #hpBar{transition:width .055s linear!important}.damage-number{animation-duration:.65s!important;will-change:transform,opacity}.moon-inner{transition:scale .07s ease-out,box-shadow .15s ease!important}
 
 #authScreen.hidden ~ #authMonitorSettings{display:none!important}
+
+/* Owner radio studio and floating transport share the same player. */
+.radio-studio-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.radio-studio-heading h3{margin:5px 0}.radio-studio-eyebrow,.radio-mini-eyebrow{font-size:9px;letter-spacing:.16em;color:#67e8f9}
+.radio-studio-card{margin:12px 0;padding:14px;background:linear-gradient(135deg,#15233cbb,#1d1735aa);border:1px solid #67e8f92b;border-radius:14px}
+.radio-studio-card>h4{margin-top:0}.radio-studio-card summary{cursor:pointer;font-size:13px;font-weight:600;color:#c4b5fd;padding:4px 0}
+.radio-admin .radio-studio-card label:first-child{margin-top:0}
+.radio-admin input[type=file]{font-size:12px}.radio-admin select[multiple]{margin-bottom:10px}
+.radio-mini{position:fixed;top:20px;left:50%;transform:translateX(-50%);width:min(390px,calc(100vw - 28px));z-index:45;padding:12px 14px;border:1px solid #67e8f955;border-radius:18px;background:linear-gradient(125deg,#111f35f5,#221835f5);box-shadow:0 12px 36px #0006,0 0 24px #67e8f910;color:#e8edf8;backdrop-filter:blur(16px)}
+.radio-mini-heading{display:flex;gap:8px;align-items:center;min-width:0}
+.radio-live-dot{flex:none;width:6px;height:6px;border-radius:50%;background:#67e8f9;box-shadow:0 0 8px #67e8f9}
+.radio-mini-eyebrow{white-space:nowrap;font-size:8px}.radio-mini-heading strong{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500}
+.radio-mini button,.radio-mini select{border:1px solid #7686ad55;border-radius:10px;background:#17263d;color:#e8edf8;font:inherit}
+.radio-mini button{cursor:pointer;min-height:36px;padding:6px 9px;font-size:12px}.radio-mini button:hover{background:#28405b;border-color:#67e8f9}
+.radio-mini button:focus-visible,.radio-mini select:focus-visible{outline:2px solid #67e8f9;outline-offset:2px}
+#radioMiniCollapse{min-height:28px;min-width:30px;background:transparent;border:0;font-size:19px;padding:0 5px}
+.radio-mini-body{padding-top:10px}.radio-mini-select{display:flex;gap:8px}.radio-mini-select select{flex:1;min-width:0;padding:8px;font-size:12px}
+.radio-mini-controls{display:flex;gap:6px;margin-top:8px}.radio-mini-controls button{flex:1;white-space:nowrap}
+.radio-mini button[aria-pressed=true]{background:#164e63;border-color:#67e8f9;color:#cffafe}
+.radio-mini button:disabled{opacity:.45;cursor:wait}
+#radioMiniStatus{font-size:10px;line-height:1.4;color:#9cabc4;margin:8px 0 0;max-height:28px;overflow:auto}
+.radio-mini.collapsed{top:8px;width:min(330px,calc(100vw - 28px));padding:7px 12px;border-radius:0 0 16px 16px}
+.radio-mini.collapsed .radio-mini-body{display:none}
+.app:has(.radio-mini:not(.hidden):not(.collapsed)){padding-top:210px}
+@media(max-width:700px){.radio-mini{top:74px}.radio-mini.collapsed{top:5px}.app:has(.radio-mini:not(.hidden):not(.collapsed)){padding-top:250px}}

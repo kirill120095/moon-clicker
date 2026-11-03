@@ -8,13 +8,13 @@ test('late radio initialization cannot create subscriptions or timers after logo
  assert.equal(channels,0);assert.equal(timers,0);
 });
 test('radio refresh completion after logout cannot reconnect the channel',async()=>{
- let resolve,channels=0,timers=0,roleRequests=0;
+ let resolve,channels=0,timers=0,roleRequests=0,removed=0,cleared=0;
  class Audio{addEventListener(){}pause(){}}
- const client={from:()=>({select:()=>({eq:()=>({single:()=>new Promise(r=>{resolve=r;})})})}),rpc(){roleRequests++;},channel(){channels++;}};
- const context={initSupabase:async()=>client,Audio,audio:{apply(){}},document:{getElementById:()=>null,addEventListener(){}},setInterval(){timers++;},clearInterval(){},console};
+ const client={from:()=>({select:()=>({eq:()=>({single:()=>new Promise(r=>{resolve=r;})})})}),rpc(){roleRequests++;return Promise.resolve({data:false});},channel(){channels++;return {on(){return this;},subscribe(){return this;}};},removeChannel(){removed++;}};
+ const context={initSupabase:async()=>client,Audio,audio:{apply(){}},document:{getElementById:()=>null,addEventListener(){}},setInterval(){timers++;return timers;},clearInterval(id){if(id)cleared++;},console};
  vm.createContext(context);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/radio.js'),'utf8')),context);
  const pending=vm.runInContext("radio.connect({id:'user'})",context);await new Promise(r=>setImmediate(r));vm.runInContext('radio.disconnect()',context);resolve({data:{version:1,track_path:null},error:null});await pending;
- assert.equal(channels,0);assert.equal(timers,0);assert.equal(roleRequests,0);
+ assert.equal(channels,1);assert.equal(timers,2);assert.equal(roleRequests,1);assert.equal(removed,1);assert.equal(cleared,2);assert.equal(vm.runInContext('radio.current',context),null);
 });
 test('parallel game initialization shares one load and cancellation starts no timers',async()=>{
  let resolve,loads=0,timers=0;
