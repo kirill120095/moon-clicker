@@ -129,3 +129,5 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 .live-combat-effects p{font-size:12px;line-height:1.6;color:#cbd5e1;margin:8px 0}.combat-live-note{font-size:11px;color:#94a3b8;line-height:1.5}
 
 #hpBar{transition:width .055s linear!important}.damage-number{animation-duration:.65s!important;will-change:transform,opacity}.moon-inner{transition:scale .07s ease-out,box-shadow .15s ease!important}
+
+#authScreen.hidden ~ #authMonitorSettings{display:none!important}
