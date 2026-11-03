@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="css/game.css?v=9">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
-  <link rel="stylesheet" href="css/neon.css?v=ufo-combo-1">
+  <link rel="stylesheet" href="css/neon.css?v=admin-reset-1">
 </head>
 <body>
   <!-- ЗВЁЗДНОЕ НЕБО -->
@@ -165,7 +165,11 @@
  <label for="radioFile">Добавить аудиофайлы · до 20 МБ каждый</label><input id="radioFile" type="file" accept="audio/*" multiple><button id="radioUpload" class="btn-action">Загрузить и добавить</button>
  <label for="radioTracks">Библиотека · можно выбрать несколько треков</label><select id="radioTracks" multiple size="5"></select><button id="radioAddTracks" class="btn-action">Добавить выбранные треки</button>
  <p id="radioStatus" role="status" aria-live="polite"></p></section>
-          <p class="settings-note">Настройки сохраняются на этом устройстве. Музыка останавливается в скрытой вкладке.</p></section>
+          <section id="gameAdminSettings" class="game-admin-settings hidden">
+ <h3>Управление игрой</h3><p>Полный сброс игрового прогресса у всех игроков. Аккаунты и данные входа сохраняются.</p>
+ <button id="resetAllProgressBtn" type="button" class="btn-action reset-all-button">⚠ Сбросить прогресс всех аккаунтов</button>
+ </section>
+ <p class="settings-note">Настройки сохраняются на этом устройстве. Музыка останавливается в скрытой вкладке.</p></section>
         </div>   </div>
       
       <button class="panel-edge-close panel-edge-close-left" onclick="window.closePanel('profilePanel')" title="Закрыть">
@@ -303,33 +307,40 @@
   <!-- SUPABASE CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.1/dist/umd/supabase.min.js"></script>
   
+  <dialog id="globalResetDialog" class="global-reset-dialog" aria-labelledby="globalResetTitle" aria-describedby="globalResetMessage">
+ <h2 id="globalResetTitle"></h2><p id="globalResetMessage"></p>
+ <div id="globalResetPhraseRow" class="hidden"><label for="globalResetPhrase">Введите: <strong>СБРОСИТЬ ВЕСЬ ПРОГРЕСС</strong></label><input id="globalResetPhrase" type="text" autocomplete="off" spellcheck="false" aria-label="Фраза подтверждения общего сброса"></div>
+ <p id="globalResetError" role="alert"></p>
+ <div class="global-reset-actions"><button id="globalResetCancel" type="button" class="btn-action">Отмена</button><button id="globalResetNext" type="button" class="btn-action">Продолжить</button></div>
+ </dialog>
   <!-- ОСНОВНОЙ СКРИПТ -->
   <script type="importmap">
 {
   "imports": {
-    "./src/core/config.js": "./src/core/config.js?v=ufo-combo-1",
-    "./src/core/constants.js": "./src/core/constants.js?v=ufo-combo-1",
+    "./src/core/config.js": "./src/core/config.js?v=admin-reset-1",
+    "./src/core/constants.js": "./src/core/constants.js?v=admin-reset-1",
     "./src/core/state.js": "./src/core/state.js?v=season2-neon-1",
-    "./src/index.js": "./src/index.js?v=ufo-combo-1",
-    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=ufo-combo-1",
+    "./src/index.js": "./src/index.js?v=admin-reset-1",
+    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=admin-reset-1",
     "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
     "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
-    "./src/modules/game/game.js": "./src/modules/game/game.js?v=ufo-combo-1",
+    "./src/modules/game/game.js": "./src/modules/game/game.js?v=admin-reset-1",
     "./src/modules/game/rewards.js": "./src/modules/game/rewards.js?v=season2-neon-1",
     "./src/modules/network/cache.js": "./src/modules/network/cache.js?v=season2-neon-1",
-    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=ufo-combo-1",
-    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=ufo-combo-1",
-    "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=ufo-combo-1",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=ufo-combo-1",
-    "./src/utils/numbers.js": "./src/utils/numbers.js?v=ufo-combo-1",
+    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=admin-reset-1",
+    "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=admin-reset-1",
+    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=admin-reset-1",
+    "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=admin-reset-1",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=admin-reset-1",
+    "./src/utils/numbers.js": "./src/utils/numbers.js?v=admin-reset-1",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=ufo-combo-1",
-    "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=ufo-combo-1",
-    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=ufo-combo-1"
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=admin-reset-1",
+    "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=admin-reset-1",
+    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=admin-reset-1"
   }
 }
   </script>
-  <script type="module" src="src/index.js?v=ufo-combo-1"></script>
+  <script type="module" src="src/index.js?v=admin-reset-1"></script>
 </body>
 </html>

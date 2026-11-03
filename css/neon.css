@@ -110,3 +110,16 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 .radio-playlist-items button{padding:6px 9px;background:#15213b;color:#e8edf8;border:1px solid #667493;border-radius:6px;cursor:pointer}
 .radio-admin h4{font-size:13px;margin:18px 0 8px}.radio-admin button:disabled{opacity:.45}
 @media(max-width:380px){.radio-transport{grid-template-columns:1fr}.radio-create{flex-wrap:wrap}}
+
+.game-admin-settings{margin-top:24px;padding-top:16px;border-top:1px solid #fb718566}
+.game-admin-settings h3{font-size:16px;color:#fda4af}.game-admin-settings p{font-size:13px;line-height:1.6;color:#cbd5e1}
+.reset-all-button,.global-reset-dialog .reset-final{background:#881337!important;border:1px solid #fb7185!important;color:#fff!important}
+.global-reset-dialog{width:min(480px,calc(100vw - 32px));max-height:90vh;overflow:auto;border:1px solid #fb7185;border-radius:16px;background:#10182b;color:#f8fafc;padding:24px;box-shadow:0 24px 100px #000b}
+.global-reset-dialog::backdrop{background:#020617d9;backdrop-filter:blur(5px)}
+.global-reset-dialog h2{font-size:20px;color:#fda4af;margin:0 0 16px}
+.global-reset-dialog p,.global-reset-dialog label{font-size:14px;line-height:1.65}
+.global-reset-dialog label{display:block}.global-reset-dialog strong{display:block}
+.global-reset-dialog input{box-sizing:border-box;width:100%;padding:12px;margin:10px 0;border-radius:8px;border:1px solid #94a3b8;background:#020617;color:white}
+.global-reset-actions{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
+.global-reset-dialog .btn-action{white-space:normal;line-height:1.4}
+#globalResetError{color:#fda4af;overflow-wrap:anywhere}

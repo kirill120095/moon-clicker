@@ -1,3 +1,4 @@
+import { gameAdmin } from '../ui/admin.js';
 import { gameEngine } from './game.js';
 import { appState, state } from '../../core/state.js';
 import { CONSTANTS,QUESTS,ACHIEVEMENTS } from '../../core/constants.js';
@@ -35,6 +36,10 @@ function apply(result,hits=[]){
  const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
  if(result.revision&&result.revision<=lastRevision)return;
  lastRevision=result.revision||lastRevision;
+ if(s.resetId&&state.user?.id)try{
+  const key='moon_progress_reset_'+state.user.id;
+  if(localStorage.getItem(key)!==s.resetId){localStorage.removeItem('moon_completed_'+state.user.id);localStorage.setItem(key,s.resetId);}
+ }catch{}
  const previousQuests=state.quests||{},previousAchievements=state.achievements||{};
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
@@ -99,6 +104,7 @@ gameEngine.init=async()=>{
  active=true;ready=false;lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
  try{apply(await db.action('load'));}catch(error){active=false;gameEngine._isRunning=false;throw error;}
  radio.connect(state.user).catch(()=>{});
+ gameAdmin.connect(state.user).catch(()=>{});
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
  ticker=setInterval(()=>{
   if(!active)return;
@@ -118,7 +124,7 @@ gameEngine.init=async()=>{
  ping=setInterval(()=>{if(active&&!document.hidden&&!clickFlight&&!pendingClicks&&!syncing)send('sync').catch(()=>{});},20000);
  updateProfileAndLeaders();
 };
-gameEngine.destroy=()=>{radio.disconnect();active=false;ready=false;lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{gameAdmin.disconnect();radio.disconnect();active=false;ready=false;lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
  if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
