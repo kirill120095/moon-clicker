@@ -1,17 +1,20 @@
+import { ownerMonitor } from './monitor.js';
 import { initSupabase } from '../network/supabase.js';
 
 export const RESET_PHRASE='СБРОСИТЬ ВЕСЬ ПРОГРЕСС';
 class GameAdmin{
  constructor(){this.userId=null;this.client=null;this.allowed=false;this.bound=false;this.step=1;this.busy=false;this.generation=0;this.requestId=null;}
  async connect(user){
+  if(this.userId===user?.id&&this.client)return;
   const generation=++this.generation;this.userId=user?.id;this.allowed=false;this.hide();
   if(!this.userId)return;this.bind();const client=await initSupabase();
   const {data,error}=await client.rpc('is_game_admin');
   if(generation!==this.generation)return;
   if(error)throw error;this.client=client;this.allowed=data===true;
   document.getElementById('gameAdminSettings')?.classList.toggle('hidden',!this.allowed);
+  if(this.allowed)ownerMonitor.connect(client);
  }
- disconnect(){this.generation++;this.userId=null;this.allowed=false;this.client=null;this.requestId=null;this.hide();this.dialog()?.close();}
+ disconnect(){ownerMonitor.disconnect();this.generation++;this.userId=null;this.allowed=false;this.client=null;this.requestId=null;this.hide();this.dialog()?.close();}
  hide(){document.getElementById('gameAdminSettings')?.classList.add('hidden');}
  dialog(){return document.getElementById('globalResetDialog');}
  bind(){

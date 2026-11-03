@@ -8,7 +8,7 @@ import {
   CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, 
   QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, 
   SYNERGY_BONUSES, RARITY_CONFIG,
-  getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, getPrestigeUpgradeCost, PRESTIGE_UPGRADES
+  getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, getPrestigeUpgradeCost, getCombatStats, PRESTIGE_UPGRADES
 } from '../../core/constants.js';
 import { getMaxHPForLevel, getTitle, getClickUpgradeCost } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
@@ -222,6 +222,8 @@ function _updateMoonAuras() {
   const moonContainer = document.getElementById('moonContainer');
   if (!moonContainer) return;
   
+  const auraKey=JSON.stringify((window._activeSynergies||[]).map(s=>s.key));
+  if(moonContainer.dataset.auraKey===auraKey)return;moonContainer.dataset.auraKey=auraKey;
   const auraClasses = [
     'aura-normal', 'aura-blood', 'aura-ice', 'aura-shadow',
     'aura-fire', 'aura-electric', 'aura-gold', 'aura-cosmic',
@@ -633,14 +635,9 @@ function _updateProfile() {
   const activeMoons = state.activeMoons || [];
   const ownedMoons = state.ownedMoons || [];
   const maxSlots = state.maxSlots || 1;
-  const totalDamageBonus = window._totalDamageBonus || 0;
-  const totalShardBonus = window._totalShardBonus || 0;
-  const totalCritChanceBonus = window._totalCritChanceBonus || 0;
-  const totalCritDamageBonus = window._totalCritDamageBonus || 0;
-  const baseDamage = data.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
-  const finalDamage = state.finalDamage || Math.round(baseDamage * (1 + totalDamageBonus));
-  const finalCritChance = Math.round((state.finalCritChance??(0.05 + totalCritChanceBonus + (state.prestigeSummary?.critBonus||0))) * 100);
-  const finalCritDamage = Math.round((2 + totalCritDamageBonus) * 100);
+  const combat=getCombatStats(state);
+  const totalDamageBonus=combat.damageBonus,totalShardBonus=combat.shardBonus,totalCritChanceBonus=combat.critChanceBonus,totalCritDamageBonus=combat.critDamageBonus;
+  const baseDamage=combat.baseDamage,finalDamage=combat.finalDamage,finalCritChance=Math.round(combat.critChance*100),finalCritDamage=Math.round(combat.critMultiplier*combat.critTier/2*100);
 
   let activeMoonsHtml = '';
   activeMoons.forEach(moonId => {
@@ -759,28 +756,28 @@ function _updateProfile() {
           <div class="combat-stat-icon">🗡️</div>
           <div class="combat-stat-info">
             <div class="combat-stat-label">Базовый урон</div>
-            <div class="combat-stat-value">${baseDamage}</div>
+            <div class="combat-stat-value" data-live-stat="baseDamage">${formatNumber(baseDamage)}</div>
           </div>
         </div>
         <div class="combat-stat">
           <div class="combat-stat-icon">💥</div>
           <div class="combat-stat-info">
-            <div class="combat-stat-label">Финальный урон</div>
-            <div class="combat-stat-value highlight">${finalDamage}</div>
+            <div class="combat-stat-label">Текущий урон · без случайных эффектов</div>
+            <div class="combat-stat-value highlight" data-live-stat="finalDamage">${formatNumber(finalDamage)}</div>
           </div>
         </div>
         <div class="combat-stat">
           <div class="combat-stat-icon">🎯</div>
           <div class="combat-stat-info">
             <div class="combat-stat-label">Шанс крита</div>
-            <div class="combat-stat-value">${finalCritChance}%</div>
+            <div class="combat-stat-value" data-live-stat="critChance">${finalCritChance}%</div>
           </div>
         </div>
         <div class="combat-stat">
           <div class="combat-stat-icon">⚡</div>
           <div class="combat-stat-info">
             <div class="combat-stat-label">Урон крита</div>
-            <div class="combat-stat-value">${finalCritDamage}%</div>
+            <div class="combat-stat-value" data-live-stat="critDamage">${formatNumber(combat.critDamage)} · ${finalCritDamage}%</div>
           </div>
         </div>
       </div>
@@ -795,26 +792,27 @@ function _updateProfile() {
         <div class="bonus-card damage-bonus">
           <div class="bonus-card-icon">⚔️</div>
           <div class="bonus-card-label">Урон</div>
-          <div class="bonus-card-value">+${Math.round(totalDamageBonus * 100)}%</div>
+          <div class="bonus-card-value" data-live-stat="damageBonus">+${Math.round(totalDamageBonus * 100)}%</div>
         </div>
         <div class="bonus-card shard-bonus">
           <div class="bonus-card-icon">💎</div>
           <div class="bonus-card-label">Осколки</div>
-          <div class="bonus-card-value">+${Math.round(totalShardBonus * 100)}%</div>
+          <div class="bonus-card-value" data-live-stat="shardBonus">+${Math.round(totalShardBonus * 100)}%</div>
         </div>
         <div class="bonus-card crit-chance-bonus">
           <div class="bonus-card-icon">🎯</div>
           <div class="bonus-card-label">Крит шанс</div>
-          <div class="bonus-card-value">+${Math.round(totalCritChanceBonus * 100)}%</div>
+          <div class="bonus-card-value" data-live-stat="critChanceBonus">+${Math.round(totalCritChanceBonus * 100)}%</div>
         </div>
         <div class="bonus-card crit-damage-bonus">
           <div class="bonus-card-icon">💥</div>
           <div class="bonus-card-label">Крит урон</div>
-          <div class="bonus-card-value">+${Math.round(totalCritDamageBonus * 100)}%</div>
+          <div class="bonus-card-value" data-live-stat="critDamageBonus">+${Math.round(totalCritDamageBonus * 100)}%</div>
         </div>
       </div>
     </div>
 
+    <div class="profile-block"><div class="profile-block-header"><span class="block-icon">⏱️</span><span class="block-title">Действующие эффекты · сейчас</span></div><div id="liveCombatEffects" class="live-combat-effects"></div><p class="combat-live-note">Обновляется в реальном времени. Случайные молнии и двойные криты указаны отдельно от обычного урона.</p></div>
     <div class="profile-block">
       <div class="profile-block-header">
         <span class="block-icon">⭐</span>
@@ -881,6 +879,27 @@ function _updateProfile() {
       </div>
     </div>
   `;
+}
+
+export function updateLiveCombatProfile(){
+ const panel=document.getElementById('profilePanel'),tab=document.getElementById('profileTabContent');
+ if(!panel||panel.classList.contains('hidden')||tab&&!tab.classList.contains('active'))return;
+ const s=getCombatStats(state),pct=n=>(n*100).toLocaleString('ru-RU',{maximumFractionDigits:2})+'%';
+ const values={baseDamage:formatNumber(s.baseDamage),finalDamage:formatNumber(s.finalDamage),critChance:pct(s.critChance),
+ critDamage:formatNumber(s.critDamage)+' · '+(s.critMultiplier*s.critTier/2).toLocaleString('ru-RU',{maximumFractionDigits:2})+'×'+(s.extraCritChance?' · '+pct(s.extraCritChance)+' → '+formatNumber(s.nextCritDamage):''),
+ damageBonus:'+'+pct(s.damageBonus),shardBonus:'+'+pct(s.shardBonus),critChanceBonus:'+'+pct(s.critChanceBonus),critDamageBonus:'+'+pct(s.critDamageBonus)};
+ for(const [key,text]of Object.entries(values)){const el=document.querySelector('[data-live-stat="'+key+'"]');if(el&&el.textContent!==text)el.textContent=text;}
+ const rows=s.sources.filter(b=>b.damage||b.shards||b.crit||b.critDamage).map(b=>b.name+': '+[['урон',b.damage],['добыча',b.shards],['шанс крита',b.crit],['крит. урон',b.critDamage]].filter(([,v])=>v).map(([label,v])=>label+' +'+pct(v)).join(' · '));
+ if(s.goldMultiplier!==1)rows.push('Золотая луна: награда ×'+s.goldMultiplier);
+ if(s.fullCombo)rows.push('Полное комбо: бонус добычи активен');
+ if(s.firstStrike)rows.push('Тень: первый удар — гарантированный крит');
+ if(s.nextPierce)rows.push('Лёд: следующий удар — пронзающий');
+ if(s.execute)rows.push('Кровь: добивание босса активно');
+ rows.push('За текущую луну: '+formatNumber(s.moonReward)+' 💎');
+ if(state.ufoLevel)rows.push('Флот: '+s.ufoCount+' тарелок · '+formatNumber(s.ufoDamage)+' урона · интервал '+(s.ufoInterval/1000).toLocaleString('ru-RU')+' с · урон +'+pct(s.ufoDamageBonus)+' · крит '+pct(s.ufoCritChance)+(s.ufoChainEvery?' · цепь каждые '+s.ufoChainEvery+' выстрелов':''));
+ const electric=(state.activeMoons||[]).includes('electric')?getMoonMechanicParams('electric',state.moonLevels?.electric||1):null;
+ if(electric)rows.push('Молнии: случайные ×2 / ×5 / ×10; накопление неудач '+(state.runtime?._pityClicks||0));
+ const target=document.getElementById('liveCombatEffects'),signature=JSON.stringify(rows);if(target&&target.dataset.signature!==signature){target.replaceChildren();for(const text of rows){const row=document.createElement('p');row.textContent=text;target.appendChild(row);}target.dataset.signature=signature;}
 }
 
 let leadersUpdatedAt = 0;

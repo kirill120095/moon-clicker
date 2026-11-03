@@ -32,22 +32,28 @@ function readDuration(source){
  });
 }
 class GameRadio{
- constructor(){this.client=null;this.channel=null;this.timer=null;this.tickTimer=null;this.userId=null;this.current=null;this.player=null;this.bound=false;this.admin=false;this.playlists=[];this.selectedId=null;this.library=[];this.playingKey=null;this.busy=false;}
+ constructor(){this.client=null;this.channel=null;this.timer=null;this.tickTimer=null;this.userId=null;this.current=null;this.player=null;this.bound=false;this.admin=false;this.playlists=[];this.selectedId=null;this.library=[];this.playingKey=null;this.busy=false;this.generation=0;this.refreshPending=null;this.nextRefreshAt=0;}
  async connect(user){
   if(this.userId===user?.id)return;
-  this.disconnect();this.userId=user?.id;if(!this.userId)return;
-  this.client=await initSupabase();
+  this.disconnect();this.userId=user?.id;if(!this.userId)return;const generation=this.generation;
+  const client=await initSupabase();if(generation!==this.generation)return;this.client=client;
   if(!this.player){this.player=new Audio();this.player.preload='metadata';this.player.addEventListener('loadedmetadata',()=>this.tick());this.player.addEventListener('ended',()=>this.tick());this.player.addEventListener('error',()=>{audio.radioActive=false;audio.apply();this.status('Не удалось воспроизвести трек.');});}
   audio.radioElement=this.player;this.bind();
-  await this.refresh();
-  const {data,error}=await this.client.rpc('is_radio_admin');if(error)throw error;
+  await this.refresh();if(generation!==this.generation)return;
+  const {data,error}=await this.client.rpc('is_radio_admin');if(generation!==this.generation)return;if(error)throw error;
   this.admin=data===true;document.getElementById('radioAdmin')?.classList.toggle('hidden',!this.admin);
-  if(this.admin){await this.listPlaylists();await this.listTracks();}
-  this.channel=this.client.channel('moon-radio').on('postgres_changes',{event:'UPDATE',schema:'public',table:'game_radio',filter:'id=eq.1'},event=>this.accept(event.new)).subscribe(status=>{if(status==='SUBSCRIBED')this.refresh().catch(()=>{});});
+  if(this.admin){await this.listPlaylists();if(generation!==this.generation)return;await this.listTracks();if(generation!==this.generation)return;}
+  this.channel=this.client.channel('moon-radio').on('postgres_changes',{event:'UPDATE',schema:'public',table:'game_radio',filter:'id=eq.1'},event=>{if(generation===this.generation)this.accept(event.new);}).subscribe(status=>{if(status==='SUBSCRIBED'&&generation===this.generation)this.refresh().catch(()=>{});});
   this.timer=setInterval(()=>{if(!document.hidden)this.refresh().catch(()=>{});},15000);
   this.tickTimer=setInterval(()=>{if(!document.hidden)this.tick();},500);
  }
- async refresh(){const {data,error}=await this.client.from('game_radio').select('*').eq('id',1).single();if(error)throw error;this.accept(data);}
+ async refresh(){
+  if(!this.client||Date.now()<this.nextRefreshAt)return;
+  if(this.refreshPending)return this.refreshPending;
+  const client=this.client,generation=this.generation;
+  const pending=(async()=>{const {data,error}=await client.from('game_radio').select('*').eq('id',1).single();if(generation!==this.generation)return;if(error){this.nextRefreshAt=Date.now()+60000;throw error;}this.nextRefreshAt=0;this.accept(data);})();
+  this.refreshPending=pending;try{return await pending;}finally{if(this.refreshPending===pending)this.refreshPending=null;}
+ }
  accept(row){if(!row||this.current?.version===row.version)return;this.current=row;this.playingKey=null;this.tick();this.renderModes();}
  tick(){
   if(!this.player)return;
@@ -67,7 +73,7 @@ class GameRadio{
   if(!document.hidden&&this.player.paused)this.player.play().catch(()=>{});
  }
  play(){this.tick();}
- disconnect(){clearInterval(this.timer);clearInterval(this.tickTimer);this.timer=null;this.tickTimer=null;if(this.channel)this.client?.removeChannel(this.channel);this.channel=null;this.player?.pause();this.current=null;this.playingKey=null;this.userId=null;this.admin=false;this.playlists=[];this.selectedId=null;audio.radioActive=false;audio.radioElement=null;audio.apply();document.getElementById('radioAdmin')?.classList.add('hidden');}
+ disconnect(){this.generation++;this.refreshPending=null;this.nextRefreshAt=0;clearInterval(this.timer);clearInterval(this.tickTimer);this.timer=null;this.tickTimer=null;if(this.channel)Promise.resolve(this.client?.removeChannel(this.channel)).catch(()=>{});this.channel=null;this.player?.pause();this.current=null;this.playingKey=null;this.userId=null;this.admin=false;this.playlists=[];this.selectedId=null;audio.radioActive=false;audio.radioElement=null;audio.apply();document.getElementById('radioAdmin')?.classList.add('hidden');}
  status(text){const el=document.getElementById('radioStatus');if(el)el.textContent=text;}
  async run(task){
   if(this.busy)return;this.busy=true;
@@ -76,7 +82,8 @@ class GameRadio{
  }
  selected(){return this.playlists.find(p=>p.id===this.selectedId);}
  async listPlaylists(){
-  const {data,error}=await this.client.from('radio_playlists').select('*').order('updated_at',{ascending:false});if(error)throw error;
+  const generation=this.generation;
+  const {data,error}=await this.client.from('radio_playlists').select('*').order('updated_at',{ascending:false});if(generation!==this.generation)return;if(error)throw error;
   this.playlists=data||[];if(!this.selected())this.selectedId=this.playlists[0]?.id||null;this.renderPlaylist();
  }
  renderPlaylist(){
@@ -114,9 +121,10 @@ class GameRadio{
   await this.savePlaylist({...p,tracks});this.status('Плейлист сохранён. Изменения вступят в эфир после нажатия «Воспроизвести».');
  }
  async listTracks(){
+  const generation=this.generation;
   let all=[],offset=0;
-  for(;;){const {data,error}=await this.client.storage.from('game-radio').list('',{limit:100,offset,sortBy:{column:'created_at',order:'desc'}});if(error)throw error;all.push(...(data||[]).filter(i=>i.id));if((data||[]).length<100)break;offset+=100;}
-  const {data:metadata,error:metadataError}=await this.client.from('radio_library').select('path,title,duration');if(metadataError)throw metadataError;
+  for(;;){const {data,error}=await this.client.storage.from('game-radio').list('',{limit:100,offset,sortBy:{column:'created_at',order:'desc'}});if(generation!==this.generation)return;if(error)throw error;all.push(...(data||[]).filter(i=>i.id));if((data||[]).length<100)break;offset+=100;}
+  const {data:metadata,error:metadataError}=await this.client.from('radio_library').select('path,title,duration');if(generation!==this.generation)return;if(metadataError)throw metadataError;
   const byPath=new Map((metadata||[]).map(t=>[t.path,t]));this.library=all.map(item=>({...item,...byPath.get(item.name)}));const select=document.getElementById('radioTracks');if(!select)return;select.replaceChildren();
   for(const item of this.library){const option=document.createElement('option');option.value=item.name;option.textContent=item.title||trackLabel(item.name);select.appendChild(option);}
  }

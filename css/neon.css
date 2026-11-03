@@ -123,3 +123,9 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 .global-reset-actions{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}
 .global-reset-dialog .btn-action{white-space:normal;line-height:1.4}
 #globalResetError{color:#fda4af;overflow-wrap:anywhere}
+
+.game-monitor{margin-top:22px;border-top:1px solid #67e8f955;padding-top:16px}.game-monitor h3{font-size:16px;color:#a5f3fc}.game-monitor p,.game-monitor h4{font-size:12px;line-height:1.5}.game-monitor pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;background:#020617;color:#cbd5e1;padding:12px;border:1px solid #334155;border-radius:8px;font:11px/1.6 monospace}.game-monitor .btn-action{font-size:12px;margin:4px 6px 4px 0}
+.auth-monitor{position:fixed;bottom:12px;right:12px;z-index:3000;width:min(500px,calc(100vw - 24px));max-height:45vh;overflow:auto;background:#0f172a;padding:16px;border-radius:12px;border:1px solid #22d3ee}
+.live-combat-effects p{font-size:12px;line-height:1.6;color:#cbd5e1;margin:8px 0}.combat-live-note{font-size:11px;color:#94a3b8;line-height:1.5}
+
+#hpBar{transition:width .055s linear!important}.damage-number{animation-duration:.65s!important;will-change:transform,opacity}.moon-inner{transition:scale .07s ease-out,box-shadow .15s ease!important}

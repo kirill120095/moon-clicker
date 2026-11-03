@@ -16,6 +16,7 @@ function setup() {
   const intervals = new Map(), storage = new Map(), writes = [];
   let nextId = 1, leaders = 0;
   const context = {
+    recordDiagnostic(){}, gameAdmin:{connect:async()=>{}},
     console: { log() {}, error() {}, warn() {} }, window: {},
     document: { getElementById() { return null; } },
     localStorage: { getItem: k => storage.get(k) ?? null,
@@ -61,6 +62,7 @@ test('HP changes do not refresh the leaderboard', () => {
 });
 test('a failed player load cannot enable gameplay', async () => {
   const h = setup();
+  h.run('gameEngine.init=async()=>{throw new Error("Load failed");};');
   await assert.rejects(h.run('handleSuccessfulLogin({id:"A"})'));
   assert.equal(h.run('state.user'), null);
   assert.equal(h.intervals.size, 0);

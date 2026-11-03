@@ -5,7 +5,7 @@ function setup(){
   const classes=new Set();nodes[id]={value:'',textContent:'',disabled:false,open:false,classList:{add:v=>classes.add(v),toggle(v,on){if(on)classes.add(v);else classes.delete(v);},contains:v=>classes.has(v)},addEventListener(){},focus(){},showModal(){this.open=true;},close(){this.open=false;}};
  }
  const client={rpc:async(name,args)=>{calls.push({name,args});if(name==='is_game_admin')return {data:admin};return fail?{error:Error('Network failed')}:{data:{players_reset:4}};}};
- const context={document:{getElementById:id=>nodes[id]},initSupabase:async()=>client,sessionStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},crypto:{randomUUID:()=> 'request-'+(++uuids)},window:{location:{reload(){reloads++;}}},console};
+ const context={ownerMonitor:{connect(){},disconnect(){}},document:{getElementById:id=>nodes[id]},initSupabase:async()=>client,sessionStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v),removeItem:k=>store.delete(k)},crypto:{randomUUID:()=> 'request-'+(++uuids)},window:{location:{reload(){reloads++;}}},console};
  vm.createContext(context);const source=fs.readFileSync(path.join(__dirname,'../src/modules/ui/admin.js'),'utf8').replace(/^import .*;$/gm,'').replace(/^export /gm,'');vm.runInContext(source,context);
  return {nodes,calls,store,run:code=>vm.runInContext(code,context),reloads:()=>reloads,setFail:v=>{fail=v;},setAdmin:v=>{admin=v;}};
 }

@@ -6,7 +6,7 @@ import { db } from '../network/supabase.js';
 import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
 import { radio } from '../ui/radio.js';
-import { showToast, updateUI,updateShopUI,updateProfileAndLeaders,updateQuestAndAchievementUI,updateTimerBar,updateHPBar } from '../ui/renderer.js';
+import { showToast, updateUI,updateShopUI,updateProfileAndLeaders,updateQuestAndAchievementUI,updateTimerBar,updateHPBar,updateLiveCombatProfile } from '../ui/renderer.js';
 let previewHits=[];
 function refreshPreview(){gameEngine._previewDamage=previewHits.reduce((sum,hit)=>sum+hit.damage,0);updateHPBar();}
 function previewDamage(){
@@ -30,7 +30,7 @@ function renderFleet(count){
  orbit.dataset.count=String(count);
 }
 
-let nextUfoSync=0;
+let nextUfoSync=0,lastErrorToast=0,lastErrorMessage='';
 let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
 function apply(result,hits=[]){
  const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
@@ -43,7 +43,7 @@ function apply(result,hits=[]){
  const previousQuests=state.quests||{},previousAchievements=state.achievements||{};
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
- appState.setMany({prestige:s.prestige,prestigeSummary:s.prestigeSummary,runMaxLevel:s.runMaxLevel,moonSerial:s.moonSerial,ufoCount:s.ufoCount||0,ufoComboRelay:!!s.ufoComboRelay,gameCompleted:s.gameCompleted,maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,finalCritChance:s.finalCritChance,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
+ appState.setMany({runtime:{...(s.runtime||{})},lastClickAt:s.lastClickAt,lastComboAt:s.lastComboAt,serverClockOffset:offset,prestige:s.prestige,prestigeSummary:s.prestigeSummary,runMaxLevel:s.runMaxLevel,moonSerial:s.moonSerial,ufoCount:s.ufoCount||0,ufoComboRelay:!!s.ufoComboRelay,gameCompleted:s.gameCompleted,maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,finalCritChance:s.finalCritChance,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
  clickCount:s.clickCount,totalSecondsPlayed:s.totalSecondsPlayed,playerData:{...s.playerData,level:s.currentLevel,total_clicks:s.clickCount,total_seconds_played:s.totalSecondsPlayed},
  activeMoon:s.activeMoon,activeMoons:s.activeMoons,ownedMoons:s.ownedMoons,moonLevels:s.moonLevels,
  maxSlots:s.maxSlots,bossKills:s.bossKills,quests:s.quests,achievements:s.achievements,
@@ -54,6 +54,7 @@ function apply(result,hits=[]){
  gameEngine._lastComboTime=Math.max(s.lastClickAt||0,s.lastComboAt||0)-offset;
  gameEngine.recalcMoonBonuses();refreshBuffs();updateUI();updateShopUI();updateQuestAndAchievementUI();
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
+ updateLiveCombatProfile();
  renderFleet(s.ufoCount||(s.ufoLevel?1:0));
  if(ready){
   for(const [id,q]of Object.entries(s.quests||{}))if(q.completed&&!previousQuests[id]?.completed)showToast('🎯 Квест выполнен: '+(QUESTS[id]?.name||id),'success',3500);
@@ -80,7 +81,7 @@ async function send(action,payload={}){
   const hits=action==='click'?previewHits.splice(0,payload.count):[];
   gameEngine._previewDamage=previewHits.reduce((sum,hit)=>sum+hit.damage,0);
   if(active)apply(result,hits);return result;}
- catch(error){if(action==='click'){previewHits.splice(0,payload.count);refreshPreview();}if(status)status.textContent='Нет связи — действие не подтверждено';showToast(error.message,'warning');throw error;}
+ catch(error){if(action==='click'){previewHits.splice(0,payload.count);refreshPreview();}if(status)status.textContent='Нет связи — действие не подтверждено';if(error.message!==lastErrorMessage||Date.now()-lastErrorToast>5000){showToast(error.message,'warning');lastErrorMessage=error.message;lastErrorToast=Date.now();}throw error;}
 }
 async function flush(){
  if(flushTimer){clearTimeout(flushTimer);flushTimer=null;}
@@ -99,16 +100,20 @@ async function command(action,payload={},purchase=false){
  try{do{await flush();}while(active&&pendingClicks>0);await send(action,payload);if(purchase)audio.purchase();updateProfileAndLeaders();}
  finally{purchasing=false;}
 }
+let initializing=null,initGeneration=0;
 const oldDestroy=gameEngine.destroy.bind(gameEngine);
-gameEngine.init=async()=>{
+gameEngine.init=()=>{
+ if(initializing)return initializing;
+ const generation=++initGeneration;
+ const pending=(async()=>{
  active=true;ready=false;lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
- try{apply(await db.action('load'));}catch(error){active=false;gameEngine._isRunning=false;throw error;}
+ try{const loaded=await db.action('load');if(generation!==initGeneration||!active)throw Object.assign(Error('Загрузка отменена'),{code:'LOAD_CANCELLED'});apply(loaded);}catch(error){if(generation===initGeneration){active=false;gameEngine._isRunning=false;}throw error;}
  radio.connect(state.user).catch(()=>{});
  gameAdmin.connect(state.user).catch(()=>{});
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
  ticker=setInterval(()=>{
   if(!active)return;
-  refreshBuffs();
+  refreshBuffs();updateLiveCombatProfile();
   if(state.ufoLevel&&state.ufoNextShotAt<=Date.now()+offset&&!document.hidden&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextUfoSync){
    nextUfoSync=Date.now()+250;syncing=true;
    send('sync').catch(()=>{}).finally(()=>{syncing=false;});
@@ -123,8 +128,10 @@ gameEngine.init=async()=>{
  },250);
  ping=setInterval(()=>{if(active&&!document.hidden&&!clickFlight&&!pendingClicks&&!syncing)send('sync').catch(()=>{});},20000);
  updateProfileAndLeaders();
+ })();
+ const tracked=pending.finally(()=>{if(initializing===tracked)initializing=null;});initializing=tracked;return tracked;
 };
-gameEngine.destroy=()=>{gameAdmin.disconnect();radio.disconnect();active=false;ready=false;lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{initGeneration++;initializing=null;gameAdmin.disconnect();radio.disconnect();active=false;ready=false;lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
  if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;

@@ -8,7 +8,7 @@ export class AnimationManager {
     this._animations = new Map();
     this._rafId = null;
     this._isRunning = false;
-    this._baseDamage = 10;
+    this._baseDamage = 10;this._particleCount=0;this._lastLightEffect=0;this._damageNodes=[];
   }
 
   setBaseDamage(damage) {
@@ -67,7 +67,8 @@ export class AnimationManager {
   // ВСПЛЫВАЮЩИЙ УРОН
   // ============================================================
   showDamageNumber(x, y, damage, isCrit = false, isBoss = false) {
-    const damageEl = document.createElement('div');
+    while(this._damageNodes.length>=24)this._damageNodes.shift()?.remove();
+    const damageEl = document.createElement('div');this._damageNodes.push(damageEl);
     damageEl.className = 'damage-number';
     
     const color = this.getDamageColor(damage, isCrit);
@@ -94,8 +95,8 @@ export class AnimationManager {
     });
     
     setTimeout(() => {
-      if (damageEl.parentNode) damageEl.remove();
-    }, 1200);
+      if (damageEl.parentNode) damageEl.remove();const i=this._damageNodes.indexOf(damageEl);if(i>=0)this._damageNodes.splice(i,1);
+    }, 700);
   }
 
   // ============================================================
@@ -191,7 +192,10 @@ export class AnimationManager {
       return;
     }
 
-    for (let i = 0; i < count; i++) {
+    if(document.body.classList.contains('reduce-effects')||document.hidden)return;
+    const available=Math.max(0,64-this._particleCount);
+    for (let i = 0; i < Math.min(count,available); i++) {
+      this._particleCount++;
       const particle = document.createElement('div');
       particle.style.cssText = `
         position: fixed;
@@ -221,7 +225,7 @@ export class AnimationManager {
         duration: duration * (0.5 + Math.random() * 0.5),
         easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         fill: 'forwards'
-      }).onfinish = () => particle.remove();
+      }).onfinish = () => {particle.remove();this._particleCount=Math.max(0,this._particleCount-1);};
     }
   }
 
@@ -237,17 +241,18 @@ export class AnimationManager {
     // 1. Всплывающий урон
     if (showNumber) this.showDamageNumber(x, y, damage, isCrit, isBoss);
     
+    if(!isCrit&&performance.now()-this._lastLightEffect<90)return;this._lastLightEffect=performance.now();
     // 2. Ударная волна
     const shockwaveIntensity = isCrit ? 'crit' : 'normal';
     this.createShockwave(x, y, shockwaveIntensity, color);
     
     // 3. Частицы
-    const particleCount = isCrit ? 15 : 8;
+    const particleCount = isCrit ? 8 : 3;
     this.createParticles(null, {
       count: particleCount,
       color: color,
       size: isCrit ? 5 : 3,
-      duration: isCrit ? 800 : 600,
+      duration: isCrit ? 400 : 280,
       spread: isCrit ? 120 : 80,
       x, y
     });

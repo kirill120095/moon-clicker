@@ -1,3 +1,5 @@
+import { gameAdmin } from '../ui/admin.js';
+import { recordDiagnostic } from '../../utils/diagnostics.js';
 // ============================================================
 // АВТОРИЗАЦИЯ
 // ============================================================
@@ -33,7 +35,8 @@ export async function checkAuth() {
     console.error('[Auth] Check auth error:', error);
     showAuthScreen();
     hideApp();
-    showError('Не удалось загрузить сохранение. Попробуйте войти ещё раз.');
+    recordDiagnostic('auth','restore',error.code||'LOAD_ERROR',error);
+    showError('Не удалось загрузить сохранение: '+error.message);
   }
 }
 
@@ -120,8 +123,9 @@ async function handleSuccessfulLogin(user) {
   console.log('[Auth] Successful login:', user.email);
   
   appState.setUser(user);
+  gameAdmin.connect(user).catch(error=>recordDiagnostic('admin','access',error.code||'UNAVAILABLE',error));
   // Secure init loads the full authoritative state once, without a second profile fetch.
-  await gameEngine.init();
+  try{await gameEngine.init();}catch(error){if(error.code==='LOAD_CANCELLED')throw error;gameEngine.destroy();appState.setUser(null);gameAdmin.connect(user).catch(()=>{});throw error;}
   hideAuthScreen();
   showApp();
 
