@@ -1,4 +1,4 @@
-import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, PRESTIGE_UPGRADES } from './constants.js';
+import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, PRESTIGE_UPGRADES } from './constants.js';
 import { getMaxHPForLevel, getSlotUpgradeCost, getClickUpgradeCost } from './config.js';
 const showToast=()=>{},updateQuestUI=()=>{},updateAchievementUI=()=>{},updateProfileAndLeaders=()=>{};
 export function freshState(username='Игрок') {
@@ -109,7 +109,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   _applyMoonMechanics(baseDamage, bonuses, isBoss) {
     const mechanics = this._getActiveMechanics();
     let damageMultiplier = 1 + bonuses.totalDamageBonus;
-    let critChance = Math.min(0.95, 0.05 + bonuses.totalCritChanceBonus);
+    let critChance = Math.max(0, 0.05 + bonuses.totalCritChanceBonus);
     let critDamageMultiplier = 2 + bonuses.totalCritDamageBonus;
     let finalMultiplier = 1; // Применяется в самом конце
     let specialEffect = null;
@@ -176,13 +176,13 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
         
         // Уровень 5: Первый удар = гарантированный крит
         if (params.firstStrikeCrit && this._firstStrikeUsed === false && this._newMoon) {
-          critChance = 1.0;
+          critChance = Math.max(1, critChance);
           this._firstStrikeUsed = true;
         }
         
         // Уровень 10: при полном стаке +10% к шансу крита
         if (params.fullStackCritChance > 0 && stacks >= params.maxStacks) {
-          critChance = Math.min(critChance === 1 ? 1 : 0.95, critChance + params.fullStackCritChance);
+          critChance = critChance + params.fullStackCritChance;
         }
         
         // Тень НЕ сбрасывается при макс. стеках — только по таймауту бездействия
@@ -282,9 +282,10 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
     let finalDamage = Math.max(1, Math.round(baseDamage * damageMultiplier));
     
     // Критический удар
-    const isCrit = Math.random() < critChance;
+    const critical = rollCritical(critChance,critDamageMultiplier);
+    const isCrit = critical.isCrit;
     if (isCrit) {
-      finalDamage = Math.round(finalDamage * critDamageMultiplier);
+      finalDamage = Math.round(finalDamage * critical.multiplier);
       
       // Теневая ур. 7: двойной крит
       if (mechanics.includes('shadowCritStacks')) {
@@ -469,7 +470,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   }
   state.effects.push(event);
  }
- function ufoInterval(){return Math.round((CONSTANTS.UFO.BASE_INTERVAL-Math.max(0,state.ufoLevel-1)*CONSTANTS.UFO.INTERVAL_REDUCTION)*(1-getUfoBonuses(state,rules).haste));}
+ function ufoInterval(){return Math.max(CONSTANTS.UFO.MIN_INTERVAL,Math.round((CONSTANTS.UFO.BASE_INTERVAL-Math.max(0,state.ufoLevel-1)*CONSTANTS.UFO.INTERVAL_REDUCTION)*(1-getUfoBonuses(state,rules).haste)));}
  // Only server elapsed time permits shots; frequent syncs do not create extra damage.
  if(state.ufoLevel>0){
   if(!state.ufoLastShotAt||action==='load'||now-(state.lastActionAt||now)>CONSTANTS.UFO.MAX_IDLE_MS)state.ufoLastShotAt=now;
@@ -478,8 +479,8 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
    const shots=Math.max(0,Math.floor((now-state.ufoLastShotAt)/interval));
    for(let i=0;i<shots;i++){
     const buff=getUfoBonuses(state,rules);state.ufoShots=(state.ufoShots||0)+1;
-    const crit=Math.random()<buff.critChance,chain=buff.chainEvery&&state.ufoShots%buff.chainEvery===0;
-    const damage=Math.max(1,Math.round(finalDamage()*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+buff.damage)*(crit?buff.critMultiplier:1)*(chain?buff.chainMultiplier:1)));
+    const critical=rollCritical(buff.critChance,buff.critMultiplier),crit=critical.isCrit,chain=buff.chainEvery&&state.ufoShots%buff.chainEvery===0;
+    const damage=Math.max(1,Math.round(finalDamage()*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+buff.damage)*critical.multiplier*(chain?buff.chainMultiplier:1)));
     hit(damage,crit,'ufo');
    }
    state.ufoLastShotAt+=shots*interval;
@@ -504,8 +505,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  } else if(action==='buyPrestige'){
   if(!Object.hasOwn(PRESTIGE_UPGRADES,payload.id))throw Error('Неизвестное улучшение престижа');
   const def=PRESTIGE_UPGRADES[payload.id],p=state.prestige,level=p.upgrades?.[payload.id]||0;
-  if(level>=def.maxLevel)throw Error('Улучшение престижа достигло максимума');
-  const cost=Math.floor(def.baseCost*Math.pow(def.multiplier,level));
+  const cost=getPrestigeUpgradeCost(payload.id,level);
   if((p.coins||0)<cost)throw Error('Недостаточно монет престижа');
   p.coins-=cost;p.upgrades=p.upgrades||{};p.upgrades[payload.id]=level+1;
  } else if(action==='buyUfo'){
@@ -556,6 +556,9 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  state.ufoNextShotAt=state.ufoLevel?state.ufoLastShotAt+state.ufoInterval/Math.max(1,state.ufoCount):null;
  bankMilestones();
  state.prestigeSummary=getPrestigeSummary(state);
+ state.finalCritChance=Math.max(0,0.05+rules._calculateAllBonuses().totalCritChanceBonus);
+ const shadow=rules._getMechanicParamsForActiveMoon('shadow');
+ if(shadow?.fullStackCritChance>0&&rules._shadowCritStacks>=shadow.clicksPerStack*shadow.maxStacks)state.finalCritChance+=shadow.fullStackCritChance;
  state.gameCompleted=state.ownedMoons.includes('cosmic')&&(state.moonLevels.cosmic||0)>=CONSTANTS.LIMITS.MAX_MOON_LEVEL;
  state.runtime=Object.fromEntries(Object.keys(rules).map(k=>[k,rules[k]]));
  state.lastActionAt=now;state.testMode=false;

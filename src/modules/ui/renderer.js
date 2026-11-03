@@ -6,7 +6,7 @@ import {
   CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, 
   QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, 
   SYNERGY_BONUSES, RARITY_CONFIG,
-  getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, PRESTIGE_UPGRADES
+  getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, getPrestigeUpgradeCost, PRESTIGE_UPGRADES
 } from '../../core/constants.js';
 import { getMaxHPForLevel, getTitle, getClickUpgradeCost } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
@@ -273,10 +273,12 @@ export function updateShopUI() {
 
 export function updatePrestigeUI(){
  const p=getPrestigeSummary(state),container=document.getElementById('prestigeShop'),profile=document.getElementById('profilePrestige');
- if(profile&&!document.getElementById('profilePanel')?.classList.contains('hidden'))profile.innerHTML='<h3>🌟 Вечный престиж</h3><p>Монеты: <b>'+p.coins+'</b> · Вознесений: '+p.ascensions+'</p><p>Урон +'+Math.round(p.damageBonus*100)+'% · Добыча +'+Math.round(p.shardBonus*100)+'% · Крит +'+Math.round(p.critBonus*100)+'%</p><p>Тарелки: урон +'+Math.round(p.ufoDamage*100)+'% · интервал короче на '+Math.round(p.ufoHaste*100)+'%</p><p>Рекорд этого прохождения: '+p.runRecord+' · При вознесении: '+p.pendingCoins+' монет</p>';
+ if(profile&&!document.getElementById('profilePanel')?.classList.contains('hidden'))profile.innerHTML='<div class="profile-block"><div class="profile-block-header"><span class="block-icon">🌟</span><span class="block-title">Вечный престиж</span></div><div class="stats-grid">'+[
+ ['🌟','Монеты',p.coins],['✨','Вознесения',p.ascensions],['⚔️','Урон','+'+Math.round(p.damageBonus*100)+'%'],['💎','Добыча','+'+Math.round(p.shardBonus*100)+'%'],['🎯','Шанс крита','+'+Math.round(p.critBonus*100)+'%'],['🛸','Урон тарелок','+'+Math.round(p.ufoDamage*100)+'%'],['⏱️','Сокращение интервала',Math.round(p.ufoHaste*100)+'%'],['📈','Рекорд прохождения',p.runRecord],['🔮','При вознесении',p.pendingCoins+' 🌟']
+ ].map(([icon,label,value])=>'<div class="stat-card"><div class="stat-card-icon">'+icon+'</div><div class="stat-card-label">'+label+'</div><div class="stat-card-value">'+value+'</div></div>').join('')+'</div></div>';
  if(!container||!document.getElementById('prestigeTabContent')?.classList.contains('active'))return;
  container.innerHTML='<h3>🌟 Магазин вечных улучшений</h3><p class="prestige-summary">Монеты престижа: <b>'+p.coins+'</b></p><p class="ufo-description">В этом прохождении: '+p.runRecord+' уровней. При вознесении получите '+p.pendingCoins+' монет. Обычный прогресс сбросится; вечные бонусы и покупки сохранятся. В новом прохождении рубежи снова доступны.</p><button class="btn-action ascend-button" data-ascend '+(p.pendingCoins?'':'disabled')+'>Вознестись · +'+p.pendingCoins+' 🌟</button>'+
- Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=Math.floor(d.baseCost*Math.pow(d.multiplier,level));return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+level+'/'+d.maxLevel+'</p><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(level>=d.maxLevel||p.coins<cost?'disabled':'')+'>'+(level>=d.maxLevel?'MAX':cost+' 🌟')+'</button></div>';}).join('');
+ Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level);return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+level+' / ∞'+'</p><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(p.coins<cost?'disabled':'')+'>'+(formatNumber(cost)+' 🌟')+'</button></div>';}).join('');
 }
 
 function _updateUfoShop() {
@@ -639,7 +641,7 @@ function _updateProfile() {
   const totalCritDamageBonus = window._totalCritDamageBonus || 0;
   const baseDamage = data.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
   const finalDamage = state.finalDamage || Math.round(baseDamage * (1 + totalDamageBonus));
-  const finalCritChance = Math.round((0.05 + totalCritChanceBonus + (state.prestigeSummary?.critBonus||0)) * 100);
+  const finalCritChance = Math.round((state.finalCritChance??(0.05 + totalCritChanceBonus + (state.prestigeSummary?.critBonus||0))) * 100);
   const finalCritDamage = Math.round((2 + totalCritDamageBonus) * 100);
 
   let activeMoonsHtml = '';

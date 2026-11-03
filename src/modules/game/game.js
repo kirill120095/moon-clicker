@@ -4,7 +4,7 @@
 import { appState, state } from '../../core/state.js';
 import { 
   CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS, RARITY_CONFIG,
-  getMoonMechanicParams, getMoonUpgradeCostForLevel
+  rollCritical, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel
 } from '../../core/constants.js';
 import { 
   getMaxHPForLevel, isBossLevel, getSlotUpgradeCost 
@@ -313,7 +313,7 @@ export class GameEngine {
   _applyMoonMechanics(baseDamage, bonuses, isBoss) {
     const mechanics = this._getActiveMechanics();
     let damageMultiplier = 1 + bonuses.totalDamageBonus;
-    let critChance = Math.min(0.95, 0.05 + bonuses.totalCritChanceBonus);
+    let critChance = Math.max(0, 0.05 + bonuses.totalCritChanceBonus);
     let critDamageMultiplier = 2 + bonuses.totalCritDamageBonus;
     let finalMultiplier = 1; // Применяется в самом конце
     let specialEffect = null;
@@ -380,13 +380,13 @@ export class GameEngine {
         
         // Уровень 5: Первый удар = гарантированный крит
         if (params.firstStrikeCrit && this._firstStrikeUsed === false && this._newMoon) {
-          critChance = 1.0;
+          critChance = Math.max(1, critChance);
           this._firstStrikeUsed = true;
         }
         
         // Уровень 10: при полном стаке +10% к шансу крита
         if (params.fullStackCritChance > 0 && stacks >= params.maxStacks) {
-          critChance = Math.min(critChance === 1 ? 1 : 0.95, critChance + params.fullStackCritChance);
+          critChance = critChance + params.fullStackCritChance;
         }
         
         // Тень НЕ сбрасывается при макс. стеках — только по таймауту бездействия
@@ -486,9 +486,10 @@ export class GameEngine {
     let finalDamage = Math.max(1, Math.round(baseDamage * damageMultiplier));
     
     // Критический удар
-    const isCrit = Math.random() < critChance;
+    const critical = rollCritical(critChance,critDamageMultiplier);
+    const isCrit = critical.isCrit;
     if (isCrit) {
-      finalDamage = Math.round(finalDamage * critDamageMultiplier);
+      finalDamage = Math.round(finalDamage * critical.multiplier);
       
       // Теневая ур. 7: двойной крит
       if (mechanics.includes('shadowCritStacks')) {
