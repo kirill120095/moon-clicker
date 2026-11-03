@@ -96,3 +96,17 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 .prestige-item h4{font-size:15px;color:#e9d5ff;margin:0 0 8px}
 .ascend-button{width:100%;background:linear-gradient(120deg,#7c3aed,#0891b2)!important;color:#fff!important}
 .toast-container{display:flex;flex-direction:column;gap:8px}
+
+/* Radio playlists and statistics use the existing panel vocabulary. */
+.profile-prestige.prestige-stats{padding:0;border:0;background:none}
+.radio-transport{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.radio-admin .btn-action{font-size:12px;white-space:normal;line-height:1.4}
+.radio-admin .btn-action[aria-pressed="true"]{background:#155e75;border-color:#67e8f9;color:#ecfeff;box-shadow:0 0 12px #22d3ee33}
+.radio-create{display:flex;gap:8px;align-items:center}.radio-create input{min-width:0;flex:1}
+.radio-danger{color:#fda4af!important}
+.radio-playlist-items{list-style:none;padding:0;display:grid;gap:6px;max-height:240px;overflow:auto}
+.radio-playlist-items li{display:flex;gap:5px;align-items:center;border:1px solid #66749355;border-radius:8px;padding:8px;font-size:12px}
+.radio-playlist-items li span{flex:1;min-width:0;overflow-wrap:anywhere}
+.radio-playlist-items button{padding:6px 9px;background:#15213b;color:#e8edf8;border:1px solid #667493;border-radius:6px;cursor:pointer}
+.radio-admin h4{font-size:13px;margin:18px 0 8px}.radio-admin button:disabled{opacity:.45}
+@media(max-width:380px){.radio-transport{grid-template-columns:1fr}.radio-create{flex-wrap:wrap}}
