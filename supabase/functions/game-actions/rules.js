@@ -20,8 +20,9 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  if(action==='ascend'){
   const summary=getPrestigeSummary(state);if(!summary.canAscend)throw Error('Новые монеты престижа появятся на следующем рубеже '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровней');
   const p=structuredClone(state.prestige);p.coins=(p.coins||0)+summary.pendingCoins;p.runDamageSteps=0;p.runShardSteps=0;p.ascensions=(p.ascensions||0)+1;
+  const wheelEconomy=structuredClone(state.wheelEconomy||{}),wheelResult=state.wheelResult;
   const record=state.maxLevel,serial=(state.moonSerial||1)+1,name=state.playerData.username,totalClicks=state.clickCount;
-  state=freshState(name);state.clickCount=totalClicks;state.maxLevel=record;state.moonSerial=serial;state.prestige=p;state.playerData.shards=getPrestigeSummary(state).startShards;action='load';
+  state=freshState(name);state.wheelEconomy=wheelEconomy;state.wheelResult=wheelResult;state.clickCount=totalClicks;state.maxLevel=record;state.moonSerial=serial;state.prestige=p;state.playerData.shards=getPrestigeSummary(state).startShards;action='load';
  }
  state.maxSlots=Math.min(getSlotLimit(state),Math.max(1+getPrestigeSummary(state).extraSlots,state.maxSlots||1));
  state.clickCrystalLevel=Number.isSafeInteger(state.clickCrystalLevel)&&state.clickCrystalLevel>=0?state.clickCrystalLevel:0;
@@ -484,6 +485,9 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   const payout=multiplier==='bankrupt'?0:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(bet*multiplier));
   state.playerData.shards=multiplier==='bankrupt'?0:Math.min(CONSTANTS.SAFE_NUMBER_CAP,before-bet+payout);
   state.wheelResult={at:now,index,bet,multiplier,payout,balanceBefore:before,balanceAfter:state.playerData.shards,delta:state.playerData.shards-before};
+  const economy=state.wheelEconomy||{},delta=state.wheelResult.delta,cap=CONSTANTS.SAFE_NUMBER_CAP;
+  state.wheelEconomy={pressure:Math.max(0,Math.min(config.MAX_PRESSURE,(Number(economy.pressure)||0)+(delta>0?Math.max(1,Number(multiplier)-1):-1))),spins:Math.min(cap,(economy.spins||0)+1),wagered:Math.min(cap,(economy.wagered||0)+bet),payouts:Math.min(cap,(economy.payouts||0)+payout),houseNet:Math.max(-cap,Math.min(cap,(economy.houseNet||0)-delta))};
+
  } else if(action==='buyClickCrystal'){
   spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;
  } else if(action==='setCloneTargets'){
@@ -542,6 +546,9 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   if(payload.id==='clone'&&state.activeMoons.includes('clone')&&!state.cloneTargets.length)state.cloneTargets=state.activeMoons.filter(id=>id!=='clone').slice(0,getMoonMechanicParams('clone',state.moonLevels.clone||1).copies);
  } else if(action==='lock'){state.levelLocked=!state.levelLocked;
  } else if(action==='rollback'||action==='rollbackFive'){if(state.currentLevel>1){state.currentLevel=Math.max(1,state.currentLevel-(action==='rollbackFive'?CONSTANTS.ROLLBACK_LEVELS:1));startMoon();}
+ } else if(action==='returnToRecord'){
+  const target=state.runMaxLevel;if(!Number.isSafeInteger(target)||target<=state.currentLevel)throw Error('Вы уже на последнем достигнутом уровне этого забега');
+  state.currentLevel=target;startMoon();
  } else if(action==='claimAllQuests'){
   let count=0,reward=0;
   for(const [id,q]of Object.entries(state.quests||{})){

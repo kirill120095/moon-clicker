@@ -59,13 +59,13 @@ Deno.serve(async(req:Request)=>{
   let claims;try{claims=JSON.parse(decoder.decode(unb64(authorization.slice(7).split('.')[1])));}catch{return reply({error:'Некорректная сессия'},401);}
   if(!claims.session_id||claims.sub!==user.id)return reply({error:'Некорректная сессия'},401);
   const identity={uid:user.id,session:String(claims.session_id),username:user.user_metadata?.username};
-  let trusted={canSpinWheel:false,wheelIndex:-1};
+  let trusted={canSpinWheel:false,wheelIndex:-1,ticket:0};
   if(body.action==='spinWheel'){
    // Auth and session claims above authorize every signed-in player.
    // Rejection sampling avoids modulo bias. Keep this result across commit retries.
    const count=CONSTANTS.WHEEL.WEIGHTS.reduce((sum,w)=>sum+w,0),limit=Math.floor(0x100000000/count)*count;
    let value;do{value=crypto.getRandomValues(new Uint32Array(1))[0];}while(value>=limit);
-   trusted={canSpinWheel:true,wheelIndex:getWheelSectorIndex(value%count)};
+   trusted={canSpinWheel:true,wheelIndex:-1,ticket:value%count};
   }
   const hash=await tokenHash(authorization);
   let snapshot=await openSnapshot(body.snapshot,hash);
@@ -80,7 +80,8 @@ Deno.serve(async(req:Request)=>{
     state=freshState(state.playerData.username);state.maxLevel=maxLevel;state.moonSerial=serial;state.prestige=prestige;state.runMaxLevel=runMaxLevel;
    }
    try{
-    state=applyAction(state,body.action==='reset'?'load':body.action,body.payload||{},now,trusted);
+    if(body.action==='spinWheel')trusted.wheelIndex=getWheelSectorIndex(trusted.ticket,state);
+   state=applyAction(state,body.action==='reset'?'load':body.action,body.payload||{},now,trusted);
     const saved=await save(state,loaded.revision,{state,serverNow:now,revision:loaded.revision+1});
     if(body.action==='load')await diagnostic(user.id,body.request_id,'load','OK','Сохранение загружено','info');
     return reply(await seal(saved,identity,hash));

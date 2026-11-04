@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="css/game.css?v=9">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
-  <link rel="stylesheet" href="css/neon.css?v=shop-tabs-fit-1">
+  <link rel="stylesheet" href="css/neon.css?v=low-memory-1">
 </head>
 <body>
   <!-- ЗВЁЗДНОЕ НЕБО -->
@@ -96,6 +96,7 @@
         <button id="rollbackFiveBtn" class="level-control-btn rollback-five hidden" onclick="window.gameEngine.rollbackFive()" title="Вернуться на 5 уровней" aria-label="Вернуться на 5 уровней">↶ 5</button>
         <div id="levelTitle" class="level-title">Уровень 1</div>
         
+        <button id="returnRecordBtn" class="level-control-btn hidden" onclick="window.gameEngine.returnToRecord()" title="Вернуться к рекорду текущего забега" aria-label="Вернуться к рекорду текущего забега">⏭</button>
         <button id="lockLevelBtn" class="level-control-btn lock-btn" onclick="window.toggleLevelLock()" title="Закрепить уровень">
           <svg id="lockIconOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="11" width="18" height="11" rx="2"/>
@@ -167,6 +168,7 @@
           <section class="sound-settings"><h3>Звук и атмосфера</h3><label class="sound-row"><span>Музыка</span><input type="range" min="0" max="100" step="1" data-audio-volume="music" aria-label="Громкость музыки"><output data-audio-output="music">14%</output></label>
 <label class="sound-row"><span>Эффекты</span><input type="range" min="0" max="100" step="1" data-audio-volume="effects" aria-label="Громкость эффектов"><output data-audio-output="effects">45%</output></label>
 <label class="sound-check"><input type="checkbox" data-audio-mute> Выключить весь звук</label>
+          <label class="sound-check">Производительность <select id="performanceMode"><option value="auto">Автоматически</option><option value="low">Слабое устройство</option><option value="full">Полные эффекты</option></select></label>
           <label class="sound-check"><input type="checkbox" id="reduceEffects"> Уменьшить анимацию</label>
           <p id="radioNowPlaying" class="radio-now-playing">Космический фон</p>
           <section id="radioAdmin" class="radio-admin hidden">
@@ -329,33 +331,36 @@
   <script type="importmap">
 {
   "imports": {
-    "./src/core/config.js": "./src/core/config.js?v=signup-hints-1",
-    "./src/core/constants.js": "./src/core/constants.js?v=signup-hints-1",
-    "./src/core/state.js": "./src/core/state.js?v=signup-hints-1",
-    "./src/index.js": "./src/index.js?v=signup-hints-1",
-    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=signup-hints-1",
+    "./src/core/config.js": "./src/core/config.js?v=low-memory-1",
+    "./src/core/constants.js": "./src/core/constants.js?v=low-memory-1",
+    "./src/core/state.js": "./src/core/state.js?v=low-memory-1",
+    "./src/index.js": "./src/index.js?v=low-memory-1",
+    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=low-memory-1",
     "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
     "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
-    "./src/modules/game/game.js": "./src/modules/game/game.js?v=signup-hints-1",
+    "./src/modules/game/game.js": "./src/modules/game/game.js?v=low-memory-1",
     "./src/modules/game/rewards.js": "./src/modules/game/rewards.js?v=season2-neon-1",
     "./src/modules/network/cache.js": "./src/modules/network/cache.js?v=season2-neon-1",
-    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=signup-hints-1",
-    "./src/utils/diagnostics.js": "./src/utils/diagnostics.js?v=signup-hints-1",
-    "./src/modules/ui/monitor.js": "./src/modules/ui/monitor.js?v=signup-hints-1",
-    "./src/modules/ui/wheel.js": "./src/modules/ui/wheel.js?v=signup-hints-1",
-    "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=signup-hints-1",
-    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=signup-hints-1",
-    "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=signup-hints-1",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=signup-hints-1",
-    "./src/utils/numbers.js": "./src/utils/numbers.js?v=signup-hints-1",
+    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=low-memory-1",
+    "./src/utils/device-budget.js": "./src/utils/device-budget.js?v=low-memory-1",
+    "./src/modules/ui/currency-display.js": "./src/modules/ui/currency-display.js?v=low-memory-1",
+    "./src/modules/ui/starfield.js": "./src/modules/ui/starfield.js?v=low-memory-1",
+    "./src/utils/diagnostics.js": "./src/utils/diagnostics.js?v=low-memory-1",
+    "./src/modules/ui/monitor.js": "./src/modules/ui/monitor.js?v=low-memory-1",
+    "./src/modules/ui/wheel.js": "./src/modules/ui/wheel.js?v=low-memory-1",
+    "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=low-memory-1",
+    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=low-memory-1",
+    "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=low-memory-1",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=low-memory-1",
+    "./src/utils/numbers.js": "./src/utils/numbers.js?v=low-memory-1",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=signup-hints-1",
-    "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=signup-hints-1",
-    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=signup-hints-1"
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=low-memory-1",
+    "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=low-memory-1",
+    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=low-memory-1"
   }
 }
   </script>
-  <script type="module" src="src/index.js?v=signup-hints-1"></script>
+  <script type="module" src="src/index.js?v=low-memory-1"></script>
 </body>
 </html>

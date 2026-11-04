@@ -29,11 +29,11 @@ test('wheel caps huge winnings and does not increment combat clicks or kill coun
 function uiSetup(){
  const nodes={},animations=[],particles=[];let spinCalls=0,resolveSpin,cleared=0;
  const classes=new Set(),form={elements:{bet:{value:'100'},risk:{}},reportValidity:()=>true};form.elements[Symbol.iterator]=function*(){yield this.bet;yield this.risk;};
- const result={replaceChildren(){},append(){}},rotor={style:{},animate(frames,options){const a={frames,options,cancelled:false,cancel(){this.cancelled=true;},finished:Promise.resolve()};animations.push(a);return a;}};
+ const result={replaceChildren(){},append(){},animate(){return {finished:Promise.resolve(),cancel(){}};}},rotor={style:{},animate(frames,options){const a={frames,options,cancelled:false,cancel(){this.cancelled=true;},finished:Promise.resolve()};animations.push(a);return a;}};
  const holder={replaceChildren(){particles.length=0;},append(p){particles.push(p);}};
  nodes['.fortune-rotor']=rotor;nodes['.fortune-result']=result;nodes['form']=form;nodes['.fortune-spin']={};nodes['.fortune-close']={};nodes['.fortune-particles']=holder;
- const c={CONSTANTS:{WHEEL:{SECTORS:[0,2,5,0,2,10,5,2,0,0,'bankrupt',2],WEIGHTS:[97,97,97,97,97,97,97,97,97,97,33,97],SPIN_MS:5200}},state:{playerData:{shards:1000}},audio:{purchase(){}},document:{getElementById:()=>null,createElement:()=>({style:{setProperty(){}},textContent:''})},window:{matchMedia:()=>({matches:false})},performance:{now:()=>100},setTimeout:()=>1,clearTimeout:()=>{cleared++;},console};
- vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/wheel.js'),'utf8')),c);
+ const c={CONSTANTS:{WHEEL:{SECTORS:[0,2,5,0,2,10,5,2,0,0,'bankrupt',2],WEIGHTS:[97,97,97,97,97,97,97,97,97,97,33,97],VISUAL_WEIGHTS:[97,97,97,97,97,97,97,97,97,97,33,97],SPIN_MS:5200}},state:{playerData:{shards:1000}},audio:{purchase(){}},document:{getElementById:()=>null,createElement:()=>({style:{setProperty(){}},textContent:''})},window:{matchMedia:()=>({matches:false})},performance:{now:()=>100},setTimeout:()=>1,clearTimeout:()=>{cleared++;},console};
+ vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/currency-display.js'),'utf8'))+'\n'+strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/wheel.js'),'utf8')),c);
  const wheel=vm.runInContext('fortuneWheel',c);wheel.root={classList:{add:x=>classes.add(x),remove:(...xs)=>xs.forEach(x=>classes.delete(x))},querySelector:s=>nodes[s]};wheel.dialog={close(){},showModal(){}};wheel.rotor=rotor;wheel.result=result;wheel.form=form;wheel.button=nodes['.fortune-spin'];wheel.allowed=true;wheel.message=(...args)=>{wheel.lastMessage=args;};wheel.bind(()=>{spinCalls++;return new Promise(r=>{resolveSpin=r;});});
  return {wheel,animations,particles,classes,form,c,get calls(){return spinCalls;},get cleared(){return cleared;},resolve(result){resolveSpin({state:{wheelResult:result}});}};
 }
@@ -83,11 +83,11 @@ test('cached request never runs wheel payout again',async()=>{
  const s=await edgeSetup({cached:true});assert.equal(s.response.status,200);assert.equal(s.contexts.length,0);assert.equal(s.commits,1);
 });
 
-test('1100 integer tickets give exactly 3 percent bankruptcy with requested sector counts',()=>{
+test('10000 integer tickets give exactly 3 percent bankruptcy and house-positive expected return',()=>{
  const run=setup(),counts=Array(12).fill(0);
- for(let ticket=0;ticket<1100;ticket++)counts[run('getWheelSectorIndex('+ticket+')')]++;
- assert.deepEqual(counts,[97,97,97,97,97,97,97,97,97,97,33,97]);assert.equal(counts[10]/1100,.03);for(const [m,n] of [[2,4],[5,2],[0,4],[10,1]])assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m==="+m+").length"),n);assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m===.5||m===1).length"),0);
- for(const ticket of [-1,1100,.5])assert.throws(()=>run('getWheelSectorIndex('+ticket+')'));
+ for(let ticket=0;ticket<10000;ticket++)counts[run('getWheelSectorIndex('+ticket+')')]++;
+ assert.deepEqual(counts,[1658,650,200,1658,650,70,200,650,1657,1657,300,650]);assert.equal(counts[10]/10000,.03);for(const [m,n] of [[2,4],[5,2],[0,4],[10,1]])assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m==="+m+").length"),n);assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m===.5||m===1).length"),0);
+ for(const ticket of [-1,10000,.5])assert.throws(()=>run('getWheelSectorIndex('+ticket+')'));
 });
 test('weighted wheel stops in exact center of every visible sector including narrow bankruptcy',()=>{
  const s=uiSetup(),weights=[97,97,97,97,97,97,97,97,97,97,33,97];let start=0;
@@ -109,4 +109,13 @@ test('every authenticated regular account receives public fortune without owner 
 
 test('public fortune still refuses requests with no authentication token',async()=>{
  const s=await edgeSetup({missingToken:true});assert.equal(s.response.status,401);assert.equal(s.loads,0);assert.equal(s.commits,0);assert.equal(s.roleCalls,0);assert.equal(s.randomCalls,0);
+});
+
+test('all-in preset fills the exact visible balance without starting a spin',()=>{
+ const s=uiSetup();s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),1000);assert.equal(s.calls,0);s.wheel.busy=true;s.c.state.playerData.shards=1500;s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),1000);
+ s.wheel.busy=false;s.c.state.playerData.shards=0;s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),0);assert.equal(s.calls,0);
+});
+
+test('a lost stake shows a red-cross outcome rather than a zero multiplier reward',async()=>{
+ const s=uiSetup(),pending=s.wheel.play();s.resolve({index:0,multiplier:0,payout:0,delta:-100});await pending;assert.match(s.wheel.lastMessage[1],/Ставка проиграна/);assert.doesNotMatch(s.wheel.lastMessage[1],/×0/);
 });

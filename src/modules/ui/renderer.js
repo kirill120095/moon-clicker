@@ -1,3 +1,5 @@
+import { getVisibleShards } from './currency-display.js';
+import { renderStarfield } from './starfield.js';
 import { formatNumber, formatMoney, formatPrice, formatExact, formatBaseDamage } from '../../utils/numbers.js';
 export { formatNumber };
 // ============================================================
@@ -89,13 +91,13 @@ export function updateUI() {
     if (typeof window.updateBuffsDisplay === 'function') {
       window.updateBuffsDisplay();
     }
-  });
+  },0,'combat-hud');
 }
 
 function _updateCounter() {
   const counter = document.getElementById('counter');
   if (!counter) return;
-  const shards = state.playerData?.shards || 0;
+  const shards = getVisibleShards(state.playerData?.shards);
   counter.textContent = `💎 ${formatMoney(shards)}`;
   counter.title = formatExact(shards)+' 💎';
 }
@@ -114,6 +116,8 @@ function _updateLevelControls() {
   const lockBtn = document.getElementById('lockLevelBtn');
   const fiveBtn=document.getElementById('rollbackFiveBtn');
   fiveBtn?.classList.toggle('hidden',state.currentLevel<=1);
+  const recordButton=document.getElementById('returnRecordBtn'),record=Math.max(state.currentLevel,state.runMaxLevel||state.currentLevel);
+  if(recordButton){recordButton.classList.toggle('hidden',record<=state.currentLevel);recordButton.title='Вернуться на '+record+' уровень текущего забега';}
   
   if (rollbackBtn) {
     // Скрываем кнопку отката на 1 уровне
@@ -153,7 +157,7 @@ export function updateHPBar() {
 
   if (hpBar) {
     const percent = Math.max(0, (displayHP / state.maxHP) * 100);
-    hpBar.style.width = Math.min(100, percent) + '%';
+    hpBar.style.transform = 'scaleX('+Math.min(1,percent/100)+')';
   }
 
   if (hpPercent) {
@@ -183,11 +187,11 @@ export function updateTimerBar() {
   if (isActive) {
     container.classList.add('active');
     const pct = Math.max(0, (state.bossTimer / CONSTANTS.BOSS_TIMER) * 100);
-    bar.style.width = pct + '%';
+    bar.style.transform = 'scaleX('+Math.min(1,pct/100)+')';
     percent.textContent = `${Math.ceil(state.bossTimer)}с`;
   } else {
     container.classList.remove('active');
-    bar.style.width = '100%';
+    bar.style.transform = 'scaleX(1)';
     percent.textContent = `${CONSTANTS.BOSS_TIMER}с`;
   }
 }
@@ -265,7 +269,7 @@ export function updateShopUI() {
     _updateUfoShop();
     _updateSlotShop();
     _updateClickCrystalShop();
-  });
+  },0,'shop');
 }
 
 let prestigeShopKey='',prestigeProfileKey='';
@@ -290,17 +294,17 @@ function _updateUfoShop() {
   const count=state.ufoCount||0,limit=state.ownedMoons?.length||1,unitCost=Math.floor(c.UNIT_BASE_COST*Math.pow(c.UNIT_COST_MULTIPLIER,Math.max(0,count-1)));
   if(fleet)fleet.textContent='Тарелки: '+count+' / '+limit+' · каждую новую луну можно сопровождать ещё одной тарелкой';
   if(unitPrice)unitPrice.textContent=count>=limit?'Купите ещё одну луну':!count?'Сначала купите первую тарелку':formatPrice(unitCost)+' 💎';
-  if(unitButton)unitButton.disabled=!count||count>=limit||(state.playerData?.shards||0)<unitCost;
+  if(unitButton)unitButton.disabled=!count||count>=limit||(getVisibleShards(state.playerData?.shards))<unitCost;
   const relay=document.getElementById('buyUfoComboRelayBtn'),relayPrice=document.getElementById('ufoComboRelayPrice');
   const relayUnlocked=(state.ownedMoons||[]).includes('electric')&&level>0;
-  if(relay){relay.disabled=!!state.ufoComboRelay||!relayUnlocked||(state.playerData?.shards||0)<c.COMBO_RELAY_COST;relay.textContent=state.ufoComboRelay?'Куплено':'Купить';}
+  if(relay){relay.disabled=!!state.ufoComboRelay||!relayUnlocked||(getVisibleShards(state.playerData?.shards))<c.COMBO_RELAY_COST;relay.textContent=state.ufoComboRelay?'Куплено':'Купить';}
   if(relayPrice)relayPrice.textContent=state.ufoComboRelay?'Выстрел даёт 2 шага комбо, жара и тени':!relayUnlocked?'После покупки Электрической луны и тарелки':formatPrice(c.COMBO_RELAY_COST)+' 💎';
   const interval=state.ufoInterval||(c.BASE_INTERVAL-Math.max(0,level-1)*c.INTERVAL_REDUCTION);
   const buffs=document.getElementById('ufoBuffs');if(buffs)buffs.textContent=(state.activeMoons||[]).slice(0,state.maxSlots||1).map(id=>getUfoMoonDescription(id,state.moonLevels?.[id]||1)).join(' · ');
   info.textContent=level?'Ур. '+level+'/'+c.MAX_LEVEL+' · '+formatNumber(state.ufoDamage)+' урона раз в '+(interval/1000).toLocaleString('ru-RU')+' с':'50% финального урона раз в '+(c.BASE_INTERVAL/1000)+' с';
   price.textContent=level>=c.MAX_LEVEL?'Улучшена полностью':state.currentLevel<c.UNLOCK_LEVEL?'Откроется с '+c.UNLOCK_LEVEL+' уровня':formatPrice(cost)+' 💎';
   price.title=formatExact(cost)+' 💎';if(unitPrice)unitPrice.title=formatExact(unitCost)+' 💎';if(relayPrice)relayPrice.title=formatExact(c.COMBO_RELAY_COST)+' 💎';
-  button.disabled=level>=c.MAX_LEVEL||state.currentLevel<c.UNLOCK_LEVEL||(state.playerData?.shards||0)<cost;
+  button.disabled=level>=c.MAX_LEVEL||state.currentLevel<c.UNLOCK_LEVEL||(getVisibleShards(state.playerData?.shards))<cost;
   button.textContent=level>=c.MAX_LEVEL?'MAX':level?'Улучшить':'Купить';
 }
 
@@ -323,7 +327,7 @@ function _updateClickDamageShop() {
   const currentLevelUpgrade = state.playerData?.click_damage_level || 0;
   const cost = getClickUpgradeCost(currentLevelUpgrade);
   const goal=document.getElementById('nextGoal');
-  if(goal)goal.textContent=currentLevelUpgrade>=CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL?'Урон улучшен полностью':'Следующее улучшение: '+cost.toLocaleString('ru-RU')+' 💎 · ещё '+Math.max(0,cost-(state.playerData?.shards||0)).toLocaleString('ru-RU')+' 💎';
+  if(goal)goal.textContent=currentLevelUpgrade>=CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL?'Урон улучшен полностью':'Следующее улучшение: '+cost.toLocaleString('ru-RU')+' 💎 · ещё '+Math.max(0,cost-(getVisibleShards(state.playerData?.shards))).toLocaleString('ru-RU')+' 💎';
   const currentDamage = state.playerData?.click_damage || CONSTANTS.DEFAULTS.CLICK_DAMAGE;
   const upgradeValue = CONSTANTS.CLICK_DAMAGE_UPGRADE_VALUE;
   const nextDamage = currentDamage + upgradeValue;
@@ -333,7 +337,7 @@ function _updateClickDamageShop() {
   priceEl.title = formatExact(displayCost)+' 💎';
   levelEl.innerHTML = `Ур. ${currentLevelUpgrade}: ${currentDamage} → ${nextDamage} <span style="color: #4caf50; font-size: 0.75rem;">(+${upgradeValue})</span>`;
 
-  const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
+  const hasEnoughShards = state.testMode || (getVisibleShards(state.playerData?.shards)) >= cost;
   buyBtn.disabled = !isUnlocked || !hasEnoughShards || currentLevelUpgrade >= CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL;
   buyBtn.textContent = currentLevelUpgrade >= CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL ? 'MAX' : 'Купить';
   buyBtn.classList.toggle('locked', !isUnlocked);
@@ -359,7 +363,7 @@ function _updateSlotShop() {
   priceEl.title = canUpgrade ? formatExact(displayCost)+' 💎' : '';
   levelEl.textContent = `Слотов: ${currentSlots}/${getSlotLimit(state)}`;
 
-  const hasEnoughShards = state.testMode || (state.playerData?.shards || 0) >= cost;
+  const hasEnoughShards = state.testMode || (getVisibleShards(state.playerData?.shards)) >= cost;
   buyBtn.disabled = !canUpgrade || !hasEnoughShards;
   buyBtn.textContent = canUpgrade ? 'Купить' : 'MAX';
 }
@@ -371,7 +375,7 @@ let moonShopKey='';
 function _updateMoonShop() {
   const container = document.getElementById('moonShopItems');
   if (!container) return;
-  const money=state.playerData?.shards||0;
+  const money=getVisibleShards(state.playerData?.shards);
   const affordability=Object.entries(MOON_TYPES).map(([id,m])=>[getMoonPurchaseAccess(state,id).unlocked,money>=m.cost,money>=getMoonUpgradeCostForLevel(id,state.moonLevels[id]||1)]);
   const key=JSON.stringify([state.activeMoons,state.ownedMoons,state.moonLevels,state.maxSlots,state.cloneTargets,state.prestige?.upgrades,affordability]);
   if(key===moonShopKey&&container.childElementCount)return;moonShopKey=key;
@@ -387,7 +391,7 @@ function _updateMoonShop() {
     const moonLevel = owned ? (state.moonLevels[id] || 1) : 0;
     
     const canBuy = !owned && !isLockedByLevel && !isLockedByMoon &&
-      (state.testMode || (state.playerData?.shards || 0) >= moon.cost) &&
+      (state.testMode || (getVisibleShards(state.playerData?.shards)) >= moon.cost) &&
       moon.cost > 0;
     
     // Актуальные параметры с учётом прокачки
@@ -461,7 +465,7 @@ function _updateMoonShop() {
     const upgradeCost = owned ? getMoonUpgradeCostForLevel(id, moonLevel) : 0;
     const displayUpgradeCost = state.testMode ? 0 : upgradeCost;
     const canUpgrade = owned && moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL &&
-      (state.testMode || (state.playerData?.shards || 0) >= upgradeCost);
+      (state.testMode || (getVisibleShards(state.playerData?.shards)) >= upgradeCost);
     
     const displayCost = state.testMode ? 0 : moon.cost;
     
@@ -589,7 +593,7 @@ function _updateSynergiesDisplay() {
   if (!container) return;
   
   const synergies = window._activeSynergies || [];
-  
+  const key=JSON.stringify(synergies);if(container._synergyKey===key&&container.childElementCount)return;container._synergyKey=key;
   if (synergies.length === 0) {
     container.innerHTML = '<div class="no-synergies">Комбинируйте луны для активации синергий</div>';
     return;
@@ -626,7 +630,7 @@ export function updateProfileAndLeaders() {
   uiScheduler.schedule(() => {
     _updateProfile();
     _updateLeaders();
-  });
+  },0,'profile');
 }
 
 function _updateProfile() {
@@ -892,7 +896,7 @@ function _updateProfile() {
         <div class="stat-card">
           <div class="stat-card-icon">💎</div>
           <div class="stat-card-label">Всего осколков</div>
-          <div class="stat-card-value">${formatMoney(data.shards || 0)}</div>
+          <div class="stat-card-value">${formatMoney(getVisibleShards(data.shards))}</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-icon">⏱️</div>
@@ -976,24 +980,7 @@ async function _updateLeaders() {
 // ============================================================
 // ЗВЁЗДЫ
 // ============================================================
-export function createStars(count = 300) {
-  const container = document.getElementById('stars');
-  if (!container) return;
-  const fragment = document.createDocumentFragment();
-  for (let i = 0; i < count; i++) {
-    const star = document.createElement('div');
-    star.className = 'star';
-    const size = Math.random() * 3 + 1;
-    star.style.width = size + 'px';
-    star.style.height = size + 'px';
-    star.style.left = Math.random() * 100 + '%';
-    star.style.top = Math.random() * 100 + '%';
-    star.style.setProperty('--duration', (Math.random() * 3 + 2) + 's');
-    star.style.animationDelay = Math.random() * 5 + 's';
-    fragment.appendChild(star);
-  }
-  container.appendChild(fragment);
-}
+export function createStars(count=300){renderStarfield(document.getElementById('stars'),count);}
 
 // ============================================================
 // КВЕСТЫ
@@ -1211,7 +1198,22 @@ export function updateBuffsDisplay() {
   if (!container) return;
   
   const buffs = window._activeBuffs || [];
-  
+  const structure=JSON.stringify(buffs.map(b=>[b.id,b.isPassive,b.timeLeft!=null,b.isReflection,b.cloneOf,b.name,b.icon]));
+  if(buffs.length&&container._buffStructure===structure&&container.childElementCount){
+    for(const buff of buffs){
+      const card=container.querySelector('[data-buff-id="'+buff.id+'"]');if(!card)continue;
+      let stateClass=buff.isPassive?'buff-passive':buff.isMaxed?'buff-maxed':buff.isActive?'buff-active':'buff-charging';
+      if(buff.isConditional&&!buff.isActive)stateClass='buff-inactive';
+      for(const cls of ['buff-passive','buff-maxed','buff-active','buff-charging','buff-inactive'])card.classList.toggle(cls,cls===stateClass);
+      for(const [selector,text]of [['.buff-bonus',buff.bonus],['.buff-stacks',buff.value+'/'+buff.maxStacks],['.buff-timer',buff.timeLeft+'с']]){
+        const el=card.querySelector(selector);if(el&&el.textContent!==text)el.textContent=text;
+      }
+      const timer=card.querySelector('.buff-timer');timer?.classList.toggle('buff-timer-warning',buff.timeLeft<=5);
+      const progress=card.querySelector('.buff-progress-bar');if(progress){const transform='scaleX('+Math.max(0,Math.min(1,buff.progress/(buff.progressMax||1)))+')';if(progress.style.transform!==transform)progress.style.transform=transform;}
+    }
+    return;
+  }
+  container._buffStructure=structure;
   if (buffs.length === 0) {
     if (!container.classList.contains('buffs-empty')) {
       container.innerHTML = '';
@@ -1262,7 +1264,7 @@ export function updateBuffsDisplay() {
     
     const progressHtml = !buff.isPassive ? `
       <div class="buff-progress">
-        <div class="buff-progress-bar" style="width: ${Math.min(100, progressPercent)}%"></div>
+        <div class="buff-progress-bar" style="transform:scaleX(${Math.max(0,Math.min(1,progressPercent/100))})"></div>
       </div>
       <div class="buff-stacks">${buff.value}/${buff.maxStacks}</div>
     ` : '';
@@ -1320,7 +1322,7 @@ function _updateClickCrystalShop(){
  const level=state.clickCrystalLevel||0,cost=getClickCrystalCost(level),price=document.getElementById('clickCrystalPrice'),info=document.getElementById('clickCrystalInfo'),button=document.getElementById('buyClickCrystalBtn');
  if(price){price.textContent=formatPrice(cost)+' 💎';price.title=formatExact(cost)+' 💎';}
  if(info)info.textContent='Ур. '+level+' · '+formatMoney(level)+' → '+formatMoney(level+1)+' 💎 за клик';
- if(button)button.disabled=(state.playerData?.shards||0)<cost;
+ if(button)button.disabled=(getVisibleShards(state.playerData?.shards))<cost;
 }
 let cloneControlKey='';
 function _updateCloneControls(){

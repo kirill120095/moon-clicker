@@ -86,3 +86,15 @@ test('fortune never initializes when the authoritative game load fails',async()=
  const s=setup();let connected=0;s.context.db.action=async()=>{throw Error('Invalid session');};s.context.fortuneWheel.connect=()=>{connected++;};
  await assert.rejects(s.engine.init(),/Invalid session/);assert.equal(connected,0);
 });
+
+test('a late click response from the previous session cannot overwrite the new session',async()=>{
+ const s=setup();await s.engine.init();s.engine.handleClick({});const previous=s.calls.at(-1);s.engine.destroy();await s.engine.init();
+ const response=s.result();response.state.moonHP=1;response.revision=99;previous.settle.resolve(response);await new Promise(setImmediate);assert.equal(s.state.moonHP,100);
+});
+
+test('wheel winnings do not emit achievement toasts before wheel presentation settles',async()=>{
+ const s=setup(),toasts=[];let reveal;s.context.fortuneWheel.bind=(spin,onReveal)=>{reveal=onReveal;};s.context.showToast=(...args)=>toasts.push(args);s.context.ACHIEVEMENTS={wealth:{tiers:[{level:'bronze',name:'Wealth'}]}};s.context.QUESTS={};await s.engine.init();
+ const response=s.result();response.state.quests={};response.state.achievements={wealth:{bronze:'unclaimed'}};s.context.resultToApply=response;s.context.applyDeferred=true;
+ vm.runInContext('apply(resultToApply,[],applyDeferred)',s.context);assert.equal(toasts.length,0);assert.equal(vm.runInContext('pendingWheelNotices.length',s.context),1);reveal();assert.equal(toasts.length,1);assert.match(toasts[0][0],/Wealth/);assert.equal(vm.runInContext('pendingWheelNotices.length',s.context),0);
+ s.engine.destroy();assert.equal(vm.runInContext('pendingWheelNotices.length',s.context),0);
+});

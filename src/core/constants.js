@@ -28,7 +28,7 @@ export const CONSTANTS = {
   CLICK_TOKEN_CAPACITY: 36,
   ROLLBACK_LEVELS: 5,
   PRESTIGE: { DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 20, REWARD_PER_ASCENSION: 0.25, UFO_HASTE_CAP: 0.95, PRICE_STEP_RATIO: 0.2, PRICE_QUADRATIC_DIVISOR: 10 },
-  WHEEL: { COOLDOWN_MS: 5200, SPIN_MS: 5200, SECTORS: [0, 2, 5, 0, 2, 10, 5, 2, 0, 0, 'bankrupt', 2], WEIGHTS: [97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 33, 97] },
+  WHEEL: { COOLDOWN_MS: 5200, SPIN_MS: 5200, SECTORS: [0, 2, 5, 0, 2, 10, 5, 2, 0, 0, 'bankrupt', 2], WEIGHTS: [1658, 650, 200, 1658, 650, 70, 200, 650, 1657, 1657, 300, 650], VISUAL_WEIGHTS: [97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 33, 97], MAX_PRESSURE: 50, PRESSURE_STEP: 0.12 },
   ECHO: { MAX_HITS_PER_ACTION: 128, MAX_QUEUED_BURSTS: 64 },
   UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, MIN_INTERVAL: 100, COMBO_RELAY_COST: 1000000, MAX_SHOTS_PER_ACTION: 32, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, UNIT_BASE_COST: 2400, UNIT_COST_MULTIPLIER: 2, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { rewardMultiplier: 0.5 }, cosmic: { damagePerLevel: 0.001 } } },
   MOON_REWARD: { BASE: 5, PER_LEVEL: 2, EXPONENT: 1.5, GROWTH: 0.5, BOSS_MULTIPLIER: 2.5 },
@@ -1040,9 +1040,17 @@ export function getMoonPurchaseAccess(state,id){
  return {record,requiredMoon:requiredMoon||null,levelUnlocked,unlocked:levelUnlocked&&!requiredMoon};
 }
 
-// Integer tickets and visible sector angles share exactly the same weights.
-export function getWheelSectorIndex(ticket){
- const weights=CONSTANTS.WHEEL.WEIGHTS,total=weights.reduce((sum,w)=>sum+w,0);
+// Outcome weights are server-owned; wheel geometry shows possible outcomes.
+export function getWheelWeights(state={}){
+ const config=CONSTANTS.WHEEL,total=config.WEIGHTS.reduce((n,w)=>n+w,0);
+ const pressure=Math.max(0,Math.min(config.MAX_PRESSURE,Number(state.wheelEconomy?.pressure)||0)),scale=1/(1+pressure*config.PRESSURE_STEP);
+ const weights=config.WEIGHTS.map((weight,i)=>config.SECTORS[i]==='bankrupt'?weight:config.SECTORS[i]>0?Math.floor(weight*scale):0);
+ const lossSlots=config.SECTORS.map((m,i)=>m===0?i:-1).filter(i=>i>=0),remaining=total-weights.reduce((n,w)=>n+w,0);
+ lossSlots.forEach((index,i)=>{weights[index]=Math.floor(remaining/lossSlots.length)+(i<remaining%lossSlots.length?1:0);});
+ return weights;
+}
+export function getWheelSectorIndex(ticket,state={}){
+ const weights=getWheelWeights(state),total=weights.reduce((sum,w)=>sum+w,0);
  if(!Number.isInteger(ticket)||ticket<0||ticket>=total)throw Error('Invalid wheel ticket');
  let edge=0;return weights.findIndex(weight=>(edge+=weight)>ticket);
 }

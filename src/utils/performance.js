@@ -63,10 +63,13 @@ export class UIScheduler {
         this._isRunning = false;
         this._frameId = null;
         this._maxBatchSize = 10;
+        this._byKey = new Map();
     }
 
-    schedule(callback, priority = 0) {
-        this._queue.push({ callback, priority });
+    schedule(callback, priority = 0, key = null) {
+        if(key!==null&&this._byKey.has(key)){const item=this._byKey.get(key);item.callback=callback;item.priority=Math.max(item.priority,priority);this._queue.sort((a,b)=>b.priority-a.priority);return;}
+        const item={callback,priority,key};
+        this._queue.push(item);if(key!==null)this._byKey.set(key,item);
         this._queue.sort((a, b) => b.priority - a.priority);
         this._run();
     }
@@ -77,7 +80,9 @@ export class UIScheduler {
         
         this._isRunning = true;
         this._frameId = requestAnimationFrame(() => {
+            this._frameId=null;
             const batch = this._queue.splice(0, this._maxBatchSize);
+            for(const item of batch)if(item.key!==null)this._byKey.delete(item.key);
             for (const item of batch) {
                 try {
                     item.callback();
@@ -98,6 +103,7 @@ export class UIScheduler {
             this._frameId = null;
         }
         this._queue = [];
+        this._byKey.clear();
         this._isRunning = false;
     }
 

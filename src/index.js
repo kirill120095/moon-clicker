@@ -1,3 +1,5 @@
+import { installPerformanceMode } from './utils/device-budget.js';
+installPerformanceMode();
 import { installDiagnostics } from './utils/diagnostics.js';
 installDiagnostics();
 // ============================================================
@@ -165,6 +167,7 @@ async function init() {
 
     // Создаём звёзды
     createStars(300);
+    window.addEventListener('moon-performance-change',()=>createStars(300));
 
     // Проверяем авторизацию
     await checkAuth();

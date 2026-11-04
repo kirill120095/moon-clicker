@@ -657,8 +657,7 @@ export class GameEngine {
     return buffs.slice(0, 6);
   }
 
-  _updateBuffsDisplay() {
-    const buffs = this._getActiveBuffs();
+  _updateBuffsDisplay(buffs = this._getActiveBuffs()) {
     window._activeBuffs = buffs;
     
     if (typeof window.updateBuffsDisplay === 'function') {
@@ -796,7 +795,7 @@ export class GameEngine {
     this._checkBoss();
   }
 
-  recalcMoonBonuses() {
+  recalcMoonBonuses(updateBuffs = true) {
     const bonuses = this._calculateAllBonuses();
     const activeSynergies = getActiveSynergies(state);
 
@@ -806,7 +805,7 @@ export class GameEngine {
     window._totalCritDamageBonus = bonuses.totalCritDamageBonus;
     window._activeSynergies = activeSynergies;
     
-    this._updateBuffsDisplay();
+    if(updateBuffs)this._updateBuffsDisplay();
     
     return { ...bonuses, activeSynergies };
   }

@@ -1,3 +1,4 @@
+import { maskWheelDelta } from '../ui/currency-display.js';
 import { fortuneWheel } from '../ui/wheel.js';
 import { gameAdmin } from '../ui/admin.js';
 import { gameEngine } from './game.js';
@@ -16,10 +17,11 @@ function previewDamage(){
  const bonus=gameEngine._calculateAllBonuses().totalDamageBonus;
  return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(getBaseDamage(state)*(1+bonus))));
 }
-let lastRevision=0,lastBuffKey='',ready=false;
+let lastRevision=0,lastBuffKey='',ready=false,pendingWheelNotices=[];
 function refreshBuffs(){
- const key=JSON.stringify(gameEngine._getActiveBuffs());
- if(key!==lastBuffKey){lastBuffKey=key;gameEngine._updateBuffsDisplay();}
+ const buffs=gameEngine._getActiveBuffs(),key=JSON.stringify(buffs);
+ if(key!==lastBuffKey){lastBuffKey=key;gameEngine._updateBuffsDisplay(buffs);}
+ return buffs;
 }
 function renderFleet(count){
  const orbit=document.getElementById('ufoOrbit');if(!orbit)return;
@@ -33,7 +35,7 @@ function renderFleet(count){
 
 let nextUfoSync=0,lastErrorToast=0,lastErrorMessage='';
 let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
-function apply(result,hits=[]){
+function apply(result,hits=[],deferNotices=false){
  const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
  if(result.revision&&result.revision<=lastRevision)return;
  lastRevision=result.revision||lastRevision;
@@ -53,13 +55,14 @@ function apply(result,hits=[]){
  Object.assign(gameEngine,s.runtime||{});
  gameEngine._lastActivityTime=Math.max(s.lastClickAt||0,s.lastAutoClickAt||0)?Math.max(s.lastClickAt||0,s.lastAutoClickAt||0)-offset:Date.now();
  gameEngine._lastComboTime=Math.max(s.lastClickAt||0,s.lastAutoClickAt||0,s.lastComboAt||0)-offset;
- gameEngine.recalcMoonBonuses();refreshBuffs();updateUI();updateShopUI();updateQuestAndAchievementUI();
+ gameEngine.recalcMoonBonuses(false);refreshBuffs();updateUI();updateShopUI();updateQuestAndAchievementUI();
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
  updateLiveCombatProfile();
  renderFleet(s.ufoCount||(s.ufoLevel?1:0));
+ const announce=message=>{if(deferNotices)pendingWheelNotices=[...pendingWheelNotices,message].slice(-32);else showToast(message,'success',3500);};
  if(ready){
-  for(const [id,q]of Object.entries(s.quests||{}))if(q.completed&&!previousQuests[id]?.completed)showToast('🎯 Квест выполнен: '+(QUESTS[id]?.name||id),'success',3500);
-  for(const [id,tiers]of Object.entries(s.achievements||{}))for(const [tier,status]of Object.entries(tiers))if(status==='unclaimed'&&!previousAchievements[id]?.[tier])showToast('🏆 '+(ACHIEVEMENTS[id]?.tiers.find(t=>t.level===tier)?.name||id),'success',3500);
+  for(const [id,q]of Object.entries(s.quests||{}))if(q.completed&&!previousQuests[id]?.completed)announce('🎯 Квест выполнен: '+(QUESTS[id]?.name||id));
+  for(const [id,tiers]of Object.entries(s.achievements||{}))for(const [tier,status]of Object.entries(tiers))if(status==='unclaimed'&&!previousAchievements[id]?.[tier])announce('🏆 '+(ACHIEVEMENTS[id]?.tiers.find(t=>t.level===tier)?.name||id));
  }
  ready=true;
 
@@ -74,12 +77,15 @@ function apply(result,hits=[]){
 
 }
 async function send(action,payload={}){
+ const generation=initGeneration;
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохраняем…';
  try{const result=await db.action(action,payload);
+  if(!active||generation!==initGeneration)return result;
   const hits=action==='click'?previewHits.splice(0,payload.count):[];
   gameEngine._previewDamage=previewHits.reduce((sum,hit)=>sum+hit.damage,0);
-  if(active)apply(result,hits);return result;}
- catch(error){if(action==='click'){previewHits.splice(0,payload.count);refreshPreview();}if(status)status.textContent='Нет связи — действие не подтверждено';if(error.message!==lastErrorMessage||Date.now()-lastErrorToast>5000){showToast(error.message,'warning');lastErrorMessage=error.message;lastErrorToast=Date.now();}throw error;}
+  if(action==='spinWheel')maskWheelDelta(result.state?.wheelResult?.delta||0);
+  if(active)apply(result,hits,action==='spinWheel');return result;}
+ catch(error){if(generation!==initGeneration||!active)throw error;if(action==='click'){previewHits.splice(0,payload.count);refreshPreview();}if(status)status.textContent='Нет связи — действие не подтверждено';if(error.message!==lastErrorMessage||Date.now()-lastErrorToast>5000){showToast(error.message,'warning');lastErrorMessage=error.message;lastErrorToast=Date.now();}throw error;}
 }
 async function flush(){
  if(flushTimer){clearTimeout(flushTimer);flushTimer=null;}
@@ -94,6 +100,7 @@ async function flush(){
 }
 async function command(action,payload={},purchase=false){
  if(!active||purchasing)return;
+ if(fortuneWheel.busy&&action!=='spinWheel'){showToast('Дождитесь окончания вращения','info');return;}
  purchasing=true;
  try{do{await flush();}while(active&&pendingClicks>0);const result=await send(action,payload);if(action==='claimAllQuests'||action==='claimAllAchievements'){updateQuestAndAchievementUI(true);const summary=result?.state?.claimSummary;if(summary)showToast('Получено '+summary.count+' наград: +'+summary.reward.toLocaleString('ru-RU')+' 💎','success',3500);}if(action==='ascend'){updateQuestAndAchievementUI(true);try{localStorage.removeItem('moon_completed_'+state.user?.id);}catch{}}if(purchase)audio.purchase();updateProfileAndLeaders();return result;}
  finally{purchasing=false;}
@@ -104,20 +111,20 @@ gameEngine.init=()=>{
  if(initializing)return initializing;
  const generation=++initGeneration;
  const pending=(async()=>{
- active=true;ready=false;lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
+ active=true;ready=false;pendingWheelNotices=[];lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
  try{const loaded=await db.action('load');if(generation!==initGeneration||!active)throw Object.assign(Error('Загрузка отменена'),{code:'LOAD_CANCELLED'});apply(loaded);}catch(error){if(generation===initGeneration){active=false;gameEngine._isRunning=false;}throw error;}
  radio.connect(state.user).catch(()=>{});
- fortuneWheel.bind(payload=>command('spinWheel',payload));fortuneWheel.connect(true);
+ fortuneWheel.bind(payload=>command('spinWheel',payload),()=>{for(const message of pendingWheelNotices)showToast(message,'success',3500);pendingWheelNotices=[];updateUI();updateShopUI();updateProfileAndLeaders();});fortuneWheel.connect(true);
  gameAdmin.connect(state.user).catch(()=>{});
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
  ticker=setInterval(()=>{
   if(!active)return;
-  refreshBuffs();updateLiveCombatProfile();
+  const activeBuffs=refreshBuffs();updateLiveCombatProfile();
   if(((state.ufoLevel&&state.ufoNextShotAt<=Date.now()+offset)||state.pendingEchoes>0)&&!document.hidden&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextUfoSync){
    nextUfoSync=Date.now()+250;syncing=true;
    send('sync').catch(()=>{}).finally(()=>{syncing=false;});
   }
-  const expired=gameEngine._getActiveBuffs().some(buff=>buff.isTemporary&&buff.timeLeft===0);
+  const expired=activeBuffs.some(buff=>buff.isTemporary&&buff.timeLeft===0);
   if(expired&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextBuffSync){
    nextBuffSync=Date.now()+2000;syncing=true;
    send('sync').catch(()=>{}).finally(()=>{syncing=false;});
@@ -130,7 +137,7 @@ gameEngine.init=()=>{
  })();
  const tracked=pending.finally(()=>{if(initializing===tracked)initializing=null;});initializing=tracked;return tracked;
 };
-gameEngine.destroy=()=>{initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
  if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
@@ -148,6 +155,7 @@ gameEngine.buyUfoComboRelay=()=>command('buyUfoComboRelay',{},true).catch(()=>{}
 gameEngine.buyUfoUnit=()=>command('buyUfoUnit',{},true).catch(()=>{});
 gameEngine.buyUfo=()=>command('buyUfo',{},true).catch(()=>{});
 gameEngine.rollbackFive=()=>command('rollbackFive').catch(()=>{});
+gameEngine.returnToRecord=()=>command('returnToRecord').catch(()=>{});
 gameEngine.buySlot=()=>command('buySlot',{},true).catch(()=>{});
 gameEngine.buyMoon=id=>command('buyMoon',{id},true).catch(()=>{});
 gameEngine.upgradeMoon=id=>command('upgradeMoon',{id},true).catch(()=>{});

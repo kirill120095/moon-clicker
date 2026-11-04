@@ -8,7 +8,7 @@ export class AnimationManager {
     this._animations = new Map();
     this._rafId = null;
     this._isRunning = false;
-    this._baseDamage = 10;this._particleCount=0;this._lastLightEffect=0;this._damageNodes=[];
+    this._baseDamage = 10;this._particleCount=0;this._lastLightEffect=0;this._damageNodes=[];this._lastLowDamage=0;this._ufoGeometry=null;
   }
 
   setBaseDamage(damage) {
@@ -67,7 +67,11 @@ export class AnimationManager {
   // ВСПЛЫВАЮЩИЙ УРОН
   // ============================================================
   showDamageNumber(x, y, damage, isCrit = false, isBoss = false) {
-    while(this._damageNodes.length>=24)this._damageNodes.shift()?.remove();
+    if(document.hidden)return;
+    const low=document.documentElement?.classList.contains('low-power');
+    if(low){const now=performance.now();if(now-this._lastLowDamage<75)return;this._lastLowDamage=now;}
+
+    while(this._damageNodes.length>=(low?8:24))this._damageNodes.shift()?.remove();
     const damageEl = document.createElement('div');this._damageNodes.push(damageEl);
     damageEl.className = 'damage-number';
     
@@ -103,6 +107,7 @@ export class AnimationManager {
   // УДАРНАЯ ВОЛНА
   // ============================================================
   createShockwave(x, y, intensity = 'normal', color = null) {
+    if(document.hidden||document.documentElement?.classList.contains('low-power'))return;
     const shockwave = document.createElement('div');
     shockwave.className = 'shockwave';
     
@@ -192,7 +197,7 @@ export class AnimationManager {
       return;
     }
 
-    if(document.body.classList.contains('reduce-effects')||document.hidden)return;
+    if(document.body.classList.contains('reduce-effects')||document.documentElement?.classList.contains('reduce-effects')||document.documentElement?.classList.contains('low-power')||document.hidden)return;
     const available=Math.max(0,64-this._particleCount);
     for (let i = 0; i < Math.min(count,available); i++) {
       this._particleCount++;
@@ -388,12 +393,15 @@ export class AnimationManager {
   }
 
   playUfoShot(index=0) {
-    const ships=document.querySelectorAll('.ufo-ship'),ship=ships[index%Math.max(1,ships.length)],moon=document.getElementById('moonWrapper');
-    if(!ship||!moon||document.hidden)return;
-    const a=ship.getBoundingClientRect(),b=moon.getBoundingClientRect();
+    if(document.hidden||document.documentElement?.classList.contains('low-power'))return;
+    if(!this._ufoGeometry){
+      const ships=[...document.querySelectorAll('.ufo-ship')],moon=document.getElementById('moonWrapper');if(!ships.length||!moon)return;
+      this._ufoGeometry={ships:ships.map(ship=>ship.getBoundingClientRect()),moon:moon.getBoundingClientRect()};
+      requestAnimationFrame(()=>{this._ufoGeometry=null;});
+    }
+    const geometry=this._ufoGeometry,a=geometry.ships[index%geometry.ships.length],b=geometry.moon;
     const x=a.x+a.width/2,y=a.y+a.height/2,dx=b.x+b.width/2-x,dy=b.y+b.height/2-y;
-    const beam=document.createElement('div');beam.className='ufo-laser';
-    beam.style.left=x+'px';beam.style.top=y+'px';beam.style.width=Math.hypot(dx,dy)+'px';beam.style.transform='rotate('+Math.atan2(dy,dx)+'rad)';
+    const beam=document.createElement('div');beam.className='ufo-laser';beam.style.left=x+'px';beam.style.top=y+'px';beam.style.width=Math.hypot(dx,dy)+'px';beam.style.transform='rotate('+Math.atan2(dy,dx)+'rad)';
     document.body.appendChild(beam);setTimeout(()=>beam.remove(),220);
   }
 

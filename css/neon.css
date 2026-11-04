@@ -128,7 +128,7 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .auth-monitor{position:fixed;bottom:12px;right:12px;z-index:3000;width:min(500px,calc(100vw - 24px));max-height:45vh;overflow:auto;background:#0f172a;padding:16px;border-radius:12px;border:1px solid #22d3ee}
 .live-combat-effects p{font-size:12px;line-height:1.6;color:#cbd5e1;margin:8px 0}.combat-live-note{font-size:11px;color:#94a3b8;line-height:1.5}
 
-#hpBar{transition:width .055s linear!important}.damage-number{animation-duration:.65s!important;will-change:transform,opacity}.moon-inner{transition:scale .07s ease-out,box-shadow .15s ease!important}
+#hpBar{transition:transform .055s linear!important}.damage-number{animation-duration:.65s!important;will-change:transform,opacity}.moon-inner{transition:scale .07s ease-out,box-shadow .15s ease!important}
 
 #authScreen.hidden ~ #authMonitorSettings{display:none!important}
 
@@ -225,3 +225,21 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #fortuneTabContent .fortune-consent{font-size:10px;line-height:1.4}
 #fortuneTabContent .fortune-spin{padding:11px;font-size:13px}
 #fortuneTabContent .fortune-odds{font-size:9px;line-height:1.5;margin:10px 0 0}
+
+/* Single composited fill instead of a layout-width change for every hit. */
+#hpBar,#timerBar,.buff-progress-bar{width:100%!important;transform-origin:left center;transition-property:transform!important}
+#stars{contain:strict;pointer-events:none}
+.low-power .panel,.low-power .radio-mini{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.low-power .moon-inner{box-shadow:0 0 16px #94a3b833!important;filter:none!important}
+.low-power .moon-inner:before,.low-power .moon-wrapper:before,.low-power .moon-wrapper:after,.low-power .fortune-halo{display:none!important}
+.low-power .moon-wrapper,.low-power .buff-card,.low-power .synergy-badge,.low-power .buff-progress-bar{animation:none!important}
+.low-power .ufo-orbit,.low-power .ufo-satellite{animation-duration:24s!important}
+.low-power .damage-number{box-shadow:none!important;text-shadow:none!important}
+.low-power .fortune-particles{display:none}
+#performanceMode{min-width:0;max-width:190px;padding:8px;border:1px solid #64748b;border-radius:8px;background:#101b30;color:#e2e8f0}
+
+#fortuneTabContent .fortune-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+#fortuneTabContent .fortune-form{grid-template-columns:minmax(0,1fr) minmax(132px,auto)}
+@media(max-width:380px){#fortuneTabContent .fortune-form{gap:6px}#fortuneTabContent .fortune-stage{width:min(100%,clamp(128px,calc(100dvh - 490px),280px))}}
+
+@media(max-width:480px){.level-controls-row{padding:6px 8px;gap:4px}.level-control-btn{width:34px;height:34px;flex-shrink:0}.level-control-btn svg{width:20px;height:20px}.level-title{font-size:18px}}
