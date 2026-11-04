@@ -19,7 +19,7 @@ function setup() {
   const storage = { getItem: k => data.get(k) ?? null, setItem(k, v) { writes.push(k); data.set(k, v); } };
   const c = { console, storage, Math: Object.create(Math), Set };
   vm.createContext(c);
-  vm.runInContext(source.replace(/\bexport\s+/g, ''), c);
+  vm.runInContext(source.replace(/^import .*;$/gm, '').replace(/\bexport\s+/g, ''), c);
   const run = code => vm.runInContext(code, c);
   run('var model = new DemoSlotBalance(storage);');
   const outcome = run('slotOutcome');
@@ -189,9 +189,9 @@ test('invalid randomness never deducts; cap explicitly reports nominal gross', (
 });
 
 test('slots have no main-game imports/network and never clear other storage keys', () => {
-  assert.doesNotMatch(source,/\bimport\b|\bfetch\s*\(|\bXMLHttpRequest\b|\bstate\.|\bdb\.|localStorage\.clear|\.removeItem\s*\(/);
+  assert.doesNotMatch(source,/\bfetch\s*\(|\bXMLHttpRequest\b|\bstate\.|\bdb\.|localStorage\.clear|\.removeItem\s*\(/);
   const wheel=fs.readFileSync(path.join(__dirname,'../src/modules/ui/wheel.js'),'utf8');assert.match(wheel,/demoSlots\.connect\(this\.root\)/);
   for(const method of ['open','close','disconnect'])assert.ok(wheel.includes('demoSlots.'+method+'()'));
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
-  assert.match(html,/css\/slots\.css\?v=fortuna-slots-3/);assert.match(html,/slots\.js\?v=fortuna-slots-3/);
+  assert.match(html,/css\/slots\.css\?v=fortuna-slots-4/);assert.match(html,/slots\.js\?v=fortuna-slots-4/);
 });

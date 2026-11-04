@@ -1,3 +1,5 @@
+import { createFortuneSlotsView } from './fortune-slots-view.js';
+import { FORTUNE_SLOTS_HTML } from './fortune-slots-template.js';
 // Device-local toy balance. Deliberately no game state, network, or economy imports.
 export const DEMO_SLOTS_KEY = 'moonclicker.fortunaDemo.v1';
 export const DEMO_START = 1000;
@@ -111,204 +113,133 @@ export class DemoSlotBalance {
   }
 }
 
+// The only controller/transaction owner. The view receives immutable-shaped snapshots,
+// never a wallet, RNG or a callback which can credit a reward.
 export class DemoSlots {
   constructor() {
     this.busy = false;
     this.allowed = false;
     this.generation = 0;
-    this.animations = [];
-    this.pauseTimer = null;
-    this.pauseResolve = null;
-    this.visibleSymbols = [...INITIAL_SYMBOLS];
     this.onHidden = () => { if (document.hidden) this.finish(); };
     this.onPageHide = () => this.finish();
   }
   connect(parent) {
     if (!this.root) {
       let storage;
-      try { storage = window.localStorage; } catch { /* sandbox/private mode: session only */ }
+      try { storage = window.localStorage; } catch { /* session-only demo */ }
       this.model = new DemoSlotBalance(storage);
-      const root = document.createElement('section');
-      root.className = 'demo-slots';
-      root.setAttribute('aria-labelledby', 'demoSlotsTitle');
-      root.innerHTML = `
-        <header class="demo-slots-header"><div><span class="demo-slots-eyebrow">ФОРТУНА · 7 БАРАБАНОВ</span><h2 id="demoSlotsTitle">Лунные слоты</h2></div><span class="demo-slots-badge">ТЕСТ</span></header>
-        <p class="demo-slots-note">Только демо-фишки. Луны, кристаллы и прогресс игры не меняются.</p>
-        <div class="demo-slots-wallet"><span>Демо-фишки <strong data-demo-balance></strong></span><span>Вращение <b>${DEMO_COST}</b></span></div>
-        <div class="demo-slots-machine">
-          <div class="demo-slots-reels" role="group" aria-label="Семь барабанов, один результат на каждом">${Array.from({ length: SLOT_REELS }, (_, i) => `<div class="demo-slot-unit"><span class="demo-slot-index" aria-hidden="true">0${i + 1}</span><div class="demo-slot-reel" role="img" aria-label="Барабан ${i + 1}"><div class="demo-slot-strip" aria-hidden="true"></div></div></div>`).join('')}</div>
-          <div class="demo-slots-caption">3–7 ОДИНАКОВЫХ · В ЛЮБЫХ ПОЗИЦИЯХ</div>
-        </div>
-        <div class="demo-slots-result" role="status" aria-live="polite" aria-atomic="true"><strong></strong><span></span><ul class="demo-slots-groups" aria-label="Расчёт выигравших групп"></ul></div>
-        <button type="button" class="demo-slots-spin">Вращать · ${DEMO_COST} демо-фишек <span aria-hidden="true">↻</span></button>
-        <button type="button" class="demo-slots-reset">Восстановить ${DEMO_START.toLocaleString('ru-RU')} демо-фишек</button>
-        <details class="demo-slots-paytable" open><summary>40 комбинаций · таблица выплат</summary><table><caption>Количество одинаковых → gross-множитель × ${DEMO_COST} фишек. Одна тестовая таблица для всех символов; не баланс игры.</caption><thead><tr><th scope="col">Символ</th>${MATCH_COUNTS.map(n => `<th scope="col">${n}<span class="demo-sr-only"> одинаковых символов</span></th>`).join('')}</tr></thead><tbody>
-          ${SLOT_SYMBOLS.map((s, i) => `<tr><th scope="row" title="${s.name}"><span aria-hidden="true">${s.icon}</span><span class="demo-symbol-name">${s.name}</span></th>${s.multipliers.map((m, j) => `<td data-demo-rule="${i}-${j + 3}" title="${s.name}, ${j + 3} символов: ${DEMO_COST * m} демо-фишек">×${m}</td>`).join('')}</tr>`).join('')}
-        </tbody></table><p>Разные группы складываются: две тройки оплачиваются обе. Для одного символа — только фактическое количество, без вложенных троек. Пары не оплачиваются. Gross — вся выплата после списания. Итог = выплата − ${DEMO_COST}; ставку второй раз не возвращаем. Все символы равновероятны.</p></details>
-        <p class="demo-slots-storage"></p>`;
-      parent.prepend(root);
-      this.root = root;
-      this.reels = [...root.querySelectorAll('.demo-slot-reel')];
-      this.strips = [...root.querySelectorAll('.demo-slot-strip')];
-      this.button = root.querySelector('.demo-slots-spin');
-      this.resetButton = root.querySelector('.demo-slots-reset');
+      const fragment = document.createElement('div');
+      fragment.innerHTML = FORTUNE_SLOTS_HTML;
+      this.root = fragment.firstElementChild;
+      parent.prepend(this.root);
+      // Stable numeric model IDs and existing saves do not change for decorative icons.
+      const symbols = SLOT_SYMBOLS.map((symbol, id) => ({ id: String(id), icon: symbol.icon, label: symbol.name }));
+      this.view = createFortuneSlotsView(this.root, { symbols });
+      this.button = this.root.querySelector('[data-mc-spin]');
+      this.resetButton = this.root.querySelector('[data-mc-reset]');
+      this.reels = [...this.root.querySelectorAll('[data-mc-reel]')];
       this.button.addEventListener('click', () => this.play());
       this.resetButton.addEventListener('click', () => this.reset());
+      this.resetButton.setAttribute('aria-label', 'Восстановить ровно 1 000 тестовых фишек, не меняя прогресс игры');
+      const paytable = Object.fromEntries(SLOT_SYMBOLS.map((symbol, id) => [String(id),
+        Object.fromEntries(MATCH_COUNTS.map((count, i) => [count, '×' + symbol.multipliers[i]]))]));
+      this.view.setPaytable(paytable,
+        'Временные gross-множители × 10 фишек, не баланс основной игры. Gross — весь возврат после одного списания 10. Итог = gross − 10; ставку второй раз не возвращаем. Для одного вида — только фактическое количество.');
     }
     this.allowed = true;
     this.model.reload();
-    this.renderSaved();
+    this.renderCurrent();
     document.addEventListener('visibilitychange', this.onHidden);
     window.addEventListener('pagehide', this.onPageHide);
   }
-  disconnect() {
-    this.finish();
-    this.allowed = false;
-    document.removeEventListener('visibilitychange', this.onHidden);
-    window.removeEventListener('pagehide', this.onPageHide);
+  snapshot({ result = this.model.last, balance = this.model.balance, state, title, detail } = {}) {
+    const groups = (result?.groups || []).map(group => ({ symbol: String(group.symbol),
+      positions: [...group.positions], payoutText: `${DEMO_COST} × ${group.multiplier} = ${group.payout}` }));
+    const net = result ? result.payout - DEMO_COST : 0;
+    const sum = result?.groups.map(group => group.payout).join(' + ');
+    const insufficient = balance < DEMO_COST;
+    return {
+      state: state || (insufficient ? 'insufficient' : result ? result.kind : 'idle'),
+      balance, cost: DEMO_COST,
+      result: (result?.symbols || INITIAL_SYMBOLS).map(String), groups,
+      title: title || (insufficient ? 'Не хватает тестовых фишек' : result
+        ? result.groups.length ? `${groups.length > 1 ? 'Две группы! ' : ''}+${net} тестовых фишек`
+          : 'Нет группы от трёх'
+        : 'Семь барабанов. Больше совпадений.'),
+      detail: detail || (result
+        ? (result.capped ? `По таблице gross ${sum} = ${result.nominalPayout}; лимит демо-баланса. ` : '') +
+          `Выплата (gross) ${groups.length > 1 && !result.capped ? sum + ' = ' : ''}${result.payout} · потрачено ${DEMO_COST}.` +
+          (insufficient ? ' Восстанови только тестовый баланс кнопкой ниже.' : '')
+        : insufficient ? `Нужно ${DEMO_COST} тестовых фишек. Восстанови ровно 1 000, не меняя прогресс игры.`
+          : 'Собери от 3 одинаковых в любых позициях. Разные группы складываются.')
+    };
+  }
+  storageNote() {
+    const note = this.root?.querySelector('[data-mc-storage]');
+    if (note) note.textContent = this.model.persistent
+      ? 'Тестовый баланс только в этом браузере, отдельно от аккаунта. Восстановление бесплатно и устанавливает ровно 1 000.'
+      : 'Хранилище недоступно: тестовые фишки только на эту сессию. Прогресс игры не затронут.';
+  }
+  renderCurrent(overrides) {
+    if (!this.root) return;
+    this.view.render(this.snapshot(overrides));
+    this.storageNote();
   }
   open() {
     if (!this.allowed || this.busy) return;
     this.model.reload();
-    this.renderSaved();
+    this.renderCurrent();
   }
   close() { this.finish(); }
-  motion() {
-    return !document.documentElement.classList.contains('reduce-effects') &&
-      !document.body.classList.contains('reduce-effects') &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-  message(title, detail) {
-    this.root.querySelector('.demo-slots-result strong').textContent = title;
-    this.root.querySelector('.demo-slots-result > span').textContent = detail;
-  }
-  refreshBalance(visible = this.model.balance) {
-    this.root.querySelector('[data-demo-balance]').textContent = visible.toLocaleString('ru-RU');
-    this.button.disabled = this.busy || this.model.balance < DEMO_COST;
-    this.button.setAttribute('aria-busy', String(this.busy));
-    this.resetButton.disabled = this.busy;
-    this.root.querySelector('.demo-slots-storage').textContent = this.model.persistent
-      ? 'Демо-баланс хранится только в этом браузере, отдельно от аккаунта. Его можно восстановить бесплатно.'
-      : 'Хранилище недоступно: демо-фишки только на эту сессию. Прогресс игры не затронут.';
-  }
-  showSymbol(index, symbol) {
-    const span = document.createElement('span');
-    span.textContent = SLOT_SYMBOLS[symbol].icon;
-    this.strips[index].replaceChildren(span);
-    this.strips[index].style.transform = '';
-    this.reels[index].setAttribute('aria-label', `Барабан ${index + 1}: ${SLOT_SYMBOLS[symbol].name}`);
-    this.reels[index].classList.remove('demo-slot-moving');
-    this.visibleSymbols[index] = symbol;
-  }
-  clearResult() {
-    this.root.classList.remove('demo-slots-win', 'demo-slots-loss');
-    this.root.querySelector('.demo-slots-groups').replaceChildren();
-    for (const node of this.root.querySelectorAll('[data-demo-group]')) {
-      node.removeAttribute('data-demo-group');
-      node.classList.remove('demo-slot-hit', 'demo-rule-hit');
-    }
-  }
-  renderSaved() {
-    this.clearResult();
-    const result = this.model.last;
-    (result?.symbols || INITIAL_SYMBOLS).forEach((symbol, i) => this.showSymbol(i, symbol));
-    if (result) this.showResult(result);
-    else this.message('Семь барабанов. Больше совпадений.', 'Собери от 3 одинаковых где угодно. Разные группы складываются.');
-    if (this.model.balance < DEMO_COST) this.message('Не хватает демо-фишек', `Нужно ${DEMO_COST}. Восстанови тестовый баланс кнопкой ниже.`);
-    this.refreshBalance();
-  }
-  showResult(result) {
-    this.root.classList.add('demo-slots-' + result.kind);
-    const net = result.payout - DEMO_COST;
-    const title = result.groups.length ? `${result.groups.length > 1 ? 'Две группы! ' : ''}+${net} демо-фишек` : 'Нет группы от трёх';
-    const sum = result.groups.map(group => group.payout).join(' + ');
-    const detail = result.capped ? `По таблице ${sum} = ${result.nominalPayout}. Лимит демо-баланса: выплата ${result.payout} · потрачено ${DEMO_COST}.`
-      : `Выплата (gross) ${result.groups.length > 1 ? sum + ' = ' : ''}${result.payout} · потрачено ${DEMO_COST}.`;
-    this.message(title, detail);
-    const list = this.root.querySelector('.demo-slots-groups');
-    list.replaceChildren();
-    result.groups.forEach((group, index) => {
-      const symbol = SLOT_SYMBOLS[group.symbol];
-      const line = document.createElement('li');
-      line.setAttribute('data-demo-group', index);
-      line.textContent = `${symbol.icon} ${symbol.name} · ${group.count} шт.: ${DEMO_COST} × ${group.multiplier} = ${group.payout}`;
-      list.append(line);
-      for (const position of group.positions) {
-        this.reels[position].classList.add('demo-slot-hit');
-        this.reels[position].setAttribute('data-demo-group', index);
-        this.reels[position].setAttribute('aria-label', `Барабан ${position + 1}: ${symbol.name}, выигравшая группа ${group.count}`);
-      }
-      const cell = this.root.querySelector(`[data-demo-rule="${group.symbol}-${group.count}"]`);
-      cell.classList.add('demo-rule-hit');
-      cell.setAttribute('data-demo-group', index);
-    });
+  disconnect() {
+    this.finish();
+    this.allowed = false;
+    this.view?.destroy();
+    document.removeEventListener('visibilitychange', this.onHidden);
+    window.removeEventListener('pagehide', this.onPageHide);
   }
   async play() {
+    // Synchronous controller lock is authoritative, even if someone removes disabled.
     if (!this.allowed || this.busy) return false;
-    const result = this.model.spin();
-    if (!result) { this.renderSaved(); return false; }
     this.busy = true;
-    this.current = result;
     const generation = ++this.generation;
-    this.clearResult();
-    this.refreshBalance(result.before - DEMO_COST);
-    this.message('Семь барабанов в движении…', `Потрачено ${DEMO_COST} демо-фишек. Ждём седьмой символ.`);
+    const previous = this.model.last;
+    let result;
     try {
-      if (this.motion()) {
-        await Promise.all(this.strips.map(async (strip, i) => {
-          if (!strip.animate) return;
-          const lowPower = document.documentElement.classList.contains('low-power');
-          const count = lowPower ? 8 + i : 12 + i * 2;
-          const cells = [this.visibleSymbols[i], ...Array.from({ length: count - 2 }, (_, j) => (j + i) % SLOT_SYMBOLS.length), result.symbols[i]];
-          strip.replaceChildren(...cells.map(id => { const span = document.createElement('span'); span.textContent = SLOT_SYMBOLS[id].icon; return span; }));
-          this.reels[i].classList.add('demo-slot-moving');
-          this.reels[i].setAttribute('aria-label', `Барабан ${i + 1}: вращается`);
-          const animation = strip.animate([
-            { transform: 'translateY(0)' },
-            { transform: `translateY(calc(-100% + var(--demo-slot-cell)))` }
-          ], { duration: lowPower ? 650 + i * 160 : 850 + i * 200, easing: 'cubic-bezier(.15,.55,.15,1)', fill: 'forwards' });
-          this.animations.push(animation);
-          await animation.finished.catch(() => {});
-          if (generation !== this.generation) return;
-          animation.cancel();
-          this.showSymbol(i, result.symbols[i]);
-        }));
-      } else {
-        // Keep a short click lock without motion, including reduced-effects mode.
-        await new Promise(resolve => {
-          this.pauseResolve = resolve;
-          this.pauseTimer = setTimeout(resolve, 300);
-        });
-      }
+      result = this.model.spin();
+      if (!result) { this.busy = false; this.renderCurrent(); return false; }
+      // Single model transaction is already committed. Begin displays only its debit,
+      // using old faces; reveal later shows its gross outcome without any settlement.
+      const spinning = this.snapshot({ result: previous, balance: result.before - DEMO_COST,
+        state: 'spinning', title: 'Барабаны в движении…',
+        detail: `Потрачено ${DEMO_COST} тестовых фишек. Считаются только 7 итоговых символов.` });
+      this.view.begin(spinning);
+      this.storageNote();
+      await this.view.reveal(this.snapshot());
     } catch {
-      // A visual-only failure must not strand the button or reject a click handler.
+      // A view-only failure never rolls back or repeats the committed transaction.
     } finally {
-      // Also reveal the committed outcome if a browser lacks/interrupts animation support.
-      if (generation === this.generation) this.finish();
+      if (generation === this.generation) {
+        this.busy = false;
+        this.renderCurrent();
+      }
     }
-    return true;
+    return Boolean(result);
   }
   finish() {
-    if (!this.busy) return;
+    if (!this.root) return;
     this.generation++;
-    clearTimeout(this.pauseTimer);
-    this.pauseTimer = null;
-    this.pauseResolve?.();
-    this.pauseResolve = null;
-    for (const animation of this.animations) animation.cancel();
-    this.animations = [];
+    this.view.cancel();
     this.busy = false;
-    this.current.symbols.forEach((symbol, i) => this.showSymbol(i, symbol));
-    this.showResult(this.current);
-    this.current = null;
-    this.refreshBalance();
-    if (this.model.balance < DEMO_COST) this.message('Не хватает демо-фишек', `Выплата 0 · потрачено ${DEMO_COST}. Восстанови только демо-баланс ниже.`);
+    // No stale settled snapshot: always read the current model, including a spin
+    // already committed before cancel, or a balance updated from another tab.
+    this.renderCurrent();
   }
   reset() {
     if (!this.allowed || this.busy) return false;
     this.model.reset();
-    this.renderSaved();
-    this.message('Демо-баланс восстановлен', `${DEMO_START.toLocaleString('ru-RU')} тестовых фишек. Сохранение игры не изменилось.`);
+    this.renderCurrent({ title: 'Тестовый баланс восстановлен',
+      detail: 'Ровно 1 000 тестовых фишек. Сохранение и ресурсы игры не изменились.' });
     return true;
   }
 }
