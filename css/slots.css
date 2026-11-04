@@ -10,3 +10,4 @@
 @keyframes mt-wire-pulse{50%{opacity:.55}}.mt-column.mt-rolling{animation:mt-wire-pulse .8s linear infinite}.reduce-effects .mt-rolling,.low-power .mt-rolling,.mt-slots[data-motion="reduced"] .mt-rolling{animation:none}
 @media(prefers-reduced-motion:reduce){.mt-column.mt-rolling{animation:none}}
 @media(max-width:380px){.mt-slots{padding:9px}.mt-cell{height:52px;font-size:14px}.mt-controls{grid-template-columns:40px minmax(0,1fr) 40px}}
+.mt-inventory{margin-top:12px;padding:10px;border:1px solid #566278}.mt-inventory h3{font-size:13px;margin:5px 0}.mt-inventory p,.mt-inventory li{font-size:11px;overflow-wrap:anywhere}.mt-inventory ul{padding-left:18px;margin:6px 0}

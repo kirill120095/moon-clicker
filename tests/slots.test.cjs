@@ -71,7 +71,7 @@ test('normal RNG uses exactly five draws, never fifteen independent cells',async
 test('deterministic fixtures are explicit test-only strip stops, never hidden normal rerolls',async()=>{
  const a=await setup();const first=a.model.spin({fixtureId:'leftThree'});
  assert.equal(first.source.kind,'fixture');assert.equal(first.source.id,'leftThree');assert.deepEqual(first.stops,a.fixtureStops.leftThree);
- const b=await setup({testMode:false});assert.throws(()=>b.model.spin({fixtureId:'leftThree'}),/test mode/);assert.equal(b.writes.length,0);
+ const prior=a.writes.length;assert.throws(()=>new a.TempleWallet({config:a.config,storage:a.storage,testMode:false}),/test-only/);assert.equal(a.writes.length,prior);
  let draws=0;const c=await setup({rng:()=>{draws++;return 0}});assert.equal(c.model.spin().source.kind,'random');assert.equal(draws,5);
 });
 
@@ -128,7 +128,7 @@ test('all legacy7x1 saves preserve valid balance but clear old last/bonus and fl
 
 test('changing config ID clears bonus/old result while preserving balance',async()=>{
  const a=await setup();a.model.spin({fixtureId:'trigger'});const balance=a.model.balance;
- const loaded=new a.TempleWallet({config:{...a.config,id:'new-final-rules'},storage:a.storage});
+ const loaded=new a.TempleWallet({config:{...a.config,id:'new-final-rules'},storage:a.storage,testMode:true});
  assert.equal(loaded.balance,balance);assert.equal(loaded.last,null);assert.equal(loaded.bonus.remaining,0);assert.equal(loaded.rulesChanged,true);
 });
 
@@ -142,7 +142,7 @@ test('payout <= total stake is not celebrated; free net uses debit0 explicitly',
 
 test('blocked storage remains session-only; invalid RNG never commits a transaction',async()=>{
  const {TempleWallet}=await wallet,{TEMPLE_FIXTURE_CONFIG:c}=await fixtures;
- const m=new TempleWallet({config:c,storage:{getItem(){throw Error('blocked')}},rng:()=>NaN});
+ const m=new TempleWallet({config:c,storage:{getItem(){throw Error('blocked')}},rng:()=>NaN,testMode:true});
  assert.equal(m.persistent,false);assert.throws(()=>m.spin());assert.equal(m.balance,1000);assert.equal(m.sequence,0);
 });
 
@@ -152,9 +152,9 @@ test('ordinary line cash and scatter bonus commit together in one transaction',a
  assert.equal(r.scatterCount,3);assert.equal(r.freeSpinsAwarded,10);assert.equal(a.model.bonus.remaining,10);assert.equal(a.writes.length,1);
 });
 
-test('unconfigured real path preserves legacy balance and never starts unapproved math',async()=>{
+test('unconfigured test adapter preserves legacy balance without starting unapproved math',async()=>{
  const a=await setup();a.data.set(a.key,JSON.stringify({version:3,balance:1275,last:{symbols:[0,0,0,0,0,0,0]}}));
- let draws=0;const m=new a.TempleWallet({storage:a.storage,rng:()=>{draws++;return 0}});
+ let draws=0;const m=new a.TempleWallet({storage:a.storage,rng:()=>{draws++;return 0},testMode:true});
  assert.equal(m.balance,1275);assert.equal(m.last,null);assert.equal(m.rulesChanged,true);
  assert.equal(m.spin(),null);assert.equal(m.lastError,'CONFIG_PENDING');assert.equal(draws,0);assert.equal(a.writes.length,0);
 });

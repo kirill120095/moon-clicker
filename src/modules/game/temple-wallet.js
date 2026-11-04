@@ -41,6 +41,8 @@ function settle(config, { before, bonusBefore, mode, stake, stops, requestId, se
 /** Only this class commits chips and bonus state. All presentation is downstream. */
 export class TempleWallet {
   constructor({ config = null, storage, rng = () => Math.random(), testMode = false, fixtures = {} } = {}) {
+    if (testMode !== true) throw Error('TempleWallet is a test-only adapter, never an account wallet');
+    this.kind = 'demo-test';
     this.config = config ? createTempleConfig(config) : null;
     this.storage = storage; this.persistent = Boolean(storage); this.rng = rng;
     this.testMode = testMode === true;
