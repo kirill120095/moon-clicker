@@ -1,247 +1,117 @@
-import { createFortuneSlotsView } from './fortune-slots-view.js';
+import { TempleWallet } from '../game/temple-wallet.js';
+import { TEMPLE_STAKES } from '../game/temple-rules.js';
+import { TEMPLE_CONFIG, TEMPLE_TEST_MODE, TEMPLE_FIXTURES } from '../game/temple-config.js';
+import { createTempleWireframeView } from './fortune-slots-view.js';
 import { FORTUNE_SLOTS_HTML } from './fortune-slots-template.js';
-// Device-local toy balance. Deliberately no game state, network, or economy imports.
-export const DEMO_SLOTS_KEY = 'moonclicker.fortunaDemo.v1';
-export const DEMO_START = 1000;
-export const DEMO_COST = 10;
-export const SLOT_REELS = 7;
-export const MATCH_COUNTS = Object.freeze([3, 4, 5, 6, 7]);
-const SAVE_VERSION = 3;
-const MAX_BALANCE = 1_000_000_000;
-const INITIAL_SYMBOLS = Object.freeze([0, 1, 2, 3, 4, 5, 6]);
-// Uniform temporary GROSS multipliers by EXACT count 3–7, not main-game balance.
-// Gross is the whole return after the single deduction; never add the stake again.
-export const SLOT_GROSS_MULTIPLIERS = Object.freeze([2, 5, 12, 40, 150]);
-export const SLOT_SYMBOLS = Object.freeze([
-  { icon: '🌙', name: 'Луна' },
-  { icon: '⭐', name: 'Звезда' },
-  { icon: '💎', name: 'Кристалл' },
-  { icon: '☄️', name: 'Комета' },
-  { icon: '🪐', name: 'Планета' },
-  { icon: '🚀', name: 'Ракета' },
-  { icon: '🛸', name: 'НЛО' },
-  { icon: '👽', name: 'Пришелец' }
-].map(s => Object.freeze({ ...s, multipliers: SLOT_GROSS_MULTIPLIERS })));
 
-export function slotOutcome(symbols) {
-  if (!Array.isArray(symbols) || symbols.length !== SLOT_REELS ||
-      !symbols.every(id => Number.isInteger(id) && id >= 0 && id < SLOT_SYMBOLS.length)) {
-    throw new Error('Некорректные символы слотов');
-  }
-  const positions = SLOT_SYMBOLS.map(() => []);
-  symbols.forEach((id, index) => positions[id].push(index));
-  const groups = positions.flatMap((places, symbol) => {
-    if (places.length < 3) return [];
-    // One group per symbol: pay only its actual count, never nested subsets.
-    const multiplier = SLOT_SYMBOLS[symbol].multipliers[places.length - 3];
-    return [{ symbol, count: places.length, positions: places, multiplier, payout: DEMO_COST * multiplier }];
-  });
-  const multiplier = groups.reduce((sum, group) => sum + group.multiplier, 0);
-  return { symbols: [...symbols], groups, multiplier, payout: DEMO_COST * multiplier,
-    kind: groups.length ? 'win' : 'loss' };
-}
-
-function validBalance(value) {
-  return Number.isSafeInteger(value) && value >= 0 && value <= MAX_BALANCE;
-}
-function transaction(before, symbols) {
-  const result = slotOutcome(symbols);
-  const after = Math.min(MAX_BALANCE, before - DEMO_COST + result.payout);
-  const payout = after - before + DEMO_COST;
-  return { ...result, before, after, payout, nominalPayout: result.payout, capped: payout < result.payout };
-}
-
-export class DemoSlotBalance {
-  constructor(storage, random = () => Math.random()) {
-    this.storage = storage;
-    this.random = random;
-    this.persistent = Boolean(storage);
-    this.balance = DEMO_START;
-    this.last = null;
-    this.reload();
-  }
-  reload() {
-    if (!this.persistent) return;
-    let raw;
-    try { raw = this.storage.getItem(DEMO_SLOTS_KEY); }
-    catch { this.persistent = false; return; }
-    try {
-      if (raw === null) { this.balance = DEMO_START; this.last = null; return; }
-      const saved = JSON.parse(raw);
-      if (![1, 2, SAVE_VERSION].includes(saved.version) || !validBalance(saved.balance)) throw new Error('Invalid demo save');
-      this.balance = saved.balance;
-      this.last = null;
-      // Keep old demo balances, but never revalue a saved result under a new table/stake.
-      if (saved.version === SAVE_VERSION && saved.last && validBalance(saved.last.before) && saved.last.before >= DEMO_COST) {
-        try {
-          const last = transaction(saved.last.before, saved.last.symbols);
-          if (last.after === saved.balance) this.last = last;
-        } catch { /* A malformed last result does not erase an otherwise valid demo balance. */ }
-      }
-    } catch {
-      // A corrupt demo save must never touch the real game or prevent login.
-      this.balance = DEMO_START;
-      this.last = null;
-    }
-  }
-  save() {
-    if (!this.persistent) return;
-    try {
-      this.storage.setItem(DEMO_SLOTS_KEY, JSON.stringify({ version: SAVE_VERSION, balance: this.balance,
-        last: this.last ? { before: this.last.before, symbols: this.last.symbols } : null }));
-    } catch { this.persistent = false; }
-  }
-  spin() {
-    this.reload();
-    if (this.balance < DEMO_COST) return null;
-    const symbols = Array.from({ length: SLOT_REELS }, () => {
-      const value = this.random();
-      if (!Number.isFinite(value) || value < 0 || value >= 1) throw new Error('Invalid demo random');
-      return Math.floor(value * SLOT_SYMBOLS.length);
-    });
-    this.last = transaction(this.balance, symbols);
-    this.balance = this.last.after;
-    // One atomic write commits cost AND all groups before visuals. Reload cannot pay twice.
-    // The UI shows the deducted balance until the last reel stops; it never settles money.
-    this.save();
-    return this.last;
-  }
-  reset() {
-    this.balance = DEMO_START;
-    this.last = null;
-    this.save();
-  }
-}
-
-// The only controller/transaction owner. The view receives immutable-shaped snapshots,
-// never a wallet, RNG or a callback which can credit a reward.
+// One controller and one isolated wallet. The real illustrated cabinet will use
+// this snapshot contract; the current view is deliberately labelled WIREFRAME.
 export class DemoSlots {
-  constructor() {
-    this.busy = false;
-    this.allowed = false;
-    this.generation = 0;
-    this.onHidden = () => { if (document.hidden) this.finish(); };
-    this.onPageHide = () => this.finish();
+  constructor({ config = TEMPLE_CONFIG, testMode = TEMPLE_TEST_MODE, fixtures = TEMPLE_FIXTURES } = {}) {
+    this.options = { config, testMode, fixtures };
+    this.allowed = false; this.visible = false; this.busy = false; this.generation = 0;
+    this.onHidden = () => {
+      if (document.hidden) this.close();
+      else if (this.allowed && this.root?.getClientRects?.().length) this.open();
+    };
+    this.onPageHide = () => this.close();
   }
   connect(parent) {
     if (!this.root) {
-      let storage;
-      try { storage = window.localStorage; } catch { /* session-only demo */ }
-      this.model = new DemoSlotBalance(storage);
-      const fragment = document.createElement('div');
-      fragment.innerHTML = FORTUNE_SLOTS_HTML;
-      this.root = fragment.firstElementChild;
-      parent.prepend(this.root);
-      // Stable numeric model IDs and existing saves do not change for decorative icons.
-      const symbols = SLOT_SYMBOLS.map((symbol, id) => ({ id: String(id), icon: symbol.icon, label: symbol.name }));
-      this.view = createFortuneSlotsView(this.root, { symbols });
-      this.button = this.root.querySelector('[data-mc-spin]');
-      this.resetButton = this.root.querySelector('[data-mc-reset]');
-      this.reels = [...this.root.querySelectorAll('[data-mc-reel]')];
+      let storage; try { storage = window.localStorage; } catch { /* session-only demo */ }
+      this.model = new TempleWallet({ ...this.options, storage });
+      const fragment = document.createElement('div'); fragment.innerHTML = FORTUNE_SLOTS_HTML;
+      this.root = fragment.firstElementChild; parent.prepend(this.root);
+      this.view = createTempleWireframeView(this.root);
+      this.button = this.root.querySelector('[data-mt-spin]');
+      this.resetButton = this.root.querySelector('[data-mt-reset]');
       this.button.addEventListener('click', () => this.play());
       this.resetButton.addEventListener('click', () => this.reset());
-      this.resetButton.setAttribute('aria-label', 'Восстановить ровно 1 000 тестовых фишек, не меняя прогресс игры');
-      const paytable = Object.fromEntries(SLOT_SYMBOLS.map((symbol, id) => [String(id),
-        Object.fromEntries(MATCH_COUNTS.map((count, i) => [count, '×' + symbol.multipliers[i]]))]));
-      this.view.setPaytable(paytable,
-        'Временные gross-множители × 10 фишек, не баланс основной игры. Gross — весь возврат после одного списания 10. Итог = gross − 10; ставку второй раз не возвращаем. Для одного вида — только фактическое количество.');
+      this.root.querySelector('[data-mt-minus]').addEventListener('click', () => this.changeStake(-1));
+      this.root.querySelector('[data-mt-plus]').addEventListener('click', () => this.changeStake(1));
     }
-    this.allowed = true;
-    this.model.reload();
-    this.renderCurrent();
-    document.addEventListener('visibilitychange', this.onHidden);
-    window.addEventListener('pagehide', this.onPageHide);
+    this.allowed = true; this.model.reload(); this.renderCurrent();
+    document.addEventListener('visibilitychange', this.onHidden); window.addEventListener('pagehide', this.onPageHide);
   }
-  snapshot({ result = this.model.last, balance = this.model.balance, state, title, detail } = {}) {
-    const groups = (result?.groups || []).map(group => ({ symbol: String(group.symbol),
-      positions: [...group.positions], payoutText: `${DEMO_COST} × ${group.multiplier} = ${group.payout}` }));
-    const net = result ? result.payout - DEMO_COST : 0;
-    const sum = result?.groups.map(group => group.payout).join(' + ');
-    const insufficient = balance < DEMO_COST;
-    return {
-      state: state || (insufficient ? 'insufficient' : result ? result.kind : 'idle'),
-      balance, cost: DEMO_COST,
-      result: (result?.symbols || INITIAL_SYMBOLS).map(String), groups,
-      title: title || (insufficient ? 'Не хватает тестовых фишек' : result
-        ? result.groups.length ? `${groups.length > 1 ? 'Две группы! ' : ''}+${net} тестовых фишек`
-          : 'Нет группы от трёх'
-        : 'Семь барабанов. Больше совпадений.'),
-      detail: detail || (result
-        ? (result.capped ? `По таблице gross ${sum} = ${result.nominalPayout}; лимит демо-баланса. ` : '') +
-          `Выплата (gross) ${groups.length > 1 && !result.capped ? sum + ' = ' : ''}${result.payout} · потрачено ${DEMO_COST}.` +
-          (insufficient ? ' Восстанови только тестовый баланс кнопкой ниже.' : '')
-        : insufficient ? `Нужно ${DEMO_COST} тестовых фишек. Восстанови ровно 1 000, не меняя прогресс игры.`
-          : 'Собери от 3 одинаковых в любых позициях. Разные группы складываются.')
-    };
+  configure(config, { testMode = false, fixtures = {} } = {}) {
+    if (this.busy) return false;
+    this.options = { config, testMode, fixtures };
+    if (this.model) {
+      const previous = this.model;
+      this.model = new TempleWallet({ ...this.options, storage: previous.persistent ? previous.storage : undefined });
+      if (!previous.persistent) { this.model.balance = previous.balance; this.model.stake = previous.stake; this.model.rulesChanged = true; }
+      this.renderCurrent();
+    }
+    return true;
   }
-  storageNote() {
-    const note = this.root?.querySelector('[data-mc-storage]');
-    if (note) note.textContent = this.model.persistent
-      ? 'Тестовый баланс только в этом браузере, отдельно от аккаунта. Восстановление бесплатно и устанавливает ровно 1 000.'
-      : 'Хранилище недоступно: тестовые фишки только на эту сессию. Прогресс игры не затронут.';
+  snapshot({ spinning = false, result = this.model.last, title, detail } = {}) {
+    const m = this.model, free = m.bonus.remaining > 0, stake = free ? m.bonus.triggerStake : m.stake;
+    const pending = spinning && result;
+    const balance = pending ? result.before - result.debit : m.balance;
+    const bonus = pending ? result.bonusBefore : m.bonus;
+    const mode = pending ? result.mode : free ? 'free' : 'paid';
+    let heading = 'Каркас 5×3 — не финальный автомат';
+    let text = m.config ? 'Ожидаются финальные математика и иллюстрированный кабинет.' : 'SPIN недоступен: финальные reel strips и paytable ещё не подключены.';
+    if (result && !spinning) {
+      const credit = result.creditedGross;
+      heading = result.mode === 'free' ? `Бесплатное вращение: +${credit}`
+        : result.outcome === 'win' ? `Чистый выигрыш +${result.net}`
+          : result.outcome === 'return' ? 'Возврат ставки · net 0'
+            : result.outcome === 'partial-return' ? `Частичный возврат · net ${result.net}` : `Без выплаты · net ${result.net}`;
+      text = `Общая ставка ${result.totalStake}, линия ${result.lineBet}. Gross ${credit}; списано ${result.debit}; net ${result.net}.`;
+      if (result.mode === 'free') text += ` Бесплатное: debit 0, сохранена ставка триггера ${result.totalStake}.`;
+      if (result.freeSpinsAwarded) text += ' Получено 10 бесплатных вращений — запускай вручную по одному.';
+      if (result.capped) text += ` Технический лимит: номинальный gross ${result.gross}.`;
+    }
+    if (spinning) { heading = mode === 'free' ? 'Бесплатное вращение…' : 'Вращение…'; text = `Списано ${result.debit}. Результат определяется пятью stop-индексами реальных лент, не 15 независимыми ячейками.`; }
+    return { phase: spinning ? 'spinning' : !m.config ? 'config-pending' : 'settled',
+      title: title || heading, detail: detail || text, visible: this.visible, ready: Boolean(m.config),
+      grid: (spinning ? this.previousGrid : result?.grid)?.map(column => [...column]) || null,
+      result: spinning || !result ? null : structuredClone(result),
+      balance, selectedStake: m.stake, stake: pending ? result.totalStake : stake,
+      mode, bonus: { ...bonus }, debit: pending ? result.debit : result?.debit ?? null,
+      rulesChanged: m.rulesChanged, persistent: m.persistent,
+      testMode: m.testMode, fixtureIds: m.testMode ? Object.keys(m.fixtures) : [],
+      config: m.config, busy: this.busy,
+      spinAvailable: Boolean(m.config) && !this.busy && (free || m.balance >= m.stake) };
   }
-  renderCurrent(overrides) {
-    if (!this.root) return;
-    this.view.render(this.snapshot(overrides));
-    this.storageNote();
-  }
-  open() {
-    if (!this.allowed || this.busy) return;
-    this.model.reload();
-    this.renderCurrent();
-  }
-  close() { this.finish(); }
+  renderCurrent(overrides) { if (this.root) this.view.render(this.snapshot(overrides)); }
+  open() { if (!this.allowed) return; this.visible = true; if (!this.busy) { this.model.reload(); this.renderCurrent(); } }
+  close() { this.visible = false; this.finish(); }
   disconnect() {
-    this.finish();
-    this.allowed = false;
-    this.view?.destroy();
-    document.removeEventListener('visibilitychange', this.onHidden);
-    window.removeEventListener('pagehide', this.onPageHide);
+    this.close(); this.allowed = false; this.view?.destroy();
+    document.removeEventListener('visibilitychange', this.onHidden); window.removeEventListener('pagehide', this.onPageHide);
   }
-  async play() {
-    // Synchronous controller lock is authoritative, even if someone removes disabled.
+  async play({ fixtureId, mode, requestId } = {}) {
     if (!this.allowed || this.busy) return false;
-    this.busy = true;
-    const generation = ++this.generation;
-    const previous = this.model.last;
+    this.busy = true; const generation = ++this.generation;
     let result;
     try {
-      result = this.model.spin();
-      if (!result) { this.busy = false; this.renderCurrent(); return false; }
-      // Single model transaction is already committed. Begin displays only its debit,
-      // using old faces; reveal later shows its gross outcome without any settlement.
-      const spinning = this.snapshot({ result: previous, balance: result.before - DEMO_COST,
-        state: 'spinning', title: 'Барабаны в движении…',
-        detail: `Потрачено ${DEMO_COST} тестовых фишек. Считаются только 7 итоговых символов.` });
-      this.view.begin(spinning);
-      this.storageNote();
-      await this.view.reveal(this.snapshot());
+      this.model.reload(); this.previousGrid = this.model.last?.grid || null;
+      const chosen = fixtureId ?? this.view.selectedFixture?.();
+      result = this.model.spin({ mode: mode ?? (this.model.bonus.remaining ? 'free' : 'paid'), requestId, fixtureId: chosen || undefined });
+      if (!result) return false;
+      this.view.begin(this.snapshot({ spinning: true, result }));
+      await this.view.reveal(this.snapshot({ result }));
     } catch {
-      // A view-only failure never rolls back or repeats the committed transaction.
+      // Presentation/fixture errors never retry RNG or roll back a committed wallet.
     } finally {
-      if (generation === this.generation) {
-        this.busy = false;
-        this.renderCurrent();
-      }
+      if (generation === this.generation) { this.busy = false; this.renderCurrent(); }
     }
     return Boolean(result);
   }
   finish() {
     if (!this.root) return;
-    this.generation++;
-    this.view.cancel();
-    this.busy = false;
-    // No stale settled snapshot: always read the current model, including a spin
-    // already committed before cancel, or a balance updated from another tab.
-    this.renderCurrent();
+    this.generation++; this.view.cancel(); this.busy = false; this.renderCurrent();
+  }
+  changeStake(delta) {
+    if (!this.allowed || this.busy || this.model.bonus.remaining) return false;
+    const index = TEMPLE_STAKES.indexOf(this.model.stake), next = TEMPLE_STAKES[Math.max(0, Math.min(TEMPLE_STAKES.length - 1, index + Math.sign(delta)))];
+    const changed = this.model.setStake(next); this.renderCurrent(); return changed;
   }
   reset() {
     if (!this.allowed || this.busy) return false;
-    this.model.reset();
-    this.renderCurrent({ title: 'Тестовый баланс восстановлен',
-      detail: 'Ровно 1 000 тестовых фишек. Сохранение и ресурсы игры не изменились.' });
-    return true;
+    this.model.reset(); this.renderCurrent({ title: 'Демо сброшено до 1 000', detail: 'Free counter и прошлый результат очищены. Основные ресурсы игры не изменились.' }); return true;
   }
 }
-
 export const demoSlots = new DemoSlots();
