@@ -1,5 +1,5 @@
 import { applyAction, freshState } from './rules.js';
-import { CONSTANTS } from './constants.js';
+import { CONSTANTS, getWheelSectorIndex } from './constants.js';
 const base=Deno.env.get('SUPABASE_URL')!,service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const headers={apikey:service,Authorization:'Bearer '+service,'Content-Type':'application/json'};
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS'};
@@ -65,9 +65,9 @@ Deno.serve(async(req:Request)=>{
    if(!check.ok)return reply({error:'Не удалось проверить доступ к колесу'},503);
    if(await check.json()!==true)return reply({error:'Колесо доступно только владельцу'},403);
    // Rejection sampling avoids modulo bias. Keep this result across commit retries.
-   const count=CONSTANTS.WHEEL.SECTORS.length,limit=Math.floor(0x100000000/count)*count;
+   const count=CONSTANTS.WHEEL.WEIGHTS.reduce((sum,w)=>sum+w,0),limit=Math.floor(0x100000000/count)*count;
    let value;do{value=crypto.getRandomValues(new Uint32Array(1))[0];}while(value>=limit);
-   trusted={canSpinWheel:true,wheelIndex:value%count};
+   trusted={canSpinWheel:true,wheelIndex:getWheelSectorIndex(value%count)};
   }
   const hash=await tokenHash(authorization);
   let snapshot=await openSnapshot(body.snapshot,hash);

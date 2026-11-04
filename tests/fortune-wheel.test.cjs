@@ -5,7 +5,7 @@ test('wheel rejects forged owner, payout and outcome in client payload without m
  const run=setup();run('var s=freshState();s.playerData.shards=1000;var before=JSON.stringify(s)');
  assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true,canSpinWheel:true,wheelIndex:6,payout:999999},100000)"),/владельцу/);assert.equal(run('JSON.stringify(s)===before'),true);
 });
-test('every sector pays from server-selected outcome including half-stakes and full bankruptcy',()=>{
+test('every sector pays from server-selected outcome including losing stakes and full bankruptcy',()=>{
  const run=setup();
  for(let index=0;index<12;index++){
   run("var s=freshState();s.playerData.shards=1000;var next=applyAction(s,'spinWheel',{bet:101,acceptBankruptcy:true,wheelIndex:6,payout:999999},100000,{canSpinWheel:true,wheelIndex:"+index+"});");
@@ -19,8 +19,8 @@ test('invalid stakes, missing bankruptcy consent, bad outcomes and rapid spins c
  assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100},100000,trusted)"));
  assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},100000,{canSpinWheel:true,wheelIndex:12})"));
  run("s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},100000,trusted);var before=JSON.stringify(s)");
- assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},105999,trusted)"),/окончания/);assert.equal(run('JSON.stringify(s)===before'),true);
- assert.equal(run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},106000,trusted).playerData.shards"),1200);
+ assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},105199,trusted)"),/окончания/);assert.equal(run('JSON.stringify(s)===before'),true);
+ assert.equal(run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},105200,trusted).playerData.shards"),1200);
 });
 test('wheel caps huge winnings and does not increment combat clicks or kill counters',()=>{
  const run=setup();run("var s=freshState();s.playerData.shards=CONSTANTS.SAFE_NUMBER_CAP;s=applyAction(s,'spinWheel',{bet:s.playerData.shards,acceptBankruptcy:true},100000,{canSpinWheel:true,wheelIndex:6})");
@@ -32,7 +32,7 @@ function uiSetup(){
  const result={replaceChildren(){},append(){}},rotor={style:{},animate(frames,options){const a={frames,options,cancelled:false,cancel(){this.cancelled=true;},finished:Promise.resolve()};animations.push(a);return a;}};
  const holder={replaceChildren(){particles.length=0;},append(p){particles.push(p);}};
  nodes['.fortune-rotor']=rotor;nodes['.fortune-result']=result;nodes['form']=form;nodes['.fortune-spin']={};nodes['.fortune-close']={};nodes['.fortune-particles']=holder;
- const c={CONSTANTS:{WHEEL:{SECTORS:[0,2,.5,3,1,0,5,.5,2,1,'bankrupt',.5],SPIN_MS:5200}},state:{playerData:{shards:1000}},audio:{purchase(){}},document:{createElement:()=>({style:{setProperty(){}},textContent:''})},window:{matchMedia:()=>({matches:false})},performance:{now:()=>100},setTimeout:()=>1,clearTimeout:()=>{cleared++;},console};
+ const c={CONSTANTS:{WHEEL:{SECTORS:[0,2,0,3,0,0,5,0,2,0,'bankrupt',0],WEIGHTS:[9,9,9,9,9,9,9,9,9,9,1,9],SPIN_MS:5200}},state:{playerData:{shards:1000}},audio:{purchase(){}},document:{getElementById:()=>null,createElement:()=>({style:{setProperty(){}},textContent:''})},window:{matchMedia:()=>({matches:false})},performance:{now:()=>100},setTimeout:()=>1,clearTimeout:()=>{cleared++;},console};
  vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/wheel.js'),'utf8')),c);
  const wheel=vm.runInContext('fortuneWheel',c);wheel.root={classList:{add:x=>classes.add(x),remove:(...xs)=>xs.forEach(x=>classes.delete(x))},querySelector:s=>nodes[s]};wheel.dialog={close(){},showModal(){}};wheel.rotor=rotor;wheel.result=result;wheel.form=form;wheel.button=nodes['.fortune-spin'];wheel.allowed=true;wheel.message=(...args)=>{wheel.lastMessage=args;};wheel.bind(()=>{spinCalls++;return new Promise(r=>{resolveSpin=r;});});
  return {wheel,animations,particles,classes,form,c,get calls(){return spinCalls;},get cleared(){return cleared;},resolve(result){resolveSpin({state:{wheelResult:result}});}};
@@ -45,21 +45,21 @@ test('every wheel sector lands at pointer after seven full revolutions even from
 });
 test('a slow result cannot start a second spin and confirmed reward stops on correct sector',async()=>{
  const s=uiSetup(),pending=s.wheel.play();await s.wheel.play();assert.equal(s.calls,1);assert.equal(s.form.elements.bet.disabled,true);
- s.resolve({index:6,multiplier:5,payout:500,delta:400});await pending;assert.equal(s.wheel.angle,180);assert.equal(s.wheel.busy,false);assert.equal(s.form.elements.bet.disabled,false);assert.ok(s.classes.has('fortune-win'));assert.equal(s.particles.length,28);assert.ok(s.animations.every(a=>a.cancelled));assert.match(s.wheel.lastMessage[0],/400/);
+ s.resolve({index:6,multiplier:5,payout:500,delta:400});await pending;assert.ok(Math.abs(s.wheel.angle-149.4)<1e-7);assert.equal(s.wheel.busy,false);assert.equal(s.form.elements.bet.disabled,false);assert.ok(s.classes.has('fortune-win'));assert.equal(s.particles.length,28);assert.ok(s.animations.every(a=>a.cancelled));assert.match(s.wheel.lastMessage[0],/400/);
 });
 test('logout cancels animation and late server result cannot expose or restart wheel',async()=>{
  const s=uiSetup(),pending=s.wheel.play();s.wheel.disconnect();s.resolve({index:6,multiplier:5,payout:500,delta:400});await pending;
  assert.equal(s.wheel.allowed,false);assert.equal(s.wheel.busy,false);assert.equal(s.wheel.animations.length,0);assert.equal(s.particles.length,0);assert.ok(s.animations.every(a=>a.cancelled));assert.ok(s.classes.has('hidden'));assert.equal(s.form.elements.bet.disabled,false);
 });
 test('reduced motion lands without spinning or confetti',async()=>{
- const s=uiSetup();s.c.window.matchMedia=()=>({matches:true});const pending=s.wheel.play();s.resolve({index:1,multiplier:2,payout:200,delta:100});await pending;assert.equal(s.animations.length,0);assert.equal(s.particles.length,0);assert.equal(s.wheel.angle,330);
+ const s=uiSetup();s.c.window.matchMedia=()=>({matches:true});const pending=s.wheel.play();s.resolve({index:1,multiplier:2,payout:200,delta:100});await pending;assert.equal(s.animations.length,0);assert.equal(s.particles.length,0);assert.ok(Math.abs(s.wheel.angle-311.4)<1e-7);
 });
 
 async function edgeSetup({admin=false,conflict=false,cached=false}={}){
  const {stripTypeScriptTypes}=require('node:module'),{webcrypto}=require('node:crypto');
  let handler,commits=0,loads=0,authHeader,randomCalls=0,contexts=[];
  const uid='00000000-0000-4000-8000-000000000001',sid='00000000-0000-4000-8000-000000000002';
- const c={Deno:{env:{get:key=>key==='SUPABASE_URL'?'https://example.test':'test-service'},serve:fn=>{handler=fn;}},crypto:{subtle:webcrypto.subtle,getRandomValues:a=>{randomCalls++;a[0]=7;return a;}},CONSTANTS:{WHEEL:{SECTORS:Array(12).fill(0)}},TextEncoder,TextDecoder,Uint8Array,Uint32Array,Response,Request,AbortSignal,btoa,atob,setTimeout,console,structuredClone,
+ const c={Deno:{env:{get:key=>key==='SUPABASE_URL'?'https://example.test':'test-service'},serve:fn=>{handler=fn;}},crypto:{subtle:webcrypto.subtle,getRandomValues:a=>{randomCalls++;a[0]=7;return a;}},getWheelSectorIndex:()=>7,CONSTANTS:{WHEEL:{SECTORS:Array(12).fill(0),WEIGHTS:[9,9,9,9,9,9,9,9,9,9,1,9]}},TextEncoder,TextDecoder,Uint8Array,Uint32Array,Response,Request,AbortSignal,btoa,atob,setTimeout,console,structuredClone,
  freshState:()=>({balance:1000}),applyAction:(s,a,p,n,trust)=>{contexts.push(trust);return {balance:900};},fetch:async(url,options)=>{
   if(url.endsWith('/auth/v1/user'))return Response.json({id:uid});
   if(url.endsWith('/rpc/is_game_admin')){authHeader=options.headers.Authorization;return Response.json(admin);}
@@ -81,4 +81,24 @@ test('authenticated role check uses user token and conflict retry cannot reroll 
 });
 test('cached request never runs wheel payout again',async()=>{
  const s=await edgeSetup({admin:true,cached:true});assert.equal(s.response.status,200);assert.equal(s.contexts.length,0);assert.equal(s.commits,1);
+});
+
+test('100 integer tickets give exactly one bankruptcy and sector widths match winning probabilities',()=>{
+ const run=setup(),counts=Array(12).fill(0);
+ for(let ticket=0;ticket<100;ticket++)counts[run('getWheelSectorIndex('+ticket+')')]++;
+ assert.deepEqual(counts,[9,9,9,9,9,9,9,9,9,9,1,9]);assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m===.5||m===1).length"),0);
+ for(const ticket of [-1,100,.5])assert.throws(()=>run('getWheelSectorIndex('+ticket+')'));
+});
+test('weighted wheel stops in exact center of every visible sector including narrow bankruptcy',()=>{
+ const s=uiSetup(),weights=[9,9,9,9,9,9,9,9,9,9,1,9];let start=0;
+ for(let i=0;i<weights.length;i++){const center=(start+weights[i]/2)*3.6;const angle=vm.runInContext('wheelStopAngle('+i+','+JSON.stringify(weights)+',1391.25)',s.c);assert.ok(angle>=1391.25+2520);assert.ok(Math.abs((angle+center)%360)<1e-7);start+=weights[i];}
+});
+test('fortune tab follows achievements, switches centrally and closes with other tabs or shop panel',()=>{
+ const active=new Set(),contentActive=new Set();let opened=0,closed=0;
+ const classes=()=>({add:x=>active.add(x),remove:x=>active.delete(x),contains:x=>active.has(x),toggle(x,on){if(on)active.add(x);else active.delete(x);}});
+ const fortune={allowed:true,open(){opened++;},close(){closed++;}},panel={classList:classes(),querySelectorAll:()=>[]},content={classList:{add:x=>contentActive.add(x)}};
+ const c={window:{},fortuneWheel:fortune,document:{addEventListener(){},getElementById:id=>id==='shopPanel'?panel:id==='fortuneTabContent'?content:null},console};vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/events.js'),'utf8')),c);
+ c.window.switchShopTab('fortune');assert.equal(opened,1);assert.ok(contentActive.has('active'));c.window.switchShopTab('achievements');assert.equal(closed,2);
+ fortune.allowed=false;c.window.switchShopTab('fortune');assert.equal(opened,1);c.window.closePanel('shopPanel');assert.equal(closed,3);
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.ok(html.indexOf('id="fortuneTabButton"')>html.indexOf('data-tab="achievements"'));assert.match(html,/id="fortuneTabButton" class="panel-tab hidden"/);
 });

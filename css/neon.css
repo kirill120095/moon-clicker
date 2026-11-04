@@ -172,7 +172,7 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .collect-rewards{width:100%;margin:0 0 14px;padding:13px 12px!important;border:1px solid #67e8f977!important;border-radius:12px!important;background:linear-gradient(120deg,#164e63,#312e81)!important;color:#ecfeff!important;font-weight:600;white-space:normal!important;line-height:1.5!important}.collect-rewards:disabled{opacity:.45;cursor:default}
 
 /* Owner's fortune wheel: transform-only motion, bounded celebratory particles. */
-.fortune-launch{position:fixed;bottom:20px;left:20px;z-index:45;padding:12px 20px;border:1px solid #ebc27480;border-radius:30px;background:linear-gradient(120deg,#3e2945,#191c37);color:#ffe0a2;font:800 13px Inter,sans-serif;box-shadow:0 0 24px #eaa83b18;cursor:pointer}
+
 .fortune-dialog{width:min(94vw,510px);max-height:94dvh;overflow-y:auto;box-sizing:border-box;border:1px solid #e5b96980;border-radius:25px;padding:22px;color:#e9ebff;background:radial-gradient(ellipse at 50% 28%,#382446,#10172a 65%);box-shadow:0 25px 100px #000b,0 0 60px #be8c3730}
 .fortune-dialog::backdrop{background:#020617df;backdrop-filter:blur(9px)}
 .fortune-header{display:flex;align-items:center;justify-content:space-between;gap:12px}.fortune-header h2{margin:5px 0 0;font-size:26px;color:#ffe5b2;letter-spacing:-.6px}.fortune-eyebrow{font-size:9px;letter-spacing:2px;color:#cdb48b;font-weight:800}
@@ -193,16 +193,15 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .fortune-particles{position:absolute;inset:50%;pointer-events:none;z-index:4}.fortune-particles i{position:absolute;width:8px;height:13px;border-radius:2px;background:#ffdc82;box-shadow:0 0 7px #e7af50;animation:fortune-spark 1.45s ease-out var(--delay) both}.fortune-particles i:nth-child(3n){background:#88ffd1}.fortune-particles i:nth-child(3n+1){background:#c6a4ff}
 @keyframes fortune-spark{0%{transform:translate(0,0) scale(.5);opacity:0}12%{opacity:1}65%{opacity:1}100%{transform:translate(var(--x),calc(var(--y) + 150px)) rotate(var(--r));opacity:0}}
 @keyframes fortune-pop{0%{transform:translateY(12px) scale(.7);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}
-@media(max-width:480px){.fortune-dialog{padding:17px;border-radius:19px}.fortune-stage{width:290px;max-width:100%;margin:16px auto 8px}.fortune-header h2{font-size:23px}.fortune-launch{bottom:12px;left:12px;padding:10px 14px}.fortune-result strong{font-size:23px}}
+@media(max-width:480px){.fortune-dialog{padding:17px;border-radius:19px}.fortune-stage{width:290px;max-width:100%;margin:16px auto 8px}.fortune-header h2{font-size:23px}.fortune-result strong{font-size:23px}}
 @media(prefers-reduced-motion:reduce){.fortune-win .fortune-result strong,.fortune-particles i{animation:none}}
 
 .fortune-balance{text-align:center;color:#b6c5e4;font:600 12px 'JetBrains Mono',monospace;margin:8px 0}.reduce-effects .fortune-win .fortune-result strong{animation:none}
 
-@media(min-width:760px){
- .fortune-dialog[open]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;width:min(94vw,820px)}
- .fortune-header{grid-column:1/-1;margin-bottom:15px}
- .fortune-stage{grid-column:1;grid-row:2/6;width:min(100%,350px);align-self:center;margin:14px auto}
- .fortune-result,.fortune-balance,.fortune-form,.fortune-odds{grid-column:2}
- .fortune-result{align-self:end}.fortune-form{align-self:start}
-}
+
 @media(max-width:759px){.fortune-stage{width:min(100%,32dvh,300px)}}
+
+/* Fortune is a dedicated owner-only tab with a centered wheel. */
+#fortuneTabContent .fortune-dialog[open]{display:block;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;width:min(92vw,480px);max-height:92dvh;z-index:350}
+#fortuneTabContent .fortune-stage{width:min(100%,32dvh,310px);margin:14px auto 10px}
+#fortuneTabContent .fortune-header{margin-bottom:0}#fortuneTabContent .fortune-result strong{font-size:24px}

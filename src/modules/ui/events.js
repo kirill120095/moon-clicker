@@ -1,3 +1,4 @@
+import { fortuneWheel } from './wheel.js';
 // ============================================================
 // ОБРАБОТЧИКИ СОБЫТИЙ - С НОВЫМИ ФУНКЦИЯМИ
 // ============================================================
@@ -22,6 +23,7 @@ if (typeof window !== 'undefined') {
     const isOpen = !panel.classList.contains('hidden');
     
     if (isOpen) {
+      if(panelId==='shopPanel')fortuneWheel.close();
       panel.classList.add('hidden');
       updateToggleButton(panelId, false);
     } else {
@@ -45,6 +47,7 @@ if (typeof window !== 'undefined') {
     if (panelId === 'profilePanel') {
       if (window.updateProfileAndLeaders) window.updateProfileAndLeaders();
     } else if (panelId === 'shopPanel') {
+      if(document.querySelector('#shopPanel .panel-tab.active')?.dataset.tab==='fortune')fortuneWheel.open();
       if (window.updateShopUI) window.updateShopUI();
       if (window.updateQuestUI) window.updateQuestUI();
       if (window.updateAchievementUI) window.updateAchievementUI();
@@ -52,11 +55,13 @@ if (typeof window !== 'undefined') {
   }
 
   window.closeAllPanels = () => {
+    fortuneWheel.close();
     document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
     document.querySelectorAll('.side-toggle-btn').forEach(btn => btn.classList.remove('panel-open'));
   };
 
   window.closePanel = (panelId) => {
+    if(panelId==='shopPanel')fortuneWheel.close();
     const panel = document.getElementById(panelId);
     if (panel) {
       panel.classList.add('hidden');
@@ -93,6 +98,8 @@ if (typeof window !== 'undefined') {
   };
 
   window.switchShopTab = (tabName) => {
+    if(tabName==='fortune'&&!fortuneWheel.allowed)return;
+    fortuneWheel.close();
     const panel = document.getElementById('shopPanel');
     if (!panel) return;
     
@@ -107,7 +114,8 @@ if (typeof window !== 'undefined') {
     const targetContent = document.getElementById(`${tabName}TabContent`);
     if (targetContent) targetContent.classList.add('active');
     
-    if (tabName === 'shop' || tabName === 'moons') {
+    if(tabName==='fortune'){fortuneWheel.open();}
+    else if (tabName === 'shop' || tabName === 'moons') {
       if (window.updateShopUI) window.updateShopUI();
     } else if (tabName === 'prestige') {
       if(window.updatePrestigeUI)window.updatePrestigeUI();

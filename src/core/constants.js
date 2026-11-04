@@ -28,7 +28,7 @@ export const CONSTANTS = {
   CLICK_TOKEN_CAPACITY: 36,
   ROLLBACK_LEVELS: 5,
   PRESTIGE: { DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 20, REWARD_PER_ASCENSION: 0.25, UFO_HASTE_CAP: 0.95, PRICE_STEP_RATIO: 0.2, PRICE_QUADRATIC_DIVISOR: 10 },
-  WHEEL: { COOLDOWN_MS: 6000, SPIN_MS: 5200, SECTORS: [0, 2, 0.5, 3, 1, 0, 5, 0.5, 2, 1, 'bankrupt', 0.5] },
+  WHEEL: { COOLDOWN_MS: 5200, SPIN_MS: 5200, SECTORS: [0, 2, 0, 3, 0, 0, 5, 0, 2, 0, 'bankrupt', 0], WEIGHTS: [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 1, 9] },
   ECHO: { MAX_HITS_PER_ACTION: 128, MAX_QUEUED_BURSTS: 64 },
   UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, MIN_INTERVAL: 100, COMBO_RELAY_COST: 1000000, MAX_SHOTS_PER_ACTION: 32, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, UNIT_BASE_COST: 2400, UNIT_COST_MULTIPLIER: 2, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { rewardMultiplier: 0.5 }, cosmic: { damagePerLevel: 0.001 } } },
   MOON_REWARD: { BASE: 5, PER_LEVEL: 2, EXPONENT: 1.5, GROWTH: 0.5, BOSS_MULTIPLIER: 2.5 },
@@ -1038,4 +1038,11 @@ export function getMoonPurchaseAccess(state,id){
  const requiredMoon=index>0?MOON_ORDER.slice(0,index).find(previous=>!(state.ownedMoons||[]).includes(previous)):null;
  const levelUnlocked=!!moon&&record>=moon.unlockLevel;
  return {record,requiredMoon:requiredMoon||null,levelUnlocked,unlocked:levelUnlocked&&!requiredMoon};
+}
+
+// Integer tickets and visible sector angles share exactly the same weights.
+export function getWheelSectorIndex(ticket){
+ const weights=CONSTANTS.WHEEL.WEIGHTS,total=weights.reduce((sum,w)=>sum+w,0);
+ if(!Number.isInteger(ticket)||ticket<0||ticket>=total)throw Error('Invalid wheel ticket');
+ let edge=0;return weights.findIndex(weight=>(edge+=weight)>ticket);
 }
