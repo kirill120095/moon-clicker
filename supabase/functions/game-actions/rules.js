@@ -2,7 +2,7 @@ import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCriti
 import { getMaxHPForLevel, getSlotUpgradeCost, getClickUpgradeCost } from './config.js';
 const showToast=()=>{},updateQuestUI=()=>{},updateAchievementUI=()=>{},updateProfileAndLeaders=()=>{};
 export function freshState(username='Игрок') {
- return {runMaxLevel:1,prestige:{coins:0,claimedCoinSteps:0,ascensions:0,upgrades:{}},moonSerial:1,maxLevel:1,ufoCount:0,ufoLevel:0,ufoComboRelay:false,lastComboAt:0,lastAutoClickAt:0,ufoLastShotAt:0,effects:[],currentLevel:1,moonHP:CONSTANTS.BASE_HP,maxHP:CONSTANTS.BASE_HP,clickCount:0,totalSecondsPlayed:0,
+ return {runMaxLevel:1,prestige:{coins:0,claimedCoinSteps:0,ascensions:0,upgrades:{}},moonSerial:1,maxLevel:1,ufoCount:0,ufoLevel:0,ufoComboRelay:false,lastComboAt:0,lastAutoClickAt:0,ufoLastShotAt:0,effects:[],currentLevel:1,moonHP:CONSTANTS.BASE_HP,maxHP:CONSTANTS.BASE_HP,clickCount:0,runClickCount:0,totalSecondsPlayed:0,
  playerData:{username,shards:0,click_damage:CONSTANTS.DEFAULTS.CLICK_DAMAGE,click_damage_level:0},
  activeMoon:'normal',activeMoons:['normal'],ownedMoons:['normal'],moonLevels:{normal:1},
  maxSlots:1,echoQueue:[],echoPending:0,cloneTargets:[],clickCrystalLevel:0,moonKills:0,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
@@ -10,6 +10,8 @@ export function freshState(username='Игрок') {
 }
 export function applyAction(raw, action, payload={}, now=Date.now()) {
  let state=structuredClone(raw);
+ state.clickCount=Math.max(0,Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(Number(state.clickCount)||0)));
+ state.runClickCount=Number.isSafeInteger(state.runClickCount)&&state.runClickCount>=0?Math.min(state.runClickCount,state.clickCount):state.clickCount;
  state.maxLevel=Math.max(state.maxLevel||1,state.currentLevel);
  state.prestige=state.prestige||{coins:0,ascensions:0,upgrades:{}};
  state.runMaxLevel=Math.max(state.runMaxLevel??state.maxLevel,state.currentLevel);
@@ -18,8 +20,8 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  if(action==='ascend'){
   const summary=getPrestigeSummary(state);if(summary.pendingCoins<=0)throw Error('Новые монеты престижа появятся на следующем рубеже '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровней');
   const p=structuredClone(state.prestige);p.coins=(p.coins||0)+summary.pendingCoins;p.runDamageSteps=0;p.runShardSteps=0;p.ascensions=(p.ascensions||0)+1;
-  const record=state.maxLevel,serial=(state.moonSerial||1)+1,name=state.playerData.username;
-  state=freshState(name);state.maxLevel=record;state.moonSerial=serial;state.prestige=p;state.playerData.shards=getPrestigeSummary(state).startShards;action='load';
+  const record=state.maxLevel,serial=(state.moonSerial||1)+1,name=state.playerData.username,totalClicks=state.clickCount;
+  state=freshState(name);state.clickCount=totalClicks;state.maxLevel=record;state.moonSerial=serial;state.prestige=p;state.playerData.shards=getPrestigeSummary(state).startShards;action='load';
  }
  state.maxSlots=Math.min(getSlotLimit(state),Math.max(1+getPrestigeSummary(state).extraSlots,state.maxSlots||1));
  state.clickCrystalLevel=Number.isSafeInteger(state.clickCrystalLevel)&&state.clickCrystalLevel>=0?state.clickCrystalLevel:0;
@@ -434,7 +436,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
    if(id==='fire'&&p.maxStacks===Infinity&&rules[counter]>p.safeStacks*p.clicksPerStack&&Math.random()<p.resetChance)rules[counter]=p.safeStacks*p.clicksPerStack;
   }
   state.lastAutoClickAt=shotAt;state.lastComboAt=shotAt;
-  state.clickCount=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.clickCount+1);rules.updateQuestProgress('click',1);
+  state.clickCount=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.clickCount+1);state.runClickCount=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.runClickCount+1);rules.updateQuestProgress('click',1);
  }
  function ufoInterval(){return Math.max(CONSTANTS.UFO.MIN_INTERVAL,Math.round((CONSTANTS.UFO.BASE_INTERVAL-Math.max(0,state.ufoLevel-1)*CONSTANTS.UFO.INTERVAL_REDUCTION)*(1-getUfoBonuses(state,rules).haste)));}
  // Only server elapsed time permits shots; frequent syncs do not create extra damage.
@@ -462,7 +464,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   for(let i=0;i<count;i++){
    const boss=state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,bonuses=rules._calculateAllBonuses();
    const result=rules._applyMoonMechanics(getBaseDamage(state),bonuses,boss);
-   state.clickCount++;rules.updateQuestProgress('click',1);
+   state.clickCount=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.clickCount+1);state.runClickCount=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.runClickCount+1);rules.updateQuestProgress('click',1);
    hit(result.finalDamage,result.isCrit,'manual',bonuses);
    const gained=credit(state.clickCrystalLevel||0);if(gained)rules.updateQuestProgress('shard',gained);
    const echo=getPrestigeSummary(state),repeats=rollEchoRepeats(echo.echoChance);

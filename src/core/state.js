@@ -18,6 +18,7 @@ const initialState = {
   moonHP: CONSTANTS.DEFAULTS.MOON_HP,
   maxHP: CONSTANTS.DEFAULTS.MOON_HP,
   clickCount: CONSTANTS.DEFAULTS.CLICKS,
+  runClickCount: 0,
   totalSecondsPlayed: CONSTANTS.DEFAULTS.TIME_PLAYED,
   
   // Данные игрока из Supabase

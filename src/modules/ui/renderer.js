@@ -861,8 +861,13 @@ function _updateProfile() {
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-card-icon">👆</div>
-          <div class="stat-card-label">Кликов</div>
-          <div class="stat-card-value">${formatNumber(data.total_clicks || 0)}</div>
+          <div class="stat-card-label">Всего кликов</div>
+          <div class="stat-card-value" data-live-stat="lifetimeClicks">${formatNumber(data.total_clicks || 0)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">👆</div>
+          <div class="stat-card-label">Кликов в прохождении</div>
+          <div class="stat-card-value" data-live-stat="runClicks">${formatNumber(state.runClickCount ?? state.clickCount ?? 0)}</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-icon">🌘</div>
@@ -903,7 +908,7 @@ export function updateLiveCombatProfile(){
  const panel=document.getElementById('profilePanel'),tab=document.getElementById('profileTabContent');
  if(!panel||panel.classList.contains('hidden')||tab&&!tab.classList.contains('active'))return;
  const s=getCombatStats(state),pct=n=>(n*100).toLocaleString('ru-RU',{maximumFractionDigits:2})+'%';
- const values={moonKills:formatNumber(state.moonKills||0),baseDamage:formatBaseDamage(s.baseDamage),finalDamage:formatNumber(s.finalDamage),critChance:pct(s.critChance),
+ const values={lifetimeClicks:formatNumber(state.clickCount||0),runClicks:formatNumber(state.runClickCount??state.clickCount??0),moonKills:formatNumber(state.moonKills||0),baseDamage:formatBaseDamage(s.baseDamage),finalDamage:formatNumber(s.finalDamage),critChance:pct(s.critChance),
  critDamage:formatNumber(s.critDamage)+' · '+(s.critMultiplier*s.critTier/2).toLocaleString('ru-RU',{maximumFractionDigits:2})+'×'+(s.extraCritChance?' · '+pct(s.extraCritChance)+' → '+formatNumber(s.nextCritDamage):''),
  damageBonus:'+'+pct(s.damageBonus),shardBonus:'+'+pct(s.shardBonus),critChanceBonus:'+'+pct(s.critChanceBonus),critDamageBonus:'+'+pct(s.critDamageBonus)};
  for(const [key,text]of Object.entries(values)){const el=document.querySelector('[data-live-stat="'+key+'"]');if(el&&el.textContent!==text)el.textContent=text;}
