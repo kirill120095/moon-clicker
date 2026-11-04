@@ -18,7 +18,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  function bankMilestones(){const p=state.prestige,c=CONSTANTS.PRESTIGE,d=Math.floor(state.runMaxLevel/c.DAMAGE_EVERY),s=Math.floor(state.runMaxLevel/c.SHARDS_EVERY);p.damageStepsTotal=(p.damageStepsTotal||0)+Math.max(0,d-(p.runDamageSteps||0));p.shardStepsTotal=(p.shardStepsTotal||0)+Math.max(0,s-(p.runShardSteps||0));p.runDamageSteps=d;p.runShardSteps=s;}
  bankMilestones();
  if(action==='ascend'){
-  const summary=getPrestigeSummary(state);if(summary.pendingCoins<=0)throw Error('Новые монеты престижа появятся на следующем рубеже '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровней');
+  const summary=getPrestigeSummary(state);if(!summary.canAscend)throw Error('Новые монеты престижа появятся на следующем рубеже '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровней');
   const p=structuredClone(state.prestige);p.coins=(p.coins||0)+summary.pendingCoins;p.runDamageSteps=0;p.runShardSteps=0;p.ascensions=(p.ascensions||0)+1;
   const record=state.maxLevel,serial=(state.moonSerial||1)+1,name=state.playerData.username,totalClicks=state.clickCount;
   state=freshState(name);state.clickCount=totalClicks;state.maxLevel=record;state.moonSerial=serial;state.prestige=p;state.playerData.shards=getPrestigeSummary(state).startShards;action='load';
@@ -33,7 +33,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  state.moonSerial=state.moonSerial||1;
  state.moonKills=Number.isSafeInteger(state.moonKills)&&state.moonKills>=0?Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills):0;
  state.activeMoon=state.activeMoons[state.activeMoons.length-1];
- state.effects=[];
+ state.effects=[];state.claimSummary=null;
  const credit=(amount)=>{const before=state.playerData.shards;state.playerData.shards=Math.min(CONSTANTS.SAFE_NUMBER_CAP,before+Math.max(0,Math.round(amount)));return state.playerData.shards-before;};
  const appState={set:(k,v)=>{state[k]=v;}};
  const localStorage={getItem:()=>state.lastQuestDay,setItem:(_k,v)=>{state.lastQuestDay=v;}};
@@ -528,6 +528,26 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   if(payload.id==='clone'&&state.activeMoons.includes('clone')&&!state.cloneTargets.length)state.cloneTargets=state.activeMoons.filter(id=>id!=='clone').slice(0,getMoonMechanicParams('clone',state.moonLevels.clone||1).copies);
  } else if(action==='lock'){state.levelLocked=!state.levelLocked;
  } else if(action==='rollback'||action==='rollbackFive'){if(state.currentLevel>1){state.currentLevel=Math.max(1,state.currentLevel-(action==='rollbackFive'?CONSTANTS.ROLLBACK_LEVELS:1));startMoon();}
+ } else if(action==='claimAllQuests'){
+  let count=0,reward=0;
+  for(const [id,q]of Object.entries(state.quests||{})){
+   const def=QUESTS[id];if(!def||!q.completed||q.claimed)continue;
+   q.claimed=true;reward+=credit(getQuestPayout(def,state).total);count++;
+  }
+  if(!count)throw Error('Нет доступных наград квестов');
+  state.claimSummary={kind:'quests',count,reward};
+ } else if(action==='claimAllAchievements'){
+  rules.checkAchievements();let count=0,reward=0,claimed;
+  do{
+   claimed=0;
+   for(const [id,def]of Object.entries(ACHIEVEMENTS))for(const tier of def.tiers){
+    if(state.achievements[id]?.[tier.level]!=='unclaimed')continue;
+    state.achievements[id][tier.level]='claimed';reward+=credit(getProgressReward(tier.reward,state));count++;claimed++;
+   }
+   if(claimed)rules.checkAchievements();
+  }while(claimed);
+  if(!count)throw Error('Нет доступных наград достижений');
+  state.claimSummary={kind:'achievements',count,reward};
  } else if(action==='claimQuest'){
   const q=state.quests[payload.id],def=QUESTS[payload.id];
   if(!q||!def||!q.completed||q.claimed)throw Error('Награда недоступна');

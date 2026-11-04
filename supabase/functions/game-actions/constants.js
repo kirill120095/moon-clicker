@@ -847,6 +847,7 @@ export function getPrestigeSummary(state){
  const shardSteps=(p.shardStepsTotal||0)+Math.max(0,Math.floor(record/c.SHARDS_EVERY)-(p.runShardSteps||0));
  return {coins:p.coins||0,ascensions:p.ascensions||0,runRecord:record,
  pendingCoins:Math.floor(record/c.COIN_EVERY),
+ canAscend:Number.isSafeInteger(Math.floor(record/c.COIN_EVERY))&&Math.floor(record/c.COIN_EVERY)>0,
  damageBonus:damageSteps*c.DAMAGE_PER_STEP+(up.reactor||0)*PRESTIGE_UPGRADES.reactor.damage,
  shardBonus:shardSteps*c.SHARDS_PER_STEP+(up.treasury||0)*PRESTIGE_UPGRADES.treasury.shards,
  critBonus:(up.critical||0)*PRESTIGE_UPGRADES.critical.crit,

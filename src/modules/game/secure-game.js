@@ -1,7 +1,7 @@
 import { gameAdmin } from '../ui/admin.js';
 import { gameEngine } from './game.js';
 import { appState, state } from '../../core/state.js';
-import { CONSTANTS,QUESTS,ACHIEVEMENTS,getBaseDamage } from '../../core/constants.js';
+import { CONSTANTS,QUESTS,ACHIEVEMENTS,getBaseDamage,getPrestigeSummary } from '../../core/constants.js';
 import { db } from '../network/supabase.js';
 import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
@@ -94,7 +94,7 @@ async function flush(){
 async function command(action,payload={},purchase=false){
  if(!active||purchasing)return;
  purchasing=true;
- try{do{await flush();}while(active&&pendingClicks>0);await send(action,payload);if(action==='ascend'){updateQuestAndAchievementUI(true);try{localStorage.removeItem('moon_completed_'+state.user?.id);}catch{}}if(purchase)audio.purchase();updateProfileAndLeaders();}
+ try{do{await flush();}while(active&&pendingClicks>0);const result=await send(action,payload);if(action==='claimAllQuests'||action==='claimAllAchievements'){updateQuestAndAchievementUI(true);const summary=result?.state?.claimSummary;if(summary)showToast('Получено '+summary.count+' наград: +'+summary.reward.toLocaleString('ru-RU')+' 💎','success',3500);}if(action==='ascend'){updateQuestAndAchievementUI(true);try{localStorage.removeItem('moon_completed_'+state.user?.id);}catch{}}if(purchase)audio.purchase();updateProfileAndLeaders();}
  finally{purchasing=false;}
 }
 let initializing=null,initGeneration=0;
@@ -140,7 +140,7 @@ gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks
 gameEngine.buyClickCrystal=()=>command('buyClickCrystal',{},true).catch(()=>{});
 gameEngine.setCloneTargets=targets=>command('setCloneTargets',{targets}).catch(()=>{});
 gameEngine.buyClickDamage=()=>command('buyDamage',{},true).catch(()=>{});
-gameEngine.ascend=()=>{const count=state.prestigeSummary?.pendingCoins||0;if(confirm('Вознестись за '+count+' монет престижа? Весь обычный прогресс будет сброшен. Вечные бонусы, монеты и покупки сохранятся.'))command('ascend').catch(()=>{});};
+gameEngine.ascend=()=>{const summary=getPrestigeSummary(state);if(!summary.canAscend){showToast('Вознесение недоступно: достигните '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня в этом прохождении','info');return;}const count=summary.pendingCoins;if(confirm('Вознестись за '+count+' монет престижа? Весь обычный прогресс будет сброшен. Вечные бонусы, монеты и покупки сохранятся.'))command('ascend').catch(()=>{});};
 gameEngine.buyPrestige=id=>command('buyPrestige',{id},true).catch(()=>{});
 gameEngine.buyUfoComboRelay=()=>command('buyUfoComboRelay',{},true).catch(()=>{});
 gameEngine.buyUfoUnit=()=>command('buyUfoUnit',{},true).catch(()=>{});
@@ -152,6 +152,13 @@ gameEngine.upgradeMoon=id=>command('upgradeMoon',{id},true).catch(()=>{});
 gameEngine.toggleMoonActive=id=>command('toggleMoon',{id}).catch(()=>{});
 gameEngine.rollbackLevel=()=>command('rollback').catch(()=>{});
 gameEngine.toggleLevelLock=()=>command('lock').catch(()=>{});
+function collectAll(action,id){
+ const button=document.getElementById(id);if(button?.dataset.pending==='1')return;
+ if(button){button.dataset.pending='1';button.disabled=true;}
+ return command(action,{},true).catch(()=>{}).finally(()=>{if(button)delete button.dataset.pending;updateQuestAndAchievementUI(true);});
+}
+gameEngine.claimAllQuests=()=>collectAll('claimAllQuests','claimAllQuestsBtn');
+gameEngine.claimAllAchievements=()=>collectAll('claimAllAchievements','claimAllAchievementsBtn');
 gameEngine.claimQuestReward=id=>command('claimQuest',{id},true).catch(()=>{});
 gameEngine.claimAchievementReward=(id,tier)=>command('claimAchievement',{id,tier},true).catch(()=>{});
 gameEngine.resetProgress=()=>command('reset').catch(()=>{});

@@ -1,6 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../src/modules/game/secure-game.js'),'utf8').replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'');
-const getBaseDamage=vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../src/core/constants.js'),'utf8').replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'')+'\ngetBaseDamage;');
+const {getBaseDamage,getPrestigeSummary}=vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../src/core/constants.js'),'utf8').replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'')+'\n({getBaseDamage,getPrestigeSummary});');
 function setup(){
  let now=900000,perf=10000,calls=[],ticks=[],hpUpdates=0,buffUpdates=0;
  const state={moonHP:100,maxHP:100,currentLevel:1,playerData:{click_damage:10,click_damage_level:0,shards:0}};
@@ -9,7 +9,7 @@ function setup(){
  const engine={combat:{},destroy(){},recalcMoonBonuses(){},_comboClicks:0,
  _calculateAllBonuses:()=>({totalDamageBonus:0}),_getMechanicParamsForActiveMoon:()=>null,
  _updateBuffsDisplay(){buffUpdates++;},_getActiveBuffs(){return[{isTemporary:true,timeLeft:this._comboClicks>0?Math.max(0,Math.ceil((10000-(now-this._lastActivityTime))/1000)):null}];}};
- const context={getBaseDamage,gameAdmin:{connect:()=>Promise.resolve(),disconnect(){}},radio:{connect:()=>Promise.resolve(),disconnect(){}},gameEngine:engine,state,appState:{setMany:s=>Object.assign(state,s),set:(k,v)=>state[k]=v},CONSTANTS:{SAFE_NUMBER_CAP:Number.MAX_SAFE_INTEGER,MAX_CLICKS_PER_SECOND:12,CLICK_BURST:12,BOSS_TIMER:30,BOSS_INTERVAL:10,UPGRADE_COSTS:{clickDamage:{base:60,multiplier:1.22}},LIMITS:{MAX_CLICK_DAMAGE_LEVEL:200}},db:{action(action,payload){calls.push({action,payload});if(action==='load')return Promise.resolve(result());return new Promise((resolve,reject)=>calls.at(-1).settle={resolve,reject});}},document:{getElementById:()=>null},animations:{playClickVisualFeedback(){}},audio:{click(){},purchase(){}},showToast(){},updateUI(){},updateHPBar(){hpUpdates++;},updateShopUI(){},updateProfileAndLeaders(){},updateQuestAndAchievementUI(){},updateTimerBar(){},updateLiveCombatProfile(){},setInterval(fn,ms){ticks.push({fn,ms});return ticks.length;},clearInterval(){},setTimeout(){return 1;},clearTimeout(){},performance:{now:()=>perf},Date:{now:()=>now},console,Math};
+ const context={getBaseDamage,getPrestigeSummary,gameAdmin:{connect:()=>Promise.resolve(),disconnect(){}},radio:{connect:()=>Promise.resolve(),disconnect(){}},gameEngine:engine,state,appState:{setMany:s=>Object.assign(state,s),set:(k,v)=>state[k]=v},CONSTANTS:{PRESTIGE:{COIN_EVERY:20},SAFE_NUMBER_CAP:Number.MAX_SAFE_INTEGER,MAX_CLICKS_PER_SECOND:12,CLICK_BURST:12,BOSS_TIMER:30,BOSS_INTERVAL:10,UPGRADE_COSTS:{clickDamage:{base:60,multiplier:1.22}},LIMITS:{MAX_CLICK_DAMAGE_LEVEL:200}},db:{action(action,payload){calls.push({action,payload});if(action==='load')return Promise.resolve(result());return new Promise((resolve,reject)=>calls.at(-1).settle={resolve,reject});}},document:{getElementById:()=>null},animations:{playClickVisualFeedback(){}},audio:{click(){},purchase(){}},showToast(){},updateUI(){},updateHPBar(){hpUpdates++;},updateShopUI(){},updateProfileAndLeaders(){},updateQuestAndAchievementUI(){},updateTimerBar(){},updateLiveCombatProfile(){},setInterval(fn,ms){ticks.push({fn,ms});return ticks.length;},clearInterval(){},setTimeout(){return 1;},clearTimeout(){},performance:{now:()=>perf},Date:{now:()=>now},console,Math};
  vm.createContext(context);vm.runInContext(source,context);
  return{context,engine,state,calls,result,ticks,get hpUpdates(){return hpUpdates;},get buffUpdates(){return buffUpdates;},advance(ms){now+=ms;perf+=ms;}};
 }
@@ -60,4 +60,18 @@ test('new quest and achievement completions notify once with a temporary duratio
 test('cosmic flat damage is included in immediate hit prediction without changing purchased damage',async()=>{
  const s=setup();await s.engine.init();s.state.currentLevel=100;s.state.activeMoons=['cosmic'];s.state.moonLevels={cosmic:1};
  s.engine.handleClick({});assert.equal(s.engine._previewDamage,1010);assert.equal(s.state.playerData.click_damage,10);s.engine.destroy();
+});
+
+test('empty ascension cannot open confirmation even when the saved summary is stale',async()=>{
+ const s=setup();await s.engine.init();let confirmations=0;s.context.confirm=()=>{confirmations++;return false;};
+ s.state.prestigeSummary={pendingCoins:999};s.engine.ascend();assert.equal(confirmations,0);assert.equal(s.calls.filter(c=>c.action==='ascend').length,0);
+ s.state.runMaxLevel=20;s.engine.ascend();assert.equal(confirmations,1);assert.equal(s.calls.filter(c=>c.action==='ascend').length,0);
+});
+test('bulk collection sends one request while an earlier click is in flight',async()=>{
+ const s=setup();await s.engine.init();s.engine.handleClick({});const collecting=s.engine.claimAllQuests();
+ assert.equal(s.calls.filter(c=>c.action==='claimAllQuests').length,0);
+ s.calls.find(c=>c.action==='click').settle.resolve(s.result());await new Promise(setImmediate);
+ assert.equal(s.calls.filter(c=>c.action==='claimAllQuests').length,1);
+ s.engine.claimAllQuests();assert.equal(s.calls.filter(c=>c.action==='claimAllQuests').length,1);
+ s.calls.find(c=>c.action==='claimAllQuests').settle.resolve(s.result());await collecting;
 });

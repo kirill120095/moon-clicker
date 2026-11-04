@@ -168,3 +168,5 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 .buff-card.buff-reflection{border-color:#c4b5fd!important;background:linear-gradient(135deg,#20223bea,#321d48e6)!important;box-shadow:0 0 15px #a78bfa33}
 .buff-reflection .buff-name{color:#ddd6fe!important}.buff-reflection .buff-progress-bar{background:linear-gradient(90deg,#67e8f9,#c4b5fd)!important}
 .buffs-container{flex-wrap:wrap;gap:8px}
+
+.collect-rewards{width:100%;margin:0 0 14px;padding:13px 12px!important;border:1px solid #67e8f977!important;border-radius:12px!important;background:linear-gradient(120deg,#164e63,#312e81)!important;color:#ecfeff!important;font-weight:600;white-space:normal!important;line-height:1.5!important}.collect-rewards:disabled{opacity:.45;cursor:default}

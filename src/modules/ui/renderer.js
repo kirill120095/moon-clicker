@@ -278,7 +278,7 @@ export function updatePrestigeUI(){
  prestigeProfileKey=profile&&!document.getElementById('profilePanel')?.classList.contains('hidden')?profileKey:prestigeProfileKey;
  if(!container||!document.getElementById('prestigeTabContent')?.classList.contains('active'))return;
  const shopKey=JSON.stringify([p,state.prestige?.upgrades]);if(shopKey===prestigeShopKey&&container.childElementCount)return;prestigeShopKey=shopKey;
- container.innerHTML='<h3>🌟 Магазин вечных улучшений</h3><p class="prestige-summary">Монеты престижа: <b>'+p.coins+'</b></p><p class="ufo-description">В этом прохождении: '+p.runRecord+' уровней. При вознесении получите '+p.pendingCoins+' монет. Обычный прогресс сбросится; вечные бонусы и покупки сохранятся. В новом прохождении рубежи снова доступны.</p><button class="btn-action ascend-button" data-ascend '+(p.pendingCoins?'':'disabled')+'>Вознестись · +'+p.pendingCoins+' 🌟</button>'+
+ container.innerHTML='<h3>🌟 Магазин вечных улучшений</h3><p class="prestige-summary">Монеты престижа: <b>'+p.coins+'</b></p><p class="ufo-description">В этом прохождении: '+p.runRecord+' уровней. При вознесении получите '+p.pendingCoins+' монет. Обычный прогресс сбросится; вечные бонусы и покупки сохранятся. В новом прохождении рубежи снова доступны.</p><button class="btn-action ascend-button" data-ascend '+(p.canAscend?'':'disabled')+'>'+(p.canAscend?'Вознестись · +'+p.pendingCoins+' 🌟':'Вознесение с '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня прохождения')+'</button>'+
  Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel;return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+Math.min(level,d.maxLevel)+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':formatPrice(cost)+' 🌟')+'</button></div>';}).join('');
 }
 
@@ -1006,6 +1006,8 @@ export function setQuestCategory(category) {
 let questPaintAt=0,questCategory='';
 export function updateQuestUI() {
   if(document.getElementById('shopPanel')?.classList.contains('hidden')||!document.getElementById('questsTabContent')?.classList.contains('active'))return;
+  const readyQuests=Object.entries(state.quests||{}).filter(([id,q])=>QUESTS[id]&&q.completed&&!q.claimed),collect=document.getElementById('claimAllQuestsBtn');
+  if(collect){collect.disabled=!readyQuests.length||collect.dataset.pending==='1';collect.textContent=readyQuests.length?'Собрать все · '+readyQuests.length+' наград (+'+formatMoney(readyQuests.reduce((n,[id])=>n+getQuestPayout(QUESTS[id],state).total,0))+' 💎)':'Нет доступных наград';}
   if(Date.now()-questPaintAt<250&&questCategory===currentQuestCategory)return;questPaintAt=Date.now();questCategory=currentQuestCategory;
   const container = document.getElementById('questsList');
   if (!container) return;
@@ -1100,6 +1102,8 @@ export function setAchievementCategory(category) {
 let achievementPaintAt=0,achievementCategory='';
 export function updateAchievementUI() {
   if(document.getElementById('shopPanel')?.classList.contains('hidden')||!document.getElementById('achievementsTabContent')?.classList.contains('active'))return;
+  const readyAchievements=Object.entries(ACHIEVEMENTS).flatMap(([id,def])=>def.tiers.filter(tier=>state.achievements?.[id]?.[tier.level]==='unclaimed')),collect=document.getElementById('claimAllAchievementsBtn');
+  if(collect){collect.disabled=!readyAchievements.length||collect.dataset.pending==='1';collect.textContent=readyAchievements.length?'Собрать все · '+readyAchievements.length+' наград (+'+formatMoney(readyAchievements.reduce((n,tier)=>n+getProgressReward(tier.reward,state),0))+' 💎)':'Нет доступных наград';}
   if(Date.now()-achievementPaintAt<250&&achievementCategory===currentAchievementCategory)return;achievementPaintAt=Date.now();achievementCategory=currentAchievementCategory;
   const container = document.getElementById('achievementsList');
   if (!container) return;
