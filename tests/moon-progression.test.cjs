@@ -2,12 +2,13 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'');vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return code=>vm.runInContext(code,c);}
 test('moon purchase order puts electric before fire and requires all earlier moons',()=>{
  const run=setup();assert.equal(run("MOON_ORDER.join(',')"),'normal,blood,ice,shadow,electric,fire,gold,cosmic,clone');
- assert.throws(()=>run("var s=freshState();s.maxLevel=1000;s.playerData.shards=1e9;applyAction(s,'buyMoon',{id:'gold'},100000)"),/Сначала/);
+ assert.throws(()=>run("var s=freshState();s.maxLevel=1000;s.runMaxLevel=1000;s.playerData.shards=1e9;applyAction(s,'buyMoon',{id:'gold'},100000)"),/Сначала/);
  assert.equal(run("for(var id of MOON_ORDER.slice(1))s=applyAction(s,'buyMoon',{id},100000);s.ownedMoons.length"),9);
 });
-test('unlock checks lifetime record, not current or current-run level',()=>{
- const run=setup();assert.equal(run("var s=freshState();s.currentLevel=1;s.runMaxLevel=1;s.maxLevel=60;s.ownedMoons=['normal','blood','ice','shadow'];s.playerData.shards=1e6;applyAction(s,'buyMoon',{id:'electric'},100000).ownedMoons.includes('electric')"),true);
- assert.throws(()=>run("s.maxLevel=59;applyAction(s,'buyMoon',{id:'electric'},100000)"),/максимальный/);
+test('unlock checks the current run record while lifetime record cannot bypass it',()=>{
+ const run=setup();assert.throws(()=>run("var s=freshState();s.currentLevel=1;s.runMaxLevel=1;s.maxLevel=1000;s.ownedMoons=['normal','blood','ice','shadow'];s.playerData.shards=1e6;applyAction(s,'buyMoon',{id:'electric'},100000)"),/забега/);
+ assert.equal(run("s.runMaxLevel=60;applyAction(s,'buyMoon',{id:'electric'},100000).ownedMoons.includes('electric')"),true);
+ assert.throws(()=>run("s.runMaxLevel=59;applyAction(s,'buyMoon',{id:'electric'},100000)"),/забега/);
 });
 test('moon unlock thresholds follow the selected progression without changing purchase costs',()=>{
  const run=setup();
@@ -37,9 +38,18 @@ test('shop and server share the purchase gate and the shop lists moons in progre
 test('every moon enforces its exact record threshold and the previous-moon purchase chain',()=>{
  const run=setup();
  for(const [id,level]of Object.entries({blood:20,ice:40,shadow:50,electric:60,fire:70,gold:100,cosmic:120,clone:200})){
-  run("var s=freshState();s.currentLevel=1;s.maxLevel="+(level-1)+";s.playerData.shards=1e9;s.ownedMoons=MOON_ORDER.slice(0,MOON_ORDER.indexOf('"+id+"'));s.moonLevels=Object.fromEntries(s.ownedMoons.map(id=>[id,1]));");
-  assert.throws(()=>run("applyAction(s,'buyMoon',{id:'"+id+"'},100000)"),/максимальный/);
-  assert.equal(run("s.maxLevel="+level+";applyAction(s,'buyMoon',{id:'"+id+"'},100000).ownedMoons.includes('"+id+"')"),true);
+  run("var s=freshState();s.currentLevel=1;s.maxLevel=1000;s.runMaxLevel="+(level-1)+";s.playerData.shards=1e9;s.ownedMoons=MOON_ORDER.slice(0,MOON_ORDER.indexOf('"+id+"'));s.moonLevels=Object.fromEntries(s.ownedMoons.map(id=>[id,1]));");
+  assert.throws(()=>run("applyAction(s,'buyMoon',{id:'"+id+"'},100000)"),/забега/);
+  assert.equal(run("s.runMaxLevel="+level+";applyAction(s,'buyMoon',{id:'"+id+"'},100000).ownedMoons.includes('"+id+"')"),true);
   if(id!=='blood'){run('s.ownedMoons.pop();');assert.throws(()=>run("applyAction(s,'buyMoon',{id:'"+id+"'},100000)"),/Сначала/);}
  }
+});
+
+test('ascension relocks moons despite a high lifetime record and missing run fields never inherit it',()=>{
+ const run=setup();run("var s=freshState();s.currentLevel=200;s.maxLevel=1000;s.runMaxLevel=200;s.playerData.shards=1e9;s=applyAction(s,'ascend',{},100000);s.playerData.shards=1e9;");
+ assert.equal(run('s.maxLevel'),1000);assert.equal(run('s.runMaxLevel'),1);assert.equal(run("getMoonPurchaseAccess(s,'blood').unlocked"),false);
+ assert.throws(()=>run("applyAction(s,'buyMoon',{id:'blood'},100100)"),/забега/);
+ assert.equal(run("s.currentLevel=20;s=applyAction(s,'buyMoon',{id:'blood'},100200);s.ownedMoons.includes('blood')"),true);
+ run("s=applyAction(s,'rollbackFive',{},100300);");assert.equal(run('s.currentLevel'),15);assert.equal(run("getMoonPurchaseAccess(s,'blood').unlocked"),true);
+ run("delete s.runMaxLevel;s.currentLevel=1;s.maxLevel=1000;s=applyAction(s,'load',{},100400);");assert.equal(run('s.runMaxLevel'),1);assert.equal(run("getMoonPurchaseAccess(s,'ice').levelUnlocked"),false);
 });

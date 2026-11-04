@@ -14,7 +14,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  state.runClickCount=Number.isSafeInteger(state.runClickCount)&&state.runClickCount>=0?Math.min(state.runClickCount,state.clickCount):state.clickCount;
  state.maxLevel=Math.max(state.maxLevel||1,state.currentLevel);
  state.prestige=state.prestige||{coins:0,ascensions:0,upgrades:{}};
- state.runMaxLevel=Math.max(state.runMaxLevel??state.maxLevel,state.currentLevel);
+ state.runMaxLevel=Math.max(state.runMaxLevel??state.currentLevel,state.currentLevel);
  function bankMilestones(){const p=state.prestige,c=CONSTANTS.PRESTIGE,d=Math.floor(state.runMaxLevel/c.DAMAGE_EVERY),s=Math.floor(state.runMaxLevel/c.SHARDS_EVERY);p.damageStepsTotal=(p.damageStepsTotal||0)+Math.max(0,d-(p.runDamageSteps||0));p.shardStepsTotal=(p.shardStepsTotal||0)+Math.max(0,s-(p.runShardSteps||0));p.runDamageSteps=d;p.runShardSteps=s;}
  bankMilestones();
  if(action==='ascend'){
@@ -515,7 +515,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
    if(state.ownedMoons.includes(moon.id))throw Error('Луна уже куплена');
    const access=getMoonPurchaseAccess(state,moon.id);
    if(access.requiredMoon)throw Error('Сначала купите луну «'+MOON_TYPES[access.requiredMoon].name+'»');
-   if(!access.levelUnlocked)throw Error('Нужен максимальный достигнутый уровень '+moon.unlockLevel);
+   if(!access.levelUnlocked)throw Error('Нужен рекорд текущего забега: '+moon.unlockLevel);
    spend(moon.cost);state.ownedMoons.push(moon.id);state.moonLevels[moon.id]=1;
   }else{
    const level=state.moonLevels[moon.id];

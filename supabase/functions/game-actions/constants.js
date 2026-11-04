@@ -1033,7 +1033,7 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
 
 export const MOON_ORDER=Object.freeze(['normal','blood','ice','shadow','electric','fire','gold','cosmic','clone']);
 export function getMoonPurchaseAccess(state,id){
- const moon=MOON_TYPES[id],index=MOON_ORDER.indexOf(id),record=Math.max(state.maxLevel||1,state.currentLevel||1);
+ const moon=MOON_TYPES[id],index=MOON_ORDER.indexOf(id),record=Math.max(state.runMaxLevel??state.currentLevel??1,state.currentLevel||1);
  const requiredMoon=index>0?MOON_ORDER.slice(0,index).find(previous=>!(state.ownedMoons||[]).includes(previous)):null;
  const levelUnlocked=!!moon&&record>=moon.unlockLevel;
  return {record,requiredMoon:requiredMoon||null,levelUnlocked,unlocked:levelUnlocked&&!requiredMoon};

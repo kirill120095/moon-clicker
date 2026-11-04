@@ -506,7 +506,7 @@ function _updateMoonShop() {
         
         <div class="ufo-moon-trait">${escapeHTML(getUfoMoonDescription(id,moonLevel||1))}</div>
         ${owned ? `<div class="moon-shop-status"><div class="moon-level">⭐ Уровень: ${moonLevel} / ${CONSTANTS.LIMITS.MAX_MOON_LEVEL}</div></div>` : ''}
-        ${isLockedByLevel && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔒 Нужен рекорд ${moon.unlockLevel} ур.</div></div>` : ''}
+        ${isLockedByLevel && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔒 Нужен ${moon.unlockLevel} уровень в текущем забеге</div></div>` : ''}
         ${isLockedByMoon && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔗 Сначала купите: ${escapeHTML(MOON_TYPES[access.requiredMoon].name)}</div></div>` : ''}
         
         ${baseStatsHtml}
