@@ -8,7 +8,7 @@ export function freshState(username='Игрок') {
  maxSlots:1,echoQueue:[],echoPending:0,cloneTargets:[],clickCrystalLevel:0,moonKills:0,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
  tokens:CONSTANTS.CLICK_BURST,lastActionAt:0,bossDeadline:null,lastQuestDay:''};
 }
-export function applyAction(raw, action, payload={}, now=Date.now()) {
+export function applyAction(raw, action, payload={}, now=Date.now(), trusted={}) {
  let state=structuredClone(raw);
  state.clickCount=Math.max(0,Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(Number(state.clickCount)||0)));
  state.runClickCount=Number.isSafeInteger(state.runClickCount)&&state.runClickCount>=0?Math.min(state.runClickCount,state.clickCount):state.clickCount;
@@ -473,6 +473,17 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
    const echo=getPrestigeSummary(state),repeats=rollEchoRepeats(echo.echoChance);
    if(repeats){state.echoQueue.push({count:repeats,damage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(result.finalDamage*echo.echoDamage))),isCrit:result.isCrit});drainEchoes();}
   }
+ } else if(action==='spinWheel'){
+  if(trusted.canSpinWheel!==true)throw Object.assign(Error('Колесо доступно только владельцу'),{code:'FORBIDDEN'});
+  const bet=payload.bet,config=CONSTANTS.WHEEL,index=trusted.wheelIndex;
+  if(!Number.isSafeInteger(bet)||bet<1||bet>state.playerData.shards)throw Error('Укажите целую ставку в пределах баланса');
+  if(!Number.isInteger(index)||index<0||index>=config.SECTORS.length)throw Error('Не удалось определить сектор');
+  if(state.wheelResult&&now-state.wheelResult.at<config.COOLDOWN_MS)throw Object.assign(Error('Дождитесь окончания вращения'),{code:'RATE_LIMIT'});
+  if(payload.acceptBankruptcy!==true)throw Error('Подтвердите риск потери всего баланса');
+  const before=state.playerData.shards,multiplier=config.SECTORS[index];
+  const payout=multiplier==='bankrupt'?0:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(bet*multiplier));
+  state.playerData.shards=multiplier==='bankrupt'?0:Math.min(CONSTANTS.SAFE_NUMBER_CAP,before-bet+payout);
+  state.wheelResult={at:now,index,bet,multiplier,payout,balanceBefore:before,balanceAfter:state.playerData.shards,delta:state.playerData.shards-before};
  } else if(action==='buyClickCrystal'){
   spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;
  } else if(action==='setCloneTargets'){

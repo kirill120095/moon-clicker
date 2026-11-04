@@ -1,4 +1,5 @@
 import { applyAction, freshState } from './rules.js';
+import { CONSTANTS } from './constants.js';
 const base=Deno.env.get('SUPABASE_URL')!,service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const headers={apikey:service,Authorization:'Bearer '+service,'Content-Type':'application/json'};
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS'};
@@ -58,6 +59,16 @@ Deno.serve(async(req:Request)=>{
   let claims;try{claims=JSON.parse(decoder.decode(unb64(authorization.slice(7).split('.')[1])));}catch{return reply({error:'Некорректная сессия'},401);}
   if(!claims.session_id||claims.sub!==user.id)return reply({error:'Некорректная сессия'},401);
   const identity={uid:user.id,session:String(claims.session_id),username:user.user_metadata?.username};
+  let trusted={canSpinWheel:false,wheelIndex:-1};
+  if(body.action==='spinWheel'){
+   const check=await fetch(base+'/rest/v1/rpc/is_game_admin',{method:'POST',headers:{apikey:service,Authorization:authorization,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(8000)});
+   if(!check.ok)return reply({error:'Не удалось проверить доступ к колесу'},503);
+   if(await check.json()!==true)return reply({error:'Колесо доступно только владельцу'},403);
+   // Rejection sampling avoids modulo bias. Keep this result across commit retries.
+   const count=CONSTANTS.WHEEL.SECTORS.length,limit=Math.floor(0x100000000/count)*count;
+   let value;do{value=crypto.getRandomValues(new Uint32Array(1))[0];}while(value>=limit);
+   trusted={canSpinWheel:true,wheelIndex:value%count};
+  }
   const hash=await tokenHash(authorization);
   let snapshot=await openSnapshot(body.snapshot,hash);
   if(snapshot?.uid!==user.id)snapshot=null;
@@ -71,7 +82,7 @@ Deno.serve(async(req:Request)=>{
     state=freshState(state.playerData.username);state.maxLevel=maxLevel;state.moonSerial=serial;state.prestige=prestige;state.runMaxLevel=runMaxLevel;
    }
    try{
-    state=applyAction(state,body.action==='reset'?'load':body.action,body.payload||{},now);
+    state=applyAction(state,body.action==='reset'?'load':body.action,body.payload||{},now,trusted);
     const saved=await save(state,loaded.revision,{state,serverNow:now,revision:loaded.revision+1});
     if(body.action==='load')await diagnostic(user.id,body.request_id,'load','OK','Сохранение загружено','info');
     return reply(await seal(saved,identity,hash));

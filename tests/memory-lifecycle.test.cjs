@@ -18,7 +18,7 @@ test('radio refresh completion after logout cannot reconnect the channel',async(
 });
 test('parallel game initialization shares one load and cancellation starts no timers',async()=>{
  let resolve,loads=0,timers=0;
- const context={gameEngine:{destroy(){}},gameAdmin:{connect:async()=>{},disconnect(){}},radio:{connect:async()=>{},disconnect(){}},state:{},appState:{},db:{action(){loads++;return new Promise(r=>{resolve=r;});}},document:{getElementById:()=>null},setInterval(){timers++;},clearInterval(){},clearTimeout(){},console};
+ const context={gameEngine:{destroy(){}},fortuneWheel:{bind(){},connect(){},disconnect(){}},gameAdmin:{connect:async()=>{},disconnect(){}},radio:{connect:async()=>{},disconnect(){}},state:{},appState:{},db:{action(){loads++;return new Promise(r=>{resolve=r;});}},document:{getElementById:()=>null},setInterval(){timers++;},clearInterval(){},clearTimeout(){},console};
  vm.createContext(context);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/game/secure-game.js'),'utf8')),context);
  const p=vm.runInContext('gameEngine.init()',context),q=vm.runInContext('gameEngine.init()',context);assert.equal(p,q);assert.equal(loads,1);
  vm.runInContext('gameEngine.destroy()',context);resolve({state:{},revision:1});

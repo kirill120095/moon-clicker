@@ -1,3 +1,4 @@
+import { fortuneWheel } from '../ui/wheel.js';
 import { gameAdmin } from '../ui/admin.js';
 import { gameEngine } from './game.js';
 import { appState, state } from '../../core/state.js';
@@ -94,7 +95,7 @@ async function flush(){
 async function command(action,payload={},purchase=false){
  if(!active||purchasing)return;
  purchasing=true;
- try{do{await flush();}while(active&&pendingClicks>0);const result=await send(action,payload);if(action==='claimAllQuests'||action==='claimAllAchievements'){updateQuestAndAchievementUI(true);const summary=result?.state?.claimSummary;if(summary)showToast('Получено '+summary.count+' наград: +'+summary.reward.toLocaleString('ru-RU')+' 💎','success',3500);}if(action==='ascend'){updateQuestAndAchievementUI(true);try{localStorage.removeItem('moon_completed_'+state.user?.id);}catch{}}if(purchase)audio.purchase();updateProfileAndLeaders();}
+ try{do{await flush();}while(active&&pendingClicks>0);const result=await send(action,payload);if(action==='claimAllQuests'||action==='claimAllAchievements'){updateQuestAndAchievementUI(true);const summary=result?.state?.claimSummary;if(summary)showToast('Получено '+summary.count+' наград: +'+summary.reward.toLocaleString('ru-RU')+' 💎','success',3500);}if(action==='ascend'){updateQuestAndAchievementUI(true);try{localStorage.removeItem('moon_completed_'+state.user?.id);}catch{}}if(purchase)audio.purchase();updateProfileAndLeaders();return result;}
  finally{purchasing=false;}
 }
 let initializing=null,initGeneration=0;
@@ -106,7 +107,7 @@ gameEngine.init=()=>{
  active=true;ready=false;lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
  try{const loaded=await db.action('load');if(generation!==initGeneration||!active)throw Object.assign(Error('Загрузка отменена'),{code:'LOAD_CANCELLED'});apply(loaded);}catch(error){if(generation===initGeneration){active=false;gameEngine._isRunning=false;}throw error;}
  radio.connect(state.user).catch(()=>{});
- gameAdmin.connect(state.user).catch(()=>{});
+ gameAdmin.connect(state.user).then(()=>{if(generation===initGeneration&&active){fortuneWheel.bind(payload=>command('spinWheel',payload));fortuneWheel.connect(gameAdmin.allowed);}}).catch(()=>{});
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
  ticker=setInterval(()=>{
   if(!active)return;
@@ -128,7 +129,7 @@ gameEngine.init=()=>{
  })();
  const tracked=pending.finally(()=>{if(initializing===tracked)initializing=null;});initializing=tracked;return tracked;
 };
-gameEngine.destroy=()=>{initGeneration++;initializing=null;gameAdmin.disconnect();radio.disconnect();active=false;ready=false;lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
  if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
