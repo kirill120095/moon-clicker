@@ -27,7 +27,8 @@ export const CONSTANTS = {
   CLICK_BURST: 18,
   CLICK_TOKEN_CAPACITY: 36,
   ROLLBACK_LEVELS: 5,
-  PRESTIGE: { DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 20 },
+  PRESTIGE: { DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 20, REWARD_PER_ASCENSION: 0.25, UFO_HASTE_CAP: 0.95, PRICE_STEP_RATIO: 0.2, PRICE_QUADRATIC_DIVISOR: 10 },
+  ECHO: { MAX_HITS_PER_ACTION: 128, MAX_QUEUED_BURSTS: 64 },
   UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, MIN_INTERVAL: 100, COMBO_RELAY_COST: 1000000, MAX_SHOTS_PER_ACTION: 32, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, UNIT_BASE_COST: 2400, UNIT_COST_MULTIPLIER: 2, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { rewardMultiplier: 0.5 }, cosmic: { damagePerLevel: 0.001 } } },
   MOON_REWARD: { BASE: 5, PER_LEVEL: 2, EXPONENT: 1.5, GROWTH: 0.5, BOSS_MULTIPLIER: 2.5 },
 
@@ -806,7 +807,7 @@ export function getUfoBonuses(state, runtime=state.runtime||{}) {
   if(buff.critMultiplier)result.critMultiplier=buff.critMultiplier;
   if(buff.chainEvery){result.chainEvery=buff.chainEvery;result.chainMultiplier=1+(buff.chainMultiplier-1)*scale;}
  }
- result.haste=1-(1-Math.min(.9,result.haste))*(1-prestige.ufoHaste);
+ result.haste=Math.min(CONSTANTS.PRESTIGE.UFO_HASTE_CAP,1-(1-Math.min(.9,result.haste))*(1-prestige.ufoHaste));
  return result;
 }
 export function getUfoMoonDescription(id,level=1) {
@@ -824,16 +825,16 @@ export function getUfoMoonDescription(id,level=1) {
 }
 
 export const PRESTIGE_UPGRADES={
- reactor:{id:'reactor',name:'Вечный реактор',icon:'⚔️',description:'+10% урона за уровень',baseCost:1,multiplier:2,maxLevel:Infinity,damage:0.10},
- treasury:{id:'treasury',name:'Звёздная казна',icon:'💎',description:'+10% добычи кристаллов за уровень',baseCost:1,multiplier:2,maxLevel:Infinity,shards:0.10},
- fleet:{id:'fleet',name:'Бессмертная армада',icon:'🛸',description:'+5% урона тарелок за уровень',baseCost:2,multiplier:2,maxLevel:Infinity,ufoDamage:0.05},
- clock:{id:'clock',name:'Вечный хронометр',icon:'⏱️',description:'Каждый уровень сокращает интервал тарелок ещё на 3%',baseCost:2,multiplier:2,maxLevel:Infinity,ufoHaste:0.03},
- echo:{id:'echo',name:'Эхо выстрела',icon:'🔊',description:'Каждый уровень даёт ещё 5% от оставшегося шанса повторить 50% урона ручного выстрела. Эхо не создаёт эхо.',baseCost:25,multiplier:2,maxLevel:Infinity,chance:0.05,damage:0.5},
- capital:{id:'capital',name:'Стартовый капитал',icon:'🚀',description:'+500 кристаллов за уровень после вознесения',baseCost:3,multiplier:2,maxLevel:Infinity,shards:500},
- hunter:{id:'hunter',name:'Охотник на боссов',icon:'👹',description:'+10% урона боссам и +1 секунда боя за уровень',baseCost:5,multiplier:2,maxLevel:Infinity,damage:0.10,time:1},
- archive:{id:'archive',name:'Лунный архив',icon:'📚',description:'Навсегда +0,5 к базовому урону Космической за убитую луну за каждый уровень улучшения',baseCost:30,multiplier:2,maxLevel:Infinity,perKill:0.5},
- orbit:{id:'orbit',name:'Вечная орбита',icon:'🌌',description:'Один дополнительный слот активной луны, сохраняется при вознесении',baseCost:1000,multiplier:2,maxLevel:1},
- critical:{id:'critical',name:'Звёздное прицеливание',icon:'🎯',description:'+1% шанса крита за уровень',baseCost:2,multiplier:2,maxLevel:Infinity,crit:0.01}
+ reactor:{id:'reactor',name:'Вечный реактор',icon:'⚔️',description:'+25% урона за уровень',baseCost:1,maxLevel:Infinity,damage:0.25},
+ treasury:{id:'treasury',name:'Звёздная казна',icon:'💎',description:'+25% добычи кристаллов за уровень',baseCost:1,maxLevel:Infinity,shards:0.25},
+ fleet:{id:'fleet',name:'Бессмертная армада',icon:'🛸',description:'+15% урона тарелок за уровень',baseCost:2,maxLevel:Infinity,ufoDamage:0.15},
+ clock:{id:'clock',name:'Вечный хронометр',icon:'⏱️',description:'Каждый уровень сокращает оставшийся интервал ещё на 6%; предел 95%, минимум 100 мс',baseCost:2,maxLevel:49,ufoHaste:0.06},
+ echo:{id:'echo',name:'Эхо выстрела',icon:'🔊',description:'+10% шанса повторить 100% урона ручного выстрела за уровень. Каждые полные 100% дают гарантированный повтор, остаток — шанс ещё одного.',baseCost:25,maxLevel:Infinity,chance:0.10,damage:1},
+ capital:{id:'capital',name:'Стартовый капитал',icon:'🚀',description:'+2000 кристаллов за уровень после вознесения',baseCost:3,maxLevel:Infinity,shards:2000},
+ hunter:{id:'hunter',name:'Охотник на боссов',icon:'👹',description:'+25% урона боссам и +2 секунды боя за уровень',baseCost:5,maxLevel:Infinity,damage:0.25,time:2},
+ archive:{id:'archive',name:'Лунный архив',icon:'📚',description:'Навсегда +1,5 к базовому урону Космической за убитую луну за каждый уровень улучшения',baseCost:30,maxLevel:Infinity,perKill:1.5},
+ orbit:{id:'orbit',name:'Вечная орбита',icon:'🌌',description:'Один дополнительный слот активной луны, сохраняется при вознесении',baseCost:1000,maxLevel:1},
+ critical:{id:'critical',name:'Звёздное прицеливание',icon:'🎯',description:'+3% шанса крита за уровень',baseCost:2,maxLevel:Infinity,crit:0.03}
 };
 export function getPrestigeSummary(state){
  const p=state.prestige||{},up=p.upgrades||{},c=CONSTANTS.PRESTIGE;
@@ -845,12 +846,13 @@ export function getPrestigeSummary(state){
  damageBonus:damageSteps*c.DAMAGE_PER_STEP+(up.reactor||0)*PRESTIGE_UPGRADES.reactor.damage,
  shardBonus:shardSteps*c.SHARDS_PER_STEP+(up.treasury||0)*PRESTIGE_UPGRADES.treasury.shards,
  critBonus:(up.critical||0)*PRESTIGE_UPGRADES.critical.crit,
- echoChance:1-Math.pow(1-PRESTIGE_UPGRADES.echo.chance,up.echo||0),echoDamage:PRESTIGE_UPGRADES.echo.damage,
+ echoChance:(up.echo||0)*PRESTIGE_UPGRADES.echo.chance,echoDamage:PRESTIGE_UPGRADES.echo.damage,
  startShards:Math.min(CONSTANTS.SAFE_NUMBER_CAP,(up.capital||0)*PRESTIGE_UPGRADES.capital.shards),
  bossDamage:(up.hunter||0)*PRESTIGE_UPGRADES.hunter.damage,bossTime:(up.hunter||0)*PRESTIGE_UPGRADES.hunter.time,
  archivePerKill:(up.archive||0)*PRESTIGE_UPGRADES.archive.perKill,extraSlots:Math.min(1,up.orbit||0),
  ufoDamage:(up.fleet||0)*PRESTIGE_UPGRADES.fleet.ufoDamage,
- ufoHaste:1-Math.pow(1-PRESTIGE_UPGRADES.clock.ufoHaste,up.clock||0)};
+ rewardMultiplier:1+(p.ascensions||0)*c.REWARD_PER_ASCENSION,
+ ufoHaste:Math.min(c.UFO_HASTE_CAP,1-Math.pow(1-PRESTIGE_UPGRADES.clock.ufoHaste,up.clock||0))};
 }
 
 /** Every full 100% adds a crit tier; the remainder can roll the next tier. */
@@ -863,7 +865,20 @@ export function rollCritical(chance,multiplier=2,random=Math.random){
 }
 export function getPrestigeUpgradeCost(id,level){
  const d=PRESTIGE_UPGRADES[id];
- return d&&level<d.maxLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(d.baseCost*Math.pow(d.multiplier,level))):Infinity;
+ return d&&level<d.maxLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,d.baseCost+Math.max(1,Math.ceil(d.baseCost*CONSTANTS.PRESTIGE.PRICE_STEP_RATIO))*level+Math.floor(level*level/CONSTANTS.PRESTIGE.PRICE_QUADRATIC_DIVISOR)):Infinity;
+}
+
+/** Whole percentages repeat guaranteed hits; the remainder rolls one extra. */
+export function rollEchoRepeats(chance,random=Math.random){
+ const value=Math.max(0,Number.isFinite(chance)?chance:0),whole=Math.floor(value),fraction=value-whole;
+ return Math.min(CONSTANTS.SAFE_NUMBER_CAP,whole+(fraction>0&&random()<fraction?1:0));
+}
+export function getProgressReward(amount,state){
+ return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(0,Math.round(amount*getPrestigeSummary(state).rewardMultiplier)));
+}
+export function getQuestPayout(def,state){
+ const total=getProgressReward(def.reward+(def.bonusReward||0),state),base=Math.min(total,getProgressReward(def.reward,state));
+ return {base,bonus:total-base,total};
 }
 
 /** Pure live view of the same passive and temporary combat modifiers used by the server. */

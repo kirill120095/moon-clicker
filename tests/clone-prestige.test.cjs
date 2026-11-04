@@ -3,7 +3,7 @@ const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').rep
 function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return s=>vm.runInContext(s,c);}
 test('cosmic kill coefficient is 0.5 and permanent archive levels increase it before clone strength',()=>{
  const run=setup();run("var s=freshState();s.activeMoons=['cosmic'];s.moonLevels.cosmic=1;s.currentLevel=100;s.moonKills=100;s.prestige.upgrades.archive=3;");
- assert.equal(run('getBaseDamage(s)'),1210);assert.equal(run("getMoonMechanicParams('cosmic',1).baseDamagePerKill"),.5);
+ assert.equal(run('getBaseDamage(s)'),1510);assert.equal(run("getMoonMechanicParams('cosmic',1).baseDamagePerKill"),.5);
  run("s.currentLevel=150;s.maxLevel=150;s=applyAction(s,'ascend',{},100000);");assert.equal(run('s.moonKills'),0);assert.equal(run('s.prestige.upgrades.archive'),3);assert.equal(run('getBaseDamage(s)'),10);
 });
 test('prestige purchases use authoritative prices and permanent orbit is single purchase',()=>{
@@ -15,8 +15,8 @@ test('prestige purchases use authoritative prices and permanent orbit is single 
 });
 test('starting capital pays only after ascension and survives later loads without paying twice',()=>{
  const run=setup();run("var s=freshState();s.prestige.coins=3;s=applyAction(s,'buyPrestige',{id:'capital'},100000);");assert.equal(run('s.playerData.shards'),0);
- run("s.currentLevel=50;s=applyAction(s,'ascend',{},100100);");assert.equal(run('s.playerData.shards'),500);
- assert.equal(run("applyAction(s,'load',{},100200).playerData.shards"),500);assert.equal(run('s.prestige.upgrades.capital'),1);
+ run("s.currentLevel=50;s=applyAction(s,'ascend',{},100100);");assert.equal(run('s.playerData.shards'),2000);
+ assert.equal(run("applyAction(s,'load',{},100200).playerData.shards"),2000);assert.equal(run('s.prestige.upgrades.capital'),1);
 });
 test('click crystals credit manual and UFO hits once, excluding echo hits',()=>{
  const run=setup();run("Math.random=()=>0;var s=freshState();s.playerData.shards=5000;s=applyAction(s,'buyClickCrystal',{cost:0},100000);s.prestige.upgrades.echo=1;s.moonHP=1000000;s.maxHP=1000000;s=applyAction(s,'click',{count:1},100100);");
@@ -27,7 +27,7 @@ test('click crystals credit manual and UFO hits once, excluding echo hits',()=>{
 });
 test('boss hunter affects confirmed, profile and UFO damage and extends current boss deadline',()=>{
  const run=setup();run("Math.random=()=>.99;var s=freshState();s.currentLevel=10;s.moonHP=100000;s.maxHP=100000;s.bossDuration=30;s.bossDeadline=130000;s.prestige.coins=5;s=applyAction(s,'buyPrestige',{id:'hunter'},100000);");
- assert.equal(run('s.bossDeadline'),131000);assert.equal(run('s.bossDuration'),31);
+ assert.equal(run('s.bossDeadline'),132000);assert.equal(run('s.bossDuration'),32);
  assert.equal(run('getCombatStats(s,100000).finalDamage'),run('s.finalDamage'));
  assert.equal(run("applyAction(s,'click',{count:1},100100).effects[0].damage"),run('s.finalDamage'));
 });

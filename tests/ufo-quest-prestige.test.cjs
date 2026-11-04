@@ -24,9 +24,9 @@ test('automatic timestamps keep fire and shadow visible and idle gaps still expi
  assert.ok(run("getCombatStats(s,130100).sources.some(b=>b.id==='shadow-stacks')"));
  run("s=applyAction(s,'sync',{},150000);");assert.equal(run('s.runtime._comboClicks+s.runtime._fireStacks+s.runtime._shadowCritStacks'),0);
 });
-test('archive upgrades permanently add 0.5 per kill each, with existing levels upgraded too',()=>{
+test('archive upgrades permanently add 1.5 per kill each, with existing levels upgraded too',()=>{
  const run=setup();run("var s=freshState();s.activeMoons=['cosmic'];s.moonLevels.cosmic=1;s.currentLevel=100;s.moonKills=100;s.prestige.upgrades.archive=2;");
- assert.equal(run("getPrestigeSummary(s).archivePerKill"),1);assert.equal(run('getBaseDamage(s)'),1160);
+ assert.equal(run("getPrestigeSummary(s).archivePerKill"),3);assert.equal(run('getBaseDamage(s)'),1360);
  run("s=applyAction(s,'ascend',{},100000);");assert.equal(run('s.prestige.upgrades.archive'),2);assert.equal(run('s.moonKills'),0);
 });
 

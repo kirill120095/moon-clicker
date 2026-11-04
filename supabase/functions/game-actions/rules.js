@@ -1,11 +1,11 @@
-import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, getBaseDamage, getEffectiveMoonParams, getCombatStats, getSlotLimit, getClickCrystalCost, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, PRESTIGE_UPGRADES } from './constants.js';
+import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, rollEchoRepeats, getProgressReward, getQuestPayout, getBaseDamage, getEffectiveMoonParams, getCombatStats, getSlotLimit, getClickCrystalCost, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, PRESTIGE_UPGRADES } from './constants.js';
 import { getMaxHPForLevel, getSlotUpgradeCost, getClickUpgradeCost } from './config.js';
 const showToast=()=>{},updateQuestUI=()=>{},updateAchievementUI=()=>{},updateProfileAndLeaders=()=>{};
 export function freshState(username='Игрок') {
  return {runMaxLevel:1,prestige:{coins:0,claimedCoinSteps:0,ascensions:0,upgrades:{}},moonSerial:1,maxLevel:1,ufoCount:0,ufoLevel:0,ufoComboRelay:false,lastComboAt:0,lastAutoClickAt:0,ufoLastShotAt:0,effects:[],currentLevel:1,moonHP:CONSTANTS.BASE_HP,maxHP:CONSTANTS.BASE_HP,clickCount:0,totalSecondsPlayed:0,
  playerData:{username,shards:0,click_damage:CONSTANTS.DEFAULTS.CLICK_DAMAGE,click_damage_level:0},
  activeMoon:'normal',activeMoons:['normal'],ownedMoons:['normal'],moonLevels:{normal:1},
- maxSlots:1,cloneTargets:[],clickCrystalLevel:0,moonKills:0,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
+ maxSlots:1,echoQueue:[],echoPending:0,cloneTargets:[],clickCrystalLevel:0,moonKills:0,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
  tokens:CONSTANTS.CLICK_BURST,lastActionAt:0,bossDeadline:null,lastQuestDay:''};
 }
 export function applyAction(raw, action, payload={}, now=Date.now()) {
@@ -24,6 +24,8 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  state.maxSlots=Math.min(getSlotLimit(state),Math.max(1+getPrestigeSummary(state).extraSlots,state.maxSlots||1));
  state.clickCrystalLevel=Number.isSafeInteger(state.clickCrystalLevel)&&state.clickCrystalLevel>=0?state.clickCrystalLevel:0;
  state.cloneTargets=Array.isArray(state.cloneTargets)?[...new Set(state.cloneTargets)].filter(id=>id!=='clone'&&Object.hasOwn(MOON_TYPES,id)).slice(0,2):[];
+ state.echoQueue=Array.isArray(state.echoQueue)?state.echoQueue.slice(0,CONSTANTS.ECHO.MAX_QUEUED_BURSTS).filter(b=>Number.isSafeInteger(b.count)&&b.count>0&&Number.isFinite(b.damage)&&b.damage>0).map(b=>({count:b.count,damage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,b.damage),isCrit:!!b.isCrit})):[];
+ if(action==='click'&&state.echoQueue.length>CONSTANTS.ECHO.MAX_QUEUED_BURSTS-CONSTANTS.CLICK_BURST)throw Object.assign(Error('Эхо ещё выполняет предыдущие выстрелы. Подождите немного.'),{code:'RATE_LIMIT'});
  state.ufoLevel=state.ufoLevel||0;
  state.ufoCount=Math.min(state.ownedMoons.length,state.ufoCount||(state.ufoLevel?1:0));
  state.moonSerial=state.moonSerial||1;
@@ -416,6 +418,14 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   }
   state.effects.push(event);
  }
+ let echoBudget=CONSTANTS.ECHO.MAX_HITS_PER_ACTION;
+ function drainEchoes(){
+  while(echoBudget>0&&state.echoQueue.length){
+   const burst=state.echoQueue[0];hit(burst.damage,burst.isCrit,'echo');burst.count--;echoBudget--;
+   if(!burst.count)state.echoQueue.shift();
+  }
+ }
+ drainEchoes();
  function registerUfoClick(shotAt){
   const steps=state.ufoComboRelay?2:1;
   for(const [id,counter] of [['normal','_comboClicks'],['fire','_fireStacks'],['shadow','_shadowCritStacks']]){
@@ -455,7 +465,8 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
    state.clickCount++;rules.updateQuestProgress('click',1);
    hit(result.finalDamage,result.isCrit,'manual',bonuses);
    const gained=credit(state.clickCrystalLevel||0);if(gained)rules.updateQuestProgress('shard',gained);
-   const echo=getPrestigeSummary(state);if(echo.echoChance>0&&Math.random()<echo.echoChance)hit(Math.max(1,Math.round(result.finalDamage*echo.echoDamage)),result.isCrit,'echo');
+   const echo=getPrestigeSummary(state),repeats=rollEchoRepeats(echo.echoChance);
+   if(repeats){state.echoQueue.push({count:repeats,damage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(result.finalDamage*echo.echoDamage))),isCrit:result.isCrit});drainEchoes();}
   }
  } else if(action==='buyClickCrystal'){
   spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;
@@ -475,7 +486,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
   if(level>=def.maxLevel)throw Error('Улучшение уже куплено');
   const cost=getPrestigeUpgradeCost(payload.id,level);
   if((p.coins||0)<cost)throw Error('Недостаточно монет престижа');
-  p.coins-=cost;p.upgrades=p.upgrades||{};p.upgrades[payload.id]=level+1;if(payload.id==='orbit')state.maxSlots=Math.min(getSlotLimit(state),state.maxSlots+1);if(payload.id==='hunter'&&state.bossDeadline){state.bossDeadline+=1000;state.bossDuration=(state.bossDuration||CONSTANTS.BOSS_TIMER)+1;}
+  p.coins-=cost;p.upgrades=p.upgrades||{};p.upgrades[payload.id]=level+1;if(payload.id==='orbit')state.maxSlots=Math.min(getSlotLimit(state),state.maxSlots+1);if(payload.id==='hunter'&&state.bossDeadline){state.bossDeadline+=def.time*1000;state.bossDuration=(state.bossDuration||CONSTANTS.BOSS_TIMER)+def.time;}
  } else if(action==='buyUfo'){
   if(state.currentLevel<CONSTANTS.UFO.UNLOCK_LEVEL)throw Error('Тарелка доступна с '+CONSTANTS.UFO.UNLOCK_LEVEL+' уровня');
   if(state.ufoLevel>=CONSTANTS.UFO.MAX_LEVEL)throw Error('Тарелка улучшена полностью');
@@ -518,11 +529,11 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  } else if(action==='claimQuest'){
   const q=state.quests[payload.id],def=QUESTS[payload.id];
   if(!q||!def||!q.completed||q.claimed)throw Error('Награда недоступна');
-  q.claimed=true;credit(def.reward+(def.bonusReward||0));
+  q.claimed=true;credit(getQuestPayout(def,state).total);
  } else if(action==='claimAchievement'){
   rules.checkAchievements();const def=ACHIEVEMENTS[payload.id],tier=def?.tiers.find(t=>t.level===payload.tier);
   if(!tier||state.achievements[payload.id]?.[payload.tier]!=='unclaimed')throw Error('Награда недоступна');
-  state.achievements[payload.id][payload.tier]='claimed';credit(tier.reward);
+  state.achievements[payload.id][payload.tier]='claimed';credit(getProgressReward(tier.reward,state));
  } else if(!['load','sync'].includes(action))throw Error('Неизвестное действие');
  rules.checkAchievements();
  state.finalDamage=finalDamage();state.moonReward=moonReward();
@@ -535,6 +546,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
  state.finalCritChance=Math.max(0,0.05+rules._calculateAllBonuses().totalCritChanceBonus);
  const shadow=rules._getMechanicParamsForActiveMoon('shadow');
  if(shadow?.fullStackCritChance>0&&rules._shadowCritStacks>=shadow.clicksPerStack*shadow.maxStacks)state.finalCritChance+=shadow.fullStackCritChance;
+ state.echoPending=state.echoQueue.reduce((n,b)=>Math.min(CONSTANTS.SAFE_NUMBER_CAP,n+b.count),0);
  state.gameCompleted=false;
  state.runtime=Object.fromEntries(Object.keys(rules).map(k=>[k,rules[k]]));
  state.lastActionAt=now;state.testMode=false;

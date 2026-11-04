@@ -44,6 +44,7 @@ const initialState = {
   maxSlots: CONSTANTS.DEFAULTS.SLOT_LEVEL,
   
   moonKills: 0,
+  pendingEchoes: 0,
   lastAutoClickAt: 0,
   cloneTargets: [],
   clickCrystalLevel: 0,

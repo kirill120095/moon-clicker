@@ -8,7 +8,7 @@ import {
   CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, 
   QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, 
   SYNERGY_BONUSES, RARITY_CONFIG,
-  getMoonMechanicParams, getEffectiveMoonParams, getCloneTargets, getMoonPower, getSlotLimit, getClickCrystalCost, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, getPrestigeUpgradeCost, getMoonPurchaseAccess, MOON_ORDER, getCombatStats, PRESTIGE_UPGRADES
+  getMoonMechanicParams, getProgressReward, getQuestPayout, getEffectiveMoonParams, getCloneTargets, getMoonPower, getSlotLimit, getClickCrystalCost, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, getPrestigeUpgradeCost, getMoonPurchaseAccess, MOON_ORDER, getCombatStats, PRESTIGE_UPGRADES
 } from '../../core/constants.js';
 import { getMaxHPForLevel, getTitle, getClickUpgradeCost } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
@@ -273,13 +273,13 @@ export function updatePrestigeUI(){
  const p=getPrestigeSummary(state),container=document.getElementById('prestigeShop'),profile=document.getElementById('profilePrestige');
  const profileKey=JSON.stringify(p);
  if(profile&&(profileKey!==prestigeProfileKey||!profile.childElementCount)&&!document.getElementById('profilePanel')?.classList.contains('hidden'))profile.innerHTML='<div class="profile-block"><div class="profile-block-header"><span class="block-icon">🌟</span><span class="block-title">Вечный престиж</span></div><div class="stats-grid">'+[
- ['🌟','Монеты',p.coins],['✨','Вознесения',p.ascensions],['⚔️','Урон','+'+Math.round(p.damageBonus*100)+'%'],['💎','Добыча','+'+Math.round(p.shardBonus*100)+'%'],['🎯','Шанс крита','+'+Math.round(p.critBonus*100)+'%'],['🛸','Урон тарелок','+'+Math.round(p.ufoDamage*100)+'%'],['⏱️','Сокращение интервала',Math.round(p.ufoHaste*100)+'%'],['🔊','Шанс эха',Math.round(p.echoChance*100)+'%'],['🚀','Стартовый капитал',formatMoney(p.startShards)+' 💎'],['👹','Урон боссам','+'+Math.round(p.bossDamage*100)+'%'],['⏳','Время босса','+'+p.bossTime+' с'],['📚','Космос за убийство',(MOON_TYPES.cosmic.mechanicParams.baseDamagePerKill+p.archivePerKill).toLocaleString('ru-RU')],['🌌','Вечные слоты',p.extraSlots],['📈','Рекорд прохождения',p.runRecord],['🔮','При вознесении',p.pendingCoins+' 🌟']
+ ['🌟','Монеты',p.coins],['✨','Вознесения',p.ascensions],['⚔️','Урон','+'+Math.round(p.damageBonus*100)+'%'],['💎','Добыча','+'+Math.round(p.shardBonus*100)+'%'],['🎯','Шанс крита','+'+Math.round(p.critBonus*100)+'%'],['🛸','Урон тарелок','+'+Math.round(p.ufoDamage*100)+'%'],['⏱️','Сокращение интервала',Math.round(p.ufoHaste*100)+'%'],['🎁','Награды заданий','×'+p.rewardMultiplier.toLocaleString('ru-RU')],['🔊','Шанс эха',Math.round(p.echoChance*100)+'%'],['🚀','Стартовый капитал',formatMoney(p.startShards)+' 💎'],['👹','Урон боссам','+'+Math.round(p.bossDamage*100)+'%'],['⏳','Время босса','+'+p.bossTime+' с'],['📚','Космос за убийство',(MOON_TYPES.cosmic.mechanicParams.baseDamagePerKill+p.archivePerKill).toLocaleString('ru-RU')],['🌌','Вечные слоты',p.extraSlots],['📈','Рекорд прохождения',p.runRecord],['🔮','При вознесении',p.pendingCoins+' 🌟']
  ].map(([icon,label,value])=>'<div class="stat-card"><div class="stat-card-icon">'+icon+'</div><div class="stat-card-label">'+label+'</div><div class="stat-card-value">'+value+'</div></div>').join('')+'</div></div>';
  prestigeProfileKey=profile&&!document.getElementById('profilePanel')?.classList.contains('hidden')?profileKey:prestigeProfileKey;
  if(!container||!document.getElementById('prestigeTabContent')?.classList.contains('active'))return;
  const shopKey=JSON.stringify([p,state.prestige?.upgrades]);if(shopKey===prestigeShopKey&&container.childElementCount)return;prestigeShopKey=shopKey;
  container.innerHTML='<h3>🌟 Магазин вечных улучшений</h3><p class="prestige-summary">Монеты престижа: <b>'+p.coins+'</b></p><p class="ufo-description">В этом прохождении: '+p.runRecord+' уровней. При вознесении получите '+p.pendingCoins+' монет. Обычный прогресс сбросится; вечные бонусы и покупки сохранятся. В новом прохождении рубежи снова доступны.</p><button class="btn-action ascend-button" data-ascend '+(p.pendingCoins?'':'disabled')+'>Вознестись · +'+p.pendingCoins+' 🌟</button>'+
- Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel;return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+level+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':formatPrice(cost)+' 🌟')+'</button></div>';}).join('');
+ Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel;return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+Math.min(level,d.maxLevel)+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':formatPrice(cost)+' 🌟')+'</button></div>';}).join('');
 }
 
 function _updateUfoShop() {
@@ -908,7 +908,8 @@ export function updateLiveCombatProfile(){
  damageBonus:'+'+pct(s.damageBonus),shardBonus:'+'+pct(s.shardBonus),critChanceBonus:'+'+pct(s.critChanceBonus),critDamageBonus:'+'+pct(s.critDamageBonus)};
  for(const [key,text]of Object.entries(values)){const el=document.querySelector('[data-live-stat="'+key+'"]');if(el&&el.textContent!==text)el.textContent=text;}
  const rows=s.sources.filter(b=>b.damage||b.shards||b.crit||b.critDamage).map(b=>b.name+': '+[['урон',b.damage],['добыча',b.shards],['шанс крита',b.crit],['крит. урон',b.critDamage]].filter(([,v])=>v).map(([label,v])=>label+' +'+pct(v)).join(' · '));
- if(s.echoChance)rows.push('🔊 Эхо выстрела: '+pct(s.echoChance)+' шанс повторить '+pct(s.echoDamage)+' урона');
+ if(s.echoChance){const full=Math.floor(s.echoChance),extra=s.echoChance-full;rows.push('🔊 Эхо выстрела: '+full+' гарант. повторов'+(extra?' · '+pct(extra)+' шанс ещё одного':'')+' · '+pct(s.echoDamage)+' урона');}
+ if(state.pendingEchoes)rows.push('🔊 Ожидают эха: '+formatNumber(state.pendingEchoes)+' повторов');
  if(s.crystalsPerClick)rows.push('💠 Кристалл за клик: +'+formatMoney(s.crystalsPerClick)+' 💎 за клик или выстрел тарелки');
  if(s.cloneTargets?.length)rows.push('🪞 Клон: '+s.cloneTargets.map(id=>MOON_TYPES[id].name+' ×'+getMoonPower(state,id).toLocaleString('ru-RU')).join(' · '));
  if(s.baseDamageBonus)rows.push('Космическая луна: +'+formatBaseDamage(s.baseDamageBonus)+' базового урона (уровень и убийства)');
@@ -1060,8 +1061,8 @@ export function updateQuestUI() {
         <div class="quest-footer">
           <div class="quest-reward">
             <span class="reward-label">Награда:</span>
-            <span class="reward-value">💎 ${questData.reward}</span>
-            ${questData.bonusReward ? `<span class="bonus-reward">+${questData.bonusReward}</span>` : ''}
+            <span class="reward-value">💎 ${getQuestPayout(questData,state).base}</span>
+            ${questData.bonusReward ? `<span class="bonus-reward">+${getQuestPayout(questData,state).bonus}</span>` : ''}
           </div>
           <div class="quest-status">
             ${isClaimed ? '<span class="status-claimed">✓ Получено</span>' :
@@ -1159,7 +1160,7 @@ export function updateAchievementUI() {
             <div class="tier-info">
               <div class="tier-name">${escapeHTML(tier.name)}</div>
               <div class="tier-desc">${escapeHTML(tier.description)}</div>
-              <div class="tier-reward">💎 ${tier.reward}</div>
+              <div class="tier-reward">💎 ${getProgressReward(tier.reward,state)}</div>
             </div>
             ${isUnclaimed ? 
               `<button class="btn-claim-tier" onclick="window.claimAchievementReward('${ach.id}', '${tier.level}')">Получить</button>` 

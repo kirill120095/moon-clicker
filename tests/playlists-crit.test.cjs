@@ -10,8 +10,8 @@ test('critical tiers work below, at and above every 100 percent boundary',()=>{
  assert.equal(run('rollCritical(2.07,4,()=>0).multiplier'),8);
 });
 test('server uses prestige chance above 200 percent and reports it for the profile',()=>{
- const run=setup();assert.equal(run("Math.random=()=>0.01;var s=freshState();s.prestige.upgrades.critical=202;s=applyAction(s,'click',{count:1},100000);s.effects[0].damage"),44);
- assert.ok(Math.abs(run('s.finalCritChance')-2.07)<1e-10);
+ const run=setup();assert.equal(run("Math.random=()=>0.01;var s=freshState();s.prestige.upgrades.critical=67;s=applyAction(s,'click',{count:1},100000);s.effects[0].damage"),44);
+ assert.ok(Math.abs(run('s.finalCritChance')-2.06)<1e-10);
 });
 test('all eternal upgrades can be bought beyond previous caps with finite prices',()=>{
  const run=setup();
@@ -19,7 +19,7 @@ test('all eternal upgrades can be bought beyond previous caps with finite prices
   assert.equal(run("var s=freshState();s.prestige.coins=Number.MAX_SAFE_INTEGER;s.prestige.upgrades."+id+"=10;applyAction(s,'buyPrestige',{id:'"+id+"'},100000).prestige.upgrades."+id),11);
  }
  assert.equal(run("Number.isSafeInteger(getPrestigeUpgradeCost('critical',2000))"),true);
- assert.equal(run("var s=freshState();s.prestige.upgrades.clock=1000;s.ufoLevel=1;s=applyAction(s,'load',{},100000);s=applyAction(s,'sync',{},100100);s.effects.length"),1);
+ assert.equal(run("var s=freshState();s.prestige.upgrades.clock=1000;s.ufoLevel=1;s=applyAction(s,'load',{},100000);s=applyAction(s,'sync',{},100100);s.effects.length"),0);assert.equal(run("applyAction(s,'sync',{},100150).effects.length"),1);
 });
 test('quest and achievement rewards are reduced while difficulty still pays more',()=>{
  const run=setup();assert.equal(run("ACHIEVEMENTS.clickNovice.tiers[0].reward"),25);
