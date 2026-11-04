@@ -10,7 +10,7 @@ export const CONSTANTS = {
   BASE_HP: 1000,
   MAX_SLOTS: 3,
   CLICK_CRYSTALS: { BASE_COST: 5000, MULTIPLIER: 3 },
-  CLONE: { COST: 12000000, UNLOCK_LEVEL: 250, LINK_BONUS: { damageBonus: .10, shardBonus: .05, critChanceBonus: .01, critDamageBonus: .05 }, DUAL_BONUS: { damageBonus: .15, shardBonus: .10, critChanceBonus: .01, critDamageBonus: .10 } },
+  CLONE: { COST: 12000000, UNLOCK_LEVEL: 250, LINK_BONUS: { damageBonus: .10, shardBonus: .05, critChanceBonus: .01, critDamageBonus: .05 }, DUAL_BONUS: { damageBonus: .15, shardBonus: .10, critChanceBonus: .01, critDamageBonus: .10 }, GROUP_THREE: { damageBonus: .10, shardBonus: .08, critChanceBonus: .005, critDamageBonus: .05 }, GROUP_FOUR: { damageBonus: .18, shardBonus: .12, critChanceBonus: .01, critDamageBonus: .10 } },
 
   // Цены увеличены в 2 раза
   UPGRADE_COSTS: {
@@ -665,6 +665,11 @@ export const MOON_TYPES = {
 // СИНЕРГИИ (без изменений)
 // ============================================================
 export const SYNERGY_BONUSES = {
+  'blood+electric': {name:'Кровавая молния',tier:2,tierName:'Средняя',tierColor:'#03a9f4',damageBonus:.35,shardBonus:.10,critChanceBonus:.03,critDamageBonus:.25,icon:'⚡',description:'Кровь питает электрический разряд',auraCombo:['aura-blood','aura-electric']},
+  'blood+gold': {name:'Кровавое золото',tier:3,tierName:'Продвинутая',tierColor:'#ff9800',damageBonus:.25,shardBonus:.40,critChanceBonus:.02,critDamageBonus:.15,icon:'👑',description:'Кровавая ярость притягивает сокровища',auraCombo:['aura-blood','aura-gold']},
+  'ice+fire': {name:'Паровой взрыв',tier:2,tierName:'Средняя',tierColor:'#03a9f4',damageBonus:.30,shardBonus:.20,critChanceBonus:.02,critDamageBonus:.15,icon:'♨',description:'Столкновение жара и холода',auraCombo:['aura-ice','aura-fire']},
+  'electric+shadow': {name:'Тёмный разряд',tier:2,tierName:'Средняя',tierColor:'#03a9f4',damageBonus:.35,shardBonus:.15,critChanceBonus:.03,critDamageBonus:.25,icon:'⚡',description:'Молния пробивает завесу теней',auraCombo:['aura-electric','aura-shadow']},
+
   'blood+fire': { name: 'Адское пламя', tier: 1, tierName: 'Начальная', tierColor: '#8bc34a', damageBonus: 0.25, shardBonus: 0, critChanceBonus: 0.02, critDamageBonus: 0.15, icon: '🔥', description: 'Огонь и кровь питают друг друга', auraCombo: ['aura-blood', 'aura-fire'] },
   'blood+ice': { name: 'Кровавый лёд', tier: 1, tierName: 'Начальная', tierColor: '#8bc34a', damageBonus: 0.20, shardBonus: 0.15, critChanceBonus: 0.02, critDamageBonus: 0.10, icon: '🧊', description: 'Замороженная кровь', auraCombo: ['aura-blood', 'aura-ice'] },
   'ice+shadow': { name: 'Ледяная тень', tier: 1, tierName: 'Начальная', tierColor: '#8bc34a', damageBonus: 0.15, shardBonus: 0.20, critChanceBonus: 0.02, critDamageBonus: 0.05, icon: '🌑', description: 'Тени крадут тепло', auraCombo: ['aura-ice', 'aura-shadow'] },
@@ -703,6 +708,20 @@ export const SYNERGY_BONUSES = {
   SYNERGY_BONUSES[group.join('+')]={name:'Созвездие '+group.map(id=>MOON_TYPES[id].emoji).join(''),tier:5,tierName:'Созвездие',tierColor:'#c4b5fd',damageBonus:.25,shardBonus:.2,critChanceBonus:.02,critDamageBonus:.15,icon:'🌌',description:'Четыре разные луны образуют созвездие',auraCombo:[]};
  }
 
+}
+
+
+/** Fill missing triples once; canonical membership preserves existing named recipes. */
+{
+ const ids=Object.keys(MOON_TYPES).filter(id=>id!=='normal'&&id!=='clone');
+ const words={blood:'крови',ice:'льда',shadow:'тени',electric:'молний',fire:'пламени',gold:'золота',cosmic:'космоса'};
+ const known=new Set(Object.keys(SYNERGY_BONUSES).map(key=>key.split('+').sort().join('+')));
+ for(let a=0;a<ids.length;a++)for(let b=a+1;b<ids.length;b++)for(let d=b+1;d<ids.length;d++){
+  const group=[ids[a],ids[b],ids[d]],key=[...group].sort().join('+');if(known.has(key))continue;
+  const name='Союз '+group.slice(0,2).map(id=>words[id]).join(', ')+' и '+words[group[2]];
+  SYNERGY_BONUSES[key]={name,tier:3,tierName:'Тройная',tierColor:'#ff9800',damageBonus:.30,shardBonus:.20,critChanceBonus:.02,critDamageBonus:.15,icon:'✦',description:group.map(id=>MOON_TYPES[id].name).join(' + ')+': совместный бонус трёх лун',auraCombo:[]};
+  known.add(key);
+ }
 }
 
 // Cache requirements once; combat only tests membership in the active set.
@@ -913,6 +932,20 @@ export function getActiveSynergies(state){
   result.push({key:'clone+'+sorted.join('+'),name:'Двойной зеркальный резонанс',tier:4,tierName:'Двойное отражение',tierColor:'#c4b5fd',icon:'✧',isClone:true,moons:['clone',...sorted],auraCombo:[],
    description:'Две выбранные связи: '+sorted.map(id=>MOON_TYPES[id].name).join(' + ')+'. Дополнительный бонус за два разных отражения:',
    ...scaled(CONSTANTS.CLONE.DUAL_BONUS)});
+ }
+ const originals=[...active].filter(id=>id!=='normal'&&id!=='clone'&&Object.hasOwn(MOON_TYPES,id)).sort();
+ const used=new Set(result.map(b=>b.key.split('+').sort().join('+')));
+ const addGroup=group=>{
+  if(!group.some(id=>targets.includes(id)))return;
+  const key=['clone',...group].sort().join('+');if(used.has(key))return;used.add(key);
+  const four=group.length===3;
+  result.push({key,name:four?'Зеркальное созвездие':'Зеркальный союз: '+group.map(id=>MOON_TYPES[id].name).join(' + '),tier:four?5:3,tierName:four?'Зеркальное созвездие':'Зеркальный союз',tierColor:four?'#c4b5fd':'#a5b4fc',icon:'◈',isClone:true,moons:['clone',...group],auraCombo:[],
+   description:'Связь Клона: '+group.filter(id=>targets.includes(id)).map(id=>MOON_TYPES[id].name).join(' + ')+'. В сочетании участвуют '+group.map(id=>MOON_TYPES[id].name).join(', ')+'.',
+   ...scaled(four?CONSTANTS.CLONE.GROUP_FOUR:CONSTANTS.CLONE.GROUP_THREE)});
+ };
+ for(let a=0;a<originals.length;a++)for(let b=a+1;b<originals.length;b++){
+  addGroup([originals[a],originals[b]]);
+  for(let d=b+1;d<originals.length;d++)addGroup([originals[a],originals[b],originals[d]]);
  }
  return result;
 }
