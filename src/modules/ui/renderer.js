@@ -909,7 +909,7 @@ export function updateLiveCombatProfile(){
  for(const [key,text]of Object.entries(values)){const el=document.querySelector('[data-live-stat="'+key+'"]');if(el&&el.textContent!==text)el.textContent=text;}
  const rows=s.sources.filter(b=>b.damage||b.shards||b.crit||b.critDamage).map(b=>b.name+': '+[['урон',b.damage],['добыча',b.shards],['шанс крита',b.crit],['крит. урон',b.critDamage]].filter(([,v])=>v).map(([label,v])=>label+' +'+pct(v)).join(' · '));
  if(s.echoChance)rows.push('🔊 Эхо выстрела: '+pct(s.echoChance)+' шанс повторить '+pct(s.echoDamage)+' урона');
- if(s.crystalsPerClick)rows.push('💠 Кристалл за клик: +'+formatMoney(s.crystalsPerClick)+' 💎 за ручное попадание');
+ if(s.crystalsPerClick)rows.push('💠 Кристалл за клик: +'+formatMoney(s.crystalsPerClick)+' 💎 за клик или выстрел тарелки');
  if(s.cloneTargets?.length)rows.push('🪞 Клон: '+s.cloneTargets.map(id=>MOON_TYPES[id].name+' ×'+getMoonPower(state,id).toLocaleString('ru-RU')).join(' · '));
  if(s.baseDamageBonus)rows.push('Космическая луна: +'+formatBaseDamage(s.baseDamageBonus)+' базового урона (уровень и убийства)');
  if(s.goldMultiplier!==1)rows.push('Золотая луна: награда ×'+s.goldMultiplier);

@@ -9,10 +9,10 @@ test('twenty level coin thresholds pay once per ascension and restart in the new
  run("s=applyAction(s,'ascend',{},100200);");assert.equal(run('s.prestige.coins'),2);assert.throws(()=>run("applyAction(s,'ascend',{},100300)"));
  run("s.currentLevel=20;s=applyAction(s,'ascend',{},100400);");assert.equal(run('s.prestige.coins'),3);
 });
-test('each UFO shot advances click quests for every moon without generating manual-only income',()=>{
+test('each UFO shot advances click quests for every moon and awards upgraded click crystals',()=>{
  const run=setup();for(const id of ['normal','blood','ice','shadow','electric','fire','gold','cosmic','clone']){
   run("Math.random=()=>.99;var s=freshState();s.activeMoons=['"+id+"'];s.moonLevels={"+id+":1};s.ufoLevel=1;s.clickCrystalLevel=3;s.moonHP=1e12;s.maxHP=1e12;s=applyAction(s,'load',{},100000);var q=Object.values(QUESTS).find(q=>q.type==='click');s.quests={[q.id]:{progress:0,target:q.target,completed:false,claimed:false}};s=applyAction(s,'sync',{},103000);");
-  assert.equal(run('s.clickCount'),1,id);assert.equal(run('s.quests[q.id].progress'),1,id);assert.equal(run('s.playerData.shards'),0,id);assert.equal(run('s.effects.length'),1,id);
+  assert.equal(run('s.clickCount'),1,id);assert.equal(run('s.quests[q.id].progress'),1,id);assert.equal(run('s.playerData.shards'),3,id);assert.equal(run('s.effects.length'),1,id);
   assert.equal(run("applyAction(s,'sync',{},103000).clickCount"),1,id);
  }
 });
@@ -28,4 +28,14 @@ test('archive upgrades permanently add 0.5 per kill each, with existing levels u
  const run=setup();run("var s=freshState();s.activeMoons=['cosmic'];s.moonLevels.cosmic=1;s.currentLevel=100;s.moonKills=100;s.prestige.upgrades.archive=2;");
  assert.equal(run("getPrestigeSummary(s).archivePerKill"),1);assert.equal(run('getBaseDamage(s)'),1160);
  run("s=applyAction(s,'ascend',{},100000);");assert.equal(run('s.prestige.upgrades.archive'),2);assert.equal(run('s.moonKills'),0);
+});
+
+test('click crystals pay once per actual shot regardless of relay and never on duplicate sync',()=>{
+ const run=setup();for(const relay of [false,true]){
+  run("Math.random=()=>.99;var s=freshState();s.ufoLevel=1;s.ufoCount=2;s.ownedMoons.push('blood');s.ufoComboRelay="+relay+";s.clickCrystalLevel=4;s.moonHP=1e12;s.maxHP=1e12;s=applyAction(s,'load',{},100000);s=applyAction(s,'sync',{},103000);");
+  assert.equal(run('s.effects.length'),2);assert.equal(run('s.playerData.shards'),8);assert.equal(run('s.clickCount'),2);
+  assert.equal(run("applyAction(s,'sync',{},103000).playerData.shards"),8);
+  assert.equal(run("applyAction(s,'click',{count:1},103100).playerData.shards"),12);
+ }
+ run("s=freshState();s.ufoLevel=1;s.moonHP=1e12;s.maxHP=1e12;s=applyAction(s,'load',{},100000);s=applyAction(s,'sync',{},103000);");assert.equal(run('s.playerData.shards'),0);
 });

@@ -439,6 +439,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
     const critical=rollCritical(buff.critChance,buff.critMultiplier),crit=critical.isCrit,chain=buff.chainEvery&&state.ufoShots%buff.chainEvery===0;
     const damage=Math.max(1,Math.round(finalDamage()*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+buff.damage)*critical.multiplier*(chain?buff.chainMultiplier:1)));
     hit(damage,crit,'ufo');
+    const gained=credit(state.clickCrystalLevel||0);if(gained)rules.updateQuestProgress('shard',gained);
    }
    state.ufoLastShotAt+=shots*interval;
   }

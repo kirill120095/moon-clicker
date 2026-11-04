@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="css/game.css?v=9">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
-  <link rel="stylesheet" href="css/neon.css?v=ufo-combo-20">
+  <link rel="stylesheet" href="css/neon.css?v=ufo-click-income-1">
 </head>
 <body>
   <!-- ЗВЁЗДНОЕ НЕБО -->
@@ -221,7 +221,7 @@
             </div>
           </div>
           
-          <div class="shop-section"><h3 class="shop-section-title">💠 Кристалл за клик</h3><p class="ufo-description">Только ручные попадания: +1 кристалл за клик за каждый уровень улучшения. Сбрасывается при вознесении.</p><div class="shop-item"><div><div id="clickCrystalInfo" class="shop-item-level"></div><div id="clickCrystalPrice" class="shop-item-price"></div></div><button id="buyClickCrystalBtn" class="btn-buy-shop" onclick="window.gameEngine.buyClickCrystal()">Купить</button></div></div>
+          <div class="shop-section"><h3 class="shop-section-title">💠 Кристалл за клик</h3><p class="ufo-description">Ручные попадания и выстрелы тарелок: +1 кристалл за каждый уровень улучшения, даже без ретранслятора. Сбрасывается при вознесении.</p><div class="shop-item"><div><div id="clickCrystalInfo" class="shop-item-level"></div><div id="clickCrystalPrice" class="shop-item-price"></div></div><button id="buyClickCrystalBtn" class="btn-buy-shop" onclick="window.gameEngine.buyClickCrystal()">Купить</button></div></div>
           <div class="shop-section">
             <h3 class="shop-section-title">🛸 Орбитальная тарелка</h3>
             <p class="ufo-description">Стреляет с половиной финального урона. Каждый выстрел даёт клик для заданий и набирает комбо, жар и стаки тени активных лун. Работает, пока игра открыта.</p>
@@ -327,32 +327,32 @@
   <script type="importmap">
 {
   "imports": {
-    "./src/core/config.js": "./src/core/config.js?v=ufo-combo-20",
-    "./src/core/constants.js": "./src/core/constants.js?v=ufo-combo-20",
-    "./src/core/state.js": "./src/core/state.js?v=ufo-combo-20",
-    "./src/index.js": "./src/index.js?v=ufo-combo-20",
-    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=ufo-combo-20",
+    "./src/core/config.js": "./src/core/config.js?v=ufo-click-income-1",
+    "./src/core/constants.js": "./src/core/constants.js?v=ufo-click-income-1",
+    "./src/core/state.js": "./src/core/state.js?v=ufo-click-income-1",
+    "./src/index.js": "./src/index.js?v=ufo-click-income-1",
+    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=ufo-click-income-1",
     "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
     "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
-    "./src/modules/game/game.js": "./src/modules/game/game.js?v=ufo-combo-20",
+    "./src/modules/game/game.js": "./src/modules/game/game.js?v=ufo-click-income-1",
     "./src/modules/game/rewards.js": "./src/modules/game/rewards.js?v=season2-neon-1",
     "./src/modules/network/cache.js": "./src/modules/network/cache.js?v=season2-neon-1",
-    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=ufo-combo-20",
-    "./src/utils/diagnostics.js": "./src/utils/diagnostics.js?v=ufo-combo-20",
-    "./src/modules/ui/monitor.js": "./src/modules/ui/monitor.js?v=ufo-combo-20",
-    "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=ufo-combo-20",
-    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=ufo-combo-20",
-    "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=ufo-combo-20",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=ufo-combo-20",
-    "./src/utils/numbers.js": "./src/utils/numbers.js?v=ufo-combo-20",
+    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=ufo-click-income-1",
+    "./src/utils/diagnostics.js": "./src/utils/diagnostics.js?v=ufo-click-income-1",
+    "./src/modules/ui/monitor.js": "./src/modules/ui/monitor.js?v=ufo-click-income-1",
+    "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=ufo-click-income-1",
+    "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=ufo-click-income-1",
+    "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=ufo-click-income-1",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=ufo-click-income-1",
+    "./src/utils/numbers.js": "./src/utils/numbers.js?v=ufo-click-income-1",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=ufo-combo-20",
-    "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=ufo-combo-20",
-    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=ufo-combo-20"
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=ufo-click-income-1",
+    "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=ufo-click-income-1",
+    "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=ufo-click-income-1"
   }
 }
   </script>
-  <script type="module" src="src/index.js?v=ufo-combo-20"></script>
+  <script type="module" src="src/index.js?v=ufo-click-income-1"></script>
 </body>
 </html>

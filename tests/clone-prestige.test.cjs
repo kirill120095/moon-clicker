@@ -18,11 +18,11 @@ test('starting capital pays only after ascension and survives later loads withou
  run("s.currentLevel=50;s=applyAction(s,'ascend',{},100100);");assert.equal(run('s.playerData.shards'),500);
  assert.equal(run("applyAction(s,'load',{},100200).playerData.shards"),500);assert.equal(run('s.prestige.upgrades.capital'),1);
 });
-test('click crystals credit manual hits once, never UFO, sync or echo hits',()=>{
+test('click crystals credit manual and UFO hits once, excluding echo hits',()=>{
  const run=setup();run("Math.random=()=>0;var s=freshState();s.playerData.shards=5000;s=applyAction(s,'buyClickCrystal',{cost:0},100000);s.prestige.upgrades.echo=1;s.moonHP=1000000;s.maxHP=1000000;s=applyAction(s,'click',{count:1},100100);");
  assert.equal(run('s.clickCount'),1);assert.equal(run('s.playerData.shards'),1);assert.equal(run('s.effects.length'),2);assert.equal(run("s.effects[1].source"),'echo');
  assert.equal(run("getClickCrystalCost(1)"),15000);
- run("s.ufoLevel=1;s=applyAction(s,'load',{},101000);s=applyAction(s,'sync',{},104000);");assert.equal(run('s.playerData.shards'),1);
+ run("s.ufoLevel=1;s=applyAction(s,'load',{},101000);s=applyAction(s,'sync',{},104000);");assert.equal(run('s.playerData.shards'),2);
  assert.throws(()=>run("applyAction(s,'buyClickCrystal',{},104100)"));
 });
 test('boss hunter affects confirmed, profile and UFO damage and extends current boss deadline',()=>{
