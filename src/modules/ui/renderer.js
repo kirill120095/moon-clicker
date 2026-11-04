@@ -599,7 +599,7 @@ function _updateSynergiesDisplay() {
   synergies.forEach(syn => {
     html += `
       <div class="synergy-badge tier-${syn.tier}" style="--tier-color: ${syn.tierColor}">
-        <div class="synergy-icon">${syn.icon || '🔗'}</div>
+        <div class="synergy-icon">${syn.isClone ? '◈' : (syn.icon || '🔗')}</div>
         <div class="synergy-info">
           <div class="synergy-name">${escapeHTML(syn.name)}</div>
           <div class="synergy-tier">${syn.tierName}</div>
@@ -711,7 +711,7 @@ function _updateProfile() {
   let synergiesHtml = '';
   if (activeSynergies.length > 0) {
     activeSynergies.forEach(syn => {
-      const moons = syn.key.split('+');
+      const moons = syn.moons || syn.key.split('+');
       const moonsHtml = moons.map(m => {
         const moon = MOON_TYPES[m];
         return moon ? `<span class="synergy-moon-emoji">${moon.emoji}</span>` : '';
@@ -720,7 +720,7 @@ function _updateProfile() {
       synergiesHtml += `
         <div class="profile-synergy-card tier-${syn.tier}" style="--tier-color: ${syn.tierColor}">
           <div class="synergy-card-header">
-            <div class="synergy-card-icon">${syn.icon}</div>
+            <div class="synergy-card-icon">${syn.isClone ? '◈' : syn.icon}</div>
             <div class="synergy-card-info">
               <div class="synergy-card-name">${escapeHTML(syn.name)}</div>
               <div class="synergy-card-tier">${syn.tierName}</div>

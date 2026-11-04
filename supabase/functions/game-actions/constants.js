@@ -10,7 +10,7 @@ export const CONSTANTS = {
   BASE_HP: 1000,
   MAX_SLOTS: 3,
   CLICK_CRYSTALS: { BASE_COST: 5000, MULTIPLIER: 3 },
-  CLONE: { COST: 12000000, UNLOCK_LEVEL: 250 },
+  CLONE: { COST: 12000000, UNLOCK_LEVEL: 250, LINK_BONUS: { damageBonus: .10, shardBonus: .05, critChanceBonus: .01, critDamageBonus: .05 }, DUAL_BONUS: { damageBonus: .15, shardBonus: .10, critChanceBonus: .01, critDamageBonus: .10 } },
 
   // Цены увеличены в 2 раза
   UPGRADE_COSTS: {
@@ -702,8 +702,12 @@ export const SYNERGY_BONUSES = {
   const group=[ids[a],ids[b],ids[d],ids[e]];
   SYNERGY_BONUSES[group.join('+')]={name:'Созвездие '+group.map(id=>MOON_TYPES[id].emoji).join(''),tier:5,tierName:'Созвездие',tierColor:'#c4b5fd',damageBonus:.25,shardBonus:.2,critChanceBonus:.02,critDamageBonus:.15,icon:'🌌',description:'Четыре разные луны образуют созвездие',auraCombo:[]};
  }
- for(const id of ids)SYNERGY_BONUSES['clone+'+id]={name:'Отражение: '+MOON_TYPES[id].name,tier:3,tierName:'Зеркальная',tierColor:'#a5b4fc',damageBonus:.1,shardBonus:.05,critChanceBonus:.01,critDamageBonus:.05,icon:'🪞',description:'Клон рядом с оригинальной луной',auraCombo:[]};
+
 }
+
+// Cache requirements once; combat only tests membership in the active set.
+const ORIGINAL_SYNERGY_ENTRIES=Object.entries(SYNERGY_BONUSES).map(([key,bonus])=>({key,bonus,moons:key.split('+')}));
+const CLONE_LINK_NAMES={normal:'Зеркальное комбо',blood:'Зеркальная ярость',ice:'Зеркальный мороз',shadow:'Зеркальная тень',electric:'Зеркальный разряд',fire:'Зеркальный жар',gold:'Зеркальное богатство',cosmic:'Зеркальная вселенная'};
 
 export const ACHIEVEMENTS = {
   clickNovice: { id: 'clickNovice', category: 'clicks', categoryName: 'Клики', icon: '👆', tiers: [{ level: 'bronze', target: 100, name: 'Начинающий кликер', description: 'Сделайте 100 кликов', reward: 25 }, { level: 'silver', target: 1000, name: 'Опытный кликер', description: 'Сделайте 1 000 кликов', reward: 125 }, { level: 'gold', target: 10000, name: 'Мастер кликов', description: 'Сделайте 10 000 кликов', reward: 625 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.clickCount || 0) >= tier.target; } },
@@ -716,7 +720,7 @@ export const ACHIEVEMENTS = {
   shardCollector: { id: 'shardCollector', category: 'wealth', categoryName: 'Богатство', icon: '💎', tiers: [{ level: 'bronze', target: 1000, name: 'Первая тысяча', description: 'Накопите 1 000 осколков', reward: 63 }, { level: 'silver', target: 10000, name: 'Десять тысяч', description: 'Накопите 10 000 осколков', reward: 500 }, { level: 'gold', target: 100000, name: 'Сто тысяч!', description: 'Накопите 100 000 осколков', reward: 2500 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.playerData?.shards || 0) >= tier.target; } },
   shardMillionaire: { id: 'shardMillionaire', category: 'wealth', categoryName: 'Богатство', icon: '💰', tiers: [{ level: 'bronze', target: 500000, name: 'Полмиллиона', description: 'Накопите 500 000 осколков', reward: 7500 }, { level: 'silver', target: 2000000, name: 'Мультимиллионер', description: 'Накопите 2 000 000 осколков', reward: 25000 }, { level: 'gold', target: 10000000, name: 'Миллиардер', description: 'Накопите 10 000 000 осколков', reward: 125000 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.playerData?.shards || 0) >= tier.target; } },
   slotMaster: { id: 'slotMaster', category: 'slots', categoryName: 'Слоты', icon: '🎰', tiers: [{ level: 'bronze', target: 2, name: 'Двойной слот', description: 'Откройте 2 слота', reward: 250 }, { level: 'silver', target: 3, name: 'Все слоты открыты', description: 'Откройте все 3 слота', reward: 1250 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.maxSlots || 1) >= tier.target; } },
-  synergyHunter: { id: 'synergyHunter', category: 'synergies', categoryName: 'Синергии', icon: '🔗', tiers: [{ level: 'bronze', target: 1, name: 'Первая синергия', description: 'Активируйте 1 синергию', reward: 188 }, { level: 'silver', target: 3, name: 'Мастер комбинаций', description: 'Активируйте 3 синергии', reward: 1250 }, { level: 'gold', target: 5, name: 'Синергетический бог', description: 'Активируйте 5 синергий', reward: 5000 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; const active = (state?.activeMoons || []).slice(0, state?.maxSlots || 1); return Object.keys(SYNERGY_BONUSES).filter(key => key.split('+').every(id => active.includes(id))).length >= tier.target; } },
+  synergyHunter: { id: 'synergyHunter', category: 'synergies', categoryName: 'Синергии', icon: '🔗', tiers: [{ level: 'bronze', target: 1, name: 'Первая синергия', description: 'Активируйте 1 синергию', reward: 188 }, { level: 'silver', target: 3, name: 'Мастер комбинаций', description: 'Активируйте 3 синергии', reward: 1250 }, { level: 'gold', target: 5, name: 'Синергетический бог', description: 'Активируйте 5 синергий', reward: 5000 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; const active = (state?.activeMoons || []).slice(0, state?.maxSlots || 1); return getActiveSynergies(state).length >= tier.target; } },
   timePlayed: { id: 'timePlayed', category: 'time', categoryName: 'Время', icon: '⏱️', tiers: [{ level: 'bronze', target: 3600, name: 'Первый час', description: 'Сыграйте 1 час', reward: 125 }, { level: 'silver', target: 36000, name: '10 часов', description: 'Сыграйте 10 часов', reward: 2500 }, { level: 'gold', target: 360000, name: '100 часов!', description: 'Сыграйте 100 часов', reward: 25000 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.totalSecondsPlayed || 0) >= tier.target; } }
 };
 
@@ -890,6 +894,28 @@ export function getCloneTargets(state){
  const count=getMoonMechanicParams('clone',state.moonLevels?.clone||1).copies;
  return [...new Set(state.cloneTargets||[])].filter(id=>id!=='clone'&&active.includes(id)&&Object.hasOwn(MOON_TYPES,id)).slice(0,count);
 }
+
+/** Reflected synergies require real bindings; no virtual clone can clone another. */
+export function getActiveSynergies(state){
+ const active=new Set((state.activeMoons||[]).slice(0,state.maxSlots||1));
+ const result=ORIGINAL_SYNERGY_ENTRIES.filter(entry=>entry.moons.every(id=>active.has(id))).map(entry=>({key:entry.key,...entry.bonus,moons:entry.moons}));
+ const targets=getCloneTargets(state);if(!targets.length)return result;
+ const p=getMoonMechanicParams('clone',state.moonLevels?.clone||1);
+ const scaled=bonus=>Object.fromEntries(Object.entries(bonus).map(([key,value])=>[key,value*p.pairScale]));
+ for(const target of targets){
+  result.push({key:'clone+'+target,name:CLONE_LINK_NAMES[target],tier:3,tierName:'Зеркальная связь',tierColor:'#a5b4fc',icon:'◈',isClone:true,moons:['clone',target],auraCombo:[],
+   description:'Клон отражает «'+MOON_TYPES[target].name+'» ур. '+(state.moonLevels?.[target]||1)+'. Оригинал и отражение по '+Math.round(p.pairScale*100)+'% силы. Бонус связи:',
+   ...scaled(CONSTANTS.CLONE.LINK_BONUS)});
+ }
+ if(targets.length===2){
+  const sorted=[...targets].sort();
+  result.push({key:'clone+'+sorted.join('+'),name:'Двойной зеркальный резонанс',tier:4,tierName:'Двойное отражение',tierColor:'#c4b5fd',icon:'✧',isClone:true,moons:['clone',...sorted],auraCombo:[],
+   description:'Две выбранные связи: '+sorted.map(id=>MOON_TYPES[id].name).join(' + ')+'. Дополнительный бонус за два разных отражения:',
+   ...scaled(CONSTANTS.CLONE.DUAL_BONUS)});
+ }
+ return result;
+}
+
 export function getMoonPower(state,id){
  if(id==='clone')return 0;
  return getCloneTargets(state).includes(id)?2*getMoonMechanicParams('clone',state.moonLevels?.clone||1).pairScale:1;
@@ -931,7 +957,7 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
   if(id==='cosmic')add('cosmic-level','Космическое масштабирование',m.damagePerLevel*state.currentLevel,m.shardPerLevel*state.currentLevel,(m.critChancePerLevel||0)*state.currentLevel,m.critDamagePerLevel*state.currentLevel);
   if(id==='gold'&&m.shardToDamageRatio>0)add('gold-wealth','Золотой дождь',(state.playerData?.shards||0)*m.shardToDamageRatio);
  }
- for(const [key,b] of Object.entries(SYNERGY_BONUSES))if(key.split('+').every(id=>active.includes(id)))add(key,b.name,b.damageBonus||0,b.shardBonus||0,b.critChanceBonus||0,b.critDamageBonus||0);
+ for(const b of getActiveSynergies(state))add(b.key,b.name,b.damageBonus||0,b.shardBonus||0,b.critChanceBonus||0,b.critDamageBonus||0);
  if(active.includes('normal')&&active.length>1)add('normal-link','Связь обычной луны',.05,.05);
  const passive={totalDamageBonus:damage,totalShardBonus:shards,totalCritChanceBonus:crit,totalCritDamageBonus:critDamage};
  for(const [id,key]of [['normal','_comboClicks'],['fire','_fireStacks'],['shadow','_shadowCritStacks']]){

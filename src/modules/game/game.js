@@ -4,7 +4,7 @@
 import { appState, state } from '../../core/state.js';
 import { 
   CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS, RARITY_CONFIG,
-  rollCritical, getBaseDamage, getEffectiveMoonParams, getCombatStats, getCloneTargets, getSlotLimit, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
+  rollCritical, getBaseDamage, getEffectiveMoonParams, getCombatStats, getActiveSynergies, getCloneTargets, getSlotLimit, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
 } from '../../core/constants.js';
 import { 
   getMaxHPForLevel, isBossLevel, getSlotUpgradeCost 
@@ -795,27 +795,8 @@ export class GameEngine {
 
   recalcMoonBonuses() {
     const bonuses = this._calculateAllBonuses();
-    const activeIds = (state.activeMoons || []).slice(0, state.maxSlots);
-    const activeSynergies = [];
-    
-    if (activeIds.length > 1 && state.maxSlots > 1) {
-      const sortedActive = [...activeIds].sort();
-      
-      for (const [key, bonus] of Object.entries(SYNERGY_BONUSES)) {
-        const moons = key.split('+').sort();
-        if (moons.every(m => sortedActive.includes(m))) {
-          activeSynergies.push({
-            name: bonus.name, description: bonus.description, key: key,
-            tier: bonus.tier, tierName: bonus.tierName, tierColor: bonus.tierColor,
-            icon: bonus.icon,
-            damageBonus: bonus.damageBonus || 0, shardBonus: bonus.shardBonus || 0,
-            critChanceBonus: bonus.critChanceBonus || 0, critDamageBonus: bonus.critDamageBonus || 0,
-            auraCombo: bonus.auraCombo || []
-          });
-        }
-      }
-    }
-    
+    const activeSynergies = getActiveSynergies(state);
+
     window._totalDamageBonus = bonuses.totalDamageBonus;
     window._totalShardBonus = bonuses.totalShardBonus;
     window._totalCritChanceBonus = bonuses.totalCritChanceBonus;
