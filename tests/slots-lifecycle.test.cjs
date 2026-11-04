@@ -35,11 +35,13 @@ function setup({ motion = true, low = false, breakAnimation = false } = {}) {
 }
 
 test('rapid calls share one seven-reel spin; sequential completion cannot duplicate settlement', async () => {
-  const { s, writes, animations, nodes } = setup();
+  const { s, writes, animations, nodes, run } = setup();
+  run('var rolls=0;s.model.random=()=>{rolls++;return 0;}');
   const pending = s.play();
   for (let i = 0; i < 20; i++) assert.equal(await s.play(), false);
-  assert.equal(writes.length, 1); assert.equal(s.model.balance, 2475);
-  assert.equal(nodes['[data-demo-balance]'].textContent, '975');
+  assert.equal(writes.length, 1); assert.equal(s.model.balance, 2490);
+  assert.equal(run('rolls'), 7);
+  assert.equal(nodes['[data-demo-balance]'].textContent, '990');
   assert.equal(s.button.disabled, true); assert.equal(s.resetButton.disabled, true);
   assert.deepEqual(animations.map(a => a.options.duration), [850,1050,1250,1450,1650,1850,2050]);
   for (const a of animations) { a.resolve(); await Promise.resolve(); }
@@ -52,10 +54,10 @@ test('rapid calls share one seven-reel spin; sequential completion cannot duplic
 test('close/disconnect finish safely; cancelled callbacks cannot affect a new spin', async () => {
   const { s, animations, writes } = setup();
   const first = s.play(); assert.equal(s.reset(), false);
-  s.close(); assert.equal(s.busy, false); assert.equal(s.model.balance, 2475);
+  s.close(); assert.equal(s.busy, false); assert.equal(s.model.balance, 2490);
   const second = s.play(); await first; assert.equal(s.busy, true);
   s.disconnect(); await second;
-  assert.equal(s.busy, false); assert.equal(s.allowed, false); assert.equal(s.model.balance, 3950);
+  assert.equal(s.busy, false); assert.equal(s.allowed, false); assert.equal(s.model.balance, 3980);
   assert.equal(writes.length, 2); assert.ok(animations.every(a => a.cancelled));
   assert.equal(await s.play(), false);
 });
@@ -67,7 +69,7 @@ test('reduced motion keeps 300ms guard; closing clears its sole timer', async ()
   assert.equal(writes.length, 1); assert.equal(animations.length, 0); assert.equal(timers.size, 1);
   s.close(); await first; assert.equal(timers.size, 0); assert.equal(s.busy, false);
   const second = s.play(); [...timers.values()][0](); await second;
-  assert.equal(timers.size, 0); assert.equal(s.model.balance, 3950);
+  assert.equal(timers.size, 0); assert.equal(s.model.balance, 3980);
 });
 
 test('low-power mode rolls seven short transform-only strips', async () => {
@@ -80,7 +82,7 @@ test('low-power mode rolls seven short transform-only strips', async () => {
 
 test('missing/broken animation support reveals result and unlocks without rejection', async () => {
   const { s, writes } = setup({ breakAnimation: true });
-  assert.equal(await s.play(), true); assert.equal(s.model.balance, 2475);
+  assert.equal(await s.play(), true); assert.equal(s.model.balance, 2490);
   assert.equal(s.busy, false); assert.equal(s.animations.length, 0); assert.equal(writes.length, 1);
 });
 
@@ -88,15 +90,15 @@ test('two groups highlight separate reels/cells and show exact additive breakdow
   const { s, nodes, run } = setup({ breakAnimation: true });
   run('var samples=[0,1,0,2,1,0,1];s.model.random=()=>((samples.shift()||0)+.5)/8');
   await s.play();
-  assert.equal(s.model.balance, 1125);
+  assert.equal(s.model.balance, 1030);
   assert.equal(s.reels.filter(r => r['data-demo-group'] === 0).length, 3);
   assert.equal(s.reels.filter(r => r['data-demo-group'] === 1).length, 3);
   assert.equal(s.reels[3].classList.contains('demo-slot-hit'), false);
   assert.equal(nodes['[data-demo-rule="0-3"]']['data-demo-group'], 0);
   assert.equal(nodes['[data-demo-rule="1-3"]']['data-demo-group'], 1);
-  assert.match(nodes['.demo-slots-result > span'].textContent, /75 \+ 75 = 150/);
+  assert.match(nodes['.demo-slots-result > span'].textContent, /20 \+ 20 = 40/);
   const lines = nodes['.demo-slots-groups'].children;
-  assert.equal(lines.length, 2); assert.match(lines[0].textContent, /3 шт.: 25 × 3 = 75/);
+  assert.equal(lines.length, 2); assert.match(lines[0].textContent, /3 шт.: 10 × 2 = 20/);
   s.reset();
   assert.equal(nodes['.demo-slots-groups'].children.length, 0);
   assert.ok(s.reels.every(r => !r.classList.contains('demo-slot-hit')));

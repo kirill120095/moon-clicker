@@ -1,23 +1,25 @@
 // Device-local toy balance. Deliberately no game state, network, or economy imports.
 export const DEMO_SLOTS_KEY = 'moonclicker.fortunaDemo.v1';
 export const DEMO_START = 1000;
-export const DEMO_COST = 25;
+export const DEMO_COST = 10;
 export const SLOT_REELS = 7;
 export const MATCH_COUNTS = Object.freeze([3, 4, 5, 6, 7]);
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 const MAX_BALANCE = 1_000_000_000;
 const INITIAL_SYMBOLS = Object.freeze([0, 1, 2, 3, 4, 5, 6]);
-// Temporary demo multipliers by EXACT count 3, 4, 5, 6, 7. Not game balance.
+// Uniform temporary GROSS multipliers by EXACT count 3–7, not main-game balance.
+// Gross is the whole return after the single deduction; never add the stake again.
+export const SLOT_GROSS_MULTIPLIERS = Object.freeze([2, 5, 12, 40, 150]);
 export const SLOT_SYMBOLS = Object.freeze([
-  { icon: '🌙', name: 'Луна', multipliers: [3, 6, 12, 25, 60] },
-  { icon: '⭐', name: 'Звезда', multipliers: [3, 5, 10, 20, 50] },
-  { icon: '💎', name: 'Кристалл', multipliers: [4, 8, 16, 32, 80] },
-  { icon: '☄️', name: 'Комета', multipliers: [2, 4, 8, 16, 40] },
-  { icon: '🪐', name: 'Планета', multipliers: [4, 7, 14, 28, 70] },
-  { icon: '🚀', name: 'Ракета', multipliers: [5, 10, 20, 40, 100] },
-  { icon: '🛸', name: 'НЛО', multipliers: [5, 9, 18, 36, 90] },
-  { icon: '👽', name: 'Пришелец', multipliers: [6, 12, 24, 48, 120] }
-].map(s => Object.freeze({ ...s, multipliers: Object.freeze(s.multipliers) })));
+  { icon: '🌙', name: 'Луна' },
+  { icon: '⭐', name: 'Звезда' },
+  { icon: '💎', name: 'Кристалл' },
+  { icon: '☄️', name: 'Комета' },
+  { icon: '🪐', name: 'Планета' },
+  { icon: '🚀', name: 'Ракета' },
+  { icon: '🛸', name: 'НЛО' },
+  { icon: '👽', name: 'Пришелец' }
+].map(s => Object.freeze({ ...s, multipliers: SLOT_GROSS_MULTIPLIERS })));
 
 export function slotOutcome(symbols) {
   if (!Array.isArray(symbols) || symbols.length !== SLOT_REELS ||
@@ -64,10 +66,10 @@ export class DemoSlotBalance {
     try {
       if (raw === null) { this.balance = DEMO_START; this.last = null; return; }
       const saved = JSON.parse(raw);
-      if (![1, SAVE_VERSION].includes(saved.version) || !validBalance(saved.balance)) throw new Error('Invalid demo save');
+      if (![1, 2, SAVE_VERSION].includes(saved.version) || !validBalance(saved.balance)) throw new Error('Invalid demo save');
       this.balance = saved.balance;
       this.last = null;
-      // Preserve the old prototype's demo balance, but never replay its three-reel result.
+      // Keep old demo balances, but never revalue a saved result under a new table/stake.
       if (saved.version === SAVE_VERSION && saved.last && validBalance(saved.last.before) && saved.last.before >= DEMO_COST) {
         try {
           const last = transaction(saved.last.before, saved.last.symbols);
@@ -140,9 +142,9 @@ export class DemoSlots {
         <div class="demo-slots-result" role="status" aria-live="polite" aria-atomic="true"><strong></strong><span></span><ul class="demo-slots-groups" aria-label="Расчёт выигравших групп"></ul></div>
         <button type="button" class="demo-slots-spin">Вращать · ${DEMO_COST} демо-фишек <span aria-hidden="true">↻</span></button>
         <button type="button" class="demo-slots-reset">Восстановить ${DEMO_START.toLocaleString('ru-RU')} демо-фишек</button>
-        <details class="demo-slots-paytable" open><summary>40 комбинаций · таблица выплат</summary><table><caption>Количество одинаковых → множитель × ${DEMO_COST} фишек. Коэффициенты временные, не баланс игры.</caption><thead><tr><th scope="col">Символ</th>${MATCH_COUNTS.map(n => `<th scope="col">${n}<span class="demo-sr-only"> одинаковых символов</span></th>`).join('')}</tr></thead><tbody>
+        <details class="demo-slots-paytable" open><summary>40 комбинаций · таблица выплат</summary><table><caption>Количество одинаковых → gross-множитель × ${DEMO_COST} фишек. Одна тестовая таблица для всех символов; не баланс игры.</caption><thead><tr><th scope="col">Символ</th>${MATCH_COUNTS.map(n => `<th scope="col">${n}<span class="demo-sr-only"> одинаковых символов</span></th>`).join('')}</tr></thead><tbody>
           ${SLOT_SYMBOLS.map((s, i) => `<tr><th scope="row" title="${s.name}"><span aria-hidden="true">${s.icon}</span><span class="demo-symbol-name">${s.name}</span></th>${s.multipliers.map((m, j) => `<td data-demo-rule="${i}-${j + 3}" title="${s.name}, ${j + 3} символов: ${DEMO_COST * m} демо-фишек">×${m}</td>`).join('')}</tr>`).join('')}
-        </tbody></table><p>Разные группы складываются: две тройки оплачиваются обе. Для одного символа — только фактическое количество, без вложенных троек. Пары не оплачиваются. Выплата включает стоимость вращения; символы равновероятны.</p></details>
+        </tbody></table><p>Разные группы складываются: две тройки оплачиваются обе. Для одного символа — только фактическое количество, без вложенных троек. Пары не оплачиваются. Gross — вся выплата после списания. Итог = выплата − ${DEMO_COST}; ставку второй раз не возвращаем. Все символы равновероятны.</p></details>
         <p class="demo-slots-storage"></p>`;
       parent.prepend(root);
       this.root = root;
@@ -221,7 +223,7 @@ export class DemoSlots {
     const title = result.groups.length ? `${result.groups.length > 1 ? 'Две группы! ' : ''}+${net} демо-фишек` : 'Нет группы от трёх';
     const sum = result.groups.map(group => group.payout).join(' + ');
     const detail = result.capped ? `По таблице ${sum} = ${result.nominalPayout}. Лимит демо-баланса: выплата ${result.payout} · потрачено ${DEMO_COST}.`
-      : `Выплата ${result.groups.length > 1 ? sum + ' = ' : ''}${result.payout} · потрачено ${DEMO_COST}.`;
+      : `Выплата (gross) ${result.groups.length > 1 ? sum + ' = ' : ''}${result.payout} · потрачено ${DEMO_COST}.`;
     this.message(title, detail);
     const list = this.root.querySelector('.demo-slots-groups');
     list.replaceChildren();
