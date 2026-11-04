@@ -23,7 +23,7 @@ test('relay builds combo, fire and shadow stacks for active moons',()=>{
 test('ascension clears the ordinary relay upgrade',()=>{const run=setup();assert.equal(run("var s=freshState();s.currentLevel=50;s.ufoComboRelay=true;applyAction(s,'ascend',{},100000).ufoComboRelay"),false);});
 test('boss payout is halved and kill preview equals credited amount',()=>{
  const run=setup();assert.equal(run('CONSTANTS.MOON_REWARD.BOSS_MULTIPLIER'),2.5);
- assert.equal(run("Math.random=()=>0.99;var s=freshState();s.currentLevel=10;s=applyAction(s,'load',{},100000);var base=Math.floor(5+10*2+Math.pow(10,1.3)*.5);s.moonReward"),run('Math.round(base*2.5)'));
+ assert.equal(run("Math.random=()=>0.99;var s=freshState();s.currentLevel=10;s=applyAction(s,'load',{},100000);var base=Math.floor(5+10*2+Math.pow(10,CONSTANTS.MOON_REWARD.EXPONENT)*.5);s.moonReward"),run('Math.round(base*2.5)'));
  assert.equal(run("var preview=s.moonReward;s.moonHP=1;s=applyAction(s,'click',{count:1},100100);s.effects[0].reward"),run('preview'));
 });
 test('click damage can still upgrade far beyond its former cap',()=>{const run=setup();assert.equal(run("var s=freshState();s.playerData.click_damage_level=1000;s.playerData.shards=Number.MAX_SAFE_INTEGER;applyAction(s,'buyDamage',{},100000).playerData.click_damage_level"),1001);});

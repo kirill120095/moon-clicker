@@ -4,7 +4,7 @@
 import { appState, state } from '../../core/state.js';
 import { 
   CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS, RARITY_CONFIG,
-  rollCritical, getBaseDamage, getEffectiveMoonParams, getCombatStats, getSlotLimit, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
+  rollCritical, getBaseDamage, getEffectiveMoonParams, getCombatStats, getCloneTargets, getSlotLimit, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
 } from '../../core/constants.js';
 import { 
   getMaxHPForLevel, isBossLevel, getSlotUpgradeCost 
@@ -475,13 +475,23 @@ export class GameEngine {
   // ============================================================
   _getActiveBuffs() {
     const buffs = [];
+    const percent=n=>(n*100).toLocaleString('ru-RU',{maximumFractionDigits:2});
     const mechanics = this._getActiveMechanics();
+    const targets=getCloneTargets(state),reflected=new Set(targets);
+    // Combat uses the combined original+copy power; each card shows one half.
+    const cardParams=id=>{
+      const combined=this._getMechanicParamsForActiveMoon(id);if(!combined||!reflected.has(id))return combined;
+      const p={...combined};
+      for(const key of ['bonusPerStack','critDamagePerStack','pityBonus','pityMax','damageBonus','timerBonus','baseDamagePerLevel','baseDamagePerKill','damagePerLevel'])if(typeof p[key]==='number')p[key]/=2;
+      for(const key of ['normalMultiplier','bossMultiplier'])if(p[key])p[key]=1+(p[key]-1)/2;
+      return p;
+    };
     const isBoss = isBossLevel(state.currentLevel, CONSTANTS.BOSS_INTERVAL);
     const timeSinceLastClick = Date.now() - this._lastActivityTime;
     
     // 🌙 Комбо
     if (mechanics.includes('combo')) {
-      const params = this._getMechanicParamsForActiveMoon('normal');
+      const params = cardParams('normal');
       if (params) {
         const stacks = Math.min(
           Math.floor(this._comboClicks / params.clicksPerStack), 
@@ -495,7 +505,7 @@ export class GameEngine {
           id: 'combo', icon: '🌙', name: 'Комбо',
           value: stacks, maxStacks: params.maxStacks,
           progress, progressMax: params.clicksPerStack,
-          bonus: `+${Math.round(stacks * params.bonusPerStack * 100)}% урон`,
+          bonus: `+${percent(stacks * params.bonusPerStack)}% урон`,
           timeLeft, isActive: stacks > 0,
           isMaxed: stacks >= params.maxStacks,
           isTemporary: true
@@ -505,7 +515,7 @@ export class GameEngine {
     
     // 🔥 Жар
     if (mechanics.includes('fireStacks')) {
-      const params = this._getMechanicParamsForActiveMoon('fire');
+      const params = cardParams('fire');
       if (params) {
         const stacks = Math.floor(this._fireStacks / params.clicksPerStack);
         const progress = this._fireStacks % params.clicksPerStack;
@@ -518,8 +528,8 @@ export class GameEngine {
           value: stacks, maxStacks: maxDisplay,
           progress, progressMax: params.clicksPerStack,
           bonus: params.maxStacks === Infinity 
-            ? `+${Math.round(stacks * params.bonusPerStack * 100)}%${stacks > params.safeStacks ? ' ⚠️' : ''}`
-            : `+${Math.round(stacks * params.bonusPerStack * 100)}% урон`,
+            ? `+${percent(stacks * params.bonusPerStack)}%${stacks > params.safeStacks ? ' ⚠️' : ''}`
+            : `+${percent(stacks * params.bonusPerStack)}% урон`,
           timeLeft, isActive: stacks > 0,
           isMaxed: params.maxStacks !== Infinity && stacks >= params.maxStacks,
           isTemporary: true
@@ -529,7 +539,7 @@ export class GameEngine {
     
     // 🌑 Теневые криты
     if (mechanics.includes('shadowCritStacks')) {
-      const params = this._getMechanicParamsForActiveMoon('shadow');
+      const params = cardParams('shadow');
       if (params) {
         const stacks = Math.min(
           Math.floor(this._shadowCritStacks / params.clicksPerStack), 
@@ -543,7 +553,7 @@ export class GameEngine {
           id: 'shadow', icon: '🌑', name: 'Тень',
           value: stacks, maxStacks: params.maxStacks,
           progress, progressMax: params.clicksPerStack,
-          bonus: `+${Math.round(stacks * params.critDamagePerStack * 100)}% крит`,
+          bonus: `+${percent(stacks * params.critDamagePerStack)}% крит`,
           timeLeft, isActive: stacks > 0,
           isMaxed: stacks >= params.maxStacks,
           isTemporary: true
@@ -553,14 +563,14 @@ export class GameEngine {
     
     // ⚡ Электрический заряд
     if (mechanics.includes('chainLightning')) {
-      const params = this._getMechanicParamsForActiveMoon('electric');
+      const params = cardParams('electric');
       if (params) {
         buffs.push({
           id: 'electric', icon: '⚡', name: 'Заряд',
           value: this._pityClicks, maxStacks: 20,
           progress: this._pityClicks, progressMax: 20,
           bonus: params.pityMax > 0 
-            ? `+${Math.round(Math.min(this._pityClicks * params.pityBonus, params.pityMax) * 100)}% шанс`
+            ? `+${percent(Math.min(this._pityClicks * params.pityBonus, params.pityMax))}% шанс`
             : `Молния готова`,
           timeLeft: null,
           isActive: this._pityClicks > 0 || this._superconductorClicksLeft > 0,
@@ -572,7 +582,7 @@ export class GameEngine {
     
     // 🩸 Кровавая луна
     if (mechanics.includes('bloodMoon') && isBoss) {
-      const params = this._getMechanicParamsForActiveMoon('blood');
+      const params = cardParams('blood');
       if (params) {
         const hpRatio = state.moonHP / state.maxHP;
         const isActive = hpRatio < params.hpThreshold;
@@ -584,7 +594,7 @@ export class GameEngine {
           progress: isActive ? 100 : Math.round((params.hpThreshold - hpRatio) * 100 / params.hpThreshold),
           progressMax: 100,
           bonus: isActive 
-            ? `💀 +${Math.round(params.damageBonus * 100)}%` 
+            ? `💀 +${percent(params.damageBonus)}%` 
             : `${Math.round(hpRatio * 100)}% HP`,
           timeLeft: null,
           isActive, isMaxed: isActive,
@@ -595,13 +605,13 @@ export class GameEngine {
     
     // ❄️ Заморозка
     if (mechanics.includes('freeze') && isBoss) {
-      const params = this._getMechanicParamsForActiveMoon('ice');
+      const params = cardParams('ice');
       if (params) {
         buffs.push({
           id: 'freeze', icon: '❄️', name: 'Заморозка',
           value: Math.round(params.timerBonus * 100), maxStacks: 100,
           progress: 100, progressMax: 100,
-          bonus: `+${Math.round(params.timerBonus * 100)}% времени`,
+          bonus: `+${percent(params.timerBonus)}% времени`,
           timeLeft: null, isActive: true, isMaxed: true, isPassive: true
         });
       }
@@ -609,14 +619,14 @@ export class GameEngine {
     
     // ✨ Космос
     if (mechanics.includes('scaling')) {
-      const params = this._getMechanicParamsForActiveMoon('cosmic');
+      const params = cardParams('cosmic');
       if (params) {
         const level = state.currentLevel;
         buffs.push({
           id: 'cosmic', icon: '✨', name: 'Космос',
           value: level, maxStacks: 100,
           progress: Math.min(level, 100), progressMax: 100,
-          bonus: `+${(params.baseDamagePerLevel * level + params.baseDamagePerKill * (state.moonKills||0)).toLocaleString('ru-RU',{maximumFractionDigits:1})} баз. урона · +${Math.round(params.damagePerLevel * level * 100)}% урон`,
+          bonus: `+${(params.baseDamagePerLevel * level + params.baseDamagePerKill * (state.moonKills||0)).toLocaleString('ru-RU',{maximumFractionDigits:2})} баз. урона · +${percent(params.damagePerLevel * level)}% урон`,
           timeLeft: null, isActive: true, isMaxed: level >= 100, isPassive: true
         });
       }
@@ -624,19 +634,24 @@ export class GameEngine {
     
     // 👑 Золото
     if (mechanics.includes('goldRush')) {
-      const params = this._getMechanicParamsForActiveMoon('gold');
+      const params = cardParams('gold');
       if (params) {
         buffs.push({
           id: 'gold', icon: '👑', name: 'Золото',
           value: 100, maxStacks: 100,
           progress: 100, progressMax: 100,
-          bonus: `x${params.normalMultiplier}/x${params.bossMultiplier}`,
+          bonus: `x${params.normalMultiplier.toLocaleString('ru-RU',{maximumFractionDigits:2})}/x${params.bossMultiplier.toLocaleString('ru-RU',{maximumFractionDigits:2})}`,
           timeLeft: null, isActive: true, isMaxed: true, isPassive: true
         });
       }
     }
     
-    return buffs.slice(0, 3);
+    const buffIds={normal:'combo',blood:'blood',ice:'freeze',shadow:'shadow',electric:'electric',fire:'fire',gold:'gold',cosmic:'cosmic'};
+    for(const target of targets){
+      const original=buffs.find(buff=>buff.id===buffIds[target]);if(!original)continue;
+      buffs.push({...original,id:'clone-'+target,icon:'🪞',name:'Клон · '+original.name,isReflection:true,cloneOf:target});
+    }
+    return buffs.slice(0, 6);
   }
 
   _updateBuffsDisplay() {

@@ -1261,7 +1261,7 @@ export function updateBuffsDisplay() {
     const newClass = isNew ? 'buff-new' : '';
     
     html += `
-      <div class="buff-card ${stateClass} ${newClass}" data-buff-id="${buff.id}">
+      <div class="buff-card ${stateClass} ${newClass} ${buff.isReflection ? 'buff-reflection' : ''}" data-buff-id="${buff.id}"${buff.isReflection ? ' data-clone-of="'+buff.cloneOf+'"' : ''}>
         <div class="buff-header">
           <div class="buff-icon">${buff.icon}</div>
           <div class="buff-info">

@@ -164,3 +164,7 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 .clone-controls p{font-size:12px;color:#b7c6df;line-height:1.6}.clone-controls label{display:block;font-size:12px;color:#c4b5fd;margin:10px 0}.clone-controls select{display:block;width:100%;margin-top:6px;padding:10px;border-radius:9px;background:#101b30;border:1px solid #a5b4fc66;color:#e8edf8}
 .panel-tabs{overflow-x:auto;scrollbar-width:thin;flex-wrap:nowrap}.panel-tabs .panel-tab{flex-shrink:0}
 @media(max-width:380px){.live-combat-effects{grid-template-columns:1fr}}
+
+.buff-card.buff-reflection{border-color:#c4b5fd!important;background:linear-gradient(135deg,#20223bea,#321d48e6)!important;box-shadow:0 0 15px #a78bfa33}
+.buff-reflection .buff-name{color:#ddd6fe!important}.buff-reflection .buff-progress-bar{background:linear-gradient(90deg,#67e8f9,#c4b5fd)!important}
+.buffs-container{flex-wrap:wrap;gap:8px}
