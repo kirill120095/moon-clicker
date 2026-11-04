@@ -61,6 +61,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
     let critDamageMultiplier = 2 + bonuses.totalCritDamageBonus;
     let finalMultiplier = 1; // Применяется в самом конце
     let specialEffect = null;
+    let firstStrikeMultiplier = 1;
     
     this._clickCounter++;
     
@@ -126,6 +127,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
         if (params.firstStrikeCrit && this._firstStrikeUsed === false && this._newMoon) {
           critChance = Math.max(1, critChance);
           this._firstStrikeUsed = true;
+          firstStrikeMultiplier = params.firstStrikeMultiplier || 1;
         }
         
         // Уровень 10: при полном стаке +10% к шансу крита
@@ -234,6 +236,7 @@ export function applyAction(raw, action, payload={}, now=Date.now()) {
     const isCrit = critical.isCrit;
     if (isCrit) {
       finalDamage = Math.round(finalDamage * critical.multiplier);
+      finalDamage = Math.round(finalDamage * firstStrikeMultiplier);
       
       // Теневая ур. 7: двойной крит
       if (mechanics.includes('shadowCritStacks')) {

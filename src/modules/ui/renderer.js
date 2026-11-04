@@ -547,7 +547,7 @@ function _getMechanicDescription(moonId, params) {
     
     case 'shadow':
       let shadowDesc = `Каждые ${params.clicksPerStack} кликов +${Math.round(params.critDamagePerStack * 100)}% крит урона (макс ${params.maxStacks} стеков = +${Math.round(params.critDamagePerStack * params.maxStacks * 100)}%)`;
-      if (params.firstStrikeCrit) shadowDesc += `. Первый удар = гарантированный крит`;
+      if (params.firstStrikeCrit) shadowDesc += `. Первый ручной удар — гарантированный крит ×${params.firstStrikeMultiplier} от обычного крита`;
       if (params.doubleCritChance > 0) shadowDesc += `. ${Math.round(params.doubleCritChance * 100)}% шанс двойного крита`;
       if (params.fullStackCritChance > 0) shadowDesc += `. При полном стаке +${Math.round(params.fullStackCritChance * 100)}% шанса крита`;
       return shadowDesc;
@@ -650,7 +650,7 @@ function _updateProfile() {
   const maxSlots = state.maxSlots || 1;
   const combat=getCombatStats(state);
   const totalDamageBonus=combat.damageBonus,totalShardBonus=combat.shardBonus,totalCritChanceBonus=combat.critChanceBonus,totalCritDamageBonus=combat.critDamageBonus;
-  const baseDamage=combat.baseDamage,finalDamage=combat.finalDamage,finalCritChance=Math.round(combat.critChance*100),finalCritDamage=Math.round(combat.critMultiplier*combat.critTier/2*100);
+  const baseDamage=combat.baseDamage,finalDamage=combat.finalDamage,finalCritChance=Math.round(combat.critChance*100),finalCritDamage=Math.round(combat.critMultiplier*combat.critTier/2*(combat.firstStrikeMultiplier||1)*100);
 
   let activeMoonsHtml = '';
   activeMoons.forEach(moonId => {
@@ -909,7 +909,7 @@ export function updateLiveCombatProfile(){
  if(!panel||panel.classList.contains('hidden')||tab&&!tab.classList.contains('active'))return;
  const s=getCombatStats(state),pct=n=>(n*100).toLocaleString('ru-RU',{maximumFractionDigits:2})+'%';
  const values={lifetimeClicks:formatNumber(state.clickCount||0),runClicks:formatNumber(state.runClickCount??state.clickCount??0),moonKills:formatNumber(state.moonKills||0),baseDamage:formatBaseDamage(s.baseDamage),finalDamage:formatNumber(s.finalDamage),critChance:pct(s.critChance),
- critDamage:formatNumber(s.critDamage)+' · '+(s.critMultiplier*s.critTier/2).toLocaleString('ru-RU',{maximumFractionDigits:2})+'×'+(s.extraCritChance?' · '+pct(s.extraCritChance)+' → '+formatNumber(s.nextCritDamage):''),
+ critDamage:formatNumber(s.critDamage)+' · '+(s.critMultiplier*s.critTier/2*(s.firstStrikeMultiplier||1)).toLocaleString('ru-RU',{maximumFractionDigits:2})+'×'+(s.extraCritChance?' · '+pct(s.extraCritChance)+' → '+formatNumber(s.nextCritDamage):''),
  damageBonus:'+'+pct(s.damageBonus),shardBonus:'+'+pct(s.shardBonus),critChanceBonus:'+'+pct(s.critChanceBonus),critDamageBonus:'+'+pct(s.critDamageBonus)};
  for(const [key,text]of Object.entries(values)){const el=document.querySelector('[data-live-stat="'+key+'"]');if(el&&el.textContent!==text)el.textContent=text;}
  const rows=s.sources.filter(b=>b.damage||b.shards||b.crit||b.critDamage).map(b=>b.name+': '+[['урон',b.damage],['добыча',b.shards],['шанс крита',b.crit],['крит. урон',b.critDamage]].filter(([,v])=>v).map(([label,v])=>label+' +'+pct(v)).join(' · '));
@@ -920,7 +920,7 @@ export function updateLiveCombatProfile(){
  if(s.baseDamageBonus)rows.push('Космическая луна: +'+formatBaseDamage(s.baseDamageBonus)+' базового урона (уровень и убийства)');
  if(s.goldMultiplier!==1)rows.push('Золотая луна: награда ×'+s.goldMultiplier);
  if(s.fullCombo)rows.push('Полное комбо: бонус добычи активен');
- if(s.firstStrike)rows.push('Тень: первый удар — гарантированный крит');
+ if(s.firstStrike)rows.push('Тень: первый ручной удар — гарантированный крит ×'+s.firstStrikeMultiplier.toLocaleString('ru-RU',{maximumFractionDigits:2})+' от обычного крита');
  if(s.nextPierce)rows.push('Лёд: следующий удар — пронзающий');
  if(s.execute)rows.push('Кровь: добивание босса активно');
  rows.push('За текущую луну: '+formatMoney(s.moonReward)+' 💎');

@@ -318,6 +318,7 @@ export const MOON_TYPES = {
       maxStacks: 10,
       resetTimeout: 15000,
       firstStrikeCrit: false,
+      firstStrikeMultiplier: 1,
       doubleCritChance: 0,
       fullStackCritChance: 0
     },
@@ -332,8 +333,8 @@ export const MOON_TYPES = {
       5: {
         icon: '🎯',
         name: 'Первый удар',
-        description: 'Первый удар по любой луне = гарантированный крит',
-        apply: (params) => { params.firstStrikeCrit = true; }
+        description: 'Первый ручной удар по новой луне — гарантированный крит в 10 раз сильнее обычного крита',
+        apply: (params) => { params.firstStrikeCrit = true; params.firstStrikeMultiplier = 10; }
       },
       7: {
         icon: '🎯',
@@ -959,7 +960,7 @@ export function getEffectiveMoonParams(state,id){
  const p=getMoonMechanicParams(id,state.moonLevels?.[id]||1),power=getMoonPower(state,id);
  if(id==='cosmic')p.baseDamagePerKill+=getPrestigeSummary(state).archivePerKill;
  for(const key of ['bonusPerStack','damageBonus','timerBonus','pierceDamage','critDamagePerStack','fullStackCritChance','pityBonus','pityMax','superconductorBonus','goldenClickReward','shardToDamageRatio','baseDamagePerLevel','baseDamagePerKill','damagePerLevel','shardPerLevel','critDamagePerLevel','critChancePerLevel','shardBonusOnFullStack'])if(typeof p[key]==='number')p[key]*=power;
- for(const key of ['normalMultiplier','bossMultiplier'])if(p[key])p[key]=1+(p[key]-1)*power;
+ for(const key of ['normalMultiplier','bossMultiplier','firstStrikeMultiplier'])if(p[key])p[key]=1+(p[key]-1)*power;
  if(p.doubleCritChance)p.doubleCritChance=1-Math.pow(1-p.doubleCritChance,power);
  if(id==='electric'&&power!==1){
   const total=p.chanceX2+p.chanceX5+p.chanceX10,combined=1-Math.pow(1-total,power);
@@ -1018,6 +1019,7 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  let chance=Math.max(0,.05+crit);
  const firstStrike=!!(shadow?.firstStrikeCrit&&!runtime._firstStrikeUsed&&runtime._newMoon);
  if(firstStrike)chance=Math.max(1,chance);
+ const firstStrikeMultiplier=firstStrike?(shadow.firstStrikeMultiplier||1):1;
  const critMultiplier=2+critDamage,tier=chance>=1?Math.floor(chance)+1:2,extraChance=chance>=1?chance-Math.floor(chance):0;
  const fullCombo=!!(normal?.shardBonusOnFullStack&&combo>=normal.maxStacks),goldMultiplier=gold?(boss?gold.bossMultiplier:gold.normalMultiplier):1;
  const rewardMultiplier=(1+shards)*goldMultiplier*(fullCombo?1+normal.shardBonusOnFullStack:1);
@@ -1025,7 +1027,7 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  let reward=Math.max(1,Math.round(Math.floor(c.BASE+level*c.PER_LEVEL+Math.pow(level,c.EXPONENT)*c.GROWTH)*(boss?c.BOSS_MULTIPLIER:1)*(1+shards)));
  if(gold)reward=Math.round(reward*goldMultiplier);if(fullCombo)reward=Math.round(reward*(1+normal.shardBonusOnFullStack));
  const ufo=getUfoBonuses(state,runtime),interval=Math.max(CONSTANTS.UFO.MIN_INTERVAL,Math.round((CONSTANTS.UFO.BASE_INTERVAL-Math.max(0,(state.ufoLevel||0)-1)*CONSTANTS.UFO.INTERVAL_REDUCTION)*(1-ufo.haste)));
- return {passive,sources,runtime,baseDamage:base,baseDamageBonus,echoChance:p.echoChance,echoDamage:p.echoDamage,crystalsPerClick:state.clickCrystalLevel||0,cloneTargets:getCloneTargets(state),finalDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,finalDamage),damageBonus:damage,shardBonus:rewardMultiplier-1,critChance:chance,critChanceBonus:chance-.05,critDamageBonus:critDamage,critMultiplier,critTier:tier,extraCritChance:extraChance,critDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*tier/2)),nextCritDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*(tier+1)/2)),nextPierce,firstStrike,execute,
+ return {passive,sources,runtime,baseDamage:base,baseDamageBonus,echoChance:p.echoChance,echoDamage:p.echoDamage,crystalsPerClick:state.clickCrystalLevel||0,cloneTargets:getCloneTargets(state),finalDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,finalDamage),damageBonus:damage,shardBonus:rewardMultiplier-1,critChance:chance,critChanceBonus:chance-.05,critDamageBonus:critDamage,critMultiplier,critTier:tier,extraCritChance:extraChance,critDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(Math.round(finalDamage*critMultiplier*tier/2)*firstStrikeMultiplier)),nextCritDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(Math.round(finalDamage*critMultiplier*(tier+1)/2)*firstStrikeMultiplier)),nextPierce,firstStrike,firstStrikeMultiplier,execute,
  moonReward:Math.min(CONSTANTS.SAFE_NUMBER_CAP,reward),ufoDamage:state.ufoLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(steadyDamage*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+ufo.damage)))):0,ufoInterval:interval,ufoCount:state.ufoCount||0,goldMultiplier,fullCombo,ufoCritChance:ufo.critChance,ufoCritMultiplier:ufo.critMultiplier,ufoChainEvery:ufo.chainEvery,ufoDamageBonus:ufo.damage,ufoHaste:ufo.haste,ufoRewardMultiplier:ufo.rewardMultiplier,superconductorHits:runtime._superconductorClicksLeft||0};
 }
 
