@@ -83,6 +83,10 @@ export async function handleRegister() {
   if (authBusy) return;
   const username = document.getElementById('authEmail')?.value?.trim();
   const password = document.getElementById('authPassword')?.value;
+  if (username?.includes('@')) {
+    showError('Для регистрации придумайте игровой логин без @, например moon_player. Email используется только для входа в старые аккаунты.');
+    return;
+  }
   if (!/^[a-zA-Z0-9_-]{3,30}$/.test(username || '')) {
     showError('Логин: 3–30 латинских букв, цифр, _ или -');
     return;
@@ -92,8 +96,8 @@ export async function handleRegister() {
     return;
   }
 
-  if (password.length < 6) {
-    showError('Пароль должен быть минимум 6 символов');
+  if (password.length < 6 || password.length > 128) {
+    showError('Пароль: от 6 до 128 символов');
     return;
   }
 
