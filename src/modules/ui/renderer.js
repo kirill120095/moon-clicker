@@ -294,7 +294,7 @@ function _updateUfoShop() {
   const relay=document.getElementById('buyUfoComboRelayBtn'),relayPrice=document.getElementById('ufoComboRelayPrice');
   const relayUnlocked=(state.ownedMoons||[]).includes('electric')&&level>0;
   if(relay){relay.disabled=!!state.ufoComboRelay||!relayUnlocked||(state.playerData?.shards||0)<c.COMBO_RELAY_COST;relay.textContent=state.ufoComboRelay?'Куплено':'Купить';}
-  if(relayPrice)relayPrice.textContent=state.ufoComboRelay?'Тарелки поддерживают набранное комбо':!relayUnlocked?'После покупки Электрической луны и тарелки':formatPrice(c.COMBO_RELAY_COST)+' 💎';
+  if(relayPrice)relayPrice.textContent=state.ufoComboRelay?'Выстрел даёт 2 шага комбо, жара и тени':!relayUnlocked?'После покупки Электрической луны и тарелки':formatPrice(c.COMBO_RELAY_COST)+' 💎';
   const interval=state.ufoInterval||(c.BASE_INTERVAL-Math.max(0,level-1)*c.INTERVAL_REDUCTION);
   const buffs=document.getElementById('ufoBuffs');if(buffs)buffs.textContent=(state.activeMoons||[]).slice(0,state.maxSlots||1).map(id=>getUfoMoonDescription(id,state.moonLevels?.[id]||1)).join(' · ');
   info.textContent=level?'Ур. '+level+'/'+c.MAX_LEVEL+' · '+formatNumber(state.ufoDamage)+' урона раз в '+(interval/1000).toLocaleString('ru-RU')+' с':'50% финального урона раз в '+(c.BASE_INTERVAL/1000)+' с';

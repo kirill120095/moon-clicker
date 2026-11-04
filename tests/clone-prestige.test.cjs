@@ -3,7 +3,7 @@ const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').rep
 function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return s=>vm.runInContext(s,c);}
 test('cosmic kill coefficient is 0.5 and permanent archive levels increase it before clone strength',()=>{
  const run=setup();run("var s=freshState();s.activeMoons=['cosmic'];s.moonLevels.cosmic=1;s.currentLevel=100;s.moonKills=100;s.prestige.upgrades.archive=3;");
- assert.equal(run('getBaseDamage(s)'),1090);assert.equal(run("getMoonMechanicParams('cosmic',1).baseDamagePerKill"),.5);
+ assert.equal(run('getBaseDamage(s)'),1210);assert.equal(run("getMoonMechanicParams('cosmic',1).baseDamagePerKill"),.5);
  run("s.currentLevel=150;s.maxLevel=150;s=applyAction(s,'ascend',{},100000);");assert.equal(run('s.moonKills'),0);assert.equal(run('s.prestige.upgrades.archive'),3);assert.equal(run('getBaseDamage(s)'),10);
 });
 test('prestige purchases use authoritative prices and permanent orbit is single purchase',()=>{

@@ -27,7 +27,7 @@ export const CONSTANTS = {
   CLICK_BURST: 18,
   CLICK_TOKEN_CAPACITY: 36,
   ROLLBACK_LEVELS: 5,
-  PRESTIGE: { DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 50 },
+  PRESTIGE: { DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 20 },
   UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, MIN_INTERVAL: 100, COMBO_RELAY_COST: 1000000, MAX_SHOTS_PER_ACTION: 32, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, UNIT_BASE_COST: 2400, UNIT_COST_MULTIPLIER: 2, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { rewardMultiplier: 0.5 }, cosmic: { damagePerLevel: 0.001 } } },
   MOON_REWARD: { BASE: 5, PER_LEVEL: 2, EXPONENT: 1.3, GROWTH: 0.5, BOSS_MULTIPLIER: 2.5 },
 
@@ -831,7 +831,7 @@ export const PRESTIGE_UPGRADES={
  echo:{id:'echo',name:'Эхо выстрела',icon:'🔊',description:'Каждый уровень даёт ещё 5% от оставшегося шанса повторить 50% урона ручного выстрела. Эхо не создаёт эхо.',baseCost:25,multiplier:2,maxLevel:Infinity,chance:0.05,damage:0.5},
  capital:{id:'capital',name:'Стартовый капитал',icon:'🚀',description:'+500 кристаллов за уровень после вознесения',baseCost:3,multiplier:2,maxLevel:Infinity,shards:500},
  hunter:{id:'hunter',name:'Охотник на боссов',icon:'👹',description:'+10% урона боссам и +1 секунда боя за уровень',baseCost:5,multiplier:2,maxLevel:Infinity,damage:0.10,time:1},
- archive:{id:'archive',name:'Лунный архив',icon:'📚',description:'Навсегда +0,1 к базовому урону Космической за убитую луну за каждый уровень улучшения',baseCost:30,multiplier:2,maxLevel:Infinity,perKill:0.1},
+ archive:{id:'archive',name:'Лунный архив',icon:'📚',description:'Навсегда +0,5 к базовому урону Космической за убитую луну за каждый уровень улучшения',baseCost:30,multiplier:2,maxLevel:Infinity,perKill:0.5},
  orbit:{id:'orbit',name:'Вечная орбита',icon:'🌌',description:'Один дополнительный слот активной луны, сохраняется при вознесении',baseCost:1000,multiplier:2,maxLevel:1},
  critical:{id:'critical',name:'Звёздное прицеливание',icon:'🎯',description:'+1% шанса крита за уровень',baseCost:2,multiplier:2,maxLevel:Infinity,crit:0.01}
 };
@@ -920,7 +920,7 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  if(active.includes('normal')&&active.length>1)add('normal-link','Связь обычной луны',.05,.05);
  const passive={totalDamageBonus:damage,totalShardBonus:shards,totalCritChanceBonus:crit,totalCritDamageBonus:critDamage};
  for(const [id,key]of [['normal','_comboClicks'],['fire','_fireStacks'],['shadow','_shadowCritStacks']]){
-  const m=params(id),last=id==='normal'?Math.max(state.lastClickAt||0,state.lastComboAt||0):state.lastClickAt||0;
+  const m=params(id),last=id==='normal'?Math.max(state.lastClickAt||0,state.lastAutoClickAt||0,state.lastComboAt||0):Math.max(state.lastClickAt||0,state.lastAutoClickAt||0);
   if(m&&last&&now-last>=(m.resetTimeout||15000))runtime[key]=0;
  }
  const normal=params('normal'),fire=params('fire'),shadow=params('shadow'),blood=params('blood'),electric=params('electric'),ice=params('ice'),gold=params('gold');

@@ -7,18 +7,18 @@ test('combo relay requires the electric moon and a UFO, uses server price and ca
  assert.equal(run("s.ufoLevel=1;s=applyAction(s,'buyUfoComboRelay',{cost:0},100000);s.playerData.shards"),0);
  assert.equal(run("s.ufoComboRelay"),true);assert.throws(()=>run("applyAction(s,'buyUfoComboRelay',{},100001)"));
 });
-test('purchased relay keeps existing normal combo through repeated UFO shots without granting manual clicks',()=>{
- const run=setup();assert.equal(run("var s=freshState();s.ufoLevel=1;s.ufoComboRelay=true;s=applyAction(s,'click',{count:10},100000);for(var t=103000;t<=121000;t+=3000)s=applyAction(s,'sync',{},t);s.runtime._comboClicks"),10);
- assert.equal(run('s.clickCount'),10);assert.equal(run('s.lastClickAt'),100000);assert.equal(run('s.lastComboAt'),121000);
+test('purchased relay adds two combo steps per UFO shot and one quest click',()=>{
+ const run=setup();assert.equal(run("var s=freshState();s.ufoLevel=1;s.ufoComboRelay=true;s=applyAction(s,'click',{count:10},100000);for(var t=103000;t<=121000;t+=3000)s=applyAction(s,'sync',{},t);s.runtime._comboClicks"),24);
+ assert.equal(run('s.clickCount'),17);assert.equal(run('s.lastClickAt'),100000);assert.equal(run('s.lastComboAt'),121000);
 });
-test('without relay the UFO does not preserve combo, and idle gaps still expire upgraded combo',()=>{
- const run=setup();assert.equal(run("var s=freshState();s.ufoLevel=1;s=applyAction(s,'click',{count:10},100000);for(var t=103000;t<=121000;t+=3000)s=applyAction(s,'sync',{},t);s.runtime._comboClicks"),0);
+test('without relay UFO shots build one combo step while idle gaps still expire combo',()=>{
+ const run=setup();assert.equal(run("var s=freshState();s.ufoLevel=1;s=applyAction(s,'click',{count:10},100000);for(var t=103000;t<=121000;t+=3000)s=applyAction(s,'sync',{},t);s.runtime._comboClicks"),17);
  assert.equal(run("s.ufoComboRelay=true;s=applyAction(s,'click',{count:10},124000);s=applyAction(s,'sync',{},145000);s.runtime._comboClicks"),0);
 });
-test('relay cannot create combo or preserve fire and shadow stacks',()=>{
- const run=setup();assert.equal(run("var s=freshState();s.ufoLevel=1;s.ufoComboRelay=true;s=applyAction(s,'load',{},100000);s=applyAction(s,'sync',{},103000);s.runtime._comboClicks"),0);
- assert.equal(run("s=freshState();s.ufoLevel=1;s.ufoComboRelay=true;s.maxSlots=3;s.activeMoons=['normal','fire','shadow'];s.ownedMoons=[...s.activeMoons];s.moonLevels={normal:1,fire:1,shadow:1};s=applyAction(s,'click',{count:10},100000);for(var t=103000;t<=121000;t+=3000)s=applyAction(s,'sync',{},t);s.runtime._fireStacks+s.runtime._shadowCritStacks"),0);
- assert.equal(run('s.runtime._comboClicks'),10);
+test('relay builds combo, fire and shadow stacks for active moons',()=>{
+ const run=setup();assert.equal(run("var s=freshState();s.ufoLevel=1;s.ufoComboRelay=true;s=applyAction(s,'load',{},100000);s=applyAction(s,'sync',{},103000);s.runtime._comboClicks"),2);
+ assert.equal(run("s=freshState();s.ufoLevel=1;s.ufoComboRelay=true;s.maxSlots=3;s.activeMoons=['normal','fire','shadow'];s.ownedMoons=[...s.activeMoons];s.moonLevels={normal:1,fire:1,shadow:1};s=applyAction(s,'click',{count:10},100000);for(var t=103000;t<=121000;t+=3000)s=applyAction(s,'sync',{},t);s.runtime._fireStacks+s.runtime._shadowCritStacks"),48);
+ assert.equal(run('s.runtime._comboClicks'),24);
 });
 test('ascension clears the ordinary relay upgrade',()=>{const run=setup();assert.equal(run("var s=freshState();s.currentLevel=50;s.ufoComboRelay=true;applyAction(s,'ascend',{},100000).ufoComboRelay"),false);});
 test('boss payout is halved and kill preview equals credited amount',()=>{
