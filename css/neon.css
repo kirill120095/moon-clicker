@@ -7,7 +7,7 @@ body{background:radial-gradient(ellipse at 15% 10%,#182442 0,transparent 45%),ra
 .auth-form input:focus{border-color:#67e8f9!important;box-shadow:0 0 0 3px #67e8f920;outline:none}
 .btn-login{background:linear-gradient(115deg,#67e8f9,#a78bfa)!important;color:#101326!important;text-shadow:none!important;box-shadow:0 4px 24px #67e8f925!important;border-radius:12px!important;min-height:48px}
 .btn-register{border-radius:12px!important;min-height:46px;border:1px solid #667493!important;background:#ffffff08!important}
-button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visible,.moon-wrapper:focus-visible{outline:2px solid #67e8f9!important;outline-offset:5px}
+button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-visible,.moon-wrapper:focus-visible{outline:2px solid #67e8f9!important;outline-offset:5px}
 .mission-header{position:fixed;top:24px;left:28px;z-index:20;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .brand-orbit{font-size:16px;font-weight:800;letter-spacing:.16em;color:#f5f7ff}.brand-orbit span{color:#67e8f9;margin-left:6px}.season-badge{font-size:9px;letter-spacing:.16em;color:#aab6ce}
 .panel{background:linear-gradient(155deg,#16213cf5,#0c1428fa)!important;border-color:#6d7daf55!important;box-shadow:0 16px 70px #0008!important}
@@ -150,7 +150,7 @@ button:disabled{opacity:.55;cursor:wait}button:focus-visible,summary:focus-visib
 .radio-mini-body{padding-top:10px}.radio-mini-select{display:flex;gap:8px}.radio-mini-select select{flex:1;min-width:0;padding:8px;font-size:12px}
 .radio-mini-controls{display:flex;gap:6px;margin-top:8px}.radio-mini-controls button{flex:1;white-space:nowrap}
 .radio-mini button[aria-pressed=true]{background:#164e63;border-color:#67e8f9;color:#cffafe}
-.radio-mini button:disabled{opacity:.45;cursor:wait}
+.radio-mini button:disabled{opacity:.45;cursor:default}
 #radioMiniStatus{font-size:10px;line-height:1.4;color:#9cabc4;margin:8px 0 0;max-height:28px;overflow:auto}
 .radio-mini.collapsed{top:8px;width:min(330px,calc(100vw - 28px));padding:7px 12px;border-radius:0 0 16px 16px}
 .radio-mini.collapsed .radio-mini-body{display:none}
