@@ -474,7 +474,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
    if(repeats){state.echoQueue.push({count:repeats,damage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(result.finalDamage*echo.echoDamage))),isCrit:result.isCrit});drainEchoes();}
   }
  } else if(action==='spinWheel'){
-  if(trusted.canSpinWheel!==true)throw Object.assign(Error('Колесо доступно только владельцу'),{code:'FORBIDDEN'});
+  if(trusted.canSpinWheel!==true)throw Object.assign(Error('Требуется подтверждённая игровая сессия'),{code:'FORBIDDEN'});
   const bet=payload.bet,config=CONSTANTS.WHEEL,index=trusted.wheelIndex;
   if(!Number.isSafeInteger(bet)||bet<1||bet>state.playerData.shards)throw Error('Укажите целую ставку в пределах баланса');
   if(!Number.isInteger(index)||index<0||index>=config.SECTORS.length)throw Error('Не удалось определить сектор');

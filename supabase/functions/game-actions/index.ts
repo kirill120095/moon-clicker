@@ -61,9 +61,7 @@ Deno.serve(async(req:Request)=>{
   const identity={uid:user.id,session:String(claims.session_id),username:user.user_metadata?.username};
   let trusted={canSpinWheel:false,wheelIndex:-1};
   if(body.action==='spinWheel'){
-   const check=await fetch(base+'/rest/v1/rpc/is_game_admin',{method:'POST',headers:{apikey:service,Authorization:authorization,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(8000)});
-   if(!check.ok)return reply({error:'Не удалось проверить доступ к колесу'},503);
-   if(await check.json()!==true)return reply({error:'Колесо доступно только владельцу'},403);
+   // Auth and session claims above authorize every signed-in player.
    // Rejection sampling avoids modulo bias. Keep this result across commit retries.
    const count=CONSTANTS.WHEEL.WEIGHTS.reduce((sum,w)=>sum+w,0),limit=Math.floor(0x100000000/count)*count;
    let value;do{value=crypto.getRandomValues(new Uint32Array(1))[0];}while(value>=limit);

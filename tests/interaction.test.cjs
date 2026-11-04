@@ -75,3 +75,14 @@ test('bulk collection sends one request while an earlier click is in flight',asy
  s.engine.claimAllQuests();assert.equal(s.calls.filter(c=>c.action==='claimAllQuests').length,1);
  s.calls.find(c=>c.action==='claimAllQuests').settle.resolve(s.result());await collecting;
 });
+
+test('public fortune initializes for a regular player even if optional admin check fails',async()=>{
+ const s=setup(),allowed=[];let disconnected=0;s.state.user={id:'regular-player'};
+ s.context.gameAdmin.allowed=false;s.context.gameAdmin.connect=async()=>{throw Error('Admin role unavailable');};
+ s.context.fortuneWheel.connect=value=>allowed.push(value);s.context.fortuneWheel.disconnect=()=>{disconnected++;};
+ await s.engine.init();assert.deepEqual(allowed,[true]);assert.equal(s.context.gameAdmin.allowed,false);s.engine.destroy();assert.equal(disconnected,1);
+});
+test('fortune never initializes when the authoritative game load fails',async()=>{
+ const s=setup();let connected=0;s.context.db.action=async()=>{throw Error('Invalid session');};s.context.fortuneWheel.connect=()=>{connected++;};
+ await assert.rejects(s.engine.init(),/Invalid session/);assert.equal(connected,0);
+});

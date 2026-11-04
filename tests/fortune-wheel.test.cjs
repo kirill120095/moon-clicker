@@ -1,9 +1,9 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'');
 function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return code=>vm.runInContext(code,c);}
-test('wheel rejects forged owner, payout and outcome in client payload without mutating input',()=>{
+test('wheel rejects forged session, payout and outcome in client payload without mutating input',()=>{
  const run=setup();run('var s=freshState();s.playerData.shards=1000;var before=JSON.stringify(s)');
- assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true,canSpinWheel:true,wheelIndex:6,payout:999999},100000)"),/владельцу/);assert.equal(run('JSON.stringify(s)===before'),true);
+ assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true,canSpinWheel:true,wheelIndex:6,payout:999999},100000)"),/сессия/);assert.equal(run('JSON.stringify(s)===before'),true);
 });
 test('every sector pays from server-selected outcome including losing stakes and full bankruptcy',()=>{
  const run=setup();
@@ -55,32 +55,32 @@ test('reduced motion lands without spinning or confetti',async()=>{
  const s=uiSetup();s.c.window.matchMedia=()=>({matches:true});const pending=s.wheel.play();s.resolve({index:1,multiplier:2,payout:200,delta:100});await pending;assert.equal(s.animations.length,0);assert.equal(s.particles.length,0);assert.ok(Math.abs(s.wheel.angle-(360-145.5*360/1100))<1e-7);
 });
 
-async function edgeSetup({admin=false,conflict=false,cached=false}={}){
+async function edgeSetup({authorized=true,conflict=false,cached=false,missingToken=false}={}){
  const {stripTypeScriptTypes}=require('node:module'),{webcrypto}=require('node:crypto');
- let handler,commits=0,loads=0,authHeader,randomCalls=0,contexts=[];
+ let handler,commits=0,loads=0,authHeader,roleCalls=0,randomCalls=0,contexts=[];
  const uid='00000000-0000-4000-8000-000000000001',sid='00000000-0000-4000-8000-000000000002';
  const c={Deno:{env:{get:key=>key==='SUPABASE_URL'?'https://example.test':'test-service'},serve:fn=>{handler=fn;}},crypto:{subtle:webcrypto.subtle,getRandomValues:a=>{randomCalls++;a[0]=7;return a;}},getWheelSectorIndex:()=>7,CONSTANTS:{WHEEL:{SECTORS:Array(12).fill(0),WEIGHTS:[97,97,97,97,97,97,97,97,97,97,33,97]}},TextEncoder,TextDecoder,Uint8Array,Uint32Array,Response,Request,AbortSignal,btoa,atob,setTimeout,console,structuredClone,
  freshState:()=>({balance:1000}),applyAction:(s,a,p,n,trust)=>{contexts.push(trust);return {balance:900};},fetch:async(url,options)=>{
-  if(url.endsWith('/auth/v1/user'))return Response.json({id:uid});
-  if(url.endsWith('/rpc/is_game_admin')){authHeader=options.headers.Authorization;return Response.json(admin);}
+  if(url.endsWith('/auth/v1/user')){authHeader=options.headers.Authorization;return authorized?Response.json({id:uid}):Response.json({error:'Invalid session'},{status:401});}
+  if(url.endsWith('/rpc/is_game_admin')){roleCalls++;throw Error('Fortune must not require admin access');}
   if(url.endsWith('/rpc/game_load')){loads++;return Response.json(cached?{cached:{state:{balance:900},revision:2}}:{state:{balance:1000},revision:1});}
   if(url.endsWith('/rpc/game_commit_safe')){commits++;const args=JSON.parse(options.body);if(conflict&&commits===1)return Response.json({conflict:true});return Response.json(args.p_response);}
   return Response.json(null);
  }};
  vm.createContext(c);const source=fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions/index.ts'),'utf8').replace(/^import .*;$/gm,'');vm.runInContext(stripTypeScriptTypes(source,{mode:'strip'}),c);
  const token='a.'+Buffer.from(JSON.stringify({sub:uid,session_id:sid})).toString('base64url')+'.c',authorization='Bearer '+token;
- const response=await handler(new Request('https://example.test',{method:'POST',headers:{authorization},body:JSON.stringify({action:'spinWheel',payload:{bet:100,canSpinWheel:true,wheelIndex:6},request_id:'00000000-0000-4000-8000-000000000003'})}));
- return {response,commits,loads,authHeader,authorization,randomCalls,contexts};
+ const response=await handler(new Request('https://example.test',{method:'POST',headers:missingToken?{}:{authorization},body:JSON.stringify({action:'spinWheel',payload:{bet:100,canSpinWheel:true,wheelIndex:6},request_id:'00000000-0000-4000-8000-000000000003'})}));
+ return {response,commits,loads,authHeader,authorization,roleCalls,randomCalls,contexts};
 }
-test('Edge gate refuses non-owner before loading or committing a save',async()=>{
- const s=await edgeSetup();assert.equal(s.response.status,403);assert.equal(s.loads,0);assert.equal(s.commits,0);assert.equal(s.randomCalls,0);assert.equal(s.authHeader,s.authorization);
+test('Edge rejects an expired session before loading or committing a save',async()=>{
+ const s=await edgeSetup({authorized:false});assert.equal(s.response.status,401);assert.equal(s.loads,0);assert.equal(s.commits,0);assert.equal(s.randomCalls,0);assert.equal(s.authHeader,s.authorization);
 });
-test('authenticated role check uses user token and conflict retry cannot reroll sector',async()=>{
- const s=await edgeSetup({admin:true,conflict:true});assert.equal(s.response.status,200);assert.equal(s.commits,2);assert.equal(s.randomCalls,1);assert.equal(s.authHeader,s.authorization);assert.equal(s.contexts.length,2);
+test('ordinary player can spin without admin lookup and conflict retry cannot reroll sector',async()=>{
+ const s=await edgeSetup({conflict:true});assert.equal(s.response.status,200);assert.equal(s.commits,2);assert.equal(s.randomCalls,1);assert.equal(s.authHeader,s.authorization);assert.equal(s.contexts.length,2);assert.equal(s.roleCalls,0);
  for(const trust of s.contexts){assert.equal(trust.canSpinWheel,true);assert.equal(trust.wheelIndex,7);}
 });
 test('cached request never runs wheel payout again',async()=>{
- const s=await edgeSetup({admin:true,cached:true});assert.equal(s.response.status,200);assert.equal(s.contexts.length,0);assert.equal(s.commits,1);
+ const s=await edgeSetup({cached:true});assert.equal(s.response.status,200);assert.equal(s.contexts.length,0);assert.equal(s.commits,1);
 });
 
 test('1100 integer tickets give exactly 3 percent bankruptcy with requested sector counts',()=>{
@@ -101,4 +101,12 @@ test('fortune tab follows achievements, switches within panel and closes with ot
  c.window.switchShopTab('fortune');assert.equal(opened,1);assert.ok(contentActive.has('active'));c.window.switchShopTab('achievements');assert.equal(closed,2);
  fortune.allowed=false;c.window.switchShopTab('fortune');assert.equal(opened,1);c.window.closePanel('shopPanel');assert.equal(closed,3);
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.ok(html.indexOf('id="fortuneTabButton"')>html.indexOf('data-tab="achievements"'));assert.match(html,/id="fortuneTabButton" class="panel-tab hidden"/);
+});
+
+test('every authenticated regular account receives public fortune without owner role',async()=>{
+ const s=await edgeSetup();assert.equal(s.response.status,200);assert.equal(s.roleCalls,0);assert.equal(s.loads,1);assert.equal(s.commits,1);assert.equal(s.contexts[0].canSpinWheel,true);
+});
+
+test('public fortune still refuses requests with no authentication token',async()=>{
+ const s=await edgeSetup({missingToken:true});assert.equal(s.response.status,401);assert.equal(s.loads,0);assert.equal(s.commits,0);assert.equal(s.roleCalls,0);assert.equal(s.randomCalls,0);
 });

@@ -107,7 +107,8 @@ gameEngine.init=()=>{
  active=true;ready=false;lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
  try{const loaded=await db.action('load');if(generation!==initGeneration||!active)throw Object.assign(Error('Загрузка отменена'),{code:'LOAD_CANCELLED'});apply(loaded);}catch(error){if(generation===initGeneration){active=false;gameEngine._isRunning=false;}throw error;}
  radio.connect(state.user).catch(()=>{});
- gameAdmin.connect(state.user).then(()=>{if(generation===initGeneration&&active){fortuneWheel.bind(payload=>command('spinWheel',payload));fortuneWheel.connect(gameAdmin.allowed);}}).catch(()=>{});
+ fortuneWheel.bind(payload=>command('spinWheel',payload));fortuneWheel.connect(true);
+ gameAdmin.connect(state.user).catch(()=>{});
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
  ticker=setInterval(()=>{
   if(!active)return;
