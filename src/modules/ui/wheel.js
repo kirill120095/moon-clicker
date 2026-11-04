@@ -15,20 +15,19 @@ export class FortuneWheel {
   if(!this.root){
    const root=document.createElement('div');root.id='fortuneTabContent';root.className='tab-content hidden';
    root.innerHTML=`
-   <dialog class="fortune-dialog" aria-labelledby="fortuneTitle"><div class="fortune-header"><div><span class="fortune-eyebrow">ЛИЧНАЯ ОРБИТА · ЭКСПЕРИМЕНТ</span><h2 id="fortuneTitle">Колесо фортуны</h2></div><button type="button" class="fortune-close" aria-label="Закрыть">×</button></div>
+   <section class="fortune-dialog" aria-labelledby="fortuneTitle"><div class="fortune-header"><div><span class="fortune-eyebrow">ЛИЧНАЯ ОРБИТА · ЭКСПЕРИМЕНТ</span><h2 id="fortuneTitle">Колесо фортуны</h2></div><button type="button" class="fortune-close" aria-label="Закрыть">×</button></div>
    <div class="fortune-stage"><div class="fortune-halo"></div><div class="fortune-pointer" aria-hidden="true"></div><div class="fortune-rotor"></div><div class="fortune-hub" aria-hidden="true">✦</div><div class="fortune-particles" aria-hidden="true"></div></div>
-   <div class="fortune-result" role="status" aria-live="polite"><strong>Испытай свою удачу</strong><span>☠ Банкротство: 1% · размеры секторов соответствуют шансам</span></div>
+   <div class="fortune-result" role="status" aria-live="polite"><strong>Испытай свою удачу</strong><span>☠ Банкротство: 3% · размеры секторов соответствуют шансам</span></div>
    <p class="fortune-balance"></p><form class="fortune-form"><label>Ставка · 💎<input name="bet" type="number" inputmode="numeric" min="1" step="1" required value="100"></label><div class="fortune-presets"><button type="button" data-part="0.1">10% баланса</button><button type="button" data-part="0.5">50%</button></div><label class="fortune-consent"><input name="risk" type="checkbox" required>Понимаю: сектор «Банкротство» обнулит весь текущий баланс.</label><button class="fortune-spin" type="submit">ВРАЩАТЬ <span>✦</span></button></form>
-   <p class="fortune-odds">Красный ✕ — потеря ставки · ☠ — банкротство (1%) · ×2 / ×3 / ×5 — выплата со ставкой. Только игровые кристаллы.</p></dialog>`;
-   this.root=root;document.body.append(root);
-   this.dialog=root.querySelector('dialog');this.rotor=root.querySelector('.fortune-rotor');this.result=root.querySelector('.fortune-result');this.form=root.querySelector('form');this.button=root.querySelector('.fortune-spin');
+   <p class="fortune-odds">Красный ✕ — потеря ставки · ☠ — банкротство (3%) · ×2 / ×5 / ×10 — выплата со ставкой. Только игровые кристаллы.</p></section>`;
+   this.root=root;document.querySelector('#shopPanel .panel-content').append(root);
+   this.dialog=root.querySelector('.fortune-dialog');this.rotor=root.querySelector('.fortune-rotor');this.result=root.querySelector('.fortune-result');this.form=root.querySelector('form');this.button=root.querySelector('.fortune-spin');
    this.draw();
    root.querySelector('.fortune-close').addEventListener('click',()=>{this.close();window.switchShopTab?.('achievements');});
-   this.dialog.addEventListener('cancel',event=>{event.preventDefault();if(!this.busy){this.close();window.switchShopTab?.('achievements');}});
    this.form.addEventListener('submit',event=>{event.preventDefault();this.play();});
    for(const button of root.querySelectorAll('[data-part]'))button.addEventListener('click',()=>{if(!this.busy)this.form.elements.bet.value=Math.max(1,Math.floor((state.playerData?.shards||0)*Number(button.dataset.part)));});
   }
-  this.root.classList.add('hidden');this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.message('Испытай свою удачу','☠ Банкротство: 1% · размеры секторов соответствуют шансам');
+  this.root.classList.add('hidden');this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.message('Испытай свою удачу','☠ Банкротство: 3% · размеры секторов соответствуют шансам');
  }
  draw(){
   const sectors=CONSTANTS.WHEEL.SECTORS,weights=CONSTANTS.WHEEL.WEIGHTS,total=weights.reduce((n,w)=>n+w,0),colors=['#58214e','#096b76','#52408e','#83541c','#25637b','#642345','#9a6320','#4c3980','#13727b','#354a87','#341c35','#6b3a70'];
@@ -38,8 +37,8 @@ export class FortuneWheel {
    return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(m===0?'#4c1b35':m==='bankrupt'?'#120b18':colors[i])+'" stroke="#ffdf9a" stroke-opacity=".45"/><text x="'+t[0]+'" y="'+t[1]+'" transform="rotate('+(center+90)+' '+t.join(' ')+')" text-anchor="middle" dominant-baseline="middle" fill="'+(m===0?'#ff728e':'#fff4d7')+'" font-size="'+(m==='bankrupt'?10:m===0?30:23)+'" font-weight="900">'+(m==='bankrupt'?'☠':m===0?'✕':'×'+String(m))+'</text>';
   }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#ffdc89" stroke-width="8"/>'+Array.from({length:24},(_,i)=>{const p=point(194,i*15);return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3" fill="#fff5c4"/>';}).join('')+'</svg>';
  }
- close(){if(!this.root)return;this.root.classList.add('hidden');this.root.classList.remove('active');this.dialog.close();}
- open(){if(!this.allowed)return;this.root.classList.remove('hidden');this.root.classList.add('active');this.refreshBalance();this.dialog.show();}
+ close(){if(!this.root)return;this.root.classList.add('hidden');this.root.classList.remove('active');}
+ open(){if(!this.allowed)return;this.root.classList.remove('hidden');this.root.classList.add('active');this.refreshBalance();}
  message(title,detail){this.result.replaceChildren();const strong=document.createElement('strong'),span=document.createElement('span');strong.textContent=title;span.textContent=detail;this.result.append(strong,span);}
  refreshBalance(){const node=this.root?.querySelector('.fortune-balance');if(node)node.textContent='Баланс: '+(state.playerData?.shards||0).toLocaleString('ru-RU')+' 💎';}
  motion(){return !document.documentElement?.classList.contains('reduce-effects')&&!document.body?.classList.contains('reduce-effects')&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches;}
@@ -87,7 +86,7 @@ export class FortuneWheel {
  disconnect(){
   document.getElementById('fortuneTabButton')?.classList.add('hidden');this.generation++;this.allowed=false;this.busy=false;clearTimeout(this.timer);this.timer=null;
   for(const animation of this.animations)animation.cancel();this.animations=[];
-  if(this.root){this.root.classList.add('hidden');this.root.classList.remove('fortune-busy');this.root.querySelector('.fortune-particles').replaceChildren();for(const element of this.form.elements)element.disabled=false;this.root.querySelector('.fortune-close').disabled=false;this.dialog.close();}
+  if(this.root){this.root.classList.add('hidden');this.root.classList.remove('fortune-busy');this.root.querySelector('.fortune-particles').replaceChildren();for(const element of this.form.elements)element.disabled=false;this.root.querySelector('.fortune-close').disabled=false;}
  }
 }
 export const fortuneWheel=new FortuneWheel();

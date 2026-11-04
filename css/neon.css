@@ -163,6 +163,11 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .clone-controls{padding:14px;border:1px solid #c4b5fd55;border-radius:14px;background:#a78bfa10;margin-bottom:16px}.clone-controls h3{font-size:15px;color:#ddd6fe}
 .clone-controls p{font-size:12px;color:#b7c6df;line-height:1.6}.clone-controls label{display:block;font-size:12px;color:#c4b5fd;margin:10px 0}.clone-controls select{display:block;width:100%;margin-top:6px;padding:10px;border-radius:9px;background:#101b30;border:1px solid #a5b4fc66;color:#e8edf8}
 .panel-tabs{overflow-x:auto;scrollbar-width:thin;flex-wrap:nowrap}.panel-tabs .panel-tab{flex-shrink:0}
+/* Use the full shop header width for all six tabs without horizontal scrolling. */
+#shopPanel .panel-header{padding:0!important;min-width:0;container-type:inline-size}
+#shopPanel .panel-tabs{width:100%;box-sizing:border-box;min-width:0;gap:3px;flex-wrap:nowrap;overflow:visible}
+#shopPanel .panel-tab{flex:1 1 0;min-width:0;padding:10px 2px;font-size:clamp(9px,2.6cqw,12px);letter-spacing:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1.15;white-space:nowrap}
+
 @media(max-width:380px){.live-combat-effects{grid-template-columns:1fr}}
 
 .buff-card.buff-reflection{border-color:#c4b5fd!important;background:linear-gradient(135deg,#20223bea,#321d48e6)!important;box-shadow:0 0 15px #a78bfa33}
@@ -201,7 +206,22 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 
 @media(max-width:759px){.fortune-stage{width:min(100%,32dvh,300px)}}
 
-/* Fortune is a dedicated owner-only tab with a centered wheel. */
-#fortuneTabContent .fortune-dialog[open]{display:block;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;width:min(92vw,480px);max-height:92dvh;z-index:350}
-#fortuneTabContent .fortune-stage{width:min(100%,32dvh,310px);margin:14px auto 10px}
-#fortuneTabContent .fortune-header{margin-bottom:0}#fortuneTabContent .fortune-result strong{font-size:24px}
+
+/* Fortune stays inside the right panel and leaves combat visible. */
+#fortuneTabContent .fortune-dialog{position:relative;inset:auto;transform:none;margin:0;width:100%;max-height:none;overflow:visible;padding:10px;border-radius:16px;box-shadow:none}
+#fortuneTabContent .fortune-header{margin-bottom:0}
+#fortuneTabContent .fortune-header h2{font-size:20px}
+#fortuneTabContent .fortune-eyebrow{font-size:8px;letter-spacing:1.3px}
+#fortuneTabContent .fortune-close{display:none}
+#fortuneTabContent .fortune-stage{width:min(100%,clamp(130px,calc(100dvh - 472px),300px));margin:12px auto}
+#fortuneTabContent .fortune-result{min-height:48px;gap:3px}
+#fortuneTabContent .fortune-result strong{font-size:20px}
+#fortuneTabContent .fortune-result span{font-size:10px}
+#fortuneTabContent .fortune-balance{margin:6px 0;font-size:11px}
+#fortuneTabContent .fortune-form{margin-top:8px;gap:8px;grid-template-columns:minmax(0,1fr) auto}
+#fortuneTabContent .fortune-form>label:first-child{min-width:0}
+#fortuneTabContent .fortune-form input[type=number]{padding:8px;font-size:15px}
+#fortuneTabContent .fortune-presets button{padding:9px 6px;font-size:10px}
+#fortuneTabContent .fortune-consent{font-size:10px;line-height:1.4}
+#fortuneTabContent .fortune-spin{padding:11px;font-size:13px}
+#fortuneTabContent .fortune-odds{font-size:9px;line-height:1.5;margin:10px 0 0}

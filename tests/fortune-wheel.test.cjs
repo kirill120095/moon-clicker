@@ -32,7 +32,7 @@ function uiSetup(){
  const result={replaceChildren(){},append(){}},rotor={style:{},animate(frames,options){const a={frames,options,cancelled:false,cancel(){this.cancelled=true;},finished:Promise.resolve()};animations.push(a);return a;}};
  const holder={replaceChildren(){particles.length=0;},append(p){particles.push(p);}};
  nodes['.fortune-rotor']=rotor;nodes['.fortune-result']=result;nodes['form']=form;nodes['.fortune-spin']={};nodes['.fortune-close']={};nodes['.fortune-particles']=holder;
- const c={CONSTANTS:{WHEEL:{SECTORS:[0,2,0,3,0,0,5,0,2,0,'bankrupt',0],WEIGHTS:[9,9,9,9,9,9,9,9,9,9,1,9],SPIN_MS:5200}},state:{playerData:{shards:1000}},audio:{purchase(){}},document:{getElementById:()=>null,createElement:()=>({style:{setProperty(){}},textContent:''})},window:{matchMedia:()=>({matches:false})},performance:{now:()=>100},setTimeout:()=>1,clearTimeout:()=>{cleared++;},console};
+ const c={CONSTANTS:{WHEEL:{SECTORS:[0,2,5,0,2,10,5,2,0,0,'bankrupt',2],WEIGHTS:[97,97,97,97,97,97,97,97,97,97,33,97],SPIN_MS:5200}},state:{playerData:{shards:1000}},audio:{purchase(){}},document:{getElementById:()=>null,createElement:()=>({style:{setProperty(){}},textContent:''})},window:{matchMedia:()=>({matches:false})},performance:{now:()=>100},setTimeout:()=>1,clearTimeout:()=>{cleared++;},console};
  vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/wheel.js'),'utf8')),c);
  const wheel=vm.runInContext('fortuneWheel',c);wheel.root={classList:{add:x=>classes.add(x),remove:(...xs)=>xs.forEach(x=>classes.delete(x))},querySelector:s=>nodes[s]};wheel.dialog={close(){},showModal(){}};wheel.rotor=rotor;wheel.result=result;wheel.form=form;wheel.button=nodes['.fortune-spin'];wheel.allowed=true;wheel.message=(...args)=>{wheel.lastMessage=args;};wheel.bind(()=>{spinCalls++;return new Promise(r=>{resolveSpin=r;});});
  return {wheel,animations,particles,classes,form,c,get calls(){return spinCalls;},get cleared(){return cleared;},resolve(result){resolveSpin({state:{wheelResult:result}});}};
@@ -45,21 +45,21 @@ test('every wheel sector lands at pointer after seven full revolutions even from
 });
 test('a slow result cannot start a second spin and confirmed reward stops on correct sector',async()=>{
  const s=uiSetup(),pending=s.wheel.play();await s.wheel.play();assert.equal(s.calls,1);assert.equal(s.form.elements.bet.disabled,true);
- s.resolve({index:6,multiplier:5,payout:500,delta:400});await pending;assert.ok(Math.abs(s.wheel.angle-149.4)<1e-7);assert.equal(s.wheel.busy,false);assert.equal(s.form.elements.bet.disabled,false);assert.ok(s.classes.has('fortune-win'));assert.equal(s.particles.length,28);assert.ok(s.animations.every(a=>a.cancelled));assert.match(s.wheel.lastMessage[0],/400/);
+ s.resolve({index:6,multiplier:5,payout:500,delta:400});await pending;assert.ok(Math.abs(s.wheel.angle-(360-(6*97+48.5)*360/1100))<1e-7);assert.equal(s.wheel.busy,false);assert.equal(s.form.elements.bet.disabled,false);assert.ok(s.classes.has('fortune-win'));assert.equal(s.particles.length,28);assert.ok(s.animations.every(a=>a.cancelled));assert.match(s.wheel.lastMessage[0],/400/);
 });
 test('logout cancels animation and late server result cannot expose or restart wheel',async()=>{
  const s=uiSetup(),pending=s.wheel.play();s.wheel.disconnect();s.resolve({index:6,multiplier:5,payout:500,delta:400});await pending;
  assert.equal(s.wheel.allowed,false);assert.equal(s.wheel.busy,false);assert.equal(s.wheel.animations.length,0);assert.equal(s.particles.length,0);assert.ok(s.animations.every(a=>a.cancelled));assert.ok(s.classes.has('hidden'));assert.equal(s.form.elements.bet.disabled,false);
 });
 test('reduced motion lands without spinning or confetti',async()=>{
- const s=uiSetup();s.c.window.matchMedia=()=>({matches:true});const pending=s.wheel.play();s.resolve({index:1,multiplier:2,payout:200,delta:100});await pending;assert.equal(s.animations.length,0);assert.equal(s.particles.length,0);assert.ok(Math.abs(s.wheel.angle-311.4)<1e-7);
+ const s=uiSetup();s.c.window.matchMedia=()=>({matches:true});const pending=s.wheel.play();s.resolve({index:1,multiplier:2,payout:200,delta:100});await pending;assert.equal(s.animations.length,0);assert.equal(s.particles.length,0);assert.ok(Math.abs(s.wheel.angle-(360-145.5*360/1100))<1e-7);
 });
 
 async function edgeSetup({admin=false,conflict=false,cached=false}={}){
  const {stripTypeScriptTypes}=require('node:module'),{webcrypto}=require('node:crypto');
  let handler,commits=0,loads=0,authHeader,randomCalls=0,contexts=[];
  const uid='00000000-0000-4000-8000-000000000001',sid='00000000-0000-4000-8000-000000000002';
- const c={Deno:{env:{get:key=>key==='SUPABASE_URL'?'https://example.test':'test-service'},serve:fn=>{handler=fn;}},crypto:{subtle:webcrypto.subtle,getRandomValues:a=>{randomCalls++;a[0]=7;return a;}},getWheelSectorIndex:()=>7,CONSTANTS:{WHEEL:{SECTORS:Array(12).fill(0),WEIGHTS:[9,9,9,9,9,9,9,9,9,9,1,9]}},TextEncoder,TextDecoder,Uint8Array,Uint32Array,Response,Request,AbortSignal,btoa,atob,setTimeout,console,structuredClone,
+ const c={Deno:{env:{get:key=>key==='SUPABASE_URL'?'https://example.test':'test-service'},serve:fn=>{handler=fn;}},crypto:{subtle:webcrypto.subtle,getRandomValues:a=>{randomCalls++;a[0]=7;return a;}},getWheelSectorIndex:()=>7,CONSTANTS:{WHEEL:{SECTORS:Array(12).fill(0),WEIGHTS:[97,97,97,97,97,97,97,97,97,97,33,97]}},TextEncoder,TextDecoder,Uint8Array,Uint32Array,Response,Request,AbortSignal,btoa,atob,setTimeout,console,structuredClone,
  freshState:()=>({balance:1000}),applyAction:(s,a,p,n,trust)=>{contexts.push(trust);return {balance:900};},fetch:async(url,options)=>{
   if(url.endsWith('/auth/v1/user'))return Response.json({id:uid});
   if(url.endsWith('/rpc/is_game_admin')){authHeader=options.headers.Authorization;return Response.json(admin);}
@@ -83,17 +83,17 @@ test('cached request never runs wheel payout again',async()=>{
  const s=await edgeSetup({admin:true,cached:true});assert.equal(s.response.status,200);assert.equal(s.contexts.length,0);assert.equal(s.commits,1);
 });
 
-test('100 integer tickets give exactly one bankruptcy and sector widths match winning probabilities',()=>{
+test('1100 integer tickets give exactly 3 percent bankruptcy with requested sector counts',()=>{
  const run=setup(),counts=Array(12).fill(0);
- for(let ticket=0;ticket<100;ticket++)counts[run('getWheelSectorIndex('+ticket+')')]++;
- assert.deepEqual(counts,[9,9,9,9,9,9,9,9,9,9,1,9]);assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m===.5||m===1).length"),0);
- for(const ticket of [-1,100,.5])assert.throws(()=>run('getWheelSectorIndex('+ticket+')'));
+ for(let ticket=0;ticket<1100;ticket++)counts[run('getWheelSectorIndex('+ticket+')')]++;
+ assert.deepEqual(counts,[97,97,97,97,97,97,97,97,97,97,33,97]);assert.equal(counts[10]/1100,.03);for(const [m,n] of [[2,4],[5,2],[0,4],[10,1]])assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m==="+m+").length"),n);assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m===.5||m===1).length"),0);
+ for(const ticket of [-1,1100,.5])assert.throws(()=>run('getWheelSectorIndex('+ticket+')'));
 });
 test('weighted wheel stops in exact center of every visible sector including narrow bankruptcy',()=>{
- const s=uiSetup(),weights=[9,9,9,9,9,9,9,9,9,9,1,9];let start=0;
- for(let i=0;i<weights.length;i++){const center=(start+weights[i]/2)*3.6;const angle=vm.runInContext('wheelStopAngle('+i+','+JSON.stringify(weights)+',1391.25)',s.c);assert.ok(angle>=1391.25+2520);assert.ok(Math.abs((angle+center)%360)<1e-7);start+=weights[i];}
+ const s=uiSetup(),weights=[97,97,97,97,97,97,97,97,97,97,33,97];let start=0;
+ for(let i=0;i<weights.length;i++){const center=(start+weights[i]/2)*360/1100;const angle=vm.runInContext('wheelStopAngle('+i+','+JSON.stringify(weights)+',1391.25)',s.c);assert.ok(angle>=1391.25+2520);assert.ok(Math.abs((angle+center)%360)<1e-7);start+=weights[i];}
 });
-test('fortune tab follows achievements, switches centrally and closes with other tabs or shop panel',()=>{
+test('fortune tab follows achievements, switches within panel and closes with other tabs or shop panel',()=>{
  const active=new Set(),contentActive=new Set();let opened=0,closed=0;
  const classes=()=>({add:x=>active.add(x),remove:x=>active.delete(x),contains:x=>active.has(x),toggle(x,on){if(on)active.add(x);else active.delete(x);}});
  const fortune={allowed:true,open(){opened++;},close(){closed++;}},panel={classList:classes(),querySelectorAll:()=>[]},content={classList:{add:x=>contentActive.add(x)}};
