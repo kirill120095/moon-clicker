@@ -9,11 +9,10 @@ test('unlock checks lifetime record, not current or current-run level',()=>{
  const run=setup();assert.equal(run("var s=freshState();s.currentLevel=1;s.runMaxLevel=1;s.maxLevel=60;s.ownedMoons=['normal','blood','ice','shadow'];s.playerData.shards=1e6;applyAction(s,'buyMoon',{id:'electric'},100000).ownedMoons.includes('electric')"),true);
  assert.throws(()=>run("s.maxLevel=59;applyAction(s,'buyMoon',{id:'electric'},100000)"),/максимальный/);
 });
-test('blood unlock stays at five while every later moon has a higher threshold',()=>{
- const run=setup();assert.equal(run('MOON_TYPES.blood.unlockLevel'),5);
- for(const [id,old] of [['ice',10],['shadow',15],['electric',25],['fire',20],['gold',30],['cosmic',40]])assert.ok(run("MOON_TYPES."+id+".unlockLevel")>old);
- assert.ok(run('MOON_TYPES.fire.unlockLevel>MOON_TYPES.electric.unlockLevel&&MOON_TYPES.fire.cost>MOON_TYPES.electric.cost'));
- assert.equal(run('MOON_TYPES.gold.cost'),600000);
+test('moon unlock thresholds follow the selected progression without changing purchase costs',()=>{
+ const run=setup();
+ for(const [id,level]of Object.entries({blood:20,ice:40,shadow:50,electric:60,fire:70,gold:100,cosmic:120,clone:200}))assert.equal(run('MOON_TYPES.'+id+'.unlockLevel'),level);
+ assert.equal(run('MOON_TYPES.gold.cost'),600000);assert.equal(run('MOON_TYPES.fire.cost'),350000);assert.equal(run('MOON_TYPES.clone.cost'),12000000);
 });
 test('upgrade costs from ice scale with moon purchase prices while early moons stay unchanged',()=>{
  const run=setup();assert.equal(run("getMoonUpgradeCostForLevel('normal',1)"),300);assert.equal(run("getMoonUpgradeCostForLevel('blood',1)"),1500);
@@ -33,4 +32,14 @@ test('ascension refreshes quests and achievements, preserving only eternal progr
 test('shop and server share the purchase gate and the shop lists moons in progression order',()=>{
  const renderer=fs.readFileSync(path.join(__dirname,'../src/modules/ui/renderer.js'),'utf8');assert.match(renderer,/for \(const id of MOON_ORDER\)/);assert.match(renderer,/getMoonPurchaseAccess\(state,id\)/);
  const secure=fs.readFileSync(path.join(__dirname,'../src/modules/game/secure-game.js'),'utf8');assert.match(secure,/action==='ascend'[\s\S]*?updateQuestAndAchievementUI\(true\)/);
+});
+
+test('every moon enforces its exact record threshold and the previous-moon purchase chain',()=>{
+ const run=setup();
+ for(const [id,level]of Object.entries({blood:20,ice:40,shadow:50,electric:60,fire:70,gold:100,cosmic:120,clone:200})){
+  run("var s=freshState();s.currentLevel=1;s.maxLevel="+(level-1)+";s.playerData.shards=1e9;s.ownedMoons=MOON_ORDER.slice(0,MOON_ORDER.indexOf('"+id+"'));s.moonLevels=Object.fromEntries(s.ownedMoons.map(id=>[id,1]));");
+  assert.throws(()=>run("applyAction(s,'buyMoon',{id:'"+id+"'},100000)"),/максимальный/);
+  assert.equal(run("s.maxLevel="+level+";applyAction(s,'buyMoon',{id:'"+id+"'},100000).ownedMoons.includes('"+id+"')"),true);
+  if(id!=='blood'){run('s.ownedMoons.pop();');assert.throws(()=>run("applyAction(s,'buyMoon',{id:'"+id+"'},100000)"),/Сначала/);}
+ }
 });

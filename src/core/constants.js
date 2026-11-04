@@ -10,7 +10,7 @@ export const CONSTANTS = {
   BASE_HP: 1000,
   MAX_SLOTS: 3,
   CLICK_CRYSTALS: { BASE_COST: 5000, MULTIPLIER: 3 },
-  CLONE: { COST: 12000000, UNLOCK_LEVEL: 250, LINK_BONUS: { damageBonus: .10, shardBonus: .05, critChanceBonus: .01, critDamageBonus: .05 }, DUAL_BONUS: { damageBonus: .15, shardBonus: .10, critChanceBonus: .01, critDamageBonus: .10 }, GROUP_THREE: { damageBonus: .10, shardBonus: .08, critChanceBonus: .005, critDamageBonus: .05 }, GROUP_FOUR: { damageBonus: .18, shardBonus: .12, critChanceBonus: .01, critDamageBonus: .10 } },
+  CLONE: { COST: 12000000, UNLOCK_LEVEL: 200, LINK_BONUS: { damageBonus: .10, shardBonus: .05, critChanceBonus: .01, critDamageBonus: .05 }, DUAL_BONUS: { damageBonus: .15, shardBonus: .10, critChanceBonus: .01, critDamageBonus: .10 }, GROUP_THREE: { damageBonus: .10, shardBonus: .08, critChanceBonus: .005, critDamageBonus: .05 }, GROUP_FOUR: { damageBonus: .18, shardBonus: .12, critChanceBonus: .01, critDamageBonus: .10 } },
 
   // Цены увеличены в 2 раза
   UPGRADE_COSTS: {
@@ -162,7 +162,7 @@ export const MOON_TYPES = {
     name: 'Кровавая',
     emoji: '🩸',
     cost: 1600,
-    unlockLevel: 5,
+    unlockLevel: 20,
     rarity: 'rare',
     
     baseStats: {
@@ -230,7 +230,7 @@ export const MOON_TYPES = {
     name: 'Ледяная',
     emoji: '❄️',
     cost: 6000,
-    unlockLevel: 20,
+    unlockLevel: 40,
     rarity: 'rare',
     
     baseStats: {
@@ -298,7 +298,7 @@ export const MOON_TYPES = {
     name: 'Теневая',
     emoji: '🌑',
     cost: 18000,
-    unlockLevel: 40,
+    unlockLevel: 50,
     rarity: 'epic',
     
     baseStats: {
@@ -364,7 +364,7 @@ export const MOON_TYPES = {
     name: 'Огненная',
     emoji: '🔥',
     cost: 350000,
-    unlockLevel: 90,
+    unlockLevel: 70,
     rarity: 'epic',
     
     baseStats: {
@@ -514,7 +514,7 @@ export const MOON_TYPES = {
     name: 'Золотая',
     emoji: '👑',
     cost: 600000,
-    unlockLevel: 120,
+    unlockLevel: 100,
     rarity: 'legendary',
     
     baseStats: {
@@ -587,7 +587,7 @@ export const MOON_TYPES = {
     name: 'Космическая',
     emoji: '✨',
     cost: 1500000,
-    unlockLevel: 150,
+    unlockLevel: 120,
     rarity: 'mythic',
     
     baseStats: {
