@@ -1,3 +1,4 @@
+import { demoSlots } from './slots.js';
 import { beginWheelBalance, revealWheelBalance, getVisibleShards } from './currency-display.js';
 import { CONSTANTS } from '../../core/constants.js';
 import { state } from '../../core/state.js';
@@ -28,6 +29,7 @@ export class FortuneWheel {
    this.form.addEventListener('submit',event=>{event.preventDefault();this.play();});
    for(const button of root.querySelectorAll('[data-part]'))button.addEventListener('click',()=>this.setBetFraction(Number(button.dataset.part)));
   }
+  demoSlots.connect(this.root);
   this.root.classList.add('hidden');this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.message('Испытай свою удачу','☠ Банкротство: 3% · результат рассчитывается сервером');
  }
  setBetFraction(part){if(this.busy)return;const balance=Math.floor(getVisibleShards(state.playerData?.shards));this.form.elements.bet.value=Math.min(balance,Math.max(1,Math.floor(balance*Math.max(0,Math.min(1,part)))));}
@@ -39,8 +41,8 @@ export class FortuneWheel {
    return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(m===0?'#4c1b35':m==='bankrupt'?'#120b18':colors[i])+'" stroke="#ffdf9a" stroke-opacity=".45"/><text x="'+t[0]+'" y="'+t[1]+'" transform="rotate('+(center+90)+' '+t.join(' ')+')" text-anchor="middle" dominant-baseline="middle" fill="'+(m===0?'#ff728e':'#fff4d7')+'" font-size="'+(m==='bankrupt'?10:m===0?30:23)+'" font-weight="900">'+(m==='bankrupt'?'☠':m===0?'✕':'×'+String(m))+'</text>';
   }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#ffdc89" stroke-width="8"/>'+Array.from({length:24},(_,i)=>{const p=point(194,i*15);return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3" fill="#fff5c4"/>';}).join('')+'</svg>';
  }
- close(){if(!this.root)return;this.root.classList.add('hidden');this.root.classList.remove('active');}
- open(){if(!this.allowed)return;this.root.classList.remove('hidden');this.root.classList.add('active');this.refreshBalance();}
+ close(){if(!this.root)return;demoSlots.close();this.root.classList.add('hidden');this.root.classList.remove('active');}
+ open(){if(!this.allowed)return;this.root.classList.remove('hidden');this.root.classList.add('active');this.refreshBalance();demoSlots.open();}
  message(title,detail){this.result.replaceChildren();const strong=document.createElement('strong'),span=document.createElement('span');strong.textContent=title;span.textContent=detail;this.result.append(strong,span);}
  refreshBalance(){const node=this.root?.querySelector('.fortune-balance');if(node)node.textContent='Баланс: '+getVisibleShards(state.playerData?.shards).toLocaleString('ru-RU')+' 💎';}
  motion(){return !document.documentElement?.classList.contains('reduce-effects')&&!document.body?.classList.contains('reduce-effects')&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches;}
@@ -87,6 +89,7 @@ export class FortuneWheel {
   clearTimeout(this.timer);this.timer=setTimeout(()=>{holder.replaceChildren();this.timer=null;},1800);
  }
  disconnect(){
+  demoSlots.disconnect();
   revealWheelBalance();document.getElementById('fortuneTabButton')?.classList.add('hidden');this.generation++;this.allowed=false;this.busy=false;clearTimeout(this.timer);this.timer=null;
   for(const animation of this.animations)animation.cancel();this.animations=[];
   if(this.root){this.root.classList.add('hidden');this.root.classList.remove('fortune-busy');this.root.querySelector('.fortune-particles').replaceChildren();for(const element of this.form.elements)element.disabled=false;this.root.querySelector('.fortune-close').disabled=false;}
