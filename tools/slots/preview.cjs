@@ -63,7 +63,7 @@ let html = read('index.html')
 <script type="importmap">${JSON.stringify({ imports }).replace(/</g, '\\u003c')}</script>
 <script type="module">
 import 'moon-preview/src/index.js';
-const show=()=>{if(!document.querySelector('[data-mt-slots]'))return false;window.togglePanel('shopPanel');window.switchShopTab('fortune');for(const control of document.querySelectorAll('.fortune-form input,.fortune-form button'))control.disabled=true;document.querySelector('.fortune-odds').textContent='Существующее серверное колесо сохранено. В этом изолированном превью оно отключено; попробуй демо-слоты выше.';return true;};
+const show=()=>{if(!document.querySelector('[data-mt-slots]'))return false;window.togglePanel('shopPanel');window.switchShopTab('fortune');for(const control of document.querySelectorAll('.fortune-form input,.fortune-form button'))control.disabled=true;document.querySelector('.fortune-odds').textContent='Существующее серверное колесо сохранено, но отключено в стенде. Верхний блок — технический wireframe; фактический режим указан в нём.';return true;};
 if(!show()){const observer=new MutationObserver(()=>{if(show())observer.disconnect();});observer.observe(document.body,{childList:true,subtree:true});setTimeout(()=>observer.disconnect(),15000);}
 </script><script>window.__previewHTML=document.documentElement.outerHTML;</script></body>`);
 const outputIndex = process.argv.indexOf('--output');
