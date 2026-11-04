@@ -1,9 +1,9 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'');vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return code=>vm.runInContext(code,c);}
 test('moon purchase order puts electric before fire and requires all earlier moons',()=>{
- const run=setup();assert.equal(run("MOON_ORDER.join(',')"),'normal,blood,ice,shadow,electric,fire,gold,cosmic');
+ const run=setup();assert.equal(run("MOON_ORDER.join(',')"),'normal,blood,ice,shadow,electric,fire,gold,cosmic,clone');
  assert.throws(()=>run("var s=freshState();s.maxLevel=1000;s.playerData.shards=1e9;applyAction(s,'buyMoon',{id:'gold'},100000)"),/Сначала/);
- assert.equal(run("for(var id of MOON_ORDER.slice(1))s=applyAction(s,'buyMoon',{id},100000);s.ownedMoons.length"),8);
+ assert.equal(run("for(var id of MOON_ORDER.slice(1))s=applyAction(s,'buyMoon',{id},100000);s.ownedMoons.length"),9);
 });
 test('unlock checks lifetime record, not current or current-run level',()=>{
  const run=setup();assert.equal(run("var s=freshState();s.currentLevel=1;s.runMaxLevel=1;s.maxLevel=60;s.ownedMoons=['normal','blood','ice','shadow'];s.playerData.shards=1e6;applyAction(s,'buyMoon',{id:'electric'},100000).ownedMoons.includes('electric')"),true);

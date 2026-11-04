@@ -107,7 +107,7 @@ if (typeof window !== 'undefined') {
     const targetContent = document.getElementById(`${tabName}TabContent`);
     if (targetContent) targetContent.classList.add('active');
     
-    if (tabName === 'shop') {
+    if (tabName === 'shop' || tabName === 'moons') {
       if (window.updateShopUI) window.updateShopUI();
     } else if (tabName === 'prestige') {
       if(window.updatePrestigeUI)window.updatePrestigeUI();
@@ -187,24 +187,8 @@ if (typeof window !== 'undefined') {
   };
 
   window.submitTestModePassword = () => {
-    const input = document.getElementById('testModePassword');
-    const errorEl = document.getElementById('passwordError');
-    
-    if (!input || !errorEl) return;
-    
-    const password = input.value.trim();
-    
-    if (password === CONSTANTS.TEST_MODE_PASSWORD) {
-      window.closePasswordModal();
-      if (window.gameEngine && window.gameEngine.toggleTestMode) {
-        window.gameEngine.toggleTestMode();
-      }
-    } else {
-      errorEl.textContent = '❌ Неверный пароль';
-      errorEl.classList.add('show');
-      input.value = '';
-      input.focus();
-    }
+    window.closePasswordModal();
+    showToast('Тестовый режим отключён в защищённом сезоне','info');
   };
 
   // Обработка Enter в поле пароля
@@ -240,6 +224,11 @@ if (typeof window !== 'undefined') {
 // 🎯 ИНИЦИАЛИЗАЦИЯ ADD EVENT LISTENER
 // ============================================================
 export function initEvents() {
+  document.getElementById('applyCloneTargets')?.addEventListener('click',()=>{
+   const targets=[...document.querySelectorAll('#cloneTargetFields select')].map(el=>el.value).filter(Boolean);
+   if(new Set(targets).size!==targets.length){showToast('Выберите разные оригиналы','warning');return;}
+   gameEngine.setCloneTargets(targets);
+  });
   document.addEventListener('click',e=>{const button=e.target.closest?.('[data-prestige-upgrade],[data-ascend]');if(!button||button.disabled)return;if(button.hasAttribute('data-ascend'))gameEngine.ascend();else gameEngine.buyPrestige(button.dataset.prestigeUpgrade);});
   console.log('[Events] Инициализация...');
 

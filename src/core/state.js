@@ -44,6 +44,8 @@ const initialState = {
   maxSlots: CONSTANTS.DEFAULTS.SLOT_LEVEL,
   
   moonKills: 0,
+  cloneTargets: [],
+  clickCrystalLevel: 0,
 
   // Боссы
   bossKills: CONSTANTS.DEFAULTS.BOSS_KILLS,

@@ -9,6 +9,8 @@ export const CONSTANTS = {
   BOSS_TIMER: 30,
   BASE_HP: 1000,
   MAX_SLOTS: 3,
+  CLICK_CRYSTALS: { BASE_COST: 5000, MULTIPLIER: 3 },
+  CLONE: { COST: 12000000, UNLOCK_LEVEL: 250 },
 
   // Цены увеличены в 2 раза
   UPGRADE_COSTS: {
@@ -62,7 +64,6 @@ export const CONSTANTS = {
   },
 
   // Пароль для тестового режима
-  TEST_MODE_PASSWORD: '1488'
 };
 
 // ============================================================
@@ -597,15 +598,15 @@ export const MOON_TYPES = {
     
     specialMechanic: 'scaling',
     specialName: 'Космическая мощь',
-    specialDescription: '+10 базового урона за уровень и +0,1 за убитую луну, +1% урона, +0.25% осколков, +0.25% крит урона за уровень',
+    specialDescription: '+10 базового урона за уровень и +0,5 за убитую луну, +1% урона, +0.25% осколков, +0.25% крит урона за уровень',
     
     mechanicParams: {
       baseDamagePerLevel: 10,
-      baseDamagePerKill: 0.1,
+      baseDamagePerKill: 0.5,
       damagePerLevel: 0.01,
       shardPerLevel: 0.0025,
       critDamagePerLevel: 0.0025,
-      supernovaTriggered: false
+      critChancePerLevel: 0
     },
     
     milestones: {
@@ -630,8 +631,8 @@ export const MOON_TYPES = {
       10: {
         icon: '👑',
         name: 'Сверхновая',
-        description: 'Визуальный взрыв вселенной! (шуточный финал)',
-        apply: (params) => { params.supernovaAvailable = true; }
+        description: '+0,1% шанса крита за каждый уровень игрока',
+        apply: (params) => { params.critChancePerLevel = 0.001; }
       }
     },
     
@@ -640,7 +641,23 @@ export const MOON_TYPES = {
     gradient: 'radial-gradient(circle at 30% 30%, #e1bee7, #4a148c, #1a237e)',
     shadow: '0 0 80px rgba(156,39,176,0.8), 0 0 160px rgba(63,81,181,0.4), inset -35px -35px 90px rgba(0,0,0,0.5), inset 35px 35px 90px rgba(233,30,99,0.3)',
     accentColor: '#9c27b0'
+  },
+  clone: {
+    id:'clone',name:'Клон',emoji:'🪞',cost:CONSTANTS.CLONE.COST,unlockLevel:CONSTANTS.CLONE.UNLOCK_LEVEL,rarity:'mythic',
+    baseStats:{damageBonus:0,shardBonus:0,critChanceBonus:0,critDamageBonus:0},
+    specialMechanic:'reflection',specialName:'Зеркальная связь',
+    specialDescription:'Копирует активный оригинал, его уровень, бонусы и механику. Занимает один слот.',
+    mechanicParams:{pairScale:1,copies:1},
+    milestones:{
+      3:{icon:'🪞',name:'Чистое зеркало',description:'Оригинал и копия работают со 110% силой',apply:p=>{p.pairScale=1.1;}},
+      5:{icon:'🔗',name:'Обратная связь',description:'Оригинал и копия работают со 125% силой',apply:p=>{p.pairScale=1.25;}},
+      7:{icon:'✨',name:'Зеркальный резонанс',description:'Оригинал и копия работают со 150% силой',apply:p=>{p.pairScale=1.5;}},
+      10:{icon:'👑',name:'Идеальная пара',description:'Две копии разных активных оригиналов; каждый со своей копией работает со 150% силой',apply:p=>{p.copies=2;}}
+    },
+    shopDescription:'Отражает силу выбранных активных лун. Накопления механик общие; численные вклады складываются.',
+    gradient:'radial-gradient(circle at 30% 30%,#ecfeff,#a5b4fc,#312e81)',shadow:'0 0 70px #a5b4fc88,inset -30px -30px 80px #312e81',accentColor:'#c4b5fd'
   }
+
 };
 
 // ============================================================
@@ -677,6 +694,16 @@ export const SYNERGY_BONUSES = {
 // ============================================================
 // ДОСТИЖЕНИЯ (без изменений)
 // ============================================================
+/** Four-moon constellations are built once, never during a click. */
+{
+ const ids=Object.keys(MOON_TYPES).filter(id=>id!=='clone');
+ for(let a=0;a<ids.length;a++)for(let b=a+1;b<ids.length;b++)for(let d=b+1;d<ids.length;d++)for(let e=d+1;e<ids.length;e++){
+  const group=[ids[a],ids[b],ids[d],ids[e]];
+  SYNERGY_BONUSES[group.join('+')]={name:'Созвездие '+group.map(id=>MOON_TYPES[id].emoji).join(''),tier:5,tierName:'Созвездие',tierColor:'#c4b5fd',damageBonus:.25,shardBonus:.2,critChanceBonus:.02,critDamageBonus:.15,icon:'🌌',description:'Четыре разные луны образуют созвездие',auraCombo:[]};
+ }
+ for(const id of ids)SYNERGY_BONUSES['clone+'+id]={name:'Отражение: '+MOON_TYPES[id].name,tier:3,tierName:'Зеркальная',tierColor:'#a5b4fc',damageBonus:.1,shardBonus:.05,critChanceBonus:.01,critDamageBonus:.05,icon:'🪞',description:'Клон рядом с оригинальной луной',auraCombo:[]};
+}
+
 export const ACHIEVEMENTS = {
   clickNovice: { id: 'clickNovice', category: 'clicks', categoryName: 'Клики', icon: '👆', tiers: [{ level: 'bronze', target: 100, name: 'Начинающий кликер', description: 'Сделайте 100 кликов', reward: 25 }, { level: 'silver', target: 1000, name: 'Опытный кликер', description: 'Сделайте 1 000 кликов', reward: 125 }, { level: 'gold', target: 10000, name: 'Мастер кликов', description: 'Сделайте 10 000 кликов', reward: 625 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.clickCount || 0) >= tier.target; } },
   clickMaster: { id: 'clickMaster', category: 'clicks', categoryName: 'Клики', icon: '🖱️', tiers: [{ level: 'bronze', target: 50000, name: 'Кликомания', description: 'Сделайте 50 000 кликов', reward: 2500 }, { level: 'silver', target: 250000, name: 'Кликер-легенда', description: 'Сделайте 250 000 кликов', reward: 12500 }, { level: 'gold', target: 1000000, name: 'Бог кликов', description: 'Сделайте 1 000 000 кликов', reward: 37500 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.clickCount || 0) >= tier.target; } },
@@ -769,20 +796,21 @@ export function getUfoBonuses(state, runtime=state.runtime||{}) {
  const active=(state.activeMoons||[]).slice(0,state.maxSlots||1),c=CONSTANTS.UFO;
  for(const id of active){
   const buff=c.MOON_BUFFS[id];if(!buff)continue;
-  const scale=1+Math.max(0,(state.moonLevels?.[id]||1)-1)*c.MOON_BUFF_SCALE;
+  const scale=(1+Math.max(0,(state.moonLevels?.[id]||1)-1)*c.MOON_BUFF_SCALE)*getMoonPower(state,id);
   result.damage+=(buff.damage||0)*scale;
   if(buff.comboDamage&&(runtime._comboClicks||0)>=getMoonMechanicParams('normal',state.moonLevels?.normal||1).clicksPerStack)result.damage+=buff.comboDamage*scale;
   if(buff.bossDamage&&state.currentLevel%CONSTANTS.BOSS_INTERVAL===0)result.damage+=buff.bossDamage*scale;
   result.damage+=(buff.damagePerLevel||0)*(state.currentLevel||1)*scale;
   result.haste+=(buff.haste||0)*scale;result.critChance+=(buff.critChance||0)*scale;
-  if(buff.rewardMultiplier)result.rewardMultiplier=buff.rewardMultiplier;
+  if(buff.rewardMultiplier)result.rewardMultiplier=Math.pow(buff.rewardMultiplier,getMoonPower(state,id));
   if(buff.critMultiplier)result.critMultiplier=buff.critMultiplier;
   if(buff.chainEvery){result.chainEvery=buff.chainEvery;result.chainMultiplier=1+(buff.chainMultiplier-1)*scale;}
  }
- result.haste=1-(1-result.haste)*(1-prestige.ufoHaste);
+ result.haste=1-(1-Math.min(.9,result.haste))*(1-prestige.ufoHaste);
  return result;
 }
 export function getUfoMoonDescription(id,level=1) {
+ if(id==='clone')return '🛸 Повторяет и усиливает баффы выбранных оригиналов для тарелок';
  const b=CONSTANTS.UFO.MOON_BUFFS[id];if(!b)return '';
  const scale=1+Math.max(0,level-1)*CONSTANTS.UFO.MOON_BUFF_SCALE,percent=n=>Math.round(n*scale*100)+'%';
  if(b.comboDamage)return '🛸 Комбо: +'+percent(b.comboDamage)+' урона тарелки';
@@ -800,6 +828,11 @@ export const PRESTIGE_UPGRADES={
  treasury:{id:'treasury',name:'Звёздная казна',icon:'💎',description:'+10% добычи кристаллов за уровень',baseCost:1,multiplier:2,maxLevel:Infinity,shards:0.10},
  fleet:{id:'fleet',name:'Бессмертная армада',icon:'🛸',description:'+5% урона тарелок за уровень',baseCost:2,multiplier:2,maxLevel:Infinity,ufoDamage:0.05},
  clock:{id:'clock',name:'Вечный хронометр',icon:'⏱️',description:'Каждый уровень сокращает интервал тарелок ещё на 3%',baseCost:2,multiplier:2,maxLevel:Infinity,ufoHaste:0.03},
+ echo:{id:'echo',name:'Эхо выстрела',icon:'🔊',description:'Каждый уровень даёт ещё 5% от оставшегося шанса повторить 50% урона ручного выстрела. Эхо не создаёт эхо.',baseCost:25,multiplier:2,maxLevel:Infinity,chance:0.05,damage:0.5},
+ capital:{id:'capital',name:'Стартовый капитал',icon:'🚀',description:'+500 кристаллов за уровень после вознесения',baseCost:3,multiplier:2,maxLevel:Infinity,shards:500},
+ hunter:{id:'hunter',name:'Охотник на боссов',icon:'👹',description:'+10% урона боссам и +1 секунда боя за уровень',baseCost:5,multiplier:2,maxLevel:Infinity,damage:0.10,time:1},
+ archive:{id:'archive',name:'Лунный архив',icon:'📚',description:'Навсегда +0,1 к базовому урону Космической за убитую луну за каждый уровень улучшения',baseCost:30,multiplier:2,maxLevel:Infinity,perKill:0.1},
+ orbit:{id:'orbit',name:'Вечная орбита',icon:'🌌',description:'Один дополнительный слот активной луны, сохраняется при вознесении',baseCost:1000,multiplier:2,maxLevel:1},
  critical:{id:'critical',name:'Звёздное прицеливание',icon:'🎯',description:'+1% шанса крита за уровень',baseCost:2,multiplier:2,maxLevel:Infinity,crit:0.01}
 };
 export function getPrestigeSummary(state){
@@ -812,6 +845,10 @@ export function getPrestigeSummary(state){
  damageBonus:damageSteps*c.DAMAGE_PER_STEP+(up.reactor||0)*PRESTIGE_UPGRADES.reactor.damage,
  shardBonus:shardSteps*c.SHARDS_PER_STEP+(up.treasury||0)*PRESTIGE_UPGRADES.treasury.shards,
  critBonus:(up.critical||0)*PRESTIGE_UPGRADES.critical.crit,
+ echoChance:1-Math.pow(1-PRESTIGE_UPGRADES.echo.chance,up.echo||0),echoDamage:PRESTIGE_UPGRADES.echo.damage,
+ startShards:Math.min(CONSTANTS.SAFE_NUMBER_CAP,(up.capital||0)*PRESTIGE_UPGRADES.capital.shards),
+ bossDamage:(up.hunter||0)*PRESTIGE_UPGRADES.hunter.damage,bossTime:(up.hunter||0)*PRESTIGE_UPGRADES.hunter.time,
+ archivePerKill:(up.archive||0)*PRESTIGE_UPGRADES.archive.perKill,extraSlots:Math.min(1,up.orbit||0),
  ufoDamage:(up.fleet||0)*PRESTIGE_UPGRADES.fleet.ufoDamage,
  ufoHaste:1-Math.pow(1-PRESTIGE_UPGRADES.clock.ufoHaste,up.clock||0)};
 }
@@ -826,15 +863,43 @@ export function rollCritical(chance,multiplier=2,random=Math.random){
 }
 export function getPrestigeUpgradeCost(id,level){
  const d=PRESTIGE_UPGRADES[id];
- return d?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(d.baseCost*Math.pow(d.multiplier,level))):Infinity;
+ return d&&level<d.maxLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(d.baseCost*Math.pow(d.multiplier,level))):Infinity;
 }
 
 /** Pure live view of the same passive and temporary combat modifiers used by the server. */
+
+/** At most two distinct active originals; reflections never reflect reflections. */
+export function getCloneTargets(state){
+ const active=(state.activeMoons||[]).slice(0,state.maxSlots||1);
+ if(!active.includes('clone'))return [];
+ const count=getMoonMechanicParams('clone',state.moonLevels?.clone||1).copies;
+ return [...new Set(state.cloneTargets||[])].filter(id=>id!=='clone'&&active.includes(id)&&Object.hasOwn(MOON_TYPES,id)).slice(0,count);
+}
+export function getMoonPower(state,id){
+ if(id==='clone')return 0;
+ return getCloneTargets(state).includes(id)?2*getMoonMechanicParams('clone',state.moonLevels?.clone||1).pairScale:1;
+}
+export function getEffectiveMoonParams(state,id){
+ if(!(state.activeMoons||[]).slice(0,state.maxSlots||1).includes(id)||!Object.hasOwn(MOON_TYPES,id))return null;
+ const p=getMoonMechanicParams(id,state.moonLevels?.[id]||1),power=getMoonPower(state,id);
+ if(id==='cosmic')p.baseDamagePerKill+=getPrestigeSummary(state).archivePerKill;
+ for(const key of ['bonusPerStack','damageBonus','timerBonus','pierceDamage','critDamagePerStack','fullStackCritChance','pityBonus','pityMax','superconductorBonus','goldenClickReward','shardToDamageRatio','baseDamagePerLevel','baseDamagePerKill','damagePerLevel','shardPerLevel','critDamagePerLevel','critChancePerLevel','shardBonusOnFullStack'])if(typeof p[key]==='number')p[key]*=power;
+ for(const key of ['normalMultiplier','bossMultiplier'])if(p[key])p[key]=1+(p[key]-1)*power;
+ if(p.doubleCritChance)p.doubleCritChance=1-Math.pow(1-p.doubleCritChance,power);
+ if(id==='electric'&&power!==1){
+  const total=p.chanceX2+p.chanceX5+p.chanceX10,combined=1-Math.pow(1-total,power);
+  for(const key of ['chanceX2','chanceX5','chanceX10'])p[key]=p[key]/total*combined;
+ }
+ return p;
+}
+export function getClickCrystalCost(level){return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(CONSTANTS.CLICK_CRYSTALS.BASE_COST*Math.pow(CONSTANTS.CLICK_CRYSTALS.MULTIPLIER,level)));}
+export function getSlotLimit(state){return CONSTANTS.MAX_SLOTS+getPrestigeSummary(state).extraSlots;}
+
 /** Temporary flat damage is recalculated, never written into purchased click damage. */
 export function getBaseDamage(state){
  const base=state.playerData?.click_damage||CONSTANTS.DEFAULTS.CLICK_DAMAGE;
  if(!(state.activeMoons||[]).slice(0,state.maxSlots||1).includes('cosmic'))return base;
- const params=getMoonMechanicParams('cosmic',state.moonLevels?.cosmic||1);
+ const params=getEffectiveMoonParams(state,'cosmic');
  return Math.min(CONSTANTS.SAFE_NUMBER_CAP,base+params.baseDamagePerLevel*(state.currentLevel||1)+params.baseDamagePerKill*(state.moonKills||0));
 }
 
@@ -843,12 +908,12 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  let damage=p.damageBonus,shards=p.shardBonus,crit=p.critBonus,critDamage=0;
  const add=(id,name,d=0,s=0,c=0,cd=0)=>{damage+=d;shards+=s;crit+=c;critDamage+=cd;sources.push({id,name,damage:d,shards:s,crit:c,critDamage:cd});};
  if(damage||shards||crit)sources.push({id:'prestige',name:'Престиж и вечные улучшения',damage,shards,crit,critDamage:0});
- const params=id=>active.includes(id)?getMoonMechanicParams(id,state.moonLevels?.[id]||1):null;
+ const params=id=>getEffectiveMoonParams(state,id);
  for(const id of active){
-  const moon=MOON_TYPES[id];if(!moon)continue;const scale=1+((state.moonLevels?.[id]||1)-1)*.05,b=moon.baseStats;
+  const moon=MOON_TYPES[id];if(!moon)continue;const scale=(1+((state.moonLevels?.[id]||1)-1)*.05)*getMoonPower(state,id),b=moon.baseStats;
   add(id,moon.name,(b.damageBonus||0)*scale,(b.shardBonus||0)*scale,(b.critChanceBonus||0)*scale,(b.critDamageBonus||0)*scale);
   const m=params(id);
-  if(id==='cosmic')add('cosmic-level','Космическое масштабирование',m.damagePerLevel*state.currentLevel,m.shardPerLevel*state.currentLevel,0,m.critDamagePerLevel*state.currentLevel);
+  if(id==='cosmic')add('cosmic-level','Космическое масштабирование',m.damagePerLevel*state.currentLevel,m.shardPerLevel*state.currentLevel,(m.critChancePerLevel||0)*state.currentLevel,m.critDamagePerLevel*state.currentLevel);
   if(id==='gold'&&m.shardToDamageRatio>0)add('gold-wealth','Золотой дождь',(state.playerData?.shards||0)*m.shardToDamageRatio);
  }
  for(const [key,b] of Object.entries(SYNERGY_BONUSES))if(key.split('+').every(id=>active.includes(id)))add(key,b.name,b.damageBonus||0,b.shardBonus||0,b.critChanceBonus||0,b.critDamageBonus||0);
@@ -866,6 +931,7 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  if(shadowStacks)add('shadow-stacks','Тень · '+shadowStacks+' ст.',0,0,0,shadowStacks*shadow.critDamagePerStack);
  if(shadow?.fullStackCritChance>0&&shadowStacks>=shadow.maxStacks)add('shadow-full','Полные стаки тени',0,0,shadow.fullStackCritChance);
  const boss=(state.currentLevel||1)%CONSTANTS.BOSS_INTERVAL===0,ratio=state.moonHP/state.maxHP;
+ if(boss&&p.bossDamage)add('hunter','Охотник на боссов',p.bossDamage);
  if(boss&&blood&&ratio<blood.hpThreshold)add('blood-boss','Кровавая ярость',blood.damageBonus);
  const base=getBaseDamage(state),baseDamageBonus=base-(state.playerData?.click_damage||CONSTANTS.DEFAULTS.CLICK_DAMAGE);
  const steadyDamage=Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(base*(1+damage))));
@@ -884,11 +950,11 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  let reward=Math.max(1,Math.round(Math.floor(c.BASE+level*c.PER_LEVEL+Math.pow(level,c.EXPONENT)*c.GROWTH)*(boss?c.BOSS_MULTIPLIER:1)*(1+shards)));
  if(gold)reward=Math.round(reward*goldMultiplier);if(fullCombo)reward=Math.round(reward*(1+normal.shardBonusOnFullStack));
  const ufo=getUfoBonuses(state,runtime),interval=Math.max(CONSTANTS.UFO.MIN_INTERVAL,Math.round((CONSTANTS.UFO.BASE_INTERVAL-Math.max(0,(state.ufoLevel||0)-1)*CONSTANTS.UFO.INTERVAL_REDUCTION)*(1-ufo.haste)));
- return {passive,sources,runtime,baseDamage:base,baseDamageBonus,finalDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,finalDamage),damageBonus:damage,shardBonus:rewardMultiplier-1,critChance:chance,critChanceBonus:chance-.05,critDamageBonus:critDamage,critMultiplier,critTier:tier,extraCritChance:extraChance,critDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*tier/2)),nextCritDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*(tier+1)/2)),nextPierce,firstStrike,execute,
+ return {passive,sources,runtime,baseDamage:base,baseDamageBonus,echoChance:p.echoChance,echoDamage:p.echoDamage,crystalsPerClick:state.clickCrystalLevel||0,cloneTargets:getCloneTargets(state),finalDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,finalDamage),damageBonus:damage,shardBonus:rewardMultiplier-1,critChance:chance,critChanceBonus:chance-.05,critDamageBonus:critDamage,critMultiplier,critTier:tier,extraCritChance:extraChance,critDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*tier/2)),nextCritDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(finalDamage*critMultiplier*(tier+1)/2)),nextPierce,firstStrike,execute,
  moonReward:Math.min(CONSTANTS.SAFE_NUMBER_CAP,reward),ufoDamage:state.ufoLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(steadyDamage*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+ufo.damage)))):0,ufoInterval:interval,ufoCount:state.ufoCount||0,goldMultiplier,fullCombo,ufoCritChance:ufo.critChance,ufoCritMultiplier:ufo.critMultiplier,ufoChainEvery:ufo.chainEvery,ufoDamageBonus:ufo.damage,ufoHaste:ufo.haste,ufoRewardMultiplier:ufo.rewardMultiplier,superconductorHits:runtime._superconductorClicksLeft||0};
 }
 
-export const MOON_ORDER=Object.freeze(['normal','blood','ice','shadow','electric','fire','gold','cosmic']);
+export const MOON_ORDER=Object.freeze(['normal','blood','ice','shadow','electric','fire','gold','cosmic','clone']);
 export function getMoonPurchaseAccess(state,id){
  const moon=MOON_TYPES[id],index=MOON_ORDER.indexOf(id),record=Math.max(state.maxLevel||1,state.currentLevel||1);
  const requiredMoon=index>0?MOON_ORDER.slice(0,index).find(previous=>!(state.ownedMoons||[]).includes(previous)):null;

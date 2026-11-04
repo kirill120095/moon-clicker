@@ -4,7 +4,7 @@
 import { appState, state } from '../../core/state.js';
 import { 
   CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS, RARITY_CONFIG,
-  rollCritical, getBaseDamage, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
+  rollCritical, getBaseDamage, getEffectiveMoonParams, getCombatStats, getSlotLimit, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
 } from '../../core/constants.js';
 import { 
   getMaxHPForLevel, isBossLevel, getSlotUpgradeCost 
@@ -152,9 +152,7 @@ export class GameEngine {
   }
 
   _getMechanicParamsForActiveMoon(moonId) {
-    if (!state.activeMoons.includes(moonId)) return null;
-    const moonLevel = state.moonLevels[moonId] || 1;
-    return getMoonMechanicParams(moonId, moonLevel);
+    return getEffectiveMoonParams(state,moonId);
   }
 
   handleClick = (e) => {
@@ -245,66 +243,7 @@ export class GameEngine {
   // РАСЧЁТ ВСЕХ БОНУСОВ (С УЧЁТОМ ПРОКАЧКИ ЛУН)
   // ============================================================
   _calculateAllBonuses() {
-    let totalDamageBonus = 0;
-    let totalShardBonus = 0;
-    let totalCritChanceBonus = 0;
-    let totalCritDamageBonus = 0;
-    
-    const activeIds = (state.activeMoons || []).slice(0, state.maxSlots);
-    
-    activeIds.forEach(id => {
-      const moon = MOON_TYPES[id];
-      if (!moon) return;
-      
-      const moonLevel = state.moonLevels[id] || 1;
-      const levelMultiplier = 1 + (moonLevel - 1) * 0.05;
-      
-      // Базовые статы с учётом уровня
-      totalDamageBonus += (moon.baseStats.damageBonus || 0) * levelMultiplier;
-      totalShardBonus += (moon.baseStats.shardBonus || 0) * levelMultiplier;
-      totalCritChanceBonus += (moon.baseStats.critChanceBonus || 0) * levelMultiplier;
-      totalCritDamageBonus += (moon.baseStats.critDamageBonus || 0) * levelMultiplier;
-      
-      // Космическая луна - бонусы от уровня игрока
-      if (moon.specialMechanic === 'scaling') {
-        const cosmicParams = getMoonMechanicParams(id, moonLevel);
-        const levelBonus = state.currentLevel;
-        totalDamageBonus += cosmicParams.damagePerLevel * levelBonus;
-        totalShardBonus += cosmicParams.shardPerLevel * levelBonus;
-        totalCritDamageBonus += cosmicParams.critDamagePerLevel * levelBonus;
-      }
-      
-      // Золотая луна ур. 10 - +0.1% урона от осколков
-      if (moon.specialMechanic === 'goldRush') {
-        const goldParams = getMoonMechanicParams(id, moonLevel);
-        if (goldParams.shardToDamageRatio > 0) {
-          const shards = state.playerData?.shards || 0;
-          totalDamageBonus += shards * goldParams.shardToDamageRatio;
-        }
-      }
-    });
-    
-    // Синергии
-    if (activeIds.length > 1 && state.maxSlots > 1) {
-      const sortedActive = [...activeIds].sort();
-      
-      for (const [key, bonus] of Object.entries(SYNERGY_BONUSES)) {
-        const moons = key.split('+').sort();
-        if (moons.every(m => sortedActive.includes(m))) {
-          totalDamageBonus += bonus.damageBonus || 0;
-          totalShardBonus += bonus.shardBonus || 0;
-          totalCritChanceBonus += bonus.critChanceBonus || 0;
-          totalCritDamageBonus += bonus.critDamageBonus || 0;
-        }
-      }
-      
-      if (sortedActive.includes('normal') && sortedActive.length > 1) {
-        totalDamageBonus += 0.05;
-        totalShardBonus += 0.05;
-      }
-    }
-    
-    return { totalDamageBonus, totalShardBonus, totalCritChanceBonus, totalCritDamageBonus };
+    return getCombatStats(state).passive;
   }
 
   // ============================================================
@@ -1066,8 +1005,8 @@ export class GameEngine {
   async buySlot() {
     if (this._isPurchaseProcessing) return;
     if (!state.user) return showToast('⚠️ Войдите в аккаунт', 'warning');
-    if (state.maxSlots >= CONSTANTS.MAX_SLOTS) {
-      return showToast(`⚠️ Все ${CONSTANTS.MAX_SLOTS} слота открыты`, 'warning');
+    if (state.maxSlots >= getSlotLimit(state)) {
+      return showToast(`⚠️ Все ${getSlotLimit(state)} слота открыты`, 'warning');
     }
     
     const cost = getSlotUpgradeCost(state.maxSlots);
@@ -1234,14 +1173,7 @@ export class GameEngine {
       if (milestone) {
         showToast(`🎯 ${milestone.icon} ${milestone.name} разблокирован!`, 'success', 3000);
         
-        // Сверхновая (космическая ур. 10)
-        if (moonId === 'cosmic' && newLevel === 10) {
-          setTimeout(() => {
-            if (typeof window.showSupernovaModal === 'function') {
-              window.showSupernovaModal();
-            }
-          }, 500);
-        }
+
       }
       
       updateUI();

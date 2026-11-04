@@ -44,8 +44,8 @@ test('navigation, boss timeout, nonlethal hits and forged payload counters do no
 });
 test('kill bonus retains tenths, applies before multipliers and requires active cosmic moon',()=>{
  const run=setup();run("var s=freshState();s.currentLevel=1;s.activeMoons=['cosmic'];s.ownedMoons=['normal','cosmic'];s.moonLevels.cosmic=1;s.moonKills=3;");
- assert.equal(run('getBaseDamage(s)'),20.3);assert.equal(run('getCombatStats(s,100000).baseDamageBonus'),10.3);
- run('s.moonKills=1000;s.currentLevel=100;');assert.equal(run('getBaseDamage(s)'),1110);
+ assert.equal(run('getBaseDamage(s)'),21.5);assert.equal(run('getCombatStats(s,100000).baseDamageBonus'),11.5);
+ run('s.moonKills=1000;s.currentLevel=100;');assert.equal(run('getBaseDamage(s)'),1510);
  run("s.activeMoons=['normal'];");assert.equal(run('getBaseDamage(s)'),10);assert.equal(run('s.moonKills'),1000);
  run("s.activeMoons=['cosmic'];s=applyAction(s,'ascend',{},100000);");assert.equal(run('s.moonKills'),0);assert.equal(run('getBaseDamage(s)'),10);
 });

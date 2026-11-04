@@ -12,7 +12,7 @@ function refreshPreview(){gameEngine._previewDamage=previewHits.reduce((sum,hit)
 function previewDamage(){
  // Only guaranteed passive damage is predicted. Random crits, heat resets and
  // temporary stacks are applied on confirmation, so same-moon HP cannot rebound.
- const bonus=gameEngine._calculateAllBonuses().totalDamageBonus+(state.prestigeSummary?.damageBonus||0);
+ const bonus=gameEngine._calculateAllBonuses().totalDamageBonus;
  return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(getBaseDamage(state)*(1+bonus))));
 }
 let lastRevision=0,lastBuffKey='',ready=false;
@@ -45,7 +45,7 @@ function apply(result,hits=[]){
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
  appState.setMany({runtime:{...(s.runtime||{})},lastClickAt:s.lastClickAt,lastComboAt:s.lastComboAt,serverClockOffset:offset,prestige:s.prestige,prestigeSummary:s.prestigeSummary,runMaxLevel:s.runMaxLevel,moonSerial:s.moonSerial,ufoCount:s.ufoCount||0,ufoComboRelay:!!s.ufoComboRelay,gameCompleted:s.gameCompleted,maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,finalCritChance:s.finalCritChance,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
  clickCount:s.clickCount,totalSecondsPlayed:s.totalSecondsPlayed,playerData:{...s.playerData,level:s.currentLevel,total_clicks:s.clickCount,total_seconds_played:s.totalSecondsPlayed},
- activeMoon:s.activeMoon,activeMoons:s.activeMoons,ownedMoons:s.ownedMoons,moonLevels:s.moonLevels,
+ cloneTargets:s.cloneTargets||[],clickCrystalLevel:s.clickCrystalLevel||0,activeMoon:s.activeMoon,activeMoons:s.activeMoons,ownedMoons:s.ownedMoons,moonLevels:s.moonLevels,
  maxSlots:s.maxSlots,moonKills:s.moonKills||0,bossKills:s.bossKills,quests:s.quests,achievements:s.achievements,
  levelLocked:s.levelLocked,testMode:false,bossTimerRunning:!!deadline,
  bossTimer:deadline?Math.max(0,(deadline-result.serverNow)/1000):30});
@@ -61,10 +61,7 @@ function apply(result,hits=[]){
   for(const [id,tiers]of Object.entries(s.achievements||{}))for(const [tier,status]of Object.entries(tiers))if(status==='unclaimed'&&!previousAchievements[id]?.[tier])showToast('🏆 '+(ACHIEVEMENTS[id]?.tiers.find(t=>t.level===tier)?.name||id),'success',3500);
  }
  ready=true;
- if(s.gameCompleted){
-  const key='moon_completed_'+state.user?.id;
-  try{if(!localStorage.getItem(key)){localStorage.setItem(key,'1');window.showSupernovaModal?.();}}catch{}
- }
+
  let index=0;
  for(const event of s.effects||[]){
   if(!rect)continue;
@@ -140,6 +137,8 @@ gameEngine.handleClick=e=>{
  if(!clickFlight)flush().catch(()=>{});
 };
 gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks>0);if(active)await send('sync');};
+gameEngine.buyClickCrystal=()=>command('buyClickCrystal',{},true).catch(()=>{});
+gameEngine.setCloneTargets=targets=>command('setCloneTargets',{targets}).catch(()=>{});
 gameEngine.buyClickDamage=()=>command('buyDamage',{},true).catch(()=>{});
 gameEngine.ascend=()=>{const count=state.prestigeSummary?.pendingCoins||0;if(confirm('Вознестись за '+count+' монет престижа? Весь обычный прогресс будет сброшен. Вечные бонусы, монеты и покупки сохранятся.'))command('ascend').catch(()=>{});};
 gameEngine.buyPrestige=id=>command('buyPrestige',{id},true).catch(()=>{});
