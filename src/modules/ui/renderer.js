@@ -381,7 +381,7 @@ function _updateMoonShop() {
   if (!container) return;
   const money=getVisibleShards(state.playerData?.shards);
   const affordability=Object.entries(MOON_TYPES).map(([id,m])=>[getMoonPurchaseAccess(state,id).unlocked,money>=m.cost,money>=getMoonUpgradeCostForLevel(id,state.moonLevels[id]||1)]);
-  const key=JSON.stringify([state.activeMoons,state.ownedMoons,state.moonLevels,state.maxSlots,state.cloneTargets,state.prestige?.upgrades,affordability]);
+  const key=JSON.stringify([state.activeMoons,state.ownedMoons,state.moonLevels,state.maxSlots,state.cloneTargets,state.prestige?.upgrades,affordability,money,state.testMode]);
   if(key===moonShopKey&&container.childElementCount)return;moonShopKey=key;
 
   let html = '';
@@ -483,9 +483,9 @@ function _updateMoonShop() {
       }
       
       if (moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
-        actionsHtml += `<div class="purchase-split"><button title="${formatExact(displayUpgradeCost)} 💎" class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}')">
+        actionsHtml += `<div class="purchase-split"><button title="${formatExact(displayUpgradeCost)} 💎" class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" ${canUpgrade ? '' : 'disabled'} onclick="window.gameEngine.upgradeMoon('${id}')">
           ${canUpgrade ? `⬆️ ${formatPrice(displayUpgradeCost)} 💎` : (moonLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL ? 'MAX' : `Нужно ${formatPrice(displayUpgradeCost)} 💎`)}
-        </button><button class="btn-moon-upgrade btn-buy-max ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}',true)" title="Купить максимум уровней">MAX</button></div>`;
+        </button><button class="btn-moon-upgrade btn-buy-max ${canUpgrade ? 'can-afford' : 'cannot-afford'}" ${canUpgrade ? '' : 'disabled'} onclick="window.gameEngine.upgradeMoon('${id}',true)" title="Купить максимум уровней">MAX</button></div>`;
       } else {
         actionsHtml += `<button class="btn-moon-upgrade cannot-afford" disabled>MAX УРОВЕНЬ</button>`;
       }
@@ -495,7 +495,7 @@ function _updateMoonShop() {
       } else if (isLockedByLevel||isLockedByMoon) {
         actionsHtml += '<button class="btn-moon-locked" disabled>🔒</button>';
       } else {
-        actionsHtml += `<button title="${formatExact(displayCost)} 💎" class="btn-moon-buy ${canBuy ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.buyMoon('${id}')">
+        actionsHtml += `<button title="${formatExact(displayCost)} 💎" class="btn-moon-buy ${canBuy ? 'can-afford' : 'cannot-afford'}" ${canBuy ? '' : 'disabled'} onclick="window.gameEngine.buyMoon('${id}')">
           ${canBuy ? `Купить ${formatPrice(displayCost)} 💎` : `Нужно ${formatPrice(displayCost)} 💎`}
         </button>`;
       }
