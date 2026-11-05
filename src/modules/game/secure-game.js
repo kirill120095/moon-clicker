@@ -35,6 +35,38 @@ function renderFleet(count){
 
 let nextUfoSync=0,lastErrorToast=0,lastErrorMessage='';
 let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
+let autoClickUntil=0,autoClickTicker=null;
+function autoClickDuration(){return 15000+5000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
+function renderAutoClick(){
+ const button=document.getElementById('autoClickBtn'),label=document.getElementById('autoClickLabel'),timer=document.getElementById('autoClickTimer');
+ const left=Math.max(0,autoClickUntil-Date.now()),running=active&&left>0;
+ if(button){button.classList.toggle('active',running);button.setAttribute('aria-label',running?'Обновить время автокликов':'Запустить автоклики');button.title='Автоклики: '+Math.round(autoClickDuration()/1000)+' с. Повторное нажатие сбрасывает таймер.';}
+ if(label)label.textContent=running?'Продлить':'Автоклик';
+ if(timer)timer.textContent=((running?left:autoClickDuration())/1000).toFixed(1)+'с';
+}
+function stopAutoClick(){autoClickUntil=0;if(autoClickTicker!==null){clearInterval(autoClickTicker);autoClickTicker=null;}renderAutoClick();}
+function autoClickStep(){
+ if(!active||Date.now()>=autoClickUntil){stopAutoClick();return;}
+ renderAutoClick();
+ // Do not use DOM clicks or keyboard events: panels, scroll and mouse focus remain untouched.
+ if(purchasing||pendingClicks>CONSTANTS.CLICK_BURST-2)return;
+ const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
+ const x=rect?rect.left+rect.width/2:0,y=rect?rect.top+rect.height/2:0;
+ for(let i=0;i<2;i++){pendingClicks++;previewHits.push({damage:previewDamage(),x,y});}
+ refreshPreview();if(!clickFlight)flush().catch(()=>{});
+}
+gameEngine.activateAutoClick=()=>{
+ if(!active)return;
+ autoClickUntil=Date.now()+autoClickDuration();
+ if(autoClickTicker===null)autoClickTicker=setInterval(autoClickStep,200);
+ renderAutoClick();
+};
+const autoButton=document.getElementById('autoClickBtn');
+autoButton?.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')e.preventDefault();});
+autoButton?.addEventListener('click',()=>gameEngine.activateAutoClick());
+// Suppress space-to-shoot while automatic clicks are running, but preserve typing in forms.
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&autoClickUntil>Date.now()&&!e.target?.closest?.('input,textarea,[contenteditable="true"]')){e.preventDefault();e.stopImmediatePropagation();}},true);
+renderAutoClick();
 function apply(result,hits=[],deferNotices=false){
  const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
  if(result.revision&&result.revision<=lastRevision)return;
@@ -137,7 +169,7 @@ gameEngine.init=()=>{
  })();
  const tracked=pending.finally(()=>{if(initializing===tracked)initializing=null;});initializing=tracked;return tracked;
 };
-gameEngine.destroy=()=>{initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{stopAutoClick();initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
  if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
@@ -174,4 +206,4 @@ gameEngine.claimAchievementReward=(id,tier)=>command('claimAchievement',{id,tier
 gameEngine.resetProgress=()=>command('reset').catch(()=>{});
 gameEngine.toggleTestMode=()=>showToast('Тестовый режим отключён в защищённом сезоне','info');
 
-const moonButton=document.getElementById('moonWrapper');moonButton?.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Enter'){e.preventDefault();const r=moonButton.getBoundingClientRect();gameEngine.handleClick({clientX:r.x+r.width/2,clientY:r.y+r.height/2});}});
+const moonButton=document.getElementById('moonWrapper');moonButton?.addEventListener('keydown',e=>{if(e.code==='Space'&&autoClickUntil>Date.now()){e.preventDefault();return;}if(e.code==='Space'||e.code==='Enter'){e.preventDefault();const r=moonButton.getBoundingClientRect();gameEngine.handleClick({clientX:r.x+r.width/2,clientY:r.y+r.height/2});}});
