@@ -853,13 +853,13 @@ export const PRESTIGE_UPGRADES={
  reactor:{id:'reactor',name:'Вечный реактор',icon:'⚔️',description:'+25% урона за уровень',baseCost:1,maxLevel:Infinity,damage:0.25},
  treasury:{id:'treasury',name:'Звёздная казна',icon:'💎',description:'+25% добычи кристаллов за уровень',baseCost:1,maxLevel:Infinity,shards:0.25},
  fleet:{id:'fleet',name:'Бессмертная армада',icon:'🛸',description:'+15% урона тарелок за уровень',baseCost:2,maxLevel:Infinity,ufoDamage:0.15},
- clock:{id:'clock',name:'Вечный хронометр',icon:'⏱️',description:'Каждый уровень сокращает оставшийся интервал ещё на 6%; предел 95%, минимум 100 мс',baseCost:2,maxLevel:49,ufoHaste:0.06},
+ clock:{id:'clock',name:'Вечный хронометр',icon:'⏱️',description:'Ускоряет стрельбу тарелок: каждый уровень сокращает интервал между выстрелами ещё на 6%; предел 95%, минимум 100 мс',baseCost:2,maxLevel:49,ufoHaste:0.06},
  echo:{id:'echo',name:'Эхо выстрела',icon:'🔊',description:'+10% шанса повторить 100% урона ручного выстрела за уровень. Каждые полные 100% дают гарантированный повтор, остаток — шанс ещё одного.',baseCost:25,maxLevel:Infinity,chance:0.10,damage:1},
  capital:{id:'capital',name:'Стартовый капитал',icon:'🚀',description:'+2000 кристаллов за уровень после вознесения',baseCost:3,maxLevel:Infinity,shards:2000},
  hunter:{id:'hunter',name:'Охотник на боссов',icon:'👹',description:'+25% урона боссам и +2 секунды боя за уровень',baseCost:5,maxLevel:Infinity,damage:0.25,time:2},
  archive:{id:'archive',name:'Лунный архив',icon:'📚',description:'Навсегда +1,5 к базовому урону Космической за убитую луну за каждый уровень улучшения',baseCost:30,maxLevel:Infinity,perKill:1.5},
  orbit:{id:'orbit',name:'Вечная орбита',icon:'🌌',description:'Один дополнительный слот активной луны, сохраняется при вознесении',baseCost:1000,maxLevel:1},
- autoclick:{id:'autoclick',name:'Автопилот кликов',icon:'⚡',description:'+5 секунд автокликов за уровень (начальная длительность 15 с)',baseCost:3,maxLevel:Infinity,seconds:5},
+ autoclick:{id:'autoclick',name:'Автопилот кликов',icon:'⚡',description:'+15 секунд автокликов за уровень',baseCost:1,maxLevel:Infinity,seconds:15},
  critical:{id:'critical',name:'Звёздное прицеливание',icon:'🎯',description:'+3% шанса крита за уровень',baseCost:2,maxLevel:Infinity,crit:0.03}
 };
 export function getPrestigeSummary(state){
@@ -891,6 +891,7 @@ export function rollCritical(chance,multiplier=2,random=Math.random){
  return {isCrit:true,isOvercrit:tier>2,tier,multiplier:multiplier*tier/2};
 }
 export function getPrestigeUpgradeCost(id,level){
+ if(id==='autoclick')return level>=0?1:Infinity;
  const d=PRESTIGE_UPGRADES[id];
  return d&&level<d.maxLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,d.baseCost+Math.max(1,Math.ceil(d.baseCost*CONSTANTS.PRESTIGE.PRICE_STEP_RATIO))*level+Math.floor(level*level/CONSTANTS.PRESTIGE.PRICE_QUADRATIC_DIVISOR)):Infinity;
 }
