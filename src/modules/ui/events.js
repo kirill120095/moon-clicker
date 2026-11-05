@@ -237,7 +237,7 @@ export function initEvents() {
    if(new Set(targets).size!==targets.length){showToast('Выберите разные оригиналы','warning');return;}
    gameEngine.setCloneTargets(targets);
   });
-  document.addEventListener('click',e=>{const button=e.target.closest?.('[data-prestige-upgrade],[data-ascend]');if(!button||button.disabled)return;if(button.hasAttribute('data-ascend'))gameEngine.ascend();else gameEngine.buyPrestige(button.dataset.prestigeUpgrade);});
+  document.addEventListener('click',e=>{const button=e.target.closest?.('[data-prestige-upgrade],[data-ascend]');if(!button||button.disabled)return;if(button.hasAttribute('data-ascend'))gameEngine.ascend();else gameEngine.buyPrestige(button.dataset.prestigeUpgrade,button.dataset.buyMax==='true');});
   console.log('[Events] Инициализация...');
 
   // Кнопки авторизации

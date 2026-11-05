@@ -221,19 +221,19 @@
                 <div id="clickDamageLevel" class="shop-item-level">Ур. 0: 10 → 20</div>
                 <div id="clickDamagePrice" class="shop-item-price">60 💎</div>
               </div>
-              <button id="buyClickDamageBtn" class="btn-buy-shop" onclick="window.gameEngine.buyClickDamage()">Купить</button>
+              <div class="purchase-split"><button id="buyClickDamageBtn" class="btn-buy-shop" onclick="window.gameEngine.buyClickDamage()">Купить</button><button id="buyClickDamageBtnMax" class="btn-buy-shop btn-buy-max" onclick="window.gameEngine.buyClickDamage(true)" title="Купить максимум доступных уровней">MAX</button></div>
             </div>
           </div>
           
-          <div class="shop-section"><h3 class="shop-section-title">💠 Кристалл за клик</h3><p class="ufo-description">Ручные попадания и выстрелы тарелок: +1 кристалл за каждый уровень улучшения, даже без ретранслятора. Сбрасывается при вознесении.</p><div class="shop-item"><div><div id="clickCrystalInfo" class="shop-item-level"></div><div id="clickCrystalPrice" class="shop-item-price"></div></div><button id="buyClickCrystalBtn" class="btn-buy-shop" onclick="window.gameEngine.buyClickCrystal()">Купить</button></div></div>
+          <div class="shop-section"><h3 class="shop-section-title">💠 Кристалл за клик</h3><p class="ufo-description">Ручные попадания и выстрелы тарелок: +1 кристалл за каждый уровень улучшения, даже без ретранслятора. Сбрасывается при вознесении.</p><div class="shop-item"><div><div id="clickCrystalInfo" class="shop-item-level"></div><div id="clickCrystalPrice" class="shop-item-price"></div></div><div class="purchase-split"><button id="buyClickCrystalBtn" class="btn-buy-shop" onclick="window.gameEngine.buyClickCrystal()">Купить</button><button id="buyClickCrystalBtnMax" class="btn-buy-shop btn-buy-max" onclick="window.gameEngine.buyClickCrystal(true)" title="Купить максимум доступных уровней">MAX</button></div></div></div>
           <div class="shop-section">
             <h3 class="shop-section-title">🛸 Орбитальная тарелка</h3>
             <p class="ufo-description">Стреляет с половиной финального урона. Каждый выстрел даёт клик для заданий и набирает комбо, жар и стаки тени активных лун. Работает, пока игра открыта.</p>
             <p id="ufoBuffs" class="ufo-description"></p>
-            <div class="shop-item"><div class="shop-item-info"><div id="ufoInfo" class="shop-item-level"></div><div id="ufoPrice" class="shop-item-price"></div></div><button id="buyUfoBtn" class="btn-buy-shop" onclick="window.gameEngine.buyUfo()">Купить</button></div>
+            <div class="shop-item"><div class="shop-item-info"><div id="ufoInfo" class="shop-item-level"></div><div id="ufoPrice" class="shop-item-price"></div></div><div class="purchase-split"><button id="buyUfoBtn" class="btn-buy-shop" onclick="window.gameEngine.buyUfo()">Купить</button><button id="buyUfoBtnMax" class="btn-buy-shop btn-buy-max" onclick="window.gameEngine.buyUfo(true)" title="Купить максимум доступных уровней">MAX</button></div></div>
           </div>
           <div class="shop-section"><h3 class="shop-section-title">📡 Комбо-ретранслятор</h3><p class="ufo-description">Открывается после покупки Электрической луны. Выстрелы тарелок дают 2 шага комбо, жара и стаков тени вместо 1. Для заданий каждый выстрел считается одним кликом. Сбрасывается при вознесении.</p><div class="shop-item"><div id="ufoComboRelayPrice" class="shop-item-price"></div><button id="buyUfoComboRelayBtn" class="btn-buy-shop" onclick="window.gameEngine.buyUfoComboRelay()">Купить</button></div></div>
-          <div class="shop-section"><h3 class="shop-section-title">🛸 Флот тарелок</h3><p id="ufoFleetInfo" class="ufo-description"></p><div class="shop-item"><div id="ufoUnitPrice" class="shop-item-price"></div><button id="buyUfoUnitBtn" class="btn-buy-shop" onclick="window.gameEngine.buyUfoUnit()">Ещё тарелка</button></div></div>
+          <div class="shop-section"><h3 class="shop-section-title">🛸 Флот тарелок</h3><p id="ufoFleetInfo" class="ufo-description"></p><div class="shop-item"><div id="ufoUnitPrice" class="shop-item-price"></div><div class="purchase-split"><button id="buyUfoUnitBtn" class="btn-buy-shop" onclick="window.gameEngine.buyUfoUnit()">Ещё тарелка</button><button id="buyUfoUnitBtnMax" class="btn-buy-shop btn-buy-max" onclick="window.gameEngine.buyUfoUnit(true)" title="Купить максимум доступных уровней">MAX</button></div></div></div>
           <div class="shop-section">
             <h3 class="shop-section-title">🎰 Слоты лун</h3>
             <div class="shop-item">
@@ -241,7 +241,7 @@
                 <div id="slotLevel" class="shop-item-level">Слотов: 1/3</div>
                 <div id="slotPrice" class="shop-item-price">3000 💎</div>
               </div>
-              <button id="buySlotBtn" class="btn-buy-shop" onclick="window.gameEngine.buySlot()">Купить</button>
+              <div class="purchase-split"><button id="buySlotBtn" class="btn-buy-shop" onclick="window.gameEngine.buySlot()">Купить</button><button id="buySlotBtnMax" class="btn-buy-shop btn-buy-max" onclick="window.gameEngine.buySlot(true)" title="Купить максимум доступных уровней">MAX</button></div>
             </div>
           </div>
           

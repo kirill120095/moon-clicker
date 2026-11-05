@@ -2411,3 +2411,11 @@
     font-size: 0.95rem;
   }
 }
+
+/* Split buy-one / buy-max buttons. */
+.purchase-split{display:inline-flex;align-items:stretch;max-width:100%;gap:0;flex-shrink:0}
+.purchase-split>.btn-buy-shop,.purchase-split>.btn-moon-upgrade{min-width:0;margin:0;border-radius:0}
+.purchase-split>:first-child{border-radius:8px 0 0 8px;flex:1 1 auto}
+.purchase-split>:last-child{border-radius:0 8px 8px 0}
+.purchase-split>.btn-buy-max{flex:0 0 auto;padding-inline:10px;border-left:1px solid rgba(255,255,255,.3);font-size:.78em;font-weight:800}
+.purchase-split>button:disabled{cursor:not-allowed;opacity:.5}

@@ -283,7 +283,7 @@ export function updatePrestigeUI(){
  if(!container||!document.getElementById('prestigeTabContent')?.classList.contains('active'))return;
  const shopKey=JSON.stringify([p,state.prestige?.upgrades]);if(shopKey===prestigeShopKey&&container.childElementCount)return;prestigeShopKey=shopKey;
  container.innerHTML='<h3>🌟 Магазин вечных улучшений</h3><p class="prestige-summary">Монеты престижа: <b>'+p.coins+'</b></p><p class="ufo-description">В этом прохождении: '+p.runRecord+' уровней. При вознесении получите '+p.pendingCoins+' монет. Обычный прогресс сбросится; вечные бонусы и покупки сохранятся. В новом прохождении рубежи снова доступны.</p><button class="btn-action ascend-button" data-ascend '+(p.canAscend?'':'disabled')+'>'+(p.canAscend?'Вознестись · +'+p.pendingCoins+' 🌟':'Вознесение с '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня прохождения')+'</button>'+
- Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel;return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+Math.min(level,d.maxLevel)+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':formatPrice(cost)+' 🌟')+'</button></div>';}).join('');
+ Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel;return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+Math.min(level,d.maxLevel)+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><div class="purchase-split"><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':formatPrice(cost)+' 🌟')+'</button>'+(d.maxLevel===1?'':'<button class="btn-buy-shop btn-buy-max" data-prestige-upgrade="'+id+'" data-buy-max="true" title="Купить максимум уровней" '+(maxed||p.coins<cost?'disabled':'')+'>MAX</button>')+'</div></div>';}).join('');
 }
 
 function _updateUfoShop() {
@@ -295,6 +295,7 @@ function _updateUfoShop() {
   if(fleet)fleet.textContent='Тарелки: '+count+' / '+limit+' · каждую новую луну можно сопровождать ещё одной тарелкой';
   if(unitPrice)unitPrice.textContent=count>=limit?'Купите ещё одну луну':!count?'Сначала купите первую тарелку':formatPrice(unitCost)+' 💎';
   if(unitButton)unitButton.disabled=!count||count>=limit||(getVisibleShards(state.playerData?.shards))<unitCost;
+   const unitMax=document.getElementById('buyUfoUnitBtnMax');if(unitMax)unitMax.disabled=unitButton?.disabled??true;
   const relay=document.getElementById('buyUfoComboRelayBtn'),relayPrice=document.getElementById('ufoComboRelayPrice');
   const relayUnlocked=(state.ownedMoons||[]).includes('electric')&&level>0;
   if(relay){relay.disabled=!!state.ufoComboRelay||!relayUnlocked||(getVisibleShards(state.playerData?.shards))<c.COMBO_RELAY_COST;relay.textContent=state.ufoComboRelay?'Куплено':'Купить';}
@@ -305,6 +306,7 @@ function _updateUfoShop() {
   price.textContent=level>=c.MAX_LEVEL?'Улучшена полностью':state.currentLevel<c.UNLOCK_LEVEL?'Откроется с '+c.UNLOCK_LEVEL+' уровня':formatPrice(cost)+' 💎';
   price.title=formatExact(cost)+' 💎';if(unitPrice)unitPrice.title=formatExact(unitCost)+' 💎';if(relayPrice)relayPrice.title=formatExact(c.COMBO_RELAY_COST)+' 💎';
   button.disabled=level>=c.MAX_LEVEL||state.currentLevel<c.UNLOCK_LEVEL||(getVisibleShards(state.playerData?.shards))<cost;
+   const ufoMax=document.getElementById('buyUfoBtnMax');if(ufoMax)ufoMax.disabled=button.disabled;
   button.textContent=level>=c.MAX_LEVEL?'MAX':level?'Улучшить':'Купить';
 }
 
@@ -341,6 +343,7 @@ function _updateClickDamageShop() {
   buyBtn.disabled = !isUnlocked || !hasEnoughShards || currentLevelUpgrade >= CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL;
   buyBtn.textContent = currentLevelUpgrade >= CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL ? 'MAX' : 'Купить';
   buyBtn.classList.toggle('locked', !isUnlocked);
+   const damageMax=document.getElementById('buyClickDamageBtnMax');if(damageMax)damageMax.disabled=buyBtn.disabled;
 }
 
 function _updateSlotShop() {
@@ -366,6 +369,7 @@ function _updateSlotShop() {
   const hasEnoughShards = state.testMode || (getVisibleShards(state.playerData?.shards)) >= cost;
   buyBtn.disabled = !canUpgrade || !hasEnoughShards;
   buyBtn.textContent = canUpgrade ? 'Купить' : 'MAX';
+   const slotMax=document.getElementById('buySlotBtnMax');if(slotMax)slotMax.disabled=buyBtn.disabled;
 }
 
 // ============================================================
@@ -479,9 +483,9 @@ function _updateMoonShop() {
       }
       
       if (moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
-        actionsHtml += `<button title="${formatExact(displayUpgradeCost)} 💎" class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}')">
+        actionsHtml += `<div class="purchase-split"><button title="${formatExact(displayUpgradeCost)} 💎" class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}')">
           ${canUpgrade ? `⬆️ ${formatPrice(displayUpgradeCost)} 💎` : (moonLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL ? 'MAX' : `Нужно ${formatPrice(displayUpgradeCost)} 💎`)}
-        </button>`;
+        </button><button class="btn-moon-upgrade btn-buy-max ${canUpgrade ? 'can-afford' : 'cannot-afford'}" onclick="window.gameEngine.upgradeMoon('${id}',true)" title="Купить максимум уровней">MAX</button></div>`;
       } else {
         actionsHtml += `<button class="btn-moon-upgrade cannot-afford" disabled>MAX УРОВЕНЬ</button>`;
       }
@@ -1323,6 +1327,7 @@ function _updateClickCrystalShop(){
  if(price){price.textContent=formatPrice(cost)+' 💎';price.title=formatExact(cost)+' 💎';}
  if(info)info.textContent='Ур. '+level+' · '+formatMoney(level)+' → '+formatMoney(level+1)+' 💎 за клик';
  if(button)button.disabled=(getVisibleShards(state.playerData?.shards))<cost;
+  const crystalMax=document.getElementById('buyClickCrystalBtnMax');if(crystalMax)crystalMax.disabled=button?.disabled??true;
 }
 let cloneControlKey='';
 function _updateCloneControls(){

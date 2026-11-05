@@ -388,6 +388,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  state.bossDeadline=state.currentLevel%CONSTANTS.BOSS_INTERVAL===0?now+state.bossDuration*1000:null;}
  if(state.bossDeadline&&now>=state.bossDeadline)startMoon();
  const spend=cost=>{if(!Number.isSafeInteger(cost)||cost<0||state.playerData.shards<cost)throw Error('Недостаточно осколков');state.playerData.shards-=cost;};
+  const buyLevels=(max,canBuy,buy)=>{let count=0;do{if(!canBuy())break;buy();count++;}while(max&&count<1000000);if(!count)throw Error('Недостаточно средств или достигнут максимум');return count;};
 
  const finalDamage=()=>{
   const bonuses=rules._calculateAllBonuses();let multiplier=1+bonuses.totalDamageBonus+(state.currentLevel%CONSTANTS.BOSS_INTERVAL===0?getPrestigeSummary(state).bossDamage:0);
@@ -489,7 +490,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   state.wheelEconomy={pressure:Math.max(0,Math.min(config.MAX_PRESSURE,(Number(economy.pressure)||0)+(delta>0?Math.max(1,Number(multiplier)-1):-1))),spins:Math.min(cap,(economy.spins||0)+1),wagered:Math.min(cap,(economy.wagered||0)+bet),payouts:Math.min(cap,(economy.payouts||0)+payout),houseNet:Math.max(-cap,Math.min(cap,(economy.houseNet||0)-delta))};
 
  } else if(action==='buyClickCrystal'){
-  spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;
+  buyLevels(payload.max===true,()=>state.playerData.shards>=getClickCrystalCost(state.clickCrystalLevel),()=>{spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;});
  } else if(action==='setCloneTargets'){
   if(!state.activeMoons.includes('clone'))throw Error('Активируйте Клона');
   const targets=payload.targets,count=getMoonMechanicParams('clone',state.moonLevels.clone||1).copies;
@@ -498,20 +499,16 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  } else if(action==='buyDamage'){
   const level=state.playerData.click_damage_level;
   if(level>=CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL)throw Error('Максимальный уровень');
-  spend(getClickUpgradeCost(level));
-  state.playerData.click_damage_level++;state.playerData.click_damage=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.playerData.click_damage+CONSTANTS.CLICK_DAMAGE_UPGRADE_VALUE);
+  buyLevels(payload.max===true,()=>state.playerData.click_damage_level<CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL&&state.playerData.shards>=getClickUpgradeCost(state.playerData.click_damage_level),()=>{spend(getClickUpgradeCost(state.playerData.click_damage_level));state.playerData.click_damage_level++;state.playerData.click_damage=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.playerData.click_damage+CONSTANTS.CLICK_DAMAGE_UPGRADE_VALUE);});
  } else if(action==='buyPrestige'){
   if(!Object.hasOwn(PRESTIGE_UPGRADES,payload.id))throw Error('Неизвестное улучшение престижа');
   const def=PRESTIGE_UPGRADES[payload.id],p=state.prestige,level=p.upgrades?.[payload.id]||0;
   if(level>=def.maxLevel)throw Error('Улучшение уже куплено');
-  const cost=getPrestigeUpgradeCost(payload.id,level);
-  if((p.coins||0)<cost)throw Error('Недостаточно монет престижа');
-  p.coins-=cost;p.upgrades=p.upgrades||{};p.upgrades[payload.id]=level+1;if(payload.id==='orbit')state.maxSlots=Math.min(getSlotLimit(state),state.maxSlots+1);if(payload.id==='hunter'&&state.bossDeadline){state.bossDeadline+=def.time*1000;state.bossDuration=(state.bossDuration||CONSTANTS.BOSS_TIMER)+def.time;}
+  buyLevels(payload.max===true&&def.maxLevel!==1,()=>{const l=p.upgrades?.[payload.id]||0;return l<def.maxLevel&&(p.coins||0)>=getPrestigeUpgradeCost(payload.id,l);},()=>{const l=p.upgrades?.[payload.id]||0;p.coins-=getPrestigeUpgradeCost(payload.id,l);p.upgrades=p.upgrades||{};p.upgrades[payload.id]=l+1;if(payload.id==='orbit')state.maxSlots=Math.min(getSlotLimit(state),state.maxSlots+1);if(payload.id==='hunter'&&state.bossDeadline){state.bossDeadline+=def.time*1000;state.bossDuration=(state.bossDuration||CONSTANTS.BOSS_TIMER)+def.time;}});
  } else if(action==='buyUfo'){
   if(state.currentLevel<CONSTANTS.UFO.UNLOCK_LEVEL)throw Error('Тарелка доступна с '+CONSTANTS.UFO.UNLOCK_LEVEL+' уровня');
   if(state.ufoLevel>=CONSTANTS.UFO.MAX_LEVEL)throw Error('Тарелка улучшена полностью');
-  spend(Math.floor(CONSTANTS.UFO.BASE_COST*Math.pow(CONSTANTS.UFO.COST_MULTIPLIER,state.ufoLevel)));
-  state.ufoLevel++;state.ufoCount=Math.max(1,state.ufoCount);state.ufoLastShotAt=now;
+  buyLevels(payload.max===true,()=>state.ufoLevel<CONSTANTS.UFO.MAX_LEVEL&&state.playerData.shards>=Math.floor(CONSTANTS.UFO.BASE_COST*Math.pow(CONSTANTS.UFO.COST_MULTIPLIER,state.ufoLevel)),()=>{spend(Math.floor(CONSTANTS.UFO.BASE_COST*Math.pow(CONSTANTS.UFO.COST_MULTIPLIER,state.ufoLevel)));state.ufoLevel++;state.ufoCount=Math.max(1,state.ufoCount);state.ufoLastShotAt=now;});
  } else if(action==='buyUfoComboRelay'){
   if(state.ufoComboRelay)throw Error('Комбо-ретранслятор уже куплен');
   if(!state.ownedMoons.includes('electric'))throw Error('Сначала купите Электрическую луну');
@@ -520,10 +517,9 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  } else if(action==='buyUfoUnit'){
   if(!state.ufoLevel)throw Error('Сначала купите первую тарелку');
   if(state.ufoCount>=state.ownedMoons.length)throw Error('Купите ещё одну луну, чтобы открыть место для тарелки');
-  spend(Math.floor(CONSTANTS.UFO.UNIT_BASE_COST*Math.pow(CONSTANTS.UFO.UNIT_COST_MULTIPLIER,state.ufoCount-1)));
-  state.ufoCount++;state.ufoLastShotAt=now;
+  buyLevels(payload.max===true,()=>state.ufoCount<state.ownedMoons.length&&state.playerData.shards>=Math.floor(CONSTANTS.UFO.UNIT_BASE_COST*Math.pow(CONSTANTS.UFO.UNIT_COST_MULTIPLIER,state.ufoCount-1)),()=>{spend(Math.floor(CONSTANTS.UFO.UNIT_BASE_COST*Math.pow(CONSTANTS.UFO.UNIT_COST_MULTIPLIER,state.ufoCount-1)));state.ufoCount++;state.ufoLastShotAt=now;});
  } else if(action==='buySlot'){
-  if(state.maxSlots>=getSlotLimit(state))throw Error('Все слоты открыты');spend(getSlotUpgradeCost(state.maxSlots-getPrestigeSummary(state).extraSlots));state.maxSlots++;
+  if(state.maxSlots>=getSlotLimit(state))throw Error('Все слоты открыты');buyLevels(payload.max===true,()=>state.maxSlots<getSlotLimit(state)&&state.playerData.shards>=getSlotUpgradeCost(state.maxSlots-getPrestigeSummary(state).extraSlots),()=>{spend(getSlotUpgradeCost(state.maxSlots-getPrestigeSummary(state).extraSlots));state.maxSlots++;});
  } else if(action==='buyMoon'||action==='upgradeMoon'){
   const moon=MOON_TYPES[payload.id];if(!moon)throw Error('Неизвестная луна');
   if(action==='buyMoon'){
@@ -535,7 +531,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   }else{
    const level=state.moonLevels[moon.id];
    if(!state.ownedMoons.includes(moon.id)||!level||level>=CONSTANTS.LIMITS.MAX_MOON_LEVEL)throw Error('Улучшение недоступно');
-   spend(getMoonUpgradeCostForLevel(moon.id,level));state.moonLevels[moon.id]++;
+   buyLevels(payload.max===true,()=>state.moonLevels[moon.id]<CONSTANTS.LIMITS.MAX_MOON_LEVEL&&state.playerData.shards>=getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id]),()=>{spend(getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id]));state.moonLevels[moon.id]++;});
   }
  } else if(action==='toggleMoon'){
   if(!state.ownedMoons.includes(payload.id))throw Error('Луна не куплена');
