@@ -45,7 +45,7 @@ function renderAutoClick(){
  if(label)label.textContent=running?'Продлить':'Автоклик';
  if(timer)timer.textContent=((running?left:autoClickDuration())/1000).toFixed(1)+'с';
 }
-function stopAutoClick(){autoClickUntil=0;if(autoClickTicker!==null){clearInterval(autoClickTicker);autoClickTicker=null;}renderAutoClick();if(active&&pendingClicks&&!clickFlight)flush().catch(()=>{});}
+function stopAutoClick(flushPending=true){autoClickUntil=0;if(autoClickTicker!==null){clearInterval(autoClickTicker);autoClickTicker=null;}renderAutoClick();if(flushPending&&active&&pendingClicks&&!clickFlight)flush().catch(()=>{});}
 function autoClickStep(){
  if(!active||Date.now()>=autoClickUntil){stopAutoClick();return;}
  renderAutoClick();
@@ -175,7 +175,7 @@ gameEngine.init=()=>{
  })();
  const tracked=pending.finally(()=>{if(initializing===tracked)initializing=null;});initializing=tracked;return tracked;
 };
-gameEngine.destroy=()=>{stopAutoClick();initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{stopAutoClick(false);initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
  if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
