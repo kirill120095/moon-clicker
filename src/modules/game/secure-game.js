@@ -202,7 +202,7 @@ gameEngine.handleClick=(e,automatic=false)=>{
  pendingClicks++;previewHits.push({damage:previewDamage(),x:e.clientX,y:e.clientY,automatic});
  if(!automatic||performance.now()-autoClickLastPreview>160){autoClickLastPreview=performance.now();refreshPreview();}
  if(!automatic||!document.hidden)audio.click();
- animations.playClickVisualFeedback(e,state.finalDamage||previewDamage(),false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,false);
+ animations.playClickVisualFeedback(e,state.finalDamage||previewDamage(),false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,automatic);
  if(automatic){if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),AUTO_CLICK_BATCH_MS);}
  else if(!clickFlight)flush().catch(()=>{});
 };
