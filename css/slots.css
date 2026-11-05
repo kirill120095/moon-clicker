@@ -1,13 +1,20 @@
-/* TECHNICAL WIREFRAME ONLY — final Moon Temple illustrated cabinet is pending. */
-.mt-slots{margin-bottom:24px;padding:12px;border:1px dashed #8793a9;border-radius:8px;background:#141b29;color:#e5eaf2;font:12px/1.5 system-ui,sans-serif;min-width:0}
-.mt-slots *{box-sizing:border-box}.mt-slots h2{font-size:19px;margin:4px 0 10px}.mt-stage{font-size:10px;letter-spacing:.08em;color:#d1d8e3}.mt-warning,.mt-migration{padding:9px;border:1px solid #8d7d52;background:#302a1e;color:#f1dfac;font-size:11px;margin:8px 0}.mt-slots [hidden]{display:none!important}
-.mt-arena{position:relative;margin-top:14px}.mt-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;min-width:0}.mt-column{display:grid;grid-template-rows:repeat(3,1fr);gap:3px;min-width:0}.mt-cell{display:grid;place-items:center;min-width:0;height:64px;border:1px solid #79849a;background:#202a3b;font:700 16px monospace;color:#e1e6ee}.mt-cell.mt-hit{outline:2px solid #d4dce9;outline-offset:-3px}
-.mt-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.mt-lines polyline{fill:none;stroke:#f4e3aa;stroke-width:3;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}.mt-line-info{min-height:36px;font-size:11px;margin:6px 0}
-.mt-ledger{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0}.mt-ledger>div{padding:6px;border:1px solid #48536a;min-width:0}.mt-ledger dt{font-size:10px;color:#b8c2d5}.mt-ledger dd{font:700 16px monospace;margin:0;overflow-wrap:anywhere}.mt-bonus{font-size:11px;padding:8px 0;color:#d5dfef;min-height:34px}
-.mt-controls{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:6px}.mt-slots button,.mt-slots select{font:inherit;color:#e8edf5;border:1px solid #8c98ab;border-radius:5px;background:#253145;min-height:44px;cursor:pointer}.mt-spin{min-height:62px!important;font-size:20px!important;font-weight:800!important}.mt-reset{width:100%;margin-top:8px;font-size:11px!important}.mt-slots button:disabled{cursor:default;opacity:.5}.mt-slots :is(button,select,summary):focus-visible{outline:2px solid #e9d99c;outline-offset:3px}
-.mt-result{min-height:90px;padding:12px 0}.mt-result strong{font-size:14px}.mt-result p{font-size:11px;color:#c1ccdf;line-height:1.6;margin-top:5px}.mt-slots[data-outcome="win"] .mt-result strong{color:#c7edcf}.mt-slots[data-outcome="partial-return"] .mt-result strong,.mt-slots[data-outcome="return"] .mt-result strong,.mt-slots[data-outcome="free-result"] .mt-result strong{color:#e1e6ee}
-.mt-fixture{display:block;padding:8px;border:1px dashed #bfac6c;font-size:10px}.mt-fixture select{width:100%;display:block;margin-top:5px;font-size:10px}.mt-rules{margin-top:12px;border-top:1px solid #5a657a}.mt-rules summary{min-height:44px;align-content:center;cursor:pointer;font-weight:700}.mt-rules p{font-size:11px;margin:8px 0}.mt-rules table{width:100%;border-collapse:collapse;font-size:10px}.mt-rules th,.mt-rules td{padding:4px 2px;border-bottom:1px solid #48536a;text-align:left}.mt-rules ol{padding-left:24px;font:10px/1.8 monospace}.mt-storage{font-size:10px;color:#aebacf;margin-top:12px}
-@keyframes mt-wire-pulse{50%{opacity:.55}}.mt-column.mt-rolling{animation:mt-wire-pulse .8s linear infinite}.reduce-effects .mt-rolling,.low-power .mt-rolling,.mt-slots[data-motion="reduced"] .mt-rolling{animation:none}
-@media(prefers-reduced-motion:reduce){.mt-column.mt-rolling{animation:none}}
-@media(max-width:380px){.mt-slots{padding:9px}.mt-cell{height:52px;font-size:14px}.mt-controls{grid-template-columns:40px minmax(0,1fr) 40px}}
-.mt-inventory{margin-top:12px;padding:10px;border:1px solid #566278}.mt-inventory h3{font-size:13px;margin:5px 0}.mt-inventory p,.mt-inventory li{font-size:11px;overflow-wrap:anywhere}.mt-inventory ul{padding-left:18px;margin:6px 0}
+/* Integration controls for the provided SVG cabinet. The original art CSS is
+   imported once from lunar-temple-runtime.mjs; these rules remain slot-scoped. */
+.lt-slot{margin-block-end:24px}
+.lt-slot .lt-extension{padding:12px 6px 0;color:#c5ced6;font:12px/1.5 Inter,system-ui,sans-serif}
+.lt-slot .lt-save-status{margin:0 0 10px;color:#d4c59f;font-size:11px}
+.lt-slot .lt-extra-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lt-slot .lt-extra-controls button,.lt-slot .lt-reset-dialog button{min-height:44px;min-width:44px;border:1px solid #a38a5a;border-radius:6px;background:#142536;color:#f0dfb9;padding:8px 12px;font:600 12px/1.4 inherit;cursor:pointer}
+.lt-slot .lt-extra-controls button:disabled{opacity:.45;cursor:default}
+.lt-slot .lt-extra-controls [data-mt-reset]{margin-left:auto}
+.lt-slot .lt-bag,.lt-slot .lt-rules{margin-top:12px;border-top:1px solid #81704e;padding-top:4px}
+.lt-slot .lt-bag summary,.lt-slot .lt-rules summary{min-height:44px;align-content:center;color:#ead5ac;cursor:pointer;font-weight:600}
+.lt-slot .lt-bag ul{padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:8px 0}
+.lt-slot .lt-bag li{padding:10px;border:1px solid #8a76554d;border-radius:6px;background:#112033;overflow-wrap:anywhere}
+.lt-slot .lt-rules p{font-size:11px;line-height:1.7;margin:8px 0}
+.lt-slot .lt-fixture{display:block;margin-top:12px;border:1px dashed #8d9ba9;padding:8px;font-size:11px}
+.lt-slot .lt-fixture select{width:100%;min-height:44px;margin-top:5px;background:#17283a;color:#e6d7b5;border:1px solid #837153}
+.lt-slot .lt-reset-dialog{width:min(440px,calc(100vw - 28px));padding:22px;border:1px solid #c6a46d;border-radius:10px;background:#102031;color:#eadcc0}
+.lt-slot .lt-reset-dialog::backdrop{background:#020812c9}.lt-slot .lt-reset-dialog h3{margin:0 0 12px}.lt-slot .lt-reset-dialog p{margin-bottom:18px}.lt-slot .lt-reset-dialog button{margin-right:8px}
+.lt-slot .lt-extension :is(button,summary,select):focus-visible{outline:2px solid #c8eff5;outline-offset:3px}
+@media(max-width:500px){.lt-slot .lt-extra-controls [data-mt-reset]{margin-left:0;width:100%}.lt-slot .lt-extension{font-size:11px}}

@@ -1,4 +1,6 @@
-# Следующий законченный показ: локальное test-items demo
+# Локальное test-items demo
+
+> Актуализировано: candidate Кометы и полный SVG уже интегрированы. Canonical тип **demo_lunar_relic**, имя **Реликвия храма · ДЕМО**, одна лучшая линия→level1–3,qty=stake/10. Новый отдельныйключ **moonclicker.lunarTempleItemsDemo.v1**,save1,старыеkeysнечитаются. Прежние сведения ниже об ожиданииmapping/SVG и ключеtempleItemsTest относятся к предыдущему инженерному этапу. Текущая реализация/проверки/readiness: [lunar-temple-readiness.md](lunar-temple-readiness.md). В реальныйregistrydemoтипнепереносится.
 
 ## Текущий bounded результат
 

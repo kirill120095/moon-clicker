@@ -37,17 +37,18 @@ export const db={
 };`;
 function walk(dir) {
   return fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(e =>
-    e.isDirectory() ? walk(dir + '/' + e.name) : e.name.endsWith('.js') ? [dir + '/' + e.name] : []);
+    e.isDirectory() ? walk(dir + '/' + e.name) : /\.m?js$/.test(e.name) ? [dir + '/' + e.name] : []);
 }
 const fixtureTools = process.argv.includes('--test-tools') || process.argv.includes('--fixtures');
 const fixtureMode = process.argv.includes('--fixtures');
 const imports = {};
 for (const file of [...walk('src'), ...(fixtureTools ? ['tools/slots/temple-fixtures.js'] : [])]) {
-  let source = fixtureMode && file === 'src/modules/game/temple-config.js' ? "export { TEMPLE_FIXTURE_CONFIG as TEMPLE_CONFIG, TEMPLE_FIXTURE_STOPS as TEMPLE_FIXTURES } from '../../../tools/slots/temple-fixtures.js';export const TEMPLE_TEST_MODE=true;export const TEMPLE_TEST_ITEM_MAPPING=null;"
+  let source = fixtureMode && file === 'src/modules/game/temple-config.js' ? "export { TEMPLE_FIXTURE_CONFIG as TEMPLE_CONFIG, TEMPLE_FIXTURE_STOPS as TEMPLE_FIXTURES } from '../../../tools/slots/temple-fixtures.js';export const TEMPLE_TEST_MODE=true;export const TEMPLE_TEST_ITEM_MAPPING=null;export const TEMPLE_DEFAULT_DEMO=true;"
     : file === 'src/modules/network/supabase.js' ? mockNetwork
     : file === 'src/modules/ui/radio.js' ? 'export const radio={connect:async()=>{},disconnect(){}};' : read(file);
+  if(file==='src/modules/game/temple-config.js'&&!fixtureMode) source=source.replace('export const TEMPLE_DEFAULT_DEMO = false','export const TEMPLE_DEFAULT_DEMO = true');
   // Resolve actual module specifiers (also safeImport's literal path arguments).
-  source = source.replace(/(['"])(\.\.?\/[^'"\n]+\.js)(\?[^'"\n]*)?\1/g,
+  source = source.replace(/(['"])(\.\.?\/[^'"\n]+\.m?js)(\?[^'"\n]*)?\1/g,
     (_, quote, relative) => quote + 'moon-preview/' + path.posix.normalize(path.posix.join(path.posix.dirname(file), relative)) + quote);
   imports['moon-preview/' + file] = 'data:text/javascript;base64,' + Buffer.from(source).toString('base64');
 }
@@ -56,14 +57,14 @@ let html = read('index.html')
   .replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g, '')
   .replace(/<link[^>]*href="https:[^>]*>/g, '')
   .replace(/<link rel="stylesheet" href="([^?]+)(?:\?[^"]*)?">/g, (_, file) => '<style>\n' + read(file) + '\n</style>')
-  .replace(/<title>.*?<\/title>/, '<title>Moon Clicker · Лунный храм 5×3 · WIREFRAME</title>')
+  .replace(/<title>.*?<\/title>/, '<title>Moon Clicker · Лунный храм · тестовый SVG-автомат</title>')
   .replace('</head>', `<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'unsafe-inline' data:; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'">
 <style>.slots-preview-label{position:fixed;top:0;left:0;width:100%;height:40px;z-index:9999;padding:4px 12px;display:grid;place-items:center;text-align:center;background:#19334b;color:#d5f4ff;font:10px/1.5 sans-serif;pointer-events:none}.panel{top:40px!important;height:calc(100dvh - 40px)!important}.mission-header{top:55px!important}.audio-dock{top:55px!important}</style></head>`)
-  .replace('</body>', `<div class="slots-preview-label">WIREFRAME 5×3 · без финального арта и математики · без аккаунта и production-сервера</div>
+  .replace('</body>', `<div class="slots-preview-label">ТЕСТОВЫЙ РЕЖИМ · SVG5×3 · отдельно от аккаунта · production не изменён</div>
 <script type="importmap">${JSON.stringify({ imports }).replace(/</g, '\\u003c')}</script>
 <script type="module">
 import 'moon-preview/src/index.js';
-const show=()=>{if(!document.querySelector('[data-mt-slots]'))return false;window.togglePanel('shopPanel');window.switchShopTab('fortune');for(const control of document.querySelectorAll('.fortune-form input,.fortune-form button'))control.disabled=true;document.querySelector('.fortune-odds').textContent='Существующее серверное колесо сохранено, но отключено в стенде. Верхний блок — технический wireframe; фактический режим указан в нём.';return true;};
+const show=()=>{if(!document.querySelector('[data-mt-slots]'))return false;window.togglePanel('shopPanel');window.switchShopTab('fortune');for(const control of document.querySelectorAll('.fortune-form input,.fortune-form button'))control.disabled=true;document.querySelector('.fortune-odds').textContent='Существующее серверное колесо сохранено, но отключено в стенде. Верхний блок — отдельный тестовый автомат; фишки и предметы не связаны с аккаунтом.';return true;};
 if(!show()){const observer=new MutationObserver(()=>{if(show())observer.disconnect();});observer.observe(document.body,{childList:true,subtree:true});setTimeout(()=>observer.disconnect(),15000);}
 </script><script>window.__previewHTML=document.documentElement.outerHTML;</script></body>`);
 const outputIndex = process.argv.indexOf('--output');

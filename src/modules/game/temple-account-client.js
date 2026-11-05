@@ -44,7 +44,7 @@ export class TempleAccountClient {
     if(this.inventoryVersion!==null&&next.inventoryVersion<this.inventoryVersion)return false;
     if(this.stateVersion!==null&&next.stateVersion===this.stateVersion&&next.shardsBalance!==this.shardsBalance)return false;
     if(this.inventoryItems!==null&&next.inventoryItems!==null&&next.inventoryVersion===this.inventoryVersion){
-      const material=items=>JSON.stringify(items.map(i=>[i.instanceId,i.itemDefinitionId,i.quantity]).sort((a,b)=>a[0].localeCompare(b[0])));
+      const material=items=>JSON.stringify(items.map(i=>[i.instanceId,i.itemDefinitionId,i.level??null,i.quantity]).sort((a,b)=>a[0].localeCompare(b[0])));
       if(material(this.inventoryItems)!==material(next.inventoryItems))return false;
     }
     return true;

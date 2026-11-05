@@ -3,7 +3,7 @@ async function setup(){
  const {TempleWallet}=await import('../src/modules/game/temple-wallet.js'),{TEMPLE_STAKES}=await import('../src/modules/game/temple-rules.js'),{TEMPLE_FIXTURE_CONFIG,TEMPLE_FIXTURE_STOPS}=await import('../tools/slots/temple-fixtures.js');
  const data=new Map(),writes=[],listeners=new Map();let resolveReveal,rejectReveal;
  const view={current:null,begins:0,render(s){this.current=s},begin(s){this.begins++;this.current=s},reveal(s){this.target=s;return new Promise((r,j)=>{resolveReveal=r;rejectReveal=j})},selectedFixture(){return undefined},cancel(){resolveReveal?.(false)},destroy(){this.cancel()}};
- const c={console,TempleWallet,TEMPLE_STAKES,TEMPLE_CONFIG:null,TEMPLE_TEST_MODE:false,TEMPLE_FIXTURES:{},structuredClone,
+ const c={console,TempleWallet,TEMPLE_STAKES,TEMPLE_CONFIG:null,TEMPLE_TEST_MODE:false,TEMPLE_DEFAULT_DEMO:false,TEMPLE_FIXTURES:{},structuredClone,
  document:{hidden:false,addEventListener(k,v){listeners.set(k,v)},removeEventListener(k){listeners.delete(k)}},window:{addEventListener(k,v){listeners.set(k,v)},removeEventListener(k){listeners.delete(k)}}};
  vm.createContext(c);vm.runInContext(fs.readFileSync(path.join(__dirname,'../src/modules/ui/slots.js'),'utf8').replace(/^import .*;$/gm,'').replace(/\bexport\s+/g,''),c);
  const run=code=>vm.runInContext(code,c),s=run('new DemoSlots()');s.model=new TempleWallet({config:TEMPLE_FIXTURE_CONFIG,storage:{getItem:k=>data.get(k)??null,setItem(k,v){data.set(k,v);writes.push(k)}},testMode:true,fixtures:TEMPLE_FIXTURE_STOPS});
@@ -66,7 +66,7 @@ test('reset clears only own state; no automatic chaining of free spins',async()=
  const a=await setup(),p=a.s.play({fixtureId:'trigger'});a.resolve();await p;
  assert.equal(a.s.model.bonus.remaining,10);assert.equal(a.writes.length,1);
  await Promise.resolve();await Promise.resolve();assert.equal(a.writes.length,1);
- assert.equal(a.s.reset(),true);assert.equal(a.s.model.balance,1000);assert.equal(a.s.model.bonus.remaining,0);assert.equal(a.s.model.last,null);
+ assert.equal(a.s.reset({confirmed:true}),true);assert.equal(a.s.model.balance,1000);assert.equal(a.s.model.bonus.remaining,0);assert.equal(a.s.model.last,null);
 });
 
 test('disconnect/reconnect preserves committed state with a single reused view',async()=>{

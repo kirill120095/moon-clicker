@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const mods=Promise.all([import('../src/modules/ui/slots.js'),import('../src/modules/game/temple-account-client.js'),import('../src/modules/game/temple-wallet.js'),import('../src/modules/game/temple-rules.js'),import('../src/modules/game/temple-candidate-geometry.js')]);
 const OWNER='00000000-0000-4000-8000-000000000001',OTHER='00000000-0000-4000-8000-000000000002',REQ='00000000-0000-4000-8000-000000000010';
-const release={enabled:true,ownerAuthUserId:OWNER,projectRef:'TEST-PROJECT',rulesVersion:'TEST-RULES',rewardMappingVersion:'TEST-MAPPING'};
+const release={enabled:true,ownerAuthUserId:OWNER,projectRef:'TEST-PROJECT',rulesVersion:'TEST-RULES',rewardMappingVersion:'TEST-MAPPING',registeredItemDefinitionIds:['TEST-ITEM']};
 const base={protocolVersion:1,subjectId:OWNER,stateVersion:0,inventoryVersion:0,shardsBalance:500,rulesVersion:'TEST-RULES',rewardMappingVersion:'TEST-MAPPING',inventoryItems:[]};
 async function setup(){
  const [{DemoSlots},{TempleAccountClient},,r,g]=await mods;let resolve,binding={subjectId:OWNER,projectRef:'TEST-PROJECT'},calls=0;

@@ -3,7 +3,7 @@ const modules=Promise.all([import('../src/modules/game/temple-rules.js'),import(
 // Synthetic identities, never Kirill's auth UUID or a real project.
 const OWNER='00000000-0000-4000-8000-000000000001',OTHER='00000000-0000-4000-8000-000000000002';
 const REQUEST='00000000-0000-4000-8000-000000000010',NEXT='00000000-0000-4000-8000-000000000011';
-const release={enabled:true,ownerAuthUserId:OWNER,projectRef:'TEST-PROJECT-NOT-REAL',rulesVersion:'TEST-RULES',rewardMappingVersion:'TEST-ITEM-MAPPING'};
+const release={enabled:true,ownerAuthUserId:OWNER,projectRef:'TEST-PROJECT-NOT-REAL',rulesVersion:'TEST-RULES',rewardMappingVersion:'TEST-ITEM-MAPPING',registeredItemDefinitionIds:['TEST-ITEM-NOT-APPROVED']};
 function state(overrides={}){return {protocolVersion:1,subjectId:OWNER,stateVersion:0,inventoryVersion:0,shardsBalance:500,rulesVersion:'TEST-RULES',rewardMappingVersion:'TEST-ITEM-MAPPING',bonus:{remaining:0,triggerStake:null},inventoryItems:[],...overrides};}
 async function response(request,overrides={}){
  const [r,g]=await modules;const grid=r.templeGridFromStops(g.TEMPLE_CANDIDATE_GEOMETRY,[15,16,12,23,3]);
@@ -34,7 +34,7 @@ test('geometry has no cash table; unitless line score requires explicit mapping'
 });
 
 test('default release fails closed with no guessed UUID, project or transport',async()=>{
- const [,,p,c]=await modules;assert.deepEqual(p.TEMPLE_ACCOUNT_RELEASE,{enabled:false,ownerAuthUserId:null,projectRef:null,rulesVersion:null,rewardMappingVersion:null});
+ const [,,p,c]=await modules;assert.deepEqual(p.TEMPLE_ACCOUNT_RELEASE,{enabled:false,ownerAuthUserId:null,projectRef:null,rulesVersion:null,rewardMappingVersion:null,registeredItemDefinitionIds:null});
  const m=new c.TempleAccountClient();assert.equal(m.blockReason,'RELEASE_DISABLED');assert.equal(await m.spin(),null);assert.equal(m.shardsBalance,null);assert.equal(m.inventoryItems,null);assert.equal(m.reset(),false);
 });
 
@@ -78,7 +78,7 @@ test('timeout freezes new requests; explicit reconciliation reuses exact same re
 });
 
 test('cash, row-major, duplicate line and duplicate item DTOs are rejected without local grants',async()=>{
- const variants=[r=>({...r,gross:1000}),r=>({...r,grid:Array.from({length:3},()=>Array(5).fill('moon'))}),r=>({...r,gridOrder:'row-major'}),r=>({...r,lineWins:[r.lineWins[0],r.lineWins[0]]}),r=>({...r,awardedItems:[r.awardedItems[0],r.awardedItems[0]]}),r=>({...r,subjectId:OTHER}),r=>({...r,requestId:NEXT})];
+ const variants=[r=>({...r,gross:1000}),r=>({...r,awardedItems:[{...r.awardedItems[0],itemDefinitionId:'demo_relic'}]}),r=>({...r,awardedItems:[{...r.awardedItems[0],itemDefinitionId:null}]}),r=>({...r,awardedItems:[{...r.awardedItems[0],itemDefinitionId:'UNREGISTERED'}]}),r=>({...r,grid:Array.from({length:3},()=>Array(5).fill('moon'))}),r=>({...r,gridOrder:'row-major'}),r=>({...r,lineWins:[r.lineWins[0],r.lineWins[0]]}),r=>({...r,awardedItems:[r.awardedItems[0],r.awardedItems[0]]}),r=>({...r,subjectId:OTHER}),r=>({...r,requestId:NEXT})];
  for(const alter of variants){const a=await client({transport:{spin:async req=>alter(await response(req))}});a.model.acceptState(state());assert.equal(await a.model.spin(),null);assert.equal(a.model.shardsBalance,500);assert.deepEqual(a.model.lastDrops,[]);assert.equal(a.model.uncertain,true);}
 });
 
