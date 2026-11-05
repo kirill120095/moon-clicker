@@ -2419,3 +2419,14 @@
 .purchase-split>:last-child{border-radius:0 8px 8px 0}
 .purchase-split>.btn-buy-max{flex:0 0 auto;padding-inline:10px;border-left:1px solid rgba(255,255,255,.3);font-size:.78em;font-weight:800}
 .purchase-split>button:disabled{cursor:not-allowed;opacity:.5}
+
+/* Auto-click control alongside the shard balance. */
+.info-row-top{gap:12px;flex-wrap:wrap}
+.auto-click-control{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+#autoClickBtn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(109,225,255,.42);border-radius:12px;padding:9px 13px;background:linear-gradient(135deg,rgba(45,108,179,.34),rgba(70,35,125,.44));color:#e9faff;font:700 .88rem Inter,sans-serif;box-shadow:inset 0 1px rgba(255,255,255,.12),0 4px 16px rgba(35,100,180,.14);cursor:pointer;transition:background .2s,box-shadow .2s,transform .2s}
+#autoClickBtn:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(69,170,239,.25)}
+#autoClickBtn:focus-visible{outline:2px solid #80ddff;outline-offset:3px}
+#autoClickBtn.active{border-color:rgba(98,255,183,.75);background:linear-gradient(135deg,rgba(22,153,119,.62),rgba(28,92,164,.6));box-shadow:0 0 17px rgba(61,224,161,.25)}
+.auto-click-timer{min-width:50px;text-align:center;color:#9cc5dc;font:700 .86rem 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.auto-click-control:has(#autoClickBtn.active) .auto-click-timer{color:#84ffd0}
+@media(max-width:480px){.info-row-top{padding:9px;gap:8px}.counter{padding:6px 10px}.auto-click-control{gap:5px}#autoClickBtn{padding:8px 9px;font-size:.8rem}}
