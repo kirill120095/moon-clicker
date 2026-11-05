@@ -35,7 +35,25 @@ function renderFleet(count){
 
 let nextUfoSync=0,lastErrorToast=0,lastErrorMessage='';
 let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
-let autoClickUntil=0,autoClickTicker=null;
+let autoClickUntil=0,autoClickTicker=null,autoClickLastPreview=0;
+let damageVisualTimer=null;
+const damageVisualQueue=[];
+const MAX_DAMAGE_VISUAL_QUEUE=12;
+function queueDamageVisual(x,y,damage,isCrit,isBoss){
+ if(document.hidden)return;
+ if(damageVisualQueue.length>=MAX_DAMAGE_VISUAL_QUEUE){
+  const ordinary=damageVisualQueue.findIndex(hit=>!hit.isCrit);
+  damageVisualQueue.splice(ordinary>=0?ordinary:0,1);
+ }
+ damageVisualQueue.push({x,y,damage,isCrit,isBoss});
+ if(damageVisualTimer===null)damageVisualTimer=setInterval(()=>{
+  if(document.hidden){clearDamageVisuals();return;}
+  const hit=damageVisualQueue.shift();
+  if(hit)animations.showDamageNumber(hit.x,hit.y,hit.damage,hit.isCrit,hit.isBoss);
+  if(!damageVisualQueue.length)clearDamageVisuals();
+ },105);
+}
+function clearDamageVisuals(){damageVisualQueue.length=0;if(damageVisualTimer!==null)clearInterval(damageVisualTimer);damageVisualTimer=null;}
 const AUTO_CLICK_BATCH_MS=800; // Group four ticks into one request.
 function autoClickDuration(){return 15000+15000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
 function renderAutoClick(){
@@ -58,7 +76,7 @@ function autoClickStep(){
  for(let i=0;i<2;i++){pendingClicks++;previewHits.push({damage,x,y});}
  // Play the familiar click sound without moving the cursor or focus.
  if(!document.hidden)audio.click();
- refreshPreview();
+ if(Date.now()-autoClickLastPreview>450){autoClickLastPreview=Date.now();refreshPreview();}
  if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),AUTO_CLICK_BATCH_MS);
 }
 gameEngine.activateAutoClick=()=>{
@@ -112,7 +130,9 @@ function apply(result,hits=[],deferNotices=false){
   if(!rect)continue;
   const position=event.source==='manual'?hits[index++]:null;
   // Avoid hundreds of animated DOM nodes per batch, but always retain critical hits.
-  if(visibleDamage<12||event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
+  if(event.source==='manual'&&hits.length>1){
+   if(visibleDamage<8||event.isCrit){queueDamageVisual(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
+  }else if(visibleDamage<12||event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
   if(event.source==='ufo'){animations.playUfoShot(event.ufoIndex||0);audio.shoot(true);}
   if(event.reward>0)animations.showMoonReward(event.reward);
  }
@@ -179,7 +199,7 @@ gameEngine.init=()=>{
  })();
  const tracked=pending.finally(()=>{if(initializing===tracked)initializing=null;});initializing=tracked;return tracked;
 };
-gameEngine.destroy=()=>{stopAutoClick(false);initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{stopAutoClick(false);clearDamageVisuals();initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
 gameEngine.handleClick=e=>{
  if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
