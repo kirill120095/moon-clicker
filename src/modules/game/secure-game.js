@@ -54,7 +54,7 @@ function queueDamageVisual(x,y,damage,isCrit,isBoss){
  },105);
 }
 function clearDamageVisuals(){damageVisualQueue.length=0;if(damageVisualTimer!==null)clearInterval(damageVisualTimer);damageVisualTimer=null;}
-const AUTO_CLICK_BATCH_MS=400; // Short batches keep combat responsive without one request per click.
+const AUTO_CLICK_BATCH_MS=300; // Server requests stay batched; the same click handler runs immediately for each hit.
 function autoClickDuration(){return 15000+15000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
 function renderAutoClick(){
  const button=document.getElementById('autoClickBtn'),stopButton=document.getElementById('autoClickStopBtn'),label=document.getElementById('autoClickLabel'),timer=document.getElementById('autoClickTimer');
@@ -67,22 +67,15 @@ function renderAutoClick(){
 function stopAutoClick(flushPending=true){autoClickUntil=0;if(autoClickTicker!==null){clearInterval(autoClickTicker);autoClickTicker=null;}renderAutoClick();if(flushPending&&active&&pendingClicks&&!clickFlight)flush().catch(()=>{});}
 function autoClickStep(){
  if(!active||Date.now()>=autoClickUntil){stopAutoClick();return;}
- renderAutoClick();
- // Do not use DOM clicks or keyboard events: panels, scroll and mouse focus remain untouched.
- if(purchasing||pendingClicks>CONSTANTS.CLICK_BURST-2)return;
+ // Reuse the exact same click path as a held Space key; no synthetic DOM event or focus changes.
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
- const x=rect?rect.left+rect.width/2:0,y=rect?rect.top+rect.height/2:0;
- const damage=previewDamage();
- for(let i=0;i<2;i++){pendingClicks++;previewHits.push({damage,x,y});}
- // Play the familiar click sound without moving the cursor or focus.
- if(!document.hidden)audio.click();
- if(Date.now()-autoClickLastPreview>500){autoClickLastPreview=Date.now();refreshPreview();}
- if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),AUTO_CLICK_BATCH_MS);
+ if(!rect)return;
+ gameEngine.handleClick({clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2},true);
 }
 gameEngine.activateAutoClick=()=>{
  if(!active)return;
  autoClickUntil=Date.now()+autoClickDuration();
- if(autoClickTicker===null)autoClickTicker=setInterval(autoClickStep,200);
+ if(autoClickTicker===null)autoClickTicker=setInterval(autoClickStep,65);
  renderAutoClick();
 };
 const autoButton=document.getElementById('autoClickBtn');
@@ -130,7 +123,10 @@ function apply(result,hits=[],deferNotices=false){
   if(!rect)continue;
   const position=event.source==='manual'?hits[index++]:null;
   // Avoid hundreds of animated DOM nodes per batch, but always retain critical hits.
-  if(event.source==='manual'&&hits.length>1){
+  if(event.source==='manual'&&hits.length>1&&hits.some(hit=>hit.automatic)){
+    // Automatic hits already use the normal immediate click feedback; don't replay a burst on server response.
+    continue;
+   }else if(event.source==='manual'&&hits.length>1){
    if(visibleDamage<8||event.isCrit){queueDamageVisual(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
   }else if(visibleDamage<12||event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
   if(event.source==='ufo'){animations.playUfoShot(event.ufoIndex||0);audio.shoot(true);}
@@ -200,12 +196,15 @@ gameEngine.init=()=>{
  const tracked=pending.finally(()=>{if(initializing===tracked)initializing=null;});initializing=tracked;return tracked;
 };
 gameEngine.destroy=()=>{stopAutoClick(false);clearDamageVisuals();initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
-gameEngine.handleClick=e=>{
+gameEngine.handleClick=(e,automatic=false)=>{
  if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
- pendingClicks++;previewHits.push({damage:previewDamage(),x:e.clientX,y:e.clientY});refreshPreview();audio.click();
+ pendingClicks++;previewHits.push({damage:previewDamage(),x:e.clientX,y:e.clientY,automatic});
+ if(!automatic||performance.now()-autoClickLastPreview>160){autoClickLastPreview=performance.now();refreshPreview();}
+ if(!automatic||!document.hidden)audio.click();
  animations.playClickVisualFeedback(e,state.finalDamage||previewDamage(),false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,false);
- if(!clickFlight)flush().catch(()=>{});
+ if(automatic){if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),AUTO_CLICK_BATCH_MS);}
+ else if(!clickFlight)flush().catch(()=>{});
 };
 gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks>0);if(active)await send('sync');};
 gameEngine.buyClickCrystal=(max=false)=>command('buyClickCrystal',{max},true).catch(()=>{});
