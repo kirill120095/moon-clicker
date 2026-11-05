@@ -859,6 +859,7 @@ export const PRESTIGE_UPGRADES={
  hunter:{id:'hunter',name:'Охотник на боссов',icon:'👹',description:'+25% урона боссам и +2 секунды боя за уровень',baseCost:5,maxLevel:Infinity,damage:0.25,time:2},
  archive:{id:'archive',name:'Лунный архив',icon:'📚',description:'Навсегда +1,5 к базовому урону Космической за убитую луну за каждый уровень улучшения',baseCost:30,maxLevel:Infinity,perKill:1.5},
  orbit:{id:'orbit',name:'Вечная орбита',icon:'🌌',description:'Один дополнительный слот активной луны, сохраняется при вознесении',baseCost:1000,maxLevel:1},
+ autoclick:{id:'autoclick',name:'Автопилот кликов',icon:'⚡',description:'+5 секунд автокликов за уровень (начальная длительность 15 с)',baseCost:3,maxLevel:Infinity,seconds:5},
  critical:{id:'critical',name:'Звёздное прицеливание',icon:'🎯',description:'+3% шанса крита за уровень',baseCost:2,maxLevel:Infinity,crit:0.03}
 };
 export function getPrestigeSummary(state){
