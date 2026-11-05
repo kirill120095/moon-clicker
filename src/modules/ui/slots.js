@@ -1,16 +1,17 @@
 import { TempleWallet } from '../game/temple-wallet.js';
 import { TempleAccountClient } from '../game/temple-account-client.js';
+import { TempleTestItems } from '../game/temple-test-items.js';
 import { templeReleaseBlockReason } from '../game/temple-item-protocol.js';
 import { TEMPLE_STAKES } from '../game/temple-rules.js';
-import { TEMPLE_CONFIG, TEMPLE_TEST_MODE, TEMPLE_FIXTURES } from '../game/temple-config.js';
+import { TEMPLE_CONFIG, TEMPLE_TEST_MODE, TEMPLE_FIXTURES, TEMPLE_TEST_ITEM_MAPPING } from '../game/temple-config.js';
 import { createTempleWireframeView } from './fortune-slots-view.js';
 import { FORTUNE_SLOTS_HTML } from './fortune-slots-template.js';
 
 // One controller and one isolated wallet. The real illustrated cabinet will use
 // this snapshot contract; the current view is deliberately labelled WIREFRAME.
 export class DemoSlots {
-  constructor({ config = TEMPLE_CONFIG, testMode = TEMPLE_TEST_MODE, fixtures = TEMPLE_FIXTURES, accountClient = null } = {}) {
-    this.options = { config, testMode, fixtures, accountClient };
+  constructor({ config = TEMPLE_CONFIG, testMode = TEMPLE_TEST_MODE, fixtures = TEMPLE_FIXTURES, accountClient = null, demoItems = true, itemMapping } = {}) {
+    this.options = { config, testMode, fixtures, accountClient, demoItems, itemMapping };
     this.allowed = false; this.visible = false; this.busy = false; this.generation = 0;
     this.onHidden = () => {
       if (document.hidden) this.close();
@@ -23,9 +24,12 @@ export class DemoSlots {
       if (this.options.testMode) {
         let storage; try { storage = window.localStorage; } catch { /* session-only test adapter */ }
         this.model = new TempleWallet({ ...this.options, storage });
-      } else {
-        // No demo save, balance1000, RNG or grant is carried into a real account.
+      } else if (this.options.accountClient || !this.options.demoItems) {
+        // No test balance/inventory is ever copied into a real account.
         this.model = this.options.accountClient || new TempleAccountClient();
+      } else {
+        let storage;try { storage=window.localStorage; } catch { /* session-only test fallback */ }
+        this.model=new TempleTestItems({mapping:this.options.itemMapping??TEMPLE_TEST_ITEM_MAPPING,storage});
       }
       const fragment = document.createElement('div'); fragment.innerHTML = FORTUNE_SLOTS_HTML;
       this.root = fragment.firstElementChild; parent.prepend(this.root);
@@ -51,10 +55,33 @@ export class DemoSlots {
     }
     return true;
   }
+  configureTestItems(mapping, {storage,fixtures={},allowFixtures=false}={}) {
+    if(this.busy||this.model?.busy)return false;
+    if(storage===undefined){try{storage=window.localStorage;}catch{}}
+    this.model=new TempleTestItems({mapping,storage,fixtures,allowFixtures});
+    this.options={demoItems:true,itemMapping:mapping,testMode:false};
+    this.renderCurrent();return true;
+  }
   configureAccount(client) {
     if (this.busy || this.model?.busy || !(client instanceof TempleAccountClient)) return false;
     this.options = { accountClient:client,testMode:false,config:null,fixtures:{} };
     this.model = client; this.renderCurrent(); return true;
+  }
+  testItemSnapshot({spinning=false,result=this.model.last,title,detail}={}) {
+    const m=this.model,free=m.bonus.remaining>0,awards=spinning?[]:(result?.awardedItems||[]);
+    const count=awards.reduce((sum,item)=>sum+item.quantity,0);
+    return {rewardMode:'items',walletMode:'test-items',testMode:true,phase:spinning?'spinning':m.mapping?'settled':'mapping-pending',
+      title:title||(spinning?'Тестовое вращение…':!m.mapping?'Ожидается candidate item-mapping':result?(count?'Тестовые предметы: +'+count:'Предметы не выпали'):'Тестовый «Лунный храм»'),
+      detail:detail||(spinning?'Списаны только тестовые фишки. Предметы будут показаны после остановки.':result?`Тестовое списание ${result.debit}; найдено предметов ${count}.`+(result.mode==='free'?` Free: debit0, ставка триггера ${result.totalStake}.`:'')+(result.freeSpinsAwarded?' Получено10бесплатных вращений, вручную.':''):'Локальный баланс и сумка не связаны с аккаунтом. Mapping временный; боевых эффектов и слияния нет.'),
+      visible:this.visible,ready:Boolean(m.mapping),busy:this.busy||m.busy,
+      grid:(spinning?this.previousGrid:result?.grid)?.map(c=>[...c])||null,result:spinning||!result?null:structuredClone(result),
+      balance:spinning&&result?result.before-result.debit:m.balance,selectedStake:m.stake,stake:spinning&&result?result.totalStake:free?m.bonus.triggerStake:m.stake,
+      mode:spinning&&result?result.mode:free?'free':'paid',bonus:{...(spinning&&result?result.bonusBefore:m.bonus)},
+      inventoryVersion:spinning?this.previousInventoryVersion:m.inventoryVersion,
+      inventoryItems:structuredClone(spinning?(this.previousInventory||[]):m.inventoryItems),awardedItems:structuredClone(awards),
+      debitAmount:spinning?null:result?.debit??null,blockReason:m.blockReason,rulesChanged:m.mappingChanged,persistent:m.persistent,
+      mappingId:m.mapping?.id||null,fixtureIds:m.allowFixtures?Object.keys(m.fixtures):[],config:null,
+      spinAvailable:m.canSpin&&!this.busy,resetAvailable:true};
   }
   accountSnapshot({spinning=false,result=this.model.last,title,detail}={}) {
     const m=this.model;
@@ -74,12 +101,13 @@ export class DemoSlots {
       mode:free?'free':'paid',bonus:contextBlocked?{remaining:0,triggerStake:null}:{...m.bonus},
       inventoryVersion:contextBlocked?null:m.inventoryVersion,
       inventoryItems:contextBlocked||m.inventoryItems===null?null:structuredClone(m.inventoryItems),
-      awardedItems:structuredClone(drops),shardsDebited:visibleResult?.shardsDebited??null,
+      awardedItems:structuredClone(drops),shardsDebited:visibleResult?.shardsDebited??null,debitAmount:visibleResult?.shardsDebited??null,
       blockReason:m.blockReason,rulesChanged:false,persistent:false,testMode:false,fixtureIds:[],config:null,
       spinAvailable:m.canSpin&&!this.busy,resetAvailable:false};
   }
   snapshot(options = {}) {
     if (this.model.kind === 'account-items') return this.accountSnapshot(options);
+    if (this.model.kind === 'test-items') return this.testItemSnapshot(options);
     const {spinning=false,result=this.model.last,title,detail}=options;
     const m = this.model, free = m.bonus.remaining > 0, stake = free ? m.bonus.triggerStake : m.stake;
     const pending = spinning && result;
@@ -126,6 +154,8 @@ export class DemoSlots {
     let result;
     try {
       this.model.reload(); this.previousGrid = this.model.last?.grid || null;
+      this.previousInventory=this.model.inventoryItems===undefined||this.model.inventoryItems===null?null:structuredClone(this.model.inventoryItems);
+      this.previousInventoryVersion=this.model.inventoryVersion??null;
       const chosen = fixtureId ?? this.view.selectedFixture?.();
       if (this.model.kind === 'account-items') {
         this.view.begin(this.snapshot({spinning:true,result:null}));
@@ -155,7 +185,7 @@ export class DemoSlots {
   }
   reset() {
     if (!this.allowed || this.busy || this.model.busy || this.model.kind === 'account-items') return false;
-    this.model.reset(); this.renderCurrent({ title: 'Демо сброшено до 1 000', detail: 'Free counter и прошлый результат очищены. Основные ресурсы игры не изменились.' }); return true;
+    this.model.reset(); this.renderCurrent({ title: 'Тестовый баланс восстановлен до 1 000', detail: 'Только тестовые инвентарь, free counter и прошлый результат очищены. Основная игра не изменена.' }); return true;
   }
 }
 export const demoSlots = new DemoSlots();

@@ -1,15 +1,16 @@
-# Лунный храм 5×3 — подготовка item-release, доступ ОТКЛЮЧЁН
+# Лунный храм5×3 — подготовка законченного TEST-items demo
 
-Кирилл выбрал обычные осколки и награды предметами сразу в инвентарь, только своему аккаунту после проверок. Ник известен, auth UUID/target ещё не подтверждены. **Реальных spin-запросов, списаний, merge или deploy не было.**
+Ближайшая цель родителя: playable5×3 с10линиями,WILD/SCATTER и предметами в **тестовый** инвентарь, демо-балансом и отдельным сохранением. Не ждать БД ради локального demo. Реальный account path — ordinary shards→items, толькоКирилл после отдельного допуска — остаётся default-deny.
 
-Текущий bounded этап: strict column-major геометрия, кандидатные5×24ленты, unitless line-score, отключённый клиентский server-authoritative adapter и readonly wireframe «Сумка / Последние дропы». Ни item-mapping, ни эффекты/слияние/вознесение, ни окончательный арт не придуманы.
+В текущем bounded этапе готов persistent `TempleTestItems` и controller/view стыки. **Candidate mapping Кометы и SVG Призмы ещё не переданы.** Поэтому `TEMPLE_TEST_ITEM_MAPPING=null`; QA-предмет не подставлен как игровой mapping. Законченный публичный показ не объявлен, новый частныйwireframe не публикуется как итог.
 
-- [Актуальный account/item protocol и блокеры](moon-temple-items-contract.md).
-- [Геометрия и отдельный TEST-адаптер](moon-temple-contract.md).
-- Та же `feature/fortuna-demo-slots`, [draft PR№1](https://github.com/kirill120095/moon-clicker/pull/1).
-- [Wireframe](https://hyperagent.com/s/Vadvg2PkiFTR58AaKf5Aeg) — не готовая игра и не подключение аккаунта. SPIN недоступен; shards/inventory не подменены демо-данными.
-- 293/293 текущих теста. Это проверки кода/DTO/mock transports, **не предметного баланса и не настоящей серверной авторизации**.
-- Cash-кандидат95.676% RTP и старые7×1 цифры не применяются к предметным наградам.
-- Старое колесо, основная игра, auth/core/backend не изменены. Backend отдельно готовит Контур; его файлы здесь не дублируются.
+- [Точный handoff локального test-items adapter](moon-temple-test-demo.md).
+- [Будущий real-account protocol/default-deny](moon-temple-items-contract.md).
+- [Геометрия/тестовая математика](moon-temple-contract.md).
+- Та же feature/fortuna-demo-slots и [draftPR№1](https://github.com/kirill120095/moon-clicker/pull/1), безmain/merge/deploy.
+-307/307 **текущих** тестов, включая13 новыхtest-items сценариев; число случайно совпало со старой7×1версией, еёRTP/утверждения не переносятся.
+- Проверен pipeline на явном QAfixture: debit10→line1moon5→тестовыйitem→новыйэкземпляр изsave сохраняетquantity1 без повторнойвыдачи→reset1000/emptybag толькоtest.
+- Nativebrowser reload/полный художественный проход ещё не объявлены выполненными. Если Storage недоступен, UI честно показывает session-only.
+- Реальные осколки, аккаунты, backend и основнойинвентарь не затронуты. Демо не конвертируется вreal. Нетэффектов/слияния/покупок ячеек.
 
-Перед реальным запуском нужны подтверждённый Supabase target, auth UUID, approved item-mapping и версионированный атомарный backend, затем отдельный родительский этап допуска. Предыдущие опубликованные версии не являются текущим target или художественной приёмкой.
+Текущая [публичнаяссылка](https://hyperagent.com/s/Vadvg2PkiFTR58AaKf5Aeg) пока остаётся предыдущим отключённымwireframe, **не завершённымtestdemo этого этапа**. Обновить тот жеartifact нужно после подключения candidate mapping+SVG и фактического браузерного прогона, не создавать дубль.

@@ -43,7 +43,7 @@ const fixtureTools = process.argv.includes('--test-tools') || process.argv.inclu
 const fixtureMode = process.argv.includes('--fixtures');
 const imports = {};
 for (const file of [...walk('src'), ...(fixtureTools ? ['tools/slots/temple-fixtures.js'] : [])]) {
-  let source = fixtureMode && file === 'src/modules/game/temple-config.js' ? "export { TEMPLE_FIXTURE_CONFIG as TEMPLE_CONFIG, TEMPLE_FIXTURE_STOPS as TEMPLE_FIXTURES } from '../../../tools/slots/temple-fixtures.js';export const TEMPLE_TEST_MODE=true;"
+  let source = fixtureMode && file === 'src/modules/game/temple-config.js' ? "export { TEMPLE_FIXTURE_CONFIG as TEMPLE_CONFIG, TEMPLE_FIXTURE_STOPS as TEMPLE_FIXTURES } from '../../../tools/slots/temple-fixtures.js';export const TEMPLE_TEST_MODE=true;export const TEMPLE_TEST_ITEM_MAPPING=null;"
     : file === 'src/modules/network/supabase.js' ? mockNetwork
     : file === 'src/modules/ui/radio.js' ? 'export const radio={connect:async()=>{},disconnect(){}};' : read(file);
   // Resolve actual module specifiers (also safeImport's literal path arguments).

@@ -11,7 +11,7 @@ async function setup(){
  return {s,client,resolve:()=>resolve(),get calls(){return calls},other(){binding={subjectId:OTHER,projectRef:'TEST-PROJECT'}}};
 }
 
-test('default item UI has no fake1000 shards, no gross/net reward, and reset is unavailable',async()=>{
+test('real-account item UI has no fake1000 shards, no gross/net reward, and reset is unavailable',async()=>{
  const [{DemoSlots},{TempleAccountClient}]=await mods;const s=new DemoSlots();s.model=new TempleAccountClient();
  const v=s.snapshot();assert.equal(v.rewardMode,'items');assert.equal(v.balance,null);assert.equal(v.inventoryItems,null);assert.equal(v.inventoryVersion,null);assert.equal(v.spinAvailable,false);assert.equal(v.resetAvailable,false);
  assert.equal(s.reset(),false);assert.equal(await s.play(),false);

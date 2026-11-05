@@ -32,12 +32,12 @@ export function createTempleWireframeView(root) {
   }
   function rules(snapshot) {
     const config = snapshot.config;
-    const key=snapshot.rewardMode+':'+(config?.id||'pending');
+    const key=snapshot.rewardMode+':'+(snapshot.mappingId||snapshot.walletMode||'')+':'+(config?.id||'pending');
     if (rulesId === key) return;
     rulesId = key;
     find('paytable').replaceChildren(); find('paylines').replaceChildren();
     for (const rows of TEMPLE_PAYLINES) { const item=doc.createElement('li');item.textContent=rows.join(' – ');find('paylines').append(item); }
-    if (snapshot.rewardMode==='items') { find('paytable').textContent='Предметный mapping ожидается. Денежная таблица и cash-RTP не используются как предметный баланс.';return; }
+    if (snapshot.rewardMode==='items') { find('paytable').textContent=snapshot.walletMode==='test-items'?(snapshot.mappingId?`Временный тестовый mapping: ${snapshot.mappingId}. Score не является денежной выплатой.`:'Candidate item-mapping ещё не передан; награды не придуманы.'):'Предметный mapping ожидается. Денежная таблица и cash-RTP не используются как предметный баланс.';return; }
     if (!config) { find('paytable').textContent='Финальная таблица выплат ещё не передана. Старые коэффициенты 7×1 здесь не используются.';return; }
     const table=doc.createElement('table'),head=doc.createElement('tr');
     ['ID','3','4','5'].forEach(text=>{const cell=doc.createElement('th');cell.textContent=text;head.append(cell)});table.append(head);
@@ -48,9 +48,10 @@ export function createTempleWireframeView(root) {
     const items=snapshot.rewardMode==='items';find('inventory').hidden=!items;
     find('bag').replaceChildren();find('drops').replaceChildren();
     if(!items)return;
+    const local=snapshot.walletMode==='test-items';find('inventory-title').textContent=local?'Тестовый инвентарь · не аккаунт':'Сумка · только данные сервера';
     const bag=snapshot.inventoryItems;
-    find('bag-status').textContent=bag===null ? (snapshot.inventoryVersion===null?'Сумка ещё не загружена с проверенного сервера.':`Версия ${snapshot.inventoryVersion}: нужен актуальный список с сервера; локально дропы не объединяются.`) : `Версия ${snapshot.inventoryVersion} · записей ${bag.length}`;
-    find('drops-status').textContent=snapshot.result ? (snapshot.awardedItems.length?'Подтверждено этим запросом:':'Этот запрос не выдал предметов.') : 'Подтверждённый результат ещё не получен.';
+    find('bag-status').textContent=local?`Тестовая версия ${snapshot.inventoryVersion??0} · записей ${(bag||[]).length}`:bag===null ? (snapshot.inventoryVersion===null?'Сумка ещё не загружена с проверенного сервера.':`Версия ${snapshot.inventoryVersion}: нужен актуальный список с сервера; локально дропы не объединяются.`) : `Версия ${snapshot.inventoryVersion} · записей ${bag.length}`;
+    find('drops-status').textContent=local?(snapshot.result?(snapshot.awardedItems.length?'Последние тестовые дропы:':'В этом тестовом вращении предметы не выпали.'):'Тестовых дропов пока нет.'):snapshot.result ? (snapshot.awardedItems.length?'Подтверждено этим запросом:':'Этот запрос не выдал предметов.') : 'Подтверждённый результат ещё не получен.';
     for(const [list,entries] of [[find('bag'),bag||[]],[find('drops'),snapshot.awardedItems||[]]]){
       for(const item of entries.slice(0,50)){const li=doc.createElement('li');li.textContent=`${item.displayName||item.itemDefinitionId} ×${item.quantity}`;list.append(li)}
       if(entries.length>50){const li=doc.createElement('li');li.textContent=`Ещё записей: ${entries.length-50}`;list.append(li)}
@@ -58,37 +59,38 @@ export function createTempleWireframeView(root) {
   }
   function paint(snapshot) {
     current = snapshot;
-    const items=snapshot.rewardMode==='items'; root.dataset.phase = snapshot.phase; root.dataset.testMode = String(snapshot.testMode);
+    const items=snapshot.rewardMode==='items',local=snapshot.walletMode==='test-items'; root.dataset.phase=snapshot.phase;root.dataset.testMode=String(snapshot.testMode);root.dataset.mode=local?'test':items?'account':'qa-cash';
     root.dataset.outcome = snapshot.result?.outcome || 'none';
     root.dataset.celebrate = String(snapshot.result?.celebrate === true); // Presentation may use this; never infer from gross > 0.
-    find('warning').textContent = snapshot.testMode
+    find('warning').textContent = local ? ('ТЕСТОВЫЙ РЕЖИМ: локальные фишки и инвентарь, без связи с реальным аккаунтом. '+(snapshot.mappingId?`Временный mapping ${snapshot.mappingId}.`:'SPIN ждёт candidate item-mapping.')) : snapshot.testMode
       ? 'ОТЛАДОЧНЫЙ WIREFRAME: искусственные QA-ленты/выплаты, не финальная математика и не арт. Обычный RNG не подменяется fixture без явного выбора.'
       : 'ПРЕДМЕТНЫЙ ВЫПУСК ОТКЛЮЧЁН: нет подтверждённых target/auth UUID/backend/item-mapping. Реальных списаний сейчас нет. Арт не подключён; это WIREFRAME.';
     find('migration').hidden = !snapshot.rulesChanged;
     find('migration').textContent = 'Правила изменены: теперь 5×3 и линии. Допустимый старый демо-баланс сохранён, прежние результат и bonus очищены без переоценки.';
-    find('balance-label').textContent=items?'Осколки · подтверждено':'ТЕСТОВЫЕ фишки';
+    find('balance-label').textContent=local?'ТЕСТОВЫЕ фишки':items?'Осколки · подтверждено':'ТЕСТОВЫЕ фишки';
     find('primary-label').textContent=items?'Новых предметов':'Тестовый gross';
-    find('secondary-label').textContent=items?'Списано осколков':'Тестовый net';
+    find('secondary-label').textContent=local?'Списано тестовых':items?'Списано осколков':'Тестовый net';
     find('balance').textContent=snapshot.balance===null?'—':String(snapshot.balance);find('stake').textContent=String(snapshot.stake);
     find('gross').textContent=items?(snapshot.result?String(snapshot.awardedItems.reduce((sum,item)=>sum+item.quantity,0)):'—'):(snapshot.result?String(snapshot.result.creditedGross):'—');
-    find('net').textContent=items?(snapshot.shardsDebited===null?'—':String(snapshot.shardsDebited)):(snapshot.result?String(snapshot.result.net):'—');
-    find('bonus').textContent=items&&snapshot.blockReason?'Статус бонуса не подтверждён сервером.':snapshot.mode==='free'
+    const debit=snapshot.debitAmount??snapshot.shardsDebited??null;
+    find('net').textContent=items?(debit===null?'—':String(debit)):(snapshot.result?String(snapshot.result.net):'—');
+    find('bonus').textContent=items&&!local&&snapshot.blockReason?'Статус бонуса не подтверждён сервером.':snapshot.mode==='free'
       ? `Бесплатных: ${snapshot.bonus.remaining}. Debit 0; сохранённая ставка ${snapshot.stake}. Каждый spin вручную.`
       : `Бесплатных: ${snapshot.bonus.remaining}. Обычное списание — общая ставка.`;
     find('title').textContent=snapshot.title;find('detail').textContent=snapshot.detail;
     find('spin').disabled=!snapshot.spinAvailable || snapshot.busy;
-    find('spin').textContent=!snapshot.ready?(items?'ДОСТУП НЕ АКТИВИРОВАН':'ОЖИДАЕТ CONFIG'):snapshot.busy?'ОЖИДАНИЕ…':snapshot.mode==='free'?'FREE SPIN · 0':'SPIN';
-    find('spin').setAttribute('aria-busy',String(snapshot.busy));find('reset').disabled=snapshot.busy||items;find('reset').hidden=items;
+    find('spin').textContent=!snapshot.ready?(local?'ОЖИДАЕТ ITEM MAPPING':items?'ДОСТУП НЕ АКТИВИРОВАН':'ОЖИДАЕТ CONFIG'):snapshot.busy?'ОЖИДАНИЕ…':snapshot.mode==='free'?'FREE SPIN · 0':'SPIN';
+    find('spin').setAttribute('aria-busy',String(snapshot.busy));find('reset').disabled=snapshot.busy||(items&&!local);find('reset').hidden=items&&!local;
     const locked=snapshot.busy||snapshot.bonus.remaining>0||!snapshot.ready;
     find('minus').disabled=locked||snapshot.selectedStake===TEMPLE_STAKES[0];find('plus').disabled=locked||snapshot.selectedStake===TEMPLE_STAKES.at(-1);
     cells.forEach((_,reel)=>face(reel,snapshot.grid?.[reel]));
     if(snapshot.phase==='spinning') for(const col of gridNode.children)col.classList.add('mt-rolling');
     const key=snapshot.fixtureIds.join('|');
     if(key!==fixturesKey){fixturesKey=key;find('fixture').replaceChildren();const opt=doc.createElement('option');opt.value='';opt.textContent='Обычный RNG по тестовым лентам';find('fixture').append(opt);for(const id of snapshot.fixtureIds){const o=doc.createElement('option');o.value=id;o.textContent='FIXTURE: '+id;find('fixture').append(o)}}
-    find('fixture-wrap').hidden=!snapshot.testMode;find('fixture').disabled=snapshot.busy;
-    find('storage').textContent=items?'Аккаунт и инвентарь не берутся из локального хранилища. Демо-баланс не конвертируется в осколки или предметы.':(snapshot.persistent?'Только тестовое сохранение в этом браузере.':'Storage недоступен: сессионный тестовый режим.')+
+    find('fixture-wrap').hidden=!snapshot.testMode||snapshot.fixtureIds.length===0;find('fixture').disabled=snapshot.busy;
+    find('storage').textContent=local?(snapshot.persistent?'Тестовые фишки, сумка и free counter сохраняются отдельно на этом устройстве. В реальный аккаунт не переносятся.':'Сохранение недоступно: этот просмотр сессионный, reload не гарантирует сохранение. Это не реальный аккаунт.'):items?'Аккаунт и инвентарь не берутся из локального хранилища. Демо-баланс не конвертируется в осколки или предметы.':(snapshot.persistent?'Только тестовое сохранение в этом браузере.':'Storage недоступен: сессионный тестовый режим.')+
       (snapshot.result?.source?.kind==='fixture'?' Результат явно задан FIXTURE: '+snapshot.result.source.id+'.':'');
-    find('account-rules').hidden=!items;find('test-rules').hidden=items;
+    find('account-rules').hidden=!items||local;find('test-rules').hidden=items;find('item-test-rules').hidden=!local;
     paintInventory(snapshot);rules(snapshot);highlight(0);
   }
   return {
