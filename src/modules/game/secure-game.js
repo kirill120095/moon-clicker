@@ -36,7 +36,7 @@ function renderFleet(count){
 let nextUfoSync=0,lastErrorToast=0,lastErrorMessage='';
 let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
 let autoClickUntil=0,autoClickTicker=null;
-function autoClickDuration(){return 15000+5000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
+function autoClickDuration(){return 15000+15000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
 function renderAutoClick(){
  const button=document.getElementById('autoClickBtn'),label=document.getElementById('autoClickLabel'),timer=document.getElementById('autoClickTimer');
  const left=Math.max(0,autoClickUntil-Date.now()),running=active&&left>0;
