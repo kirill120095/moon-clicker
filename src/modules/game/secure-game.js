@@ -36,6 +36,7 @@ function renderFleet(count){
 let nextUfoSync=0,lastErrorToast=0,lastErrorMessage='';
 let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
 let autoClickUntil=0,autoClickTicker=null;
+const AUTO_CLICK_BATCH_MS=800; // Group four ticks into one request.
 function autoClickDuration(){return 15000+15000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
 function renderAutoClick(){
  const button=document.getElementById('autoClickBtn'),label=document.getElementById('autoClickLabel'),timer=document.getElementById('autoClickTimer');
@@ -44,7 +45,7 @@ function renderAutoClick(){
  if(label)label.textContent=running?'Продлить':'Автоклик';
  if(timer)timer.textContent=((running?left:autoClickDuration())/1000).toFixed(1)+'с';
 }
-function stopAutoClick(){autoClickUntil=0;if(autoClickTicker!==null){clearInterval(autoClickTicker);autoClickTicker=null;}renderAutoClick();}
+function stopAutoClick(){autoClickUntil=0;if(autoClickTicker!==null){clearInterval(autoClickTicker);autoClickTicker=null;}renderAutoClick();if(active&&pendingClicks&&!clickFlight)flush().catch(()=>{});}
 function autoClickStep(){
  if(!active||Date.now()>=autoClickUntil){stopAutoClick();return;}
  renderAutoClick();
@@ -52,8 +53,12 @@ function autoClickStep(){
  if(purchasing||pendingClicks>CONSTANTS.CLICK_BURST-2)return;
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  const x=rect?rect.left+rect.width/2:0,y=rect?rect.top+rect.height/2:0;
- for(let i=0;i<2;i++){pendingClicks++;previewHits.push({damage:previewDamage(),x,y});}
- refreshPreview();if(!clickFlight)flush().catch(()=>{});
+ const damage=previewDamage();
+ for(let i=0;i<2;i++){pendingClicks++;previewHits.push({damage,x,y});}
+ // Play the familiar click sound without moving the cursor or focus.
+ if(!document.hidden)audio.click();
+ refreshPreview();
+ if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),AUTO_CLICK_BATCH_MS);
 }
 gameEngine.activateAutoClick=()=>{
  if(!active)return;
@@ -98,11 +103,12 @@ function apply(result,hits=[],deferNotices=false){
  }
  ready=true;
 
- let index=0;
+ let index=0,visibleDamage=0;
  for(const event of s.effects||[]){
   if(!rect)continue;
   const position=event.source==='manual'?hits[index++]:null;
-  animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);
+  // Avoid hundreds of animated DOM nodes per batch, but always retain critical hits.
+  if(visibleDamage<12||event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
   if(event.source==='ufo'){animations.playUfoShot(event.ufoIndex||0);audio.shoot(true);}
   if(event.reward>0)animations.showMoonReward(event.reward);
  }
@@ -126,7 +132,7 @@ async function flush(){
  const count=Math.min(CONSTANTS.CLICK_BURST,pendingClicks);pendingClicks-=count;
  clickFlight=send('click',{count}).finally(()=>{
   clickFlight=null;
-  if(active&&pendingClicks&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),0);
+  if(active&&pendingClicks&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),autoClickUntil>Date.now()?AUTO_CLICK_BATCH_MS:0);
  });
  return clickFlight;
 }
