@@ -54,7 +54,7 @@ function queueDamageVisual(x,y,damage,isCrit,isBoss){
  },105);
 }
 function clearDamageVisuals(){damageVisualQueue.length=0;if(damageVisualTimer!==null)clearInterval(damageVisualTimer);damageVisualTimer=null;}
-const AUTO_CLICK_BATCH_MS=800; // Group four ticks into one request.
+const AUTO_CLICK_BATCH_MS=400; // Short batches keep combat responsive without one request per click.
 function autoClickDuration(){return 15000+15000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
 function renderAutoClick(){
  const button=document.getElementById('autoClickBtn'),stopButton=document.getElementById('autoClickStopBtn'),label=document.getElementById('autoClickLabel'),timer=document.getElementById('autoClickTimer');
@@ -76,7 +76,7 @@ function autoClickStep(){
  for(let i=0;i<2;i++){pendingClicks++;previewHits.push({damage,x,y});}
  // Play the familiar click sound without moving the cursor or focus.
  if(!document.hidden)audio.click();
- if(Date.now()-autoClickLastPreview>450){autoClickLastPreview=Date.now();refreshPreview();}
+ if(Date.now()-autoClickLastPreview>500){autoClickLastPreview=Date.now();refreshPreview();}
  if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),AUTO_CLICK_BATCH_MS);
 }
 gameEngine.activateAutoClick=()=>{
