@@ -39,9 +39,10 @@ let autoClickUntil=0,autoClickTicker=null;
 const AUTO_CLICK_BATCH_MS=800; // Group four ticks into one request.
 function autoClickDuration(){return 15000+15000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
 function renderAutoClick(){
- const button=document.getElementById('autoClickBtn'),label=document.getElementById('autoClickLabel'),timer=document.getElementById('autoClickTimer');
+ const button=document.getElementById('autoClickBtn'),stopButton=document.getElementById('autoClickStopBtn'),label=document.getElementById('autoClickLabel'),timer=document.getElementById('autoClickTimer');
  const left=Math.max(0,autoClickUntil-Date.now()),running=active&&left>0;
  if(button){button.classList.toggle('active',running);button.setAttribute('aria-label',running?'Обновить время автокликов':'Запустить автоклики');button.title='Автоклики: '+Math.round(autoClickDuration()/1000)+' с. Повторное нажатие сбрасывает таймер.';}
+ if(stopButton){stopButton.disabled=!running;stopButton.setAttribute('aria-disabled',String(!running));}
  if(label)label.textContent=running?'Продлить':'Автоклик';
  if(timer)timer.textContent=((running?left:autoClickDuration())/1000).toFixed(1)+'с';
 }
@@ -69,6 +70,9 @@ gameEngine.activateAutoClick=()=>{
 const autoButton=document.getElementById('autoClickBtn');
 autoButton?.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')e.preventDefault();});
 autoButton?.addEventListener('click',()=>gameEngine.activateAutoClick());
+const autoStopButton=document.getElementById('autoClickStopBtn');
+autoStopButton?.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')e.preventDefault();});
+autoStopButton?.addEventListener('click',()=>{if(autoClickUntil>Date.now())stopAutoClick();});
 // Suppress space-to-shoot while automatic clicks are running, but preserve typing in forms.
 document.addEventListener?.('keydown',e=>{if(e.code==='Space'&&autoClickUntil>Date.now()&&!e.target?.closest?.('input,textarea,[contenteditable="true"]')){e.preventDefault();e.stopImmediatePropagation();}},true);
 renderAutoClick();
