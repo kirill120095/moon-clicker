@@ -65,7 +65,7 @@ const autoButton=document.getElementById('autoClickBtn');
 autoButton?.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')e.preventDefault();});
 autoButton?.addEventListener('click',()=>gameEngine.activateAutoClick());
 // Suppress space-to-shoot while automatic clicks are running, but preserve typing in forms.
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&autoClickUntil>Date.now()&&!e.target?.closest?.('input,textarea,[contenteditable="true"]')){e.preventDefault();e.stopImmediatePropagation();}},true);
+document.addEventListener?.('keydown',e=>{if(e.code==='Space'&&autoClickUntil>Date.now()&&!e.target?.closest?.('input,textarea,[contenteditable="true"]')){e.preventDefault();e.stopImmediatePropagation();}},true);
 renderAutoClick();
 function apply(result,hits=[],deferNotices=false){
  const s=result.state;if(!s)throw Error('Сервер не вернул прогресс');
