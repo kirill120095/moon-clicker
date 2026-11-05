@@ -1,0 +1,20 @@
+/* Integration controls for the provided SVG cabinet. The original art CSS is
+   imported once from lunar-temple-runtime.mjs; these rules remain slot-scoped. */
+.lt-slot{margin-block-end:24px}
+.lt-slot .lt-extension{padding:12px 6px 0;color:#c5ced6;font:12px/1.5 Inter,system-ui,sans-serif}
+.lt-slot .lt-save-status{margin:0 0 10px;color:#d4c59f;font-size:11px}
+.lt-slot .lt-extra-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lt-slot .lt-extra-controls button,.lt-slot .lt-reset-dialog button{min-height:44px;min-width:44px;border:1px solid #a38a5a;border-radius:6px;background:#142536;color:#f0dfb9;padding:8px 12px;font:600 12px/1.4 inherit;cursor:pointer}
+.lt-slot .lt-extra-controls button:disabled{opacity:.45;cursor:default}
+.lt-slot .lt-extra-controls [data-mt-reset]{margin-left:auto}
+.lt-slot .lt-bag,.lt-slot .lt-rules{margin-top:12px;border-top:1px solid #81704e;padding-top:4px}
+.lt-slot .lt-bag summary,.lt-slot .lt-rules summary{min-height:44px;align-content:center;color:#ead5ac;cursor:pointer;font-weight:600}
+.lt-slot .lt-bag ul{padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:8px 0}
+.lt-slot .lt-bag li{padding:10px;border:1px solid #8a76554d;border-radius:6px;background:#112033;overflow-wrap:anywhere}
+.lt-slot .lt-rules p{font-size:11px;line-height:1.7;margin:8px 0}
+.lt-slot .lt-fixture{display:block;margin-top:12px;border:1px dashed #8d9ba9;padding:8px;font-size:11px}
+.lt-slot .lt-fixture select{width:100%;min-height:44px;margin-top:5px;background:#17283a;color:#e6d7b5;border:1px solid #837153}
+.lt-slot .lt-reset-dialog{width:min(440px,calc(100vw - 28px));padding:22px;border:1px solid #c6a46d;border-radius:10px;background:#102031;color:#eadcc0}
+.lt-slot .lt-reset-dialog::backdrop{background:#020812c9}.lt-slot .lt-reset-dialog h3{margin:0 0 12px}.lt-slot .lt-reset-dialog p{margin-bottom:18px}.lt-slot .lt-reset-dialog button{margin-right:8px}
+.lt-slot .lt-extension :is(button,summary,select):focus-visible{outline:2px solid #c8eff5;outline-offset:3px}
+@media(max-width:500px){.lt-slot .lt-extra-controls [data-mt-reset]{margin-left:0;width:100%}.lt-slot .lt-extension{font-size:11px}}
