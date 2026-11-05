@@ -119,13 +119,13 @@ function apply(result,hits=[],deferNotices=false){
  ready=true;
 
  let index=0,visibleDamage=0;
+ const autoBatch=hits.some(hit=>hit.automatic);
  for(const event of s.effects||[]){
   if(!rect)continue;
   const position=event.source==='manual'?hits[index++]:null;
   // Avoid hundreds of animated DOM nodes per batch, but always retain critical hits.
-  if(event.source==='manual'&&hits.length>1&&hits.some(hit=>hit.automatic)){
-    // Automatic hits already use the normal immediate click feedback; don't replay a burst on server response.
-    continue;
+  if(event.source==='manual'&&autoBatch){
+    // Immediate feedback was already shown by handleClick; avoid replaying damage after network confirmation.
    }else if(event.source==='manual'&&hits.length>1){
    if(visibleDamage<8||event.isCrit){queueDamageVisual(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
   }else if(visibleDamage<12||event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
