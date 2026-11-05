@@ -8,7 +8,7 @@ export class AnimationManager {
     this._animations = new Map();
     this._rafId = null;
     this._isRunning = false;
-    this._baseDamage = 10;this._particleCount=0;this._lastLightEffect=0;this._damageNodes=[];this._lastLowDamage=0;this._ufoGeometry=null;
+    this._baseDamage = 10;this._particleCount=0;this._lastLightEffect=0;this._damageNodes=[];this._lastLowDamage=0;this._ufoGeometry=null;this._damageSequence=0;
   }
 
   setBaseDamage(damage) {
@@ -86,11 +86,16 @@ export class AnimationManager {
     damageEl.style.color = color;
     damageEl.style.textShadow = `0 0 10px ${glow}, 0 2px 4px rgba(0,0,0,0.8)`;
     
-    const offsetX = (Math.random() - 0.5) * 60;
-    const offsetY = (Math.random() - 0.5) * 30;
-    
-    damageEl.style.left = `${x + offsetX}px`;
-    damageEl.style.top = `${y + offsetY}px`;
+    // Spread consecutive hits across a wide, rotating pattern instead of stacking at the moon centre.
+    const index=this._damageSequence++;
+    const angle=(index*2.399963229728653)%(Math.PI*2);
+    const radius=65+(index%4)*34;
+    const offsetX=Math.cos(angle)*radius+(Math.random()-.5)*16;
+    const offsetY=Math.sin(angle)*radius*.68+(Math.random()-.5)*14;
+    const viewWidth=document.documentElement.clientWidth||window.innerWidth;
+    const viewHeight=document.documentElement.clientHeight||window.innerHeight;
+    damageEl.style.left = `${Math.max(42,Math.min(viewWidth-42,x+offsetX))}px`;
+    damageEl.style.top = `${Math.max(38,Math.min(viewHeight-38,y+offsetY))}px`;
     
     document.body.appendChild(damageEl);
     
@@ -388,7 +393,7 @@ export class AnimationManager {
     const moon=document.getElementById('moonWrapper');if(!moon)return;
     const rect=moon.getBoundingClientRect(),label=document.createElement('div');
     label.className='moon-reward-popup';label.textContent='+'+amount.toLocaleString('ru-RU')+' 💎';
-    label.style.left=(rect.x+rect.width/2)+'px';label.style.top=(rect.y+rect.height/2)+'px';
+    label.style.left=(rect.x+rect.width/2)+'px';label.style.top=(rect.y+rect.height*.9+16)+'px';
     document.body.appendChild(label);setTimeout(()=>label.remove(),1400);
   }
 
