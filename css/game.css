@@ -2430,3 +2430,11 @@
 .auto-click-timer{min-width:50px;text-align:center;color:#9cc5dc;font:700 .86rem 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
 .auto-click-control:has(#autoClickBtn.active) .auto-click-timer{color:#84ffd0}
 @media(max-width:480px){.info-row-top{padding:9px;gap:8px}.counter{padding:6px 10px}.auto-click-control{gap:5px}#autoClickBtn{padding:8px 9px;font-size:.8rem}}
+
+/* Stop control sits directly beside the active auto-click extension button. */
+#autoClickStopBtn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:1px solid rgba(255,95,105,.7);border-radius:10px;background:linear-gradient(135deg,rgba(118,26,42,.85),rgba(70,14,28,.9));box-shadow:0 0 12px rgba(235,45,67,.16);cursor:pointer;transition:filter .15s,box-shadow .15s,opacity .15s}
+#autoClickStopBtn:not(:disabled):hover{filter:brightness(1.25);box-shadow:0 0 18px rgba(255,72,88,.4)}
+#autoClickStopBtn:focus-visible{outline:2px solid #ff808a;outline-offset:3px}
+#autoClickStopBtn:disabled{opacity:.32;cursor:default;box-shadow:none}
+.auto-click-stop-square{display:block;width:13px;height:13px;border-radius:2px;background:#ff4c58;box-shadow:0 0 7px rgba(255,75,86,.65)}
+@media(max-width:480px){#autoClickStopBtn{width:32px;height:32px}.auto-click-stop-square{width:12px;height:12px}}
