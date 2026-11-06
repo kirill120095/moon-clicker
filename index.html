@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="css/galaxy.css?v=9">
   <link rel="stylesheet" href="css/panel.css?v=9">
   <link rel="stylesheet" href="css/modal.css?v=prestige-cards-13">
-  <link rel="stylesheet" href="css/game.css?v=casino-profile-14">
+  <link rel="stylesheet" href="css/game.css?v=level-jump-15">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
   <link rel="stylesheet" href="css/neon.css?v=online-presence-9">
@@ -94,6 +94,10 @@
         </button>
         
         <button id="rollbackFiveBtn" class="level-control-btn rollback-five hidden" onclick="window.gameEngine.rollbackFive()" title="Вернуться на 5 уровней" aria-label="Вернуться на 5 уровней">↶ 5</button>
+        <form id="jumpLevelForm" class="level-jump-form" title="Перейти на открытый уровень">
+          <input id="jumpLevelInput" type="number" min="1" step="1" inputmode="numeric" placeholder="Ур." aria-label="Номер открытого уровня" required>
+          <button class="level-control-btn level-jump-btn" type="submit" title="Перейти на уровень" aria-label="Перейти на указанный уровень">➜</button>
+        </form>
         <div id="levelTitle" class="level-title">Уровень 1</div>
         
         <button id="returnRecordBtn" class="level-control-btn hidden" onclick="window.gameEngine.returnToRecord()" title="Вернуться к рекорду текущего забега" aria-label="Вернуться к рекорду текущего забега">⏭</button>
@@ -348,7 +352,7 @@
     "./src/core/config.js": "./src/core/config.js?v=online-presence-9",
     "./src/core/constants.js": "./src/core/constants.js?v=prestige-visible-11",
     "./src/core/state.js": "./src/core/state.js?v=online-presence-9",
-    "./src/index.js": "./src/index.js?v=casino-profile-14",
+    "./src/index.js": "./src/index.js?v=level-jump-15",
     "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=online-presence-9",
     "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
     "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
@@ -365,7 +369,7 @@
     "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=online-presence-9",
     "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=autoclick-hp-8",
     "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=buy-max-fix-2",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=casino-profile-14",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=level-jump-15",
     "./src/utils/numbers.js": "./src/utils/numbers.js?v=online-presence-9",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
@@ -375,6 +379,6 @@
   }
 }
   </script>
-  <script type="module" src="src/index.js?v=casino-profile-14"></script>
+  <script type="module" src="src/index.js?v=level-jump-15"></script>
 </body>
 </html>
