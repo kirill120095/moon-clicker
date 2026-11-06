@@ -2475,3 +2475,8 @@
 .prestige-ascend-button{width:100%;padding:14px 18px;font-weight:800}
 .prestige-upgrade-heading{margin:6px 0 0;font-size:1.1rem}
 @media(max-width:600px){.prestige-rewards,.prestige-status-grid{grid-template-columns:1fr}.prestige-card{padding:15px}.prestige-hero{padding:17px}}
+
+/* Neutral lifetime casino totals in profile statistics. */
+.casino-stat-card{border:1px solid rgba(166,177,209,.24);background:linear-gradient(135deg,rgba(32,43,68,.65),rgba(17,25,46,.8))}
+.casino-stat-loss .stat-card-value{color:#f0abb3}
+.casino-stat-win .stat-card-value{color:#a7dfc8}
