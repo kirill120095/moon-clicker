@@ -80,7 +80,7 @@ Deno.serve(async(req:Request)=>{
     // Full reset: keep only the authenticated account's display name.
     // A new serial prevents stale moon-completion cache from surviving.
     state=freshState(String(identity.username||state.playerData?.username||'Игрок').trim().slice(0,30)||'Игрок');
-    state.moonSerial=serial;
+    state.moonSerial=serial;state.resetId=body.request_id;
    }
    try{
     if(body.action==='spinWheel')trusted.wheelIndex=getWheelSectorIndex(trusted.ticket,state);
