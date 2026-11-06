@@ -15,7 +15,7 @@ import {
 import { getMaxHPForLevel, getTitle, getClickUpgradeCost } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
 import { uiScheduler } from '../../utils/performance.js';
-import { db } from '../network/supabase.js';
+import { db, leaderboardPresence } from '../network/supabase.js';
 
 let toastContainer = null;
 let currentQuestCategory = 'all';
@@ -938,6 +938,16 @@ export function updateLiveCombatProfile(){
  const target=document.getElementById('liveCombatEffects'),signature=JSON.stringify(rows);if(target&&target.dataset.signature!==signature){target.replaceChildren();for(const text of rows){const row=document.createElement('div');row.className='combat-effect-card';const split=text.indexOf(':');const title=document.createElement('strong'),value=document.createElement('span');title.textContent=split<0?text:text.slice(0,split);value.textContent=split<0?'Активно':text.slice(split+1).trim();row.appendChild(title);row.appendChild(value);target.appendChild(row);}target.dataset.signature=signature;}
 }
 
+function refreshLeaderOnlineMarkers(){
+ const list=document.getElementById('leadersList');if(!list)return;
+ for(const marker of list.querySelectorAll('[data-online-player]')){
+  const online=leaderboardPresence.isOnline(marker.dataset.onlinePlayer);
+  marker.classList.toggle('is-online',online);
+  marker.title=online?'В игре сейчас':'Не в сети';
+  marker.setAttribute('aria-label',online?'Онлайн':'Не в сети');
+ }
+}
+leaderboardPresence.subscribe(refreshLeaderOnlineMarkers);
 let leadersUpdatedAt = 0;
 let leadersInFlight = false;
 
@@ -966,13 +976,14 @@ async function _updateLeaders() {
       html += `
         <div class="leader-item ${isMe ? 'is-me' : ''} ${rankClass}">
           <div class="leader-rank">#${i + 1}</div>
-          <div class="leader-name">${escapeHTML(p.username || 'Аноним')}</div>
+          <div class="leader-name">${escapeHTML(p.username || 'Аноним')} <span class="leader-online-dot" data-online-player="${escapeHTML(p.player_id || '')}" title="Не в сети" aria-label="Не в сети"></span></div>
           <div class="leader-level" title="Максимальный достигнутый уровень">Макс. ур. ${p.max_level || p.level || 0}</div>
           <div class="leader-clicks">👆 ${formatNumber(p.total_clicks || 0)}</div>
         </div>
       `;
     });
     leadersList.innerHTML = html;
+    refreshLeaderOnlineMarkers();
   } catch (error) {
     console.error('[UI] Leaders error:', error);
     leadersList.innerHTML = '<div class="error-data">Ошибка загрузки</div>';
