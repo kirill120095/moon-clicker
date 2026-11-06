@@ -203,7 +203,7 @@ export async function handleResetProgress() {
   });
   modal._openReset=()=>document.addEventListener('keydown',onKeyDown);
  }
- modal.classList.remove('hidden');modal._openReset();modal.querySelector('[data-reset-cancel]')?.focus?.();
+ modal.classList.remove('hidden');modal._openReset();modal.querySelector('button[data-reset-cancel]')?.focus();
 }
 
 // ============================================================
