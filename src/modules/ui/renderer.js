@@ -15,7 +15,7 @@ import {
 import { getMaxHPForLevel, getTitle, getClickUpgradeCost } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
 import { uiScheduler } from '../../utils/performance.js';
-import { db, leaderboardPresence } from '../network/supabase.js';
+import { db } from '../network/supabase.js';
 
 let toastContainer = null;
 let currentQuestCategory = 'all';
@@ -941,13 +941,13 @@ export function updateLiveCombatProfile(){
 function refreshLeaderOnlineMarkers(){
  const list=document.getElementById('leadersList');if(!list)return;
  for(const marker of list.querySelectorAll('[data-online-player]')){
-  const online=leaderboardPresence.isOnline(marker.dataset.onlinePlayer);
+  const online=db.leaderboardPresence?.isOnline(marker.dataset.onlinePlayer)||false;
   marker.classList.toggle('is-online',online);
   marker.title=online?'В игре сейчас':'Не в сети';
   marker.setAttribute('aria-label',online?'Онлайн':'Не в сети');
  }
 }
-leaderboardPresence.subscribe(refreshLeaderOnlineMarkers);
+db.leaderboardPresence?.subscribe(refreshLeaderOnlineMarkers);
 let leadersUpdatedAt = 0;
 let leadersInFlight = false;
 
