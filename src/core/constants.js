@@ -27,7 +27,7 @@ export const CONSTANTS = {
   CLICK_BURST: 18,
   CLICK_TOKEN_CAPACITY: 36,
   ROLLBACK_LEVELS: 5,
-  PRESTIGE: { DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 20, REWARD_PER_ASCENSION: 0.25, UFO_HASTE_CAP: 0.95, PRICE_STEP_RATIO: 0.2, PRICE_QUADRATIC_DIVISOR: 10 },
+  PRESTIGE: { DAILY_ASCENSION_LIMIT: 3, DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 20, REWARD_PER_ASCENSION: 0.25, UFO_HASTE_CAP: 0.95, PRICE_STEP_RATIO: 0.2, PRICE_QUADRATIC_DIVISOR: 10 },
   WHEEL: { COOLDOWN_MS: 5200, SPIN_MS: 5200, SECTORS: [0, 2, 5, 0, 2, 10, 5, 2, 0, 0, 'bankrupt', 2], WEIGHTS: [1658, 650, 200, 1658, 650, 70, 200, 650, 1657, 1657, 300, 650], VISUAL_WEIGHTS: [97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 33, 97], MAX_PRESSURE: 50, PRESSURE_STEP: 0.12 },
   ECHO: { MAX_HITS_PER_ACTION: 128, MAX_QUEUED_BURSTS: 64 },
   UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, MIN_INTERVAL: 100, COMBO_RELAY_COST: 1000000, MAX_SHOTS_PER_ACTION: 32, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, UNIT_BASE_COST: 2400, UNIT_COST_MULTIPLIER: 2, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { rewardMultiplier: 0.5 }, cosmic: { damagePerLevel: 0.001 } } },
@@ -862,14 +862,17 @@ export const PRESTIGE_UPGRADES={
  autoclick:{id:'autoclick',name:'Автопилот кликов',icon:'⚡',description:'+15 секунд автокликов за уровень',baseCost:1,maxLevel:Infinity,seconds:15},
  critical:{id:'critical',name:'Звёздное прицеливание',icon:'🎯',description:'+3% шанса крита за уровень',baseCost:2,maxLevel:Infinity,crit:0.03}
 };
+export function getMoscowDay(now=Date.now()){return new Date(now+3*60*60*1000).toISOString().slice(0,10);}
 export function getPrestigeSummary(state){
  const p=state.prestige||{},up=p.upgrades||{},c=CONSTANTS.PRESTIGE;
  const record=state.runMaxLevel??Math.max(state.maxLevel||1,state.currentLevel||1);
  const damageSteps=(p.damageStepsTotal||0)+Math.max(0,Math.floor(record/c.DAMAGE_EVERY)-(p.runDamageSteps||0));
  const shardSteps=(p.shardStepsTotal||0)+Math.max(0,Math.floor(record/c.SHARDS_EVERY)-(p.runShardSteps||0));
- return {coins:p.coins||0,ascensions:p.ascensions||0,runRecord:record,
+ const today=getMoscowDay(Date.now()+(state.serverClockOffset||0));
+ const used=p.dailyAscensionDay===today?Math.max(0,Math.min(c.DAILY_ASCENSION_LIMIT,Math.floor(p.dailyAscensionCount||0))):0;
+ return {coins:p.coins||0,ascensions:p.ascensions||0,runRecord:record,dailyAscensionsUsed:used,dailyAscensionsLeft:c.DAILY_ASCENSION_LIMIT-used,dailyAscensionLimit:c.DAILY_ASCENSION_LIMIT,
  pendingCoins:Math.floor(record/c.COIN_EVERY),
- canAscend:Number.isSafeInteger(Math.floor(record/c.COIN_EVERY))&&Math.floor(record/c.COIN_EVERY)>0,
+ canAscend:used<c.DAILY_ASCENSION_LIMIT&&Number.isSafeInteger(Math.floor(record/c.COIN_EVERY))&&Math.floor(record/c.COIN_EVERY)>0,
  damageBonus:damageSteps*c.DAMAGE_PER_STEP+(up.reactor||0)*PRESTIGE_UPGRADES.reactor.damage,
  shardBonus:shardSteps*c.SHARDS_PER_STEP+(up.treasury||0)*PRESTIGE_UPGRADES.treasury.shards,
  critBonus:(up.critical||0)*PRESTIGE_UPGRADES.critical.crit,
