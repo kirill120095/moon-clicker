@@ -957,9 +957,10 @@ function refreshLeaderOnlineMarkers(){
  const list=document.getElementById('leadersList');if(!list)return;
  for(const marker of list.querySelectorAll('[data-online-player]')){
   const online=db.leaderboardPresence?.isOnline(marker.dataset.onlinePlayer)||false;
+  const ready=db.leaderboardPresence?.isReady?.()||false;
   marker.classList.toggle('is-online',online);
-  marker.title=online?'В игре сейчас':'Не в сети';
-  marker.setAttribute('aria-label',online?'Онлайн':'Не в сети');
+  marker.title=online?'В игре сейчас':ready?'Не в сети':'Проверяем онлайн…';
+  marker.setAttribute('aria-label',online?'Онлайн':ready?'Не в сети':'Подключаем онлайн');
  }
 }
 let onlineListenerAttached=false;
@@ -992,7 +993,7 @@ async function _updateLeaders() {
       html += `
         <div class="leader-item ${isMe ? 'is-me' : ''} ${rankClass}">
           <div class="leader-rank">#${i + 1}</div>
-          <div class="leader-name">${escapeHTML(p.username || 'Аноним')} <span class="leader-online-dot" data-online-player="${escapeHTML(p.player_id || '')}" title="Не в сети" aria-label="Не в сети"></span></div>
+          <div class="leader-name">${escapeHTML(p.username || 'Аноним')} <span class="leader-online-dot" data-online-player="${escapeHTML(p.player_id || '')}" title="Проверяем онлайн…" aria-label="Подключаем онлайн"></span></div>
           <div class="leader-level" title="Максимальный достигнутый уровень">Макс. ур. ${p.max_level || p.level || 0}</div>
           <div class="leader-clicks">👆 ${formatNumber(p.total_clicks || 0)}</div>
         </div>

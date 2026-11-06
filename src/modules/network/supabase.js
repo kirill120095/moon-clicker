@@ -86,37 +86,42 @@ function initSupabase() {
 }
 
 // One low-frequency Realtime Presence channel for the leaderboard (no polling or database writes).
-let onlineChannel=null,onlineUserId=null,onlineGeneration=0;
+let onlineChannel=null,onlineUserId=null,onlineGeneration=0,onlineReady=false;
 const onlineIds=new Set(),onlineListeners=new Set();
 function notifyOnline(){for(const fn of onlineListeners)try{fn();}catch(error){console.warn('[Presence] listener',error);}}
 function syncOnline(){
+ const wasReady=onlineReady;onlineReady=true;
  const next=new Set();
  for(const entries of Object.values(onlineChannel?.presenceState()||{})){
   for(const entry of entries)if(typeof entry.player_id==='string')next.add(entry.player_id);
  }
  if(next.size!==onlineIds.size||[...next].some(id=>!onlineIds.has(id))){onlineIds.clear();for(const id of next)onlineIds.add(id);notifyOnline();}
+ else if(!wasReady)notifyOnline();
 }
 export const leaderboardPresence={
  isOnline:id=>onlineIds.has(id),
+ isReady:()=>onlineReady,
  subscribe(fn){onlineListeners.add(fn);return()=>onlineListeners.delete(fn);},
  async start(playerId){
   if(!playerId||onlineChannel&&onlineUserId===playerId)return;
   const generation=++onlineGeneration;
   if(onlineChannel){const old=onlineChannel;onlineChannel=null;initSupabase().then(client=>client.removeChannel(old)).catch(()=>{});}
-  onlineUserId=playerId;onlineIds.clear();notifyOnline();
+  onlineUserId=playerId;onlineReady=false;onlineIds.clear();notifyOnline();
   try{
    const client=await initSupabase();if(generation!==onlineGeneration)return;
    const channel=client.channel('moon-clicker-online',{config:{presence:{key:playerId}}});
    onlineChannel=channel;
    channel.on('presence',{event:'sync'},syncOnline)
     .subscribe(async status=>{
-      if(status!=='SUBSCRIBED'||generation!==onlineGeneration)return;
+      if(generation!==onlineGeneration)return;
+       if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){onlineReady=false;notifyOnline();return;}
+       if(status!=='SUBSCRIBED')return;
       try{await channel.track({player_id:playerId});}catch(error){console.warn('[Presence] track failed',error);}
     });
   }catch(error){console.warn('[Presence] connection unavailable',error);}
  },
  stop(){
-  ++onlineGeneration;onlineUserId=null;onlineIds.clear();notifyOnline();
+  ++onlineGeneration;onlineUserId=null;onlineReady=false;onlineIds.clear();notifyOnline();
   if(onlineChannel){const old=onlineChannel;onlineChannel=null;initSupabase().then(client=>client.removeChannel(old)).catch(()=>{});}
  }
 };
