@@ -3,7 +3,7 @@ import { fortuneWheel } from '../ui/wheel.js';
 import { gameAdmin } from '../ui/admin.js';
 import { gameEngine } from './game.js';
 import { appState, state } from '../../core/state.js';
-import { CONSTANTS,QUESTS,ACHIEVEMENTS,getBaseDamage,getPrestigeSummary,getMoscowDay } from '../../core/constants.js';
+import { CONSTANTS,QUESTS,ACHIEVEMENTS,getBaseDamage,getPrestigeSummary } from '../../core/constants.js';
 import { db } from '../network/supabase.js';
 import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
@@ -176,10 +176,10 @@ gameEngine.init=()=>{
  fortuneWheel.bind(payload=>command('spinWheel',payload),()=>{for(const message of pendingWheelNotices)showToast(message,'success',3500);pendingWheelNotices=[];updateUI();updateShopUI();updateProfileAndLeaders();});fortuneWheel.connect(true);
  gameAdmin.connect(state.user).catch(()=>{});
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
- let lastPrestigeDay=getMoscowDay(Date.now()+offset);
+ let lastPrestigeDay=new Date(Date.now()+offset+10800000).toISOString().slice(0,10);
  ticker=setInterval(()=>{
   if(!active)return;
-  const prestigeDay=getMoscowDay(Date.now()+offset);
+  const prestigeDay=new Date(Date.now()+offset+10800000).toISOString().slice(0,10);
   if(prestigeDay!==lastPrestigeDay){lastPrestigeDay=prestigeDay;updateShopUI();updateProfileAndLeaders();}
   const activeBuffs=refreshBuffs();updateLiveCombatProfile();
   if(((state.ufoLevel&&state.ufoNextShotAt<=Date.now()+offset)||state.pendingEchoes>0)&&!document.hidden&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextUfoSync){
