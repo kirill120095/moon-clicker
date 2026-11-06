@@ -651,8 +651,8 @@ function _updateSynergiesDisplay() {
 export function updateProfileAndLeaders() {
   updatePrestigeUI();
   uiScheduler.schedule(() => {
-    _updateProfile();
-    _updateLeaders();
+    try{_updateProfile();}catch(error){console.error('[UI] Profile error:',error);}
+    _updateLeaders().catch(error=>console.error('[UI] Leaders update error:',error));
   },0,'profile');
 }
 
@@ -679,7 +679,7 @@ function _updateProfile() {
   const maxSlots = state.maxSlots || 1;
   // Server updates (including wheel payouts) must not rebuild the entire profile.
   // Only changes to its structure (moon cards, synergies, identity) require a rebuild.
-  const structureKey=JSON.stringify([state.user.id,state.user.email,state.user.user_metadata?.username,state.user.app_metadata?.login_mode,data.level||1,title,activeMoons,ownedMoons,activeMoons.map(id=>[id,state.moonLevels?.[id]]),ownedMoons.map(id=>[id,state.moonLevels?.[id]]),maxSlots,getSlotLimit(state),getActiveSynergies(state).map(b=>b.key)]);
+  const structureKey=JSON.stringify([state.user.id,state.user.email,state.user.user_metadata?.username,state.user.app_metadata?.login_mode,data.level||1,title,activeMoons,ownedMoons,activeMoons.map(id=>[id,state.moonLevels?.[id]]),ownedMoons.map(id=>[id,state.moonLevels?.[id]]),maxSlots,getSlotLimit(state),(window._activeSynergies||[]).map(b=>[b.key,b.tier,b.isClone])]);
   if(profileContent.dataset.structureKey===structureKey&&profileContent.querySelector('[data-live-stat="critDamage"]')){
     updateLiveCombatProfile();
     return;

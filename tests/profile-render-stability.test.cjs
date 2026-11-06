@@ -16,3 +16,12 @@ test('casino, shards, time and boss kills update without replacing cards',()=>{
  for(const field of ['casinoLost','casinoWon','shards','playTime','bossKills','slots'])assert.match(src,new RegExp('data-live-stat="'+field+'"'));
  assert.match(src,/const values=\{bossKills:/);
 });
+
+test('profile does not call nonexistent synergy helper and uses existing synergy state',()=>{
+ assert.doesNotMatch(src,/getActiveSynergies\(/);
+ assert.match(src,/window\._activeSynergies\|\|\[\]/);
+});
+test('leaderboard refresh still runs when profile rendering throws',()=>{
+ assert.match(src,/try\{_updateProfile\(\);\}catch\(error\)/);
+ assert.match(src,/_updateLeaders\(\)\.catch/);
+});
