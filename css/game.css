@@ -2448,3 +2448,30 @@
 .prestige-explainer h4{margin:14px 0 7px;font-size:1rem}
 .prestige-explainer p{margin:7px 0;line-height:1.55}
 .prestige-explainer .prestige-summary{font-size:1.08rem;margin-bottom:10px}
+
+/* Prestige overview: separate readable panels, responsive on small screens. */
+.prestige-overview{display:grid;gap:14px;margin-bottom:20px}
+.prestige-hero{position:relative;overflow:hidden;padding:20px 22px;border:1px solid rgba(255,209,91,.36);border-radius:18px;background:radial-gradient(circle at 90% 0%,rgba(255,197,58,.18),transparent 55%),linear-gradient(125deg,rgba(44,35,82,.85),rgba(17,25,48,.96));text-align:center}
+.prestige-hero-label{font-size:.86rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#e8d4ff}
+.prestige-hero-balance{font-size:clamp(2rem,6vw,3rem);font-weight:850;line-height:1.3;color:#ffe38a;text-shadow:0 0 25px rgba(255,197,65,.3)}
+.prestige-hero-caption{color:#b9c4da;font-size:.9rem}
+.prestige-card{padding:17px 18px;border:1px solid rgba(159,172,214,.2);border-radius:16px;background:linear-gradient(145deg,rgba(29,39,69,.92),rgba(16,24,44,.95));min-width:0}
+.prestige-card h3{margin:0 0 14px;font-size:1.02rem;color:#f3edff}
+.prestige-rewards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.prestige-reward{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid rgba(180,190,224,.13);border-radius:12px;background:rgba(255,255,255,.035)}
+.prestige-reward-icon{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:10px;background:rgba(139,112,255,.14);font-size:1.25rem}
+.prestige-reward strong,.prestige-reward span:not(.prestige-reward-icon){display:block}
+.prestige-reward strong{font-size:.93rem;margin-bottom:4px;color:#fff}
+.prestige-reward div>span{font-size:.84rem;line-height:1.5;color:#b9c5de}
+.prestige-note{margin:13px 0 0;color:#aebbd4;font-size:.82rem;line-height:1.55}
+.prestige-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.prestige-metric{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:10px 0;color:#c1cce1;font-size:.88rem}
+.prestige-metric strong{font-size:1.15rem;color:#ffe38a;white-space:nowrap}
+.prestige-limit-count{display:flex;align-items:baseline;gap:9px;color:#c3cce1;font-size:.88rem}
+.prestige-limit-count strong{font-size:2rem;line-height:1;color:#ffe38a}
+.prestige-limit-pips{display:flex;gap:7px;margin-top:13px}
+.prestige-limit-pips span{height:7px;flex:1;border-radius:20px;background:rgba(154,165,191,.22)}
+.prestige-limit-pips span.available{background:linear-gradient(90deg,#f6b94d,#ffdf86);box-shadow:0 0 8px rgba(255,204,101,.3)}
+.prestige-ascend-button{width:100%;padding:14px 18px;font-weight:800}
+.prestige-upgrade-heading{margin:6px 0 0;font-size:1.1rem}
+@media(max-width:600px){.prestige-rewards,.prestige-status-grid{grid-template-columns:1fr}.prestige-card{padding:15px}.prestige-hero{padding:17px}}
