@@ -2438,3 +2438,7 @@
 #autoClickStopBtn:disabled{opacity:.32;cursor:default;box-shadow:none}
 .auto-click-stop-square{display:block;width:13px;height:13px;border-radius:2px;background:#ff4c58;box-shadow:0 0 7px rgba(255,75,86,.65)}
 @media(max-width:480px){#autoClickStopBtn{width:32px;height:32px}.auto-click-stop-square{width:12px;height:12px}}
+
+/* Realtime online indicator in the leaderboard. */
+.leader-online-dot{display:inline-block;vertical-align:middle;width:8px;height:8px;margin-left:5px;border-radius:50%;background:#6b7280;opacity:.5;box-shadow:none;transition:background .2s,box-shadow .2s,opacity .2s}
+.leader-online-dot.is-online{background:#34e89e;opacity:1;box-shadow:0 0 0 2px rgba(52,232,158,.14),0 0 10px rgba(52,232,158,.55)}
