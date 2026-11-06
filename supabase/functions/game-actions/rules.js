@@ -1,4 +1,4 @@
-import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, rollEchoRepeats, getProgressReward, getQuestPayout, getBaseDamage, getEffectiveMoonParams, getCombatStats, getSlotLimit, getClickCrystalCost, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, PRESTIGE_UPGRADES } from './constants.js';
+import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, rollEchoRepeats, getProgressReward, getQuestPayout, getBaseDamage, getEffectiveMoonParams, getCombatStats, getSlotLimit, getClickCrystalCost, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, getMoscowDay, PRESTIGE_UPGRADES } from './constants.js';
 import { getMaxHPForLevel, getSlotUpgradeCost, getClickUpgradeCost } from './config.js';
 const showToast=()=>{},updateQuestUI=()=>{},updateAchievementUI=()=>{},updateProfileAndLeaders=()=>{};
 export function freshState(username='Игрок') {
@@ -18,8 +18,10 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  function bankMilestones(){const p=state.prestige,c=CONSTANTS.PRESTIGE,d=Math.floor(state.runMaxLevel/c.DAMAGE_EVERY),s=Math.floor(state.runMaxLevel/c.SHARDS_EVERY);p.damageStepsTotal=(p.damageStepsTotal||0)+Math.max(0,d-(p.runDamageSteps||0));p.shardStepsTotal=(p.shardStepsTotal||0)+Math.max(0,s-(p.runShardSteps||0));p.runDamageSteps=d;p.runShardSteps=s;}
  bankMilestones();
  if(action==='ascend'){
+  const today=getMoscowDay(now),current=state.prestige.dailyAscensionDay===today?Math.max(0,Math.floor(state.prestige.dailyAscensionCount||0)):0;
+  if(current>=CONSTANTS.PRESTIGE.DAILY_ASCENSION_LIMIT)throw Error('Лимит: 3 вознесения в день. Следующее доступно после 00:00 МСК.');
   const summary=getPrestigeSummary(state);if(!summary.canAscend)throw Error('Новые монеты престижа появятся на следующем рубеже '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровней');
-  const p=structuredClone(state.prestige);p.coins=(p.coins||0)+summary.pendingCoins;p.runDamageSteps=0;p.runShardSteps=0;p.ascensions=(p.ascensions||0)+1;
+  const p=structuredClone(state.prestige);p.coins=(p.coins||0)+summary.pendingCoins;p.runDamageSteps=0;p.runShardSteps=0;p.ascensions=(p.ascensions||0)+1;p.dailyAscensionDay=today;p.dailyAscensionCount=current+1;
   const wheelEconomy=structuredClone(state.wheelEconomy||{}),wheelResult=state.wheelResult;
   const record=state.maxLevel,serial=(state.moonSerial||1)+1,name=state.playerData.username,totalClicks=state.clickCount;
   state=freshState(name);state.wheelEconomy=wheelEconomy;state.wheelResult=wheelResult;state.clickCount=totalClicks;state.maxLevel=record;state.moonSerial=serial;state.prestige=p;state.playerData.shards=getPrestigeSummary(state).startShards;action='load';
