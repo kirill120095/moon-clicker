@@ -863,12 +863,12 @@ export const PRESTIGE_UPGRADES={
  critical:{id:'critical',name:'Звёздное прицеливание',icon:'🎯',description:'+3% шанса крита за уровень',baseCost:2,maxLevel:Infinity,crit:0.03}
 };
 export function getMoscowDay(now=Date.now()){return new Date(now+3*60*60*1000).toISOString().slice(0,10);}
-export function getPrestigeSummary(state){
+export function getPrestigeSummary(state,now=Date.now()+(state.serverClockOffset||0)){
  const p=state.prestige||{},up=p.upgrades||{},c=CONSTANTS.PRESTIGE;
  const record=state.runMaxLevel??Math.max(state.maxLevel||1,state.currentLevel||1);
  const damageSteps=(p.damageStepsTotal||0)+Math.max(0,Math.floor(record/c.DAMAGE_EVERY)-(p.runDamageSteps||0));
  const shardSteps=(p.shardStepsTotal||0)+Math.max(0,Math.floor(record/c.SHARDS_EVERY)-(p.runShardSteps||0));
- const today=getMoscowDay(Date.now()+(state.serverClockOffset||0));
+ const today=getMoscowDay(now);
  const used=p.dailyAscensionDay===today?Math.max(0,Math.min(c.DAILY_ASCENSION_LIMIT,Math.floor(p.dailyAscensionCount||0))):0;
  return {coins:p.coins||0,ascensions:p.ascensions||0,runRecord:record,dailyAscensionsUsed:used,dailyAscensionsLeft:c.DAILY_ASCENSION_LIMIT-used,dailyAscensionLimit:c.DAILY_ASCENSION_LIMIT,
  pendingCoins:Math.floor(record/c.COIN_EVERY),
