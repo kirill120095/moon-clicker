@@ -172,6 +172,22 @@
           <label class="sound-check">Производительность <select id="performanceMode"><option value="auto">Автоматически</option><option value="low">Слабое устройство</option><option value="full">Полные эффекты</option></select></label>
           <label class="sound-check"><input type="checkbox" id="reduceEffects"> Уменьшить анимацию</label>
           <p id="radioNowPlaying" class="radio-now-playing">Космический фон</p>
+<section id="radioModePanel" class="radio-studio-card" aria-label="Выбор радио">
+ <h3>📻 Космическое радио</h3>
+ <label for="radioMode">Источник музыки</label>
+ <select id="radioMode"><option value="own">Наше радио · общий эфир</option><option value="internet">Интернет-радиостанции · личное прослушивание</option></select>
+ <div id="internetRadioPanel" hidden>
+  <p>Станции из открытого каталога Radio Browser. Внешний эфир играет только у тебя, не меняя наше общее радио.</p>
+  <label for="internetRadioGenre">Жанр</label>
+  <select id="internetRadioGenre"><option value="ambient">Ambient</option><option value="synthwave">Synthwave</option><option value="lofi">Lo-fi</option><option value="electronic">Электроника</option><option value="rock">Рок</option><option value="jazz">Джаз</option></select>
+  <button id="internetRadioSearch" type="button" class="btn-action">Найти станции</button>
+  <label for="internetRadioStations">Радиостанция</label>
+  <select id="internetRadioStations" aria-label="Интернет-радиостанция"></select>
+  <div class="radio-actions"><button id="internetRadioPlay" type="button" class="btn-action">▶ Слушать</button><button id="internetRadioStop" type="button" class="btn-action">⏸ Пауза</button></div>
+  <p id="internetRadioStatus" role="status" aria-live="polite">Выбери жанр и нажми «Найти станции».</p>
+  <p><small>Потоки предоставляют сторонние станции. Некоторые могут быть недоступны или иметь ограничения на встраивание.</small></p>
+ </div>
+ </section>
           <section id="radioAdmin" class="radio-admin hidden">
  <div class="radio-studio-heading"><div><span class="radio-studio-eyebrow">ORBIT RADIO · СТУДИЯ</span><h3>Музыка для всех</h3></div><button id="radioRefresh" type="button" class="btn-action" title="Обновить плейлисты и библиотеку">↻ Обновить</button></div><p>Выбирай плейлист и запускай эфир. Он продолжит играть у остальных, когда ты выйдешь.</p><div class="radio-studio-card">
  <label for="radioPlaylists">Выбор плейлиста</label><select id="radioPlaylists"></select>
@@ -389,7 +405,7 @@
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
     "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=full-reset-27",
-    "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=online-presence-9",
+    "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=internet-radio-29",
     "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=quiet-audio-28"
   }
 }
