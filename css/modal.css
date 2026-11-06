@@ -268,3 +268,20 @@
   .supernova-icon { font-size: 4rem; }
   .supernova-message { font-size: 1rem; }
 }
+
+/* Centered, game-themed ascension confirmation. */
+#ascensionModal.modal{position:fixed;inset:0;width:100%;height:100%;height:100dvh;display:flex;align-items:center;justify-content:center;z-index:20000;padding:18px;box-sizing:border-box}
+#ascensionModal.modal.hidden{display:none!important}
+.ascension-modal-content{width:min(100%,430px);max-width:430px;max-height:calc(100dvh - 36px);overflow:auto;box-sizing:border-box;text-align:center;padding:28px 24px;background:radial-gradient(circle at 50% 0%,rgba(111,77,183,.32),transparent 60%),linear-gradient(145deg,#212745,#10192f);border:1px solid rgba(255,216,121,.45);border-radius:22px;box-shadow:0 28px 80px rgba(0,0,0,.65),0 0 40px rgba(130,84,218,.17)}
+.ascension-modal-emblem{display:grid;place-items:center;width:74px;height:74px;margin:0 auto 12px;border-radius:50%;font-size:2.4rem;background:radial-gradient(circle,rgba(255,207,91,.27),rgba(255,199,68,.06));box-shadow:0 0 30px rgba(255,198,79,.2)}
+.ascension-modal-content .modal-title{margin-bottom:8px;font-size:1.55rem;color:#fff}
+.ascension-modal-content .modal-message{margin-bottom:16px;font-size:.9rem}
+.ascension-modal-reward{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border:1px solid rgba(255,206,102,.28);border-radius:12px;background:rgba(255,202,93,.09);color:#d6ddec}
+.ascension-modal-reward strong{font-size:1.45rem;color:#ffe18a}
+.ascension-modal-details{text-align:left;padding:9px 4px 15px;color:#c8d3e9;font-size:.87rem;line-height:1.5}
+.ascension-modal-details p{margin:9px 0}
+.ascension-modal-actions{display:flex;gap:10px}
+.ascension-modal-actions .btn-modal{min-width:0}
+.ascension-modal-actions .btn-confirm{background:linear-gradient(135deg,#ffdc79,#f6a83f);color:#30203b;box-shadow:0 5px 20px rgba(255,194,73,.22)}
+.ascension-modal-actions .btn-cancel{background:rgba(255,255,255,.08)}
+@media(max-width:420px){.ascension-modal-content{padding:23px 17px}.ascension-modal-actions{flex-direction:column-reverse}}
