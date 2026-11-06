@@ -381,7 +381,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  for(const [id,counter] of [['normal','_comboClicks'],['fire','_fireStacks'],['shadow','_shadowCritStacks']]){
   const timeout=rules._getMechanicParamsForActiveMoon(id)?.resetTimeout||15000;
   const mechanicIdle=id==='normal'?now-Math.max(activity||now,state.lastComboAt||0):idle;
-  if(mechanicIdle>=timeout)rules[counter]=0;
+  if(action!=='toggleMoon'&&action!=='setCloneTargets'&&mechanicIdle>=timeout)rules[counter]=0;
  }
  function startMoon(){state.moonSerial++;state.maxHP=getMaxHPForLevel(state.currentLevel);state.moonHP=state.maxHP;
  rules._clickCounter=0;rules._pityClicks=0;rules._firstStrikeUsed=false;rules._newMoon=true;
