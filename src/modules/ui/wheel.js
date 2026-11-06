@@ -71,7 +71,7 @@ export class FortuneWheel {
   const bet=Number(this.form.elements.bet.value);
   if(!Number.isSafeInteger(bet)||bet<1||bet>getVisibleShards(state.playerData?.shards)){this.message('Проверь ставку','Нужно целое число в пределах твоего баланса');return;}
   for(const animation of this.animations)animation.cancel();this.animations=[];
-  this.busy=true;beginWheelBalance();let resultRevealed=false;const generation=this.generation;
+  this.busy=true;beginWheelBalance(state.wheelEconomy);let resultRevealed=false;const generation=this.generation;
   this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.root.classList.add('fortune-busy');
   this.button.disabled=true;for(const element of this.form.elements)element.disabled=true;
   this.root.querySelector('.fortune-close').disabled=true;
