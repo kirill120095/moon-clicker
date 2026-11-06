@@ -8,6 +8,27 @@ export function wheelStopAngle(index, count, from=0) {
  const target=((360-offset)%360+360)%360;
  return from+360*7+((target-from%360+360)%360);
 }
+export const WHEEL_DARK_HUMOR_LINES = Object.freeze([
+ 'Фортуна сегодня на больничном. Замещает бухгалтер.',
+ 'Надежда умерла последней. Но успела оставить чек.',
+ 'Здесь даже призраки проверяют сдачу.',
+ 'Колесо крутится. Финансовый отдел уже нервничает.',
+ 'Удача вышла покурить. Возвращаться не обещала.',
+ 'Ваши кристаллы попросили составить завещание.',
+ 'Статистика молчит. Подозрительно громко.',
+ 'Сегодня судьба работает без выходных и совести.',
+ 'У колеса есть чувство юмора. Очень чёрное.',
+ 'Кристаллы шепчут: «Мы слишком молоды для этого».',
+ 'Фортуна подмигнула. Возможно, это нервный тик.',
+ 'В архиве неудач уже готовят новую папку.',
+ 'Колесо обещало сюрприз. Детали засекречены.',
+ 'Тут даже скелеты держат кулачки.',
+ 'Ваше везение проходит внеплановую проверку.',
+ 'Луна смотрит на это и делает вид, что не знакома.',
+ 'Никто не пострадал. Кроме чувства предсказуемости.',
+ 'Судьба бросила монетку. Монетка подала жалобу.'
+]);
+
 export class FortuneWheel {
  constructor(){this.allowed=false;this.busy=false;this.generation=0;this.animations=[];this.angle=0;this.timer=null;}
  bind(spin,onReveal){this.spin=spin;this.onReveal=onReveal;}
@@ -54,7 +75,7 @@ export class FortuneWheel {
   this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.root.classList.add('fortune-busy');
   this.button.disabled=true;for(const element of this.form.elements)element.disabled=true;
   this.root.querySelector('.fortune-close').disabled=true;
-  this.message('Судьба уже в движении…','Ожидаем результат вращения');
+  this.message('Судьба уже в движении…',WHEEL_DARK_HUMOR_LINES[Math.floor(Math.random()*WHEEL_DARK_HUMOR_LINES.length)]);
   const moving=this.motion(),started=performance.now();
   const idle=moving?this.rotor.animate([{transform:'rotate('+this.angle+'deg)'},{transform:'rotate('+(this.angle+360)+'deg)'}],{duration:900,iterations:Infinity,easing:'linear'}):null;
   if(idle)this.animations.push(idle);
