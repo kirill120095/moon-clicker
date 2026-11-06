@@ -5,7 +5,7 @@ function setup(admin=true,failPublic=false,failLibrary=false){
  function node(id){if(nodes.has(id))return nodes.get(id);const classes=new Set(['hidden']);const n={value:'',textContent:'',options:[],classList:{toggle(k,v){if(v===undefined)v=!classes.has(k);v?classes.add(k):classes.delete(k);},add:k=>classes.add(k),contains:k=>classes.has(k)},setAttribute(k,v){this[k]=v;},addEventListener(e,f){listeners.set(id+':'+e,f);},replaceChildren(...children){this.options=children;},appendChild(c){this.options.push(c);},cloneNode(){return {...this};}};nodes.set(id,n);return n;}
  const client={rpc:async()=>{roleCalls++;return {data:admin};},channel(){channels++;return {on(){return this;},subscribe(){return this;}};},removeChannel(){removed++;},from(table){return {select(){return {eq(){return {single:async()=>failPublic?{error:Error('offline')}:{data:{version:1,track_path:null}}};},order:async()=>({data:[]}),then(resolve){resolve(failLibrary?{error:Error('library offline')}:{data:[]});}};}};},storage:{from(){return {list:async()=>failLibrary?{error:Error('storage offline')}:{data:[]}};}}};
  class Audio{addEventListener(){}pause(){}load(){}getAttribute(){return null;}}
- const c={initSupabase:async()=>client,Audio,audio:{apply(){}},document:{hidden:false,getElementById:node,createElement:()=>node('option'+Math.random()),querySelectorAll:()=>[],addEventListener(){}},localStorage:{getItem:k=>prefs.get(k),setItem:(k,v)=>prefs.set(k,v)},setInterval(fn){timers.add(fn);return fn;},clearInterval:id=>timers.delete(id),console};
+ const c={URL,initSupabase:async()=>client,Audio,audio:{apply(){}},document:{hidden:false,getElementById:node,createElement:()=>node('option'+Math.random()),querySelectorAll:()=>[],addEventListener(){}},localStorage:{getItem:k=>prefs.get(k),setItem:(k,v)=>prefs.set(k,v)},setInterval(fn){timers.add(fn);return fn;},clearInterval:id=>timers.delete(id),console};
  vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/radio.js'),'utf8')),c);
  return {run:s=>vm.runInContext(s,c),node,listeners,prefs,timers,counts:()=>({channels,removed,roleCalls}),client};
 }
@@ -47,4 +47,23 @@ test('mini repeat toggles preserve track position and match settings buttons',as
  await s.listeners.get('radioMiniRepeatTrack:click')();await new Promise(r=>setImmediate(r));
  assert.equal(s.run('sent.action'),'mode');assert.equal(s.run('sent.extra.p_repeat_track'),true);assert.equal(s.run('sent.extra.p_index'),0);
  assert.ok(s.run('sent.extra.p_offset')>=5);s.run('radio.disconnect()');
+});
+
+test('internet radio mode is local and does not modify the shared station',async()=>{
+ const s=setup(true);await s.run("radio.connect({id:'owner'})");
+ s.run("radio.setRadioMode('internet')");
+ assert.equal(s.run('radio.mode'),'internet');
+ assert.equal(s.prefs.get('moon-radio-mode'),'internet');
+ assert.equal(s.node('radioAdmin').classList.contains('hidden'),true);
+ assert.equal(s.node('radioMini').classList.contains('hidden'),true);
+ s.run("radio.setRadioMode('own')");
+ assert.equal(s.run('radio.mode'),'own');
+ assert.equal(s.node('radioAdmin').classList.contains('hidden'),false);
+ s.run('radio.disconnect()');
+});
+test('internet radio only accepts HTTPS station streams',()=>{
+ const s=setup(false);
+ assert.equal(s.run("safeRadioStream({url:'http://example.com/live'})"),null);
+ assert.equal(s.run("safeRadioStream({url:'javascript:alert(1)'})"),null);
+ assert.equal(s.run("safeRadioStream({url:'https://example.com/live'})"),'https://example.com/live');
 });
