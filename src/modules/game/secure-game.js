@@ -253,7 +253,7 @@ gameEngine.claimAllQuests=()=>collectAll('claimAllQuests','claimAllQuestsBtn');
 gameEngine.claimAllAchievements=()=>collectAll('claimAllAchievements','claimAllAchievementsBtn');
 gameEngine.claimQuestReward=id=>command('claimQuest',{id},true).catch(()=>{});
 gameEngine.claimAchievementReward=(id,tier)=>command('claimAchievement',{id,tier},true).catch(()=>{});
-gameEngine.resetProgress=()=>command('reset').catch(()=>{});
+gameEngine.resetProgress=()=>command('reset');
 gameEngine.toggleTestMode=()=>showToast('Тестовый режим отключён в защищённом сезоне','info');
 
 const moonButton=document.getElementById('moonWrapper');moonButton?.addEventListener('keydown',e=>{if(e.code==='Space'&&autoClickUntil>Date.now()){e.preventDefault();return;}if(e.code==='Space'||e.code==='Enter'){e.preventDefault();const r=moonButton.getBoundingClientRect();gameEngine.handleClick({clientX:r.x+r.width/2,clientY:r.y+r.height/2});}});
