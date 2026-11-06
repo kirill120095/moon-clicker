@@ -13,3 +13,14 @@ test('audio waits for interaction, remembers settings and suspends in hidden tab
  document.hidden=true;events.visibilitychange();assert.equal(vm.runInContext('audio.ctx.state',c),'suspended');assert.equal(intervals.size,0);
  document.hidden=false;events.visibilitychange();assert.equal(vm.runInContext('audio.ctx.state',c),'running');
 });
+
+test('one percent volume is quiet for radio and sound effects',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../src/modules/ui/audio.js'),'utf8');
+ const ctx={document:{addEventListener(){},querySelectorAll(){return []},getElementById(){return null}},localStorage:{getItem(){return null},setItem(){}},console};
+ vm.createContext(ctx);vm.runInContext(source.replace(/export /g,''),ctx);
+ assert.equal(vm.runInContext('audioGain(0)',ctx),0);
+ assert.ok(vm.runInContext('audioGain(0.01)',ctx)<0.001);
+ assert.ok(vm.runInContext('audioGain(0.5)',ctx)<vm.runInContext('audioGain(1)',ctx));
+ assert.match(source,/radioElement.volume=audioGain/);
+ assert.match(source,/fxBus.gain.setTargetAtTime\(audioGain/);
+});
