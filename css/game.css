@@ -2498,3 +2498,12 @@
 .level-jump-form input{appearance:textfield;-moz-appearance:textfield}
 .level-jump-btn{min-width:37px!important;width:37px!important;padding:0!important;font-size:18px!important}
 @media(max-width:420px){.level-jump-form input{width:53px;height:35px;padding:4px;font-size:12px}.level-jump-btn{width:33px!important;min-width:33px!important}}
+
+/* Active effects: compact readable formulas, not icon-only summaries. */
+.live-combat-effects{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))!important}
+.combat-effect-tile{align-items:stretch;justify-content:flex-start;min-height:0;padding:12px;gap:9px;text-align:left;cursor:default}
+.combat-effect-heading{display:flex;align-items:center;gap:8px;min-width:0}
+.combat-effect-heading .combat-effect-symbol{font-size:1.25rem}
+.combat-effect-heading .combat-effect-label{font-size:.78rem;overflow-wrap:break-word}
+.combat-effect-formula{font-size:.81rem;line-height:1.7;color:#dce5ff;overflow-wrap:break-word;white-space:normal}
+.combat-effect-metric{display:inline-block;vertical-align:middle;font-size:1rem;line-height:1.15;cursor:help}
