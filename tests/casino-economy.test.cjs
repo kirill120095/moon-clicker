@@ -30,3 +30,12 @@ test('return to record uses only this run, refreshes combat and never pays for t
 });
 
 test('bankruptcy records full balance lost, not only the stake',()=>{const run=setup();run("var s=freshState();s.playerData.shards=1500;s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},100000,{canSpinWheel:true,wheelIndex:10})");assert.equal(run('s.playerData.shards'),0);assert.equal(run('s.wheelEconomy.totalLost'),1500);assert.equal(run('s.wheelEconomy.totalWon'),0);});
+
+test('jump to unlocked level accepts earlier and cleared run levels, rejects locked or invalid targets',()=>{
+ const run=setup();run("var s=freshState();s.currentLevel=25;s.runMaxLevel=25;s.maxLevel=1000;s=applyAction(s,'jumpToLevel',{level:5},100000)");
+ assert.equal(run('s.currentLevel'),5);assert.equal(run('s.maxLevel'),1000);
+ run("s=applyAction(s,'jumpToLevel',{level:25},100100)");assert.equal(run('s.currentLevel'),25);
+ assert.throws(()=>run("applyAction(s,'jumpToLevel',{level:26},100200)"));
+ assert.throws(()=>run("applyAction(s,'jumpToLevel',{level:1.5},100200)"));
+ assert.throws(()=>run("applyAction(s,'jumpToLevel',{level:0},100200)"));
+});
