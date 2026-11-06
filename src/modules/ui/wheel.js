@@ -25,8 +25,16 @@ export const WHEEL_DARK_HUMOR_LINES = Object.freeze([
   "Космос бесконечен. Твои кристаллы — нет…",
   "Судьба подбрасывает монетку. Монетка в ужасе…",
   "Твоя удача внесена в список пропавших без вести…",
-  "Вскрытие покажет, куда делись кристаллы…"
+  "Вскрытие покажет, куда делись кристаллы…",
+  "Смерть в нищете"
 ]);
+
+// The last phrase has four times the weight of each other line.
+export function randomWheelHeadline(random=Math.random()) {
+ const totalWeight=WHEEL_DARK_HUMOR_LINES.length+3;
+ const pick=Math.min(totalWeight-1,Math.max(0,Math.floor(random*totalWeight)));
+ return WHEEL_DARK_HUMOR_LINES[pick<WHEEL_DARK_HUMOR_LINES.length?pick:WHEEL_DARK_HUMOR_LINES.length-1];
+}
 
 export class FortuneWheel {
  constructor(){this.allowed=false;this.busy=false;this.generation=0;this.animations=[];this.angle=0;this.timer=null;}
@@ -74,7 +82,7 @@ export class FortuneWheel {
   this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.root.classList.add('fortune-busy');
   this.button.disabled=true;for(const element of this.form.elements)element.disabled=true;
   this.root.querySelector('.fortune-close').disabled=true;
-  this.message(WHEEL_DARK_HUMOR_LINES[Math.floor(Math.random()*WHEEL_DARK_HUMOR_LINES.length)],'Колесо вращается…');
+  this.message(randomWheelHeadline(),'Колесо вращается…');
   const moving=this.motion(),started=performance.now();
   const idle=moving?this.rotor.animate([{transform:'rotate('+this.angle+'deg)'},{transform:'rotate('+(this.angle+360)+'deg)'}],{duration:900,iterations:Infinity,easing:'linear'}):null;
   if(idle)this.animations.push(idle);
