@@ -544,7 +544,12 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   if(payload.id==='clone'&&state.activeMoons.includes('clone')&&!state.cloneTargets.length)state.cloneTargets=state.activeMoons.filter(id=>id!=='clone').slice(0,getMoonMechanicParams('clone',state.moonLevels.clone||1).copies);
  } else if(action==='lock'){state.levelLocked=!state.levelLocked;
  } else if(action==='rollback'||action==='rollbackFive'){if(state.currentLevel>1){state.currentLevel=Math.max(1,state.currentLevel-(action==='rollbackFive'?CONSTANTS.ROLLBACK_LEVELS:1));startMoon();}
- } else if(action==='returnToRecord'){
+  } else if(action==='jumpToLevel'){
+   const target=payload.level;
+   if(!Number.isSafeInteger(target)||target<1||target>state.runMaxLevel)throw Error('Укажите открытый уровень от 1 до '+state.runMaxLevel);
+   if(target===state.currentLevel)throw Error('Вы уже на этом уровне');
+   state.currentLevel=target;startMoon();
+  } else if(action==='returnToRecord'){
   const target=state.runMaxLevel;if(!Number.isSafeInteger(target)||target<=state.currentLevel)throw Error('Вы уже на последнем достигнутом уровне этого забега');
   state.currentLevel=target;startMoon();
  } else if(action==='claimAllQuests'){
