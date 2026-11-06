@@ -170,8 +170,8 @@ gameEngine.init=()=>{
  const generation=++initGeneration;
  const pending=(async()=>{
  active=true;ready=false;pendingWheelNotices=[];lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
- try{const loaded=await db.action('load');if(generation!==initGeneration||!active)throw Object.assign(Error('Загрузка отменена'),{code:'LOAD_CANCELLED'});apply(loaded);}catch(error){if(generation===initGeneration){active=false;gameEngine._isRunning=false;}throw error;}
  db.leaderboardPresence?.start(state.user?.id).catch(()=>{});
+ try{const loaded=await db.action('load');if(generation!==initGeneration||!active)throw Object.assign(Error('Загрузка отменена'),{code:'LOAD_CANCELLED'});apply(loaded);}catch(error){if(generation===initGeneration){active=false;gameEngine._isRunning=false;}throw error;}
  radio.connect(state.user).catch(()=>{});
  fortuneWheel.bind(payload=>command('spinWheel',payload),()=>{for(const message of pendingWheelNotices)showToast(message,'success',3500);pendingWheelNotices=[];updateUI();updateShopUI();updateProfileAndLeaders();});fortuneWheel.connect(true);
  gameAdmin.connect(state.user).catch(()=>{});
