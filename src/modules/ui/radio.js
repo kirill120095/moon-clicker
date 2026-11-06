@@ -223,7 +223,7 @@ class GameRadio{
   if(this.mode==='internet'){
    this.player?.pause();audio.radioElement=this.internetPlayer;audio.radioActive=this.internetPlaying;
   }else{
-   this.stopInternetRadio();audio.radioElement=this.player;audio.radioActive=!!radioPlayback(this.current);this.tick();
+   this.stopInternetRadio();audio.radioElement=this.player;audio.radioActive=!!radioPlayback(this.current);if(this.current)this.tick();
   }
   audio.apply();this.renderMini();
  }
