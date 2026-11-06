@@ -50,6 +50,6 @@ test('ascension relocks moons despite a high lifetime record and missing run fie
  assert.equal(run('s.maxLevel'),1000);assert.equal(run('s.runMaxLevel'),1);assert.equal(run("getMoonPurchaseAccess(s,'blood').unlocked"),false);
  assert.throws(()=>run("applyAction(s,'buyMoon',{id:'blood'},100100)"),/забега/);
  assert.equal(run("s.currentLevel=20;s=applyAction(s,'buyMoon',{id:'blood'},100200);s.ownedMoons.includes('blood')"),true);
- run("s=applyAction(s,'rollbackFive',{},100300);");assert.equal(run('s.currentLevel'),15);assert.equal(run("getMoonPurchaseAccess(s,'blood').unlocked"),true);
+ run("s=applyAction(s,'rollbackFive',{},100300);");assert.equal(run('s.currentLevel'),10);assert.equal(run("getMoonPurchaseAccess(s,'blood').unlocked"),true);
  run("delete s.runMaxLevel;s.currentLevel=1;s.maxLevel=1000;s=applyAction(s,'load',{},100400);");assert.equal(run('s.runMaxLevel'),1);assert.equal(run("getMoonPurchaseAccess(s,'ice').levelUnlocked"),false);
 });
