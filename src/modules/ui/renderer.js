@@ -947,11 +947,12 @@ function refreshLeaderOnlineMarkers(){
   marker.setAttribute('aria-label',online?'Онлайн':'Не в сети');
  }
 }
-db.leaderboardPresence?.subscribe(refreshLeaderOnlineMarkers);
+let onlineListenerAttached=false;
 let leadersUpdatedAt = 0;
 let leadersInFlight = false;
 
 async function _updateLeaders() {
+  if(!onlineListenerAttached&&db.leaderboardPresence){db.leaderboardPresence.subscribe(refreshLeaderOnlineMarkers);onlineListenerAttached=true;}
   const panel = document.getElementById('profilePanel');
   const tab = document.getElementById('leadersTabContent');
   if (!panel || panel.classList.contains('hidden') || !tab?.classList.contains('active')) return;
