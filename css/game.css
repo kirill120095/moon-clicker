@@ -2490,3 +2490,11 @@
 .combat-effect-tooltip{display:none;position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:max-content;max-width:min(270px,78vw);padding:10px 12px;border:1px solid rgba(255,213,120,.4);border-radius:10px;background:#151e38;box-shadow:0 10px 25px rgba(0,0,0,.45);font-size:.79rem;line-height:1.5;font-weight:400;text-align:left;white-space:normal;overflow-wrap:break-word;pointer-events:none;z-index:10}
 .combat-effect-tile:hover .combat-effect-tooltip,.combat-effect-tile:focus-visible .combat-effect-tooltip{display:block}
 @media(hover:none){.combat-effect-tile:focus .combat-effect-tooltip{display:block}}
+
+.level-jump-form{display:flex;align-items:center;gap:5px;flex:0 0 auto;margin:0}
+.level-jump-form input{box-sizing:border-box;width:66px;height:39px;padding:5px 7px;border:1px solid rgba(170,185,231,.28);border-radius:9px;background:rgba(24,30,55,.9);color:#f4f5ff;font:inherit;font-size:13px;text-align:center;outline:none}
+.level-jump-form input:focus{border-color:#a2b7ff;box-shadow:0 0 0 2px rgba(140,159,255,.18)}
+.level-jump-form input::-webkit-inner-spin-button,.level-jump-form input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.level-jump-form input{appearance:textfield;-moz-appearance:textfield}
+.level-jump-btn{min-width:37px!important;width:37px!important;padding:0!important;font-size:18px!important}
+@media(max-width:420px){.level-jump-form input{width:53px;height:35px;padding:4px;font-size:12px}.level-jump-btn{width:33px!important;min-width:33px!important}}

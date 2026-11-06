@@ -229,6 +229,14 @@ gameEngine.buyUfoComboRelay=()=>command('buyUfoComboRelay',{},true).catch(()=>{}
 gameEngine.buyUfoUnit=(max=false)=>command('buyUfoUnit',{max},true).catch(()=>{});
 gameEngine.buyUfo=(max=false)=>command('buyUfo',{max},true).catch(()=>{});
 gameEngine.rollbackFive=()=>command('rollbackFive').catch(()=>{});
+ const jumpForm=document.getElementById('jumpLevelForm'),jumpInput=document.getElementById('jumpLevelInput');
+ if(jumpForm&&jumpInput)jumpForm.addEventListener('submit',event=>{
+  event.preventDefault();
+  const raw=jumpInput.value.trim(),level=Number(raw),limit=Math.max(1,state.runMaxLevel||state.currentLevel);
+  if(!raw||!Number.isSafeInteger(level)||level<1||level>limit){showToast('Введите открытый уровень от 1 до '+limit,'info');return;}
+  if(level===state.currentLevel){showToast('Вы уже на этом уровне','info');return;}
+  command('jumpToLevel',{level}).then(()=>{jumpInput.value='';}).catch(()=>{});
+ });
 gameEngine.returnToRecord=()=>command('returnToRecord').catch(()=>{});
 gameEngine.buySlot=(max=false)=>command('buySlot',{max},true).catch(()=>{});
 gameEngine.buyMoon=id=>command('buyMoon',{id},true).catch(()=>{});

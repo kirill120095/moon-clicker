@@ -115,6 +115,8 @@ function _updateLevelControls() {
   const rollbackBtn = document.getElementById('rollbackLevelBtn');
   const lockBtn = document.getElementById('lockLevelBtn');
   const fiveBtn=document.getElementById('rollbackFiveBtn');
+  const jumpInput=document.getElementById('jumpLevelInput');
+  if(jumpInput){jumpInput.max=String(Math.max(1,state.runMaxLevel||state.currentLevel));jumpInput.title='Доступные уровни: 1–'+jumpInput.max;}
   fiveBtn?.classList.toggle('hidden',state.currentLevel<=1);
   const recordButton=document.getElementById('returnRecordBtn'),record=Math.max(state.currentLevel,state.runMaxLevel||state.currentLevel);
   if(recordButton){recordButton.classList.toggle('hidden',record<=state.currentLevel);recordButton.title='Вернуться на '+record+' уровень текущего забега';}
