@@ -126,6 +126,7 @@ export const leaderboardPresence={
 // ============================================================
 
 export const db = {
+  leaderboardPresence,
   action(action, payload = {}) {
     const request_id = crypto.randomUUID();
     const run = async () => {
