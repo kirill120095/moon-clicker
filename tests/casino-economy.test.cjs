@@ -7,9 +7,9 @@ test('house expected payout never exceeds 79 percent and bankruptcy stays exactl
 });
 test('wins increase house pressure proportionally and losses reduce it without trusting payload',()=>{
  const run=setup();run("var s=freshState();s.playerData.shards=10000;s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true,pressure:0},100000,{canSpinWheel:true,wheelIndex:5})");
- assert.equal(run('s.wheelEconomy.pressure'),9);assert.equal(run('s.wheelEconomy.wagered'),100);assert.equal(run('s.wheelEconomy.payouts'),1000);assert.equal(run('s.wheelEconomy.houseNet'),-900);
- run("s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true,pressure:-100},106000,{canSpinWheel:true,wheelIndex:0})");assert.equal(run('s.wheelEconomy.pressure'),8);assert.equal(run('s.wheelEconomy.houseNet'),-800);
- run("s.currentLevel=20;s=applyAction(s,'ascend',{},112000)");assert.equal(run('s.wheelEconomy.pressure'),8);
+ assert.equal(run('s.wheelEconomy.pressure'),9);assert.equal(run('s.wheelEconomy.wagered'),100);assert.equal(run('s.wheelEconomy.payouts'),1000);assert.equal(run('s.wheelEconomy.houseNet'),-900);assert.equal(run('s.wheelEconomy.totalWon'),900);assert.equal(run('s.wheelEconomy.totalLost'),0);
+ run("s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true,pressure:-100},106000,{canSpinWheel:true,wheelIndex:0})");assert.equal(run('s.wheelEconomy.pressure'),8);assert.equal(run('s.wheelEconomy.houseNet'),-800);assert.equal(run('s.wheelEconomy.totalWon'),900);assert.equal(run('s.wheelEconomy.totalLost'),100);
+ run("s.currentLevel=20;s=applyAction(s,'ascend',{},112000)");assert.equal(run('s.wheelEconomy.pressure'),8);assert.equal(run('s.wheelEconomy.totalWon'),900);assert.equal(run('s.wheelEconomy.totalLost'),100);
 });
 test('visible balance holds only the roulette delta and keeps normal game income visible',()=>{
  const c={};vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/currency-display.js'),'utf8')),c);
@@ -28,3 +28,5 @@ test('return to record uses only this run, refreshes combat and never pays for t
  assert.equal(run('s.currentLevel'),100);assert.equal(run('s.playerData.shards'),777);assert.equal(run('s.clickCount===clicks'),true);assert.equal(run('JSON.stringify(s.prestige)===coins'),true);assert.equal(run('s.moonHP'),run('s.maxHP'));assert.ok(run('s.bossDeadline')>100100);assert.throws(()=>run("applyAction(s,'returnToRecord',{},100200)"));
  run("s=applyAction(s,'ascend',{},100300)");assert.equal(run('s.runMaxLevel'),1);assert.throws(()=>run("applyAction(s,'returnToRecord',{},100400)"));
 });
+
+test('bankruptcy records full balance lost, not only the stake',()=>{const run=setup();run("var s=freshState();s.playerData.shards=1500;s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},100000,{canSpinWheel:true,wheelIndex:10})");assert.equal(run('s.playerData.shards'),0);assert.equal(run('s.wheelEconomy.totalLost'),1500);assert.equal(run('s.wheelEconomy.totalWon'),0);});

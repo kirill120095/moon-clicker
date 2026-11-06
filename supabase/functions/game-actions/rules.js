@@ -489,7 +489,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   state.playerData.shards=multiplier==='bankrupt'?0:Math.min(CONSTANTS.SAFE_NUMBER_CAP,before-bet+payout);
   state.wheelResult={at:now,index,bet,multiplier,payout,balanceBefore:before,balanceAfter:state.playerData.shards,delta:state.playerData.shards-before};
   const economy=state.wheelEconomy||{},delta=state.wheelResult.delta,cap=CONSTANTS.SAFE_NUMBER_CAP;
-  state.wheelEconomy={pressure:Math.max(0,Math.min(config.MAX_PRESSURE,(Number(economy.pressure)||0)+(delta>0?Math.max(1,Number(multiplier)-1):-1))),spins:Math.min(cap,(economy.spins||0)+1),wagered:Math.min(cap,(economy.wagered||0)+bet),payouts:Math.min(cap,(economy.payouts||0)+payout),houseNet:Math.max(-cap,Math.min(cap,(economy.houseNet||0)-delta))};
+  state.wheelEconomy={pressure:Math.max(0,Math.min(config.MAX_PRESSURE,(Number(economy.pressure)||0)+(delta>0?Math.max(1,Number(multiplier)-1):-1))),spins:Math.min(cap,(economy.spins||0)+1),wagered:Math.min(cap,(economy.wagered||0)+bet),payouts:Math.min(cap,(economy.payouts||0)+payout),totalWon:Math.min(cap,(economy.totalWon||0)+Math.max(0,delta)),totalLost:Math.min(cap,(economy.totalLost||0)+Math.max(0,-delta)),houseNet:Math.max(-cap,Math.min(cap,(economy.houseNet||0)-delta))};
 
  } else if(action==='buyClickCrystal'){
   buyLevels(payload.max===true,()=>state.playerData.shards>=getClickCrystalCost(state.clickCrystalLevel),()=>{spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;});
