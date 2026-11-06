@@ -62,10 +62,10 @@ test('cosmic flat damage is included in immediate hit prediction without changin
  s.engine.handleClick({});assert.equal(s.engine._previewDamage,1010);assert.equal(s.state.playerData.click_damage,10);s.engine.destroy();
 });
 
-test('empty ascension cannot open confirmation even when the saved summary is stale',async()=>{
+test('empty ascension cannot invoke native confirmation or ascend with stale summary',async()=>{
  const s=setup();await s.engine.init();let confirmations=0;s.context.confirm=()=>{confirmations++;return false;};
  s.state.prestigeSummary={pendingCoins:999};s.engine.ascend();assert.equal(confirmations,0);assert.equal(s.calls.filter(c=>c.action==='ascend').length,0);
- s.state.runMaxLevel=20;s.engine.ascend();assert.equal(confirmations,1);assert.equal(s.calls.filter(c=>c.action==='ascend').length,0);
+ s.state.runMaxLevel=20;s.engine.ascend();assert.equal(confirmations,0);assert.equal(s.calls.filter(c=>c.action==='ascend').length,0);
 });
 test('bulk collection sends one request while an earlier click is in flight',async()=>{
  const s=setup();await s.engine.init();s.engine.handleClick({});const collecting=s.engine.claimAllQuests();
