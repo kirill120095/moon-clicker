@@ -176,10 +176,10 @@ gameEngine.init=()=>{
  fortuneWheel.bind(payload=>command('spinWheel',payload),()=>{for(const message of pendingWheelNotices)showToast(message,'success',3500);pendingWheelNotices=[];updateUI();updateShopUI();updateProfileAndLeaders();});fortuneWheel.connect(true);
  gameAdmin.connect(state.user).catch(()=>{});
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
- let lastPrestigeDay=new Date(Date.now()+offset+10800000).toISOString().slice(0,10);
+ let lastPrestigeDay=Math.floor((Date.now()+offset+10800000)/86400000);
  ticker=setInterval(()=>{
   if(!active)return;
-  const prestigeDay=new Date(Date.now()+offset+10800000).toISOString().slice(0,10);
+  const prestigeDay=Math.floor((Date.now()+offset+10800000)/86400000);
   if(prestigeDay!==lastPrestigeDay){lastPrestigeDay=prestigeDay;updateShopUI();updateProfileAndLeaders();}
   const activeBuffs=refreshBuffs();updateLiveCombatProfile();
   if(((state.ufoLevel&&state.ufoNextShotAt<=Date.now()+offset)||state.pendingEchoes>0)&&!document.hidden&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextUfoSync){
