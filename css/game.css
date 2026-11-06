@@ -2507,3 +2507,9 @@
 .combat-effect-heading .combat-effect-label{font-size:.78rem;overflow-wrap:break-word}
 .combat-effect-formula{font-size:.81rem;line-height:1.7;color:#dce5ff;overflow-wrap:break-word;white-space:normal}
 .combat-effect-metric{display:inline-block;vertical-align:middle;font-size:1rem;line-height:1.15;cursor:help}
+
+/* Account management belongs to the profile, not the game screen. */
+.profile-account-actions{margin:16px 0 20px;padding:15px;border:1px solid rgba(151,168,220,.2);border-radius:15px;background:linear-gradient(145deg,rgba(35,45,75,.65),rgba(23,31,56,.72))}
+.profile-account-heading{margin:0 0 12px;font-size:.9rem;color:#dfe6ff;font-weight:700}
+.profile-account-actions .profile-actions{display:flex;flex-direction:column;gap:9px}
+.profile-account-actions .btn-action{width:100%;margin:0}
