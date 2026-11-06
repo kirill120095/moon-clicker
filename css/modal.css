@@ -285,3 +285,16 @@
 .ascension-modal-actions .btn-confirm{background:linear-gradient(135deg,#ffdc79,#f6a83f);color:#30203b;box-shadow:0 5px 20px rgba(255,194,73,.22)}
 .ascension-modal-actions .btn-cancel{background:rgba(255,255,255,.08)}
 @media(max-width:420px){.ascension-modal-content{padding:23px 17px}.ascension-modal-actions{flex-direction:column-reverse}}
+
+/* Centered cosmic confirmation for progress reset. */
+#resetProgressModal.modal.hidden{display:none!important}
+.reset-progress-modal-content{width:min(92vw,430px);max-height:90dvh;overflow-y:auto;text-align:center;border:1px solid rgba(245,108,117,.42);background:linear-gradient(155deg,#20263e,#141b30 72%);box-shadow:0 24px 70px rgba(0,0,0,.65),0 0 35px rgba(210,70,95,.1);padding:28px 24px}
+.reset-progress-emblem{width:68px;height:68px;display:grid;place-items:center;margin:0 auto 15px;border-radius:22px;background:rgba(237,89,109,.11);border:1px solid rgba(237,89,109,.3);font-size:2rem}
+.reset-progress-modal-content .modal-title{color:#fff;font-size:1.4rem}
+.reset-progress-modal-content .modal-message{margin:0 0 16px;font-size:.9rem}
+.reset-progress-warning{display:flex;flex-direction:column;gap:7px;margin:0 0 23px;padding:13px 15px;border:1px solid rgba(242,110,122,.25);border-radius:13px;background:rgba(226,66,88,.08);text-align:left;font-size:.83rem;line-height:1.5;color:#e2e5f4}
+.reset-progress-warning strong{color:#ffb5ba}
+.reset-progress-danger{background:linear-gradient(135deg,#c53d55,#8e243a);color:#fff;border:1px solid rgba(255,160,170,.25)}
+.reset-progress-danger:hover:not(:disabled){filter:brightness(1.13)}
+.reset-progress-danger:disabled{opacity:.65;cursor:wait}
+@media(max-width:390px){.reset-progress-modal-actions{flex-direction:column-reverse}.reset-progress-modal-content{padding:24px 17px}}

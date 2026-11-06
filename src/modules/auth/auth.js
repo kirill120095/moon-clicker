@@ -173,24 +173,37 @@ export async function handleLogout() {
 // ============================================================
 // СБРОС ПРОГРЕССА
 // ============================================================
+let resetModalBusy=false;
 export async function handleResetProgress() {
-  if (!state.user) {
-    showToast('⚠️ Войдите в аккаунт', 'warning');
-    return;
-  }
-
-  const confirmed = confirm('Вы уверены, что хотите сбросить весь прогресс? Это действие нельзя отменить!');
-  
-  if (!confirmed) return;
-
-  try {
-    if (gameEngine && gameEngine.resetProgress) {
-      await gameEngine.resetProgress();
-    }
-  } catch (error) {
-    console.error('[Auth] Reset progress error:', error);
-    showToast('⚠️ Ошибка сброса прогресса', 'warning');
-  }
+ if(!state.user){showToast('⚠️ Войдите в аккаунт','warning');return;}
+ const modal=document.getElementById('resetProgressModal'),confirmButton=document.getElementById('resetProgressConfirm');
+ if(!modal||!confirmButton){showToast('Окно подтверждения недоступно','warning');return;}
+ if(!modal.dataset.bound){
+  modal.dataset.bound='true';
+  const cancel=()=>{if(resetModalBusy)return;modal.classList.add('hidden');document.removeEventListener('keydown',onKeyDown);document.getElementById('resetBtn')?.focus();};
+  const onKeyDown=e=>{
+   if(modal.classList.contains('hidden'))return;
+   if(e.key==='Escape'){e.preventDefault();cancel();}
+   if(e.key==='Tab'){
+    const buttons=[...modal.querySelectorAll('button:not(:disabled)')];if(!buttons.length)return;
+    if(e.shiftKey&&document.activeElement===buttons[0]){e.preventDefault();buttons.at(-1).focus();}
+    else if(!e.shiftKey&&document.activeElement===buttons.at(-1)){e.preventDefault();buttons[0].focus();}
+   }
+  };
+  modal.querySelectorAll('[data-reset-cancel]').forEach(button=>button.addEventListener('click',cancel));
+  confirmButton.addEventListener('click',async()=>{
+   if(resetModalBusy)return;
+   resetModalBusy=true;confirmButton.disabled=true;confirmButton.textContent='Сбрасываем…';
+   try{
+    await gameEngine.resetProgress();
+    modal.classList.add('hidden');document.removeEventListener('keydown',onKeyDown);
+    showToast('Прогресс сброшен','success');
+   }catch(error){console.error('[Auth] Reset progress error:',error);showToast('⚠️ Не удалось сбросить прогресс','warning');}
+   finally{resetModalBusy=false;confirmButton.disabled=false;confirmButton.textContent='Сбросить';}
+  });
+  modal._openReset=()=>document.addEventListener('keydown',onKeyDown);
+ }
+ modal.classList.remove('hidden');modal._openReset();modal.querySelector('button[data-reset-cancel]')?.focus();
 }
 
 // ============================================================

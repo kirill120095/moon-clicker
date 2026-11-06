@@ -18,8 +18,8 @@
   
   <link rel="stylesheet" href="css/galaxy.css?v=9">
   <link rel="stylesheet" href="css/panel.css?v=9">
-  <link rel="stylesheet" href="css/modal.css?v=prestige-cards-13">
-  <link rel="stylesheet" href="css/game.css?v=rollback-ten-17">
+  <link rel="stylesheet" href="css/modal.css?v=profile-reset-19">
+  <link rel="stylesheet" href="css/game.css?v=profile-reset-19">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
   <link rel="stylesheet" href="css/neon.css?v=online-presence-9">
@@ -158,11 +158,14 @@
       <div class="panel-content panel-scrollable">
         <div id="profileTabContent" class="tab-content active">
           <div id="profileContent" class="profile-content"></div>
+          <section class="profile-account-actions" aria-label="Управление аккаунтом">
+            <h3 class="profile-account-heading">⚙️ Управление аккаунтом</h3>
+            <div class="profile-actions">
+              <button id="logoutBtn" type="button" class="btn-action btn-logout">🚪 Выйти из аккаунта</button>
+              <button id="resetBtn" type="button" class="btn-action btn-reset">♻️ Сбросить прогресс</button>
+            </div>
+          </section>
           <section id="profilePrestige" class="profile-prestige prestige-stats"></section>
-          <div class="profile-actions">
-            <button id="logoutBtn" class="btn-action btn-logout">🚪 Выйти</button>
-            <button id="resetBtn" class="btn-action btn-reset">♻️ Сбросить прогресс</button>
-          </div>
         </div>
         
         <div id="leadersTabContent" class="tab-content">
@@ -298,6 +301,18 @@
     </div>
   </div>
 
+  <!-- Подтверждение полного сброса игрового прогресса -->
+  <div id="resetProgressModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="resetProgressTitle" aria-describedby="resetProgressDescription">
+    <div class="modal-backdrop" data-reset-cancel></div>
+    <div class="modal-content reset-progress-modal-content">
+      <div class="reset-progress-emblem" aria-hidden="true">♻️</div>
+      <h3 id="resetProgressTitle" class="modal-title">Сбросить прогресс?</h3>
+      <p id="resetProgressDescription" class="modal-message">Игровой прогресс будет сброшен. Отменить это действие невозможно.</p>
+      <div class="reset-progress-warning"><strong>⚠️ Внимание</strong><span>Текущий прогресс, ресурсы и обычные улучшения будут сброшены. Вечный престиж и аккаунт сохранятся.</span></div>
+      <div class="modal-actions reset-progress-modal-actions"><button type="button" class="btn-modal btn-cancel" data-reset-cancel>Отмена</button><button type="button" id="resetProgressConfirm" class="btn-modal reset-progress-danger">Сбросить</button></div>
+    </div>
+  </div>
+
   <!-- Подтверждение вознесения: вместо браузерного confirm() -->
   <div id="ascensionModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="ascensionModalTitle" aria-describedby="ascensionModalDescription">
     <div class="modal-backdrop" data-ascension-cancel></div>
@@ -353,7 +368,7 @@
     "./src/core/constants.js": "./src/core/constants.js?v=prestige-visible-11",
     "./src/core/state.js": "./src/core/state.js?v=online-presence-9",
     "./src/index.js": "./src/index.js?v=rollback-ten-17",
-    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=online-presence-9",
+    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=profile-reset-19",
     "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
     "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
     "./src/modules/game/game.js": "./src/modules/game/game.js?v=online-presence-9",
@@ -369,11 +384,11 @@
     "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=online-presence-9",
     "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=autoclick-hp-8",
     "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=buy-max-fix-2",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=casino-sync-18",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=profile-reset-19",
     "./src/utils/numbers.js": "./src/utils/numbers.js?v=online-presence-9",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=casino-sync-18",
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=profile-reset-19",
     "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=online-presence-9",
     "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=online-presence-9"
   }
