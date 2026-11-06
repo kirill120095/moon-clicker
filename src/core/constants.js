@@ -45,7 +45,7 @@ export const CONSTANTS = {
   LIMITS: {
     MAX_CLICK_DAMAGE_LEVEL: Infinity,
     MAX_MOON_LEVEL: 10,
-    MAX_LEADERS: 10,
+    MAX_LEADERS: 50,
     MAX_STARS: 300,
     MAX_QUESTS: 6,
   },
