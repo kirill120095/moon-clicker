@@ -20,7 +20,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  if(action==='ascend'){
   const today=getMoscowDay(now),current=state.prestige.dailyAscensionDay===today?Math.max(0,Math.floor(state.prestige.dailyAscensionCount||0)):0;
   if(current>=CONSTANTS.PRESTIGE.DAILY_ASCENSION_LIMIT)throw Error('Лимит: 3 вознесения в день. Следующее доступно после 00:00 МСК.');
-  const summary=getPrestigeSummary(state);if(!summary.canAscend)throw Error('Новые монеты престижа появятся на следующем рубеже '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровней');
+  const summary=getPrestigeSummary(state,now);if(!summary.canAscend)throw Error('Новые монеты престижа появятся на следующем рубеже '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровней');
   const p=structuredClone(state.prestige);p.coins=(p.coins||0)+summary.pendingCoins;p.runDamageSteps=0;p.runShardSteps=0;p.ascensions=(p.ascensions||0)+1;p.dailyAscensionDay=today;p.dailyAscensionCount=current+1;
   const wheelEconomy=structuredClone(state.wheelEconomy||{}),wheelResult=state.wheelResult;
   const record=state.maxLevel,serial=(state.moonSerial||1)+1,name=state.playerData.username,totalClicks=state.clickCount;
