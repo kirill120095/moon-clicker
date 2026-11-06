@@ -919,6 +919,16 @@ function _updateProfile() {
           <div class="stat-card-label">Всего осколков</div>
           <div class="stat-card-value">${formatMoney(getVisibleShards(data.shards))}</div>
         </div>
+        <div class="stat-card casino-stat-card casino-stat-loss">
+          <div class="stat-card-icon">📉</div>
+          <div class="stat-card-label">Проиграно в казино</div>
+          <div class="stat-card-value">${formatMoney(state.wheelEconomy?.totalLost || 0)} 💎</div>
+        </div>
+        <div class="stat-card casino-stat-card casino-stat-win">
+          <div class="stat-card-icon">📈</div>
+          <div class="stat-card-label">Выиграно в казино</div>
+          <div class="stat-card-value">${formatMoney(state.wheelEconomy?.totalWon || 0)} 💎</div>
+        </div>
         <div class="stat-card">
           <div class="stat-card-icon">⏱️</div>
           <div class="stat-card-label">В игре</div>
