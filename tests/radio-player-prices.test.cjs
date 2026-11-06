@@ -48,3 +48,22 @@ test('mini repeat toggles preserve track position and match settings buttons',as
  assert.equal(s.run('sent.action'),'mode');assert.equal(s.run('sent.extra.p_repeat_track'),true);assert.equal(s.run('sent.extra.p_index'),0);
  assert.ok(s.run('sent.extra.p_offset')>=5);s.run('radio.disconnect()');
 });
+
+test('internet radio mode is local and does not modify the shared station',async()=>{
+ const s=setup(true);await s.run("radio.connect({id:'owner'})");
+ s.run("radio.setRadioMode('internet')");
+ assert.equal(s.run('radio.mode'),'internet');
+ assert.equal(s.prefs.get('moon-radio-mode'),'internet');
+ assert.equal(s.node('radioAdmin').classList.contains('hidden'),true);
+ assert.equal(s.node('radioMini').classList.contains('hidden'),true);
+ s.run("radio.setRadioMode('own')");
+ assert.equal(s.run('radio.mode'),'own');
+ assert.equal(s.node('radioAdmin').classList.contains('hidden'),false);
+ s.run('radio.disconnect()');
+});
+test('internet radio only accepts HTTPS station streams',()=>{
+ const s=setup(false);
+ assert.equal(s.run("safeRadioStream({url:'http://example.com/live'})"),null);
+ assert.equal(s.run("safeRadioStream({url:'javascript:alert(1)'})"),null);
+ assert.equal(s.run("safeRadioStream({url:'https://example.com/live'})"),'https://example.com/live');
+});
