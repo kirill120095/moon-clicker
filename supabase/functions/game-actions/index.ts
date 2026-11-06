@@ -76,8 +76,11 @@ Deno.serve(async(req:Request)=>{
   for(let attempt=0;attempt<5;attempt++){
    const now=Date.now();let state=loaded.state||freshState(String(identity.username||'Игрок').trim().slice(0,30)||'Игрок');
    if(body.action==='reset'){
-    const prestige=structuredClone(state.prestige||{coins:0,ascensions:0,upgrades:{}}),runMaxLevel=state.runMaxLevel??state.maxLevel??state.currentLevel,maxLevel=state.maxLevel||state.currentLevel,serial=(state.moonSerial||1)+1;
-    state=freshState(state.playerData.username);state.maxLevel=maxLevel;state.moonSerial=serial;state.prestige=prestige;state.runMaxLevel=runMaxLevel;
+    const serial=(state.moonSerial||1)+1;
+    // Full reset: keep only the authenticated account's display name.
+    // A new serial prevents stale moon-completion cache from surviving.
+    state=freshState(String(identity.username||state.playerData?.username||'Игрок').trim().slice(0,30)||'Игрок');
+    state.moonSerial=serial;
    }
    try{
     if(body.action==='spinWheel')trusted.wheelIndex=getWheelSectorIndex(trusted.ticket,state);
