@@ -924,12 +924,12 @@ function _updateProfile() {
         <div class="stat-card casino-stat-card casino-stat-loss">
           <div class="stat-card-icon">📉</div>
           <div class="stat-card-label">Проиграно в казино</div>
-          <div class="stat-card-value">${formatMoney(state.wheelEconomy?.totalLost || 0)} 💎</div>
+          <div class="stat-card-value"><span data-live-stat="casinoLost">${formatMoney(state.wheelEconomy?.totalLost || 0)}</span> 💎</div>
         </div>
         <div class="stat-card casino-stat-card casino-stat-win">
           <div class="stat-card-icon">📈</div>
           <div class="stat-card-label">Выиграно в казино</div>
-          <div class="stat-card-value">${formatMoney(state.wheelEconomy?.totalWon || 0)} 💎</div>
+          <div class="stat-card-value"><span data-live-stat="casinoWon">${formatMoney(state.wheelEconomy?.totalWon || 0)}</span> 💎</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-icon">⏱️</div>
@@ -945,7 +945,7 @@ export function updateLiveCombatProfile(){
  const panel=document.getElementById('profilePanel'),tab=document.getElementById('profileTabContent');
  if(!panel||panel.classList.contains('hidden')||tab&&!tab.classList.contains('active'))return;
  const s=getCombatStats(state),pct=n=>(n*100).toLocaleString('ru-RU',{maximumFractionDigits:2})+'%';
- const values={lifetimeClicks:formatNumber(state.clickCount||0),runClicks:formatNumber(state.runClickCount??state.clickCount??0),moonKills:formatNumber(state.moonKills||0),baseDamage:formatBaseDamage(s.baseDamage),finalDamage:formatNumber(s.finalDamage),critChance:pct(s.critChance),
+ const values={casinoLost:formatMoney(state.wheelEconomy?.totalLost||0),casinoWon:formatMoney(state.wheelEconomy?.totalWon||0),lifetimeClicks:formatNumber(state.clickCount||0),runClicks:formatNumber(state.runClickCount??state.clickCount??0),moonKills:formatNumber(state.moonKills||0),baseDamage:formatBaseDamage(s.baseDamage),finalDamage:formatNumber(s.finalDamage),critChance:pct(s.critChance),
  critDamage:formatNumber(s.critDamage)+' · '+(s.critMultiplier*s.critTier/2*(s.firstStrikeMultiplier||1)).toLocaleString('ru-RU',{maximumFractionDigits:2})+'×'+(s.extraCritChance?' · '+pct(s.extraCritChance)+' → '+formatNumber(s.nextCritDamage):''),
  damageBonus:'+'+pct(s.damageBonus),shardBonus:'+'+pct(s.shardBonus),critChanceBonus:'+'+pct(s.critChanceBonus),critDamageBonus:'+'+pct(s.critDamageBonus)};
  for(const [key,text]of Object.entries(values)){const el=document.querySelector('[data-live-stat="'+key+'"]');if(el&&el.textContent!==text)el.textContent=text;}
