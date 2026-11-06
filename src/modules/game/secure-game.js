@@ -216,7 +216,14 @@ gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks
 gameEngine.buyClickCrystal=(max=false)=>command('buyClickCrystal',{max},true).catch(()=>{});
 gameEngine.setCloneTargets=targets=>command('setCloneTargets',{targets}).catch(()=>{});
 gameEngine.buyClickDamage=(max=false)=>command('buyDamage',{max},true).catch(()=>{});
-gameEngine.ascend=()=>{const summary=getPrestigeSummary(state);if(summary.dailyAscensionsLeft===0){showToast('Лимит: 3 вознесения в день. Обновление в 00:00 МСК','info');return;}if(!summary.canAscend){showToast('Вознесение недоступно: достигните '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня в этом прохождении','info');return;}const count=summary.pendingCoins;if(confirm('Вознестись за '+count+' монет престижа? Весь обычный прогресс будет сброшен. Вечные бонусы, монеты и покупки сохранятся.'))command('ascend').catch(()=>{});};
+gameEngine.ascend=()=>{const summary=getPrestigeSummary(state);if(summary.dailyAscensionsLeft===0){showToast('Лимит: 3 вознесения в день. Обновление в 00:00 МСК','info');return;}if(!summary.canAscend){showToast('Вознесение недоступно: достигните '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня в этом прохождении','info');return;}const modal=document.getElementById('ascensionModal');if(!modal)return;
+ const coins=modal.querySelector('#ascensionModalCoins'),accept=modal.querySelector('#ascensionModalConfirm');
+ if(coins)coins.textContent='🌟 '+summary.pendingCoins;
+ const close=()=>{modal.classList.add('hidden');modal.removeEventListener('keydown',onKey);};
+ const onKey=event=>{if(event.key==='Escape'){event.preventDefault();close();}else if(event.key==='Tab'){const buttons=[...modal.querySelectorAll('button:not([disabled])')];const first=buttons[0],last=buttons[buttons.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}};
+ modal.querySelectorAll('[data-ascension-cancel]').forEach(el=>el.onclick=close);
+ if(accept){accept.disabled=false;accept.onclick=()=>{accept.disabled=true;close();command('ascend').catch(()=>{});};}
+ modal.classList.remove('hidden');modal.addEventListener('keydown',onKey);modal.querySelector('[data-ascension-cancel]')?.focus?.();};
 gameEngine.buyPrestige=(id,max=false)=>command('buyPrestige',{id,max},true).catch(()=>{});
 gameEngine.buyUfoComboRelay=()=>command('buyUfoComboRelay',{},true).catch(()=>{});
 gameEngine.buyUfoUnit=(max=false)=>command('buyUfoUnit',{max},true).catch(()=>{});
