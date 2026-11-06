@@ -963,7 +963,8 @@ export function getActiveSynergies(state){
 
 export function getMoonPower(state,id){
  if(id==='clone')return 0;
- return 1+getCloneTargets(state).filter(target=>target===id).length*getMoonMechanicParams('clone',state.moonLevels?.clone||1).pairScale;
+ const copies=getCloneTargets(state).filter(target=>target===id).length;
+ return copies?(1+copies)*getMoonMechanicParams('clone',state.moonLevels?.clone||1).pairScale:1;
 }
 export function getEffectiveMoonParams(state,id){
  if(!(state.activeMoons||[]).slice(0,state.maxSlots||1).includes(id)||!Object.hasOwn(MOON_TYPES,id))return null;
