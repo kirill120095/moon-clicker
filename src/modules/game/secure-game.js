@@ -223,7 +223,7 @@ gameEngine.ascend=()=>{const summary=getPrestigeSummary(state);if(summary.dailyA
  const onKey=event=>{if(event.key==='Escape'){event.preventDefault();close();}else if(event.key==='Tab'){const buttons=[...modal.querySelectorAll('button:not([disabled])')];const first=buttons[0],last=buttons[buttons.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}};
  modal.querySelectorAll('[data-ascension-cancel]').forEach(el=>el.onclick=close);
  if(accept){accept.disabled=false;accept.onclick=()=>{accept.disabled=true;close();command('ascend').catch(()=>{});};}
- modal.classList.remove('hidden');modal.addEventListener('keydown',onKey);modal.querySelector('[data-ascension-cancel]')?.focus?.();};
+ modal.classList.remove('hidden');modal.addEventListener('keydown',onKey);modal.querySelector('button[data-ascension-cancel]')?.focus();};
 gameEngine.buyPrestige=(id,max=false)=>command('buyPrestige',{id,max},true).catch(()=>{});
 gameEngine.buyUfoComboRelay=()=>command('buyUfoComboRelay',{},true).catch(()=>{});
 gameEngine.buyUfoUnit=(max=false)=>command('buyUfoUnit',{max},true).catch(()=>{});
