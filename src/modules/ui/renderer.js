@@ -967,15 +967,25 @@ export function updateLiveCombatProfile(){
  const target=document.getElementById('liveCombatEffects'),signature=JSON.stringify(rows);
  if(target&&target.dataset.signature!==signature){
   const icons={'Эхо выстрела':'🔊','Ожидают эха':'🔊','Кристалл за клик':'💠','Клон':'🪞','Космическая луна':'🌌','Золотая луна':'🌟','Полное комбо':'✨','Тень':'🌑','Лёд':'🧊','Кровь':'🩸','За текущую луну':'💎','Флот':'🛸','Молнии':'⚡'};
+  const metricIcons={'урон':'⚔️','добыча':'💎','шанс крита':'🎯','крит. урон':'💥'};
   target.replaceChildren();
   for(const text of rows){
    const split=text.indexOf(':'),title=split<0?text:text.slice(0,split),details=split<0?'Активно':text.slice(split+1).trim();
-   const icon=icons[title]||(title.includes('крит')?'🎯':title.includes('урон')?'⚔️':title.includes('добыч')?'💎':'✨');
+   const icon=icons[title]||'✨';
    const tile=document.createElement('div');tile.className='combat-effect-tile';tile.tabIndex=0;tile.setAttribute('aria-label',title+': '+details);tile.title=title+': '+details;
+   const heading=document.createElement('div');heading.className='combat-effect-heading';
    const symbol=document.createElement('span');symbol.className='combat-effect-symbol';symbol.textContent=icon;
    const label=document.createElement('span');label.className='combat-effect-label';label.textContent=title;
-   const tooltip=document.createElement('span');tooltip.className='combat-effect-tooltip';tooltip.textContent=details;
-   tile.append(symbol,label,tooltip);target.appendChild(tile);
+   heading.append(symbol,label);tile.appendChild(heading);
+   const formula=document.createElement('div');formula.className='combat-effect-formula';
+   // Keep every value and separator visible; replace only metric names with recognizable symbols.
+   const pieces=details.split(/(крит\. урон|шанс крита|добыча|урон)/gi);
+   for(const piece of pieces){
+    const key=piece.toLowerCase(),symbol=metricIcons[key];
+    if(symbol){const metric=document.createElement('span');metric.className='combat-effect-metric';metric.textContent=symbol;metric.title=piece;metric.setAttribute('aria-label',piece);formula.appendChild(metric);}
+    else formula.appendChild(document.createTextNode(piece));
+   }
+   tile.appendChild(formula);target.appendChild(tile);
   }
   target.dataset.signature=signature;
  }
