@@ -400,7 +400,7 @@ function _updateMoonShop() {
   if (!container) return;
   const money=getVisibleShards(state.playerData?.shards);
   const affordability=Object.entries(MOON_TYPES).map(([id,m])=>[getMoonPurchaseAccess(state,id).unlocked,money>=m.cost,money>=getMoonUpgradeCostForLevel(id,state.moonLevels[id]||1)]);
-  const key=JSON.stringify([state.activeMoons,state.ownedMoons,state.moonLevels,state.maxSlots,state.cloneTargets,state.prestige?.upgrades,affordability,money,state.testMode]);
+  const key=JSON.stringify([state.activeMoons,state.ownedMoons,state.moonLevels,state.maxSlots,state.cloneTargets,state.prestige?.upgrades,affordability,state.testMode]);
   if(key===moonShopKey&&container.childElementCount)return;moonShopKey=key;
 
   let html = '';
