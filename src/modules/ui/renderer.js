@@ -302,7 +302,7 @@ export function updatePrestigeUI(){
  '<p class="prestige-note">Обновление каждый день ровно в <b>00:00 МСК</b>.</p></section></div>'+
  '<button class="btn-action ascend-button prestige-ascend-button" data-ascend '+(p.canAscend?'':'disabled')+'>'+(p.dailyAscensionsLeft===0?'Лимит исчерпан до 00:00 МСК':p.canAscend?'🌟 Вознестись · +'+p.pendingCoins+' 🌟':'Вознесение доступно с '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня')+'</button>'+
  '<h3 class="prestige-upgrade-heading">🛍️ Магазин вечных улучшений</h3></div>'+
- Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel;return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+Math.min(level,d.maxLevel)+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><div class="purchase-split"><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':formatPrice(cost)+' 🌟')+'</button>'+(d.maxLevel===1?'':'<button class="btn-buy-shop btn-buy-max" data-prestige-upgrade="'+id+'" data-buy-max="true" title="Купить максимум уровней" '+(maxed||p.coins<cost?'disabled':'')+'>MAX</button>')+'</div></div>';}).join('');
+ Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel,locked=id==='cloneCopies'&&(state.moonLevels?.clone||0)<(level===0?15:20);return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+Math.min(level,d.maxLevel)+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><div class="purchase-split"><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||locked||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':locked?'Нужен Клон ур. '+(level===0?15:20):formatPrice(cost)+' 🌟')+'</button>'+(d.maxLevel===1?'':'<button class="btn-buy-shop btn-buy-max" data-prestige-upgrade="'+id+'" data-buy-max="true" title="Купить максимум уровней" '+(maxed||locked||p.coins<cost?'disabled':'')+'>MAX</button>')+'</div></div>';}).join('');
 }
 
 function _updateUfoShop() {
@@ -1410,13 +1410,13 @@ let cloneControlKey='';
 function _updateCloneControls(){
  const root=document.getElementById('cloneControls'),fields=document.getElementById('cloneTargetFields');if(!root||!fields)return;
  const enabled=(state.activeMoons||[]).includes('clone');root.classList.toggle('hidden',!enabled);if(!enabled)return;
- const key=JSON.stringify([state.activeMoons,state.moonLevels,state.cloneTargets]);if(key===cloneControlKey&&fields.childElementCount)return;cloneControlKey=key;
- const p=getMoonMechanicParams('clone',state.moonLevels.clone||1),targets=getCloneTargets(state);fields.replaceChildren();
- for(let i=0;i<p.copies;i++){
+ const key=JSON.stringify([state.activeMoons,state.moonLevels,state.cloneTargets,state.prestige?.upgrades?.cloneCopies]);if(key===cloneControlKey&&fields.childElementCount)return;cloneControlKey=key;
+ const p=getMoonMechanicParams('clone',state.moonLevels.clone||1),level=state.moonLevels.clone||1,up=state.prestige?.upgrades?.cloneCopies||0,count=p.copies+(level>=15&&up>=1?1:0)+(level>=20&&up>=2?1:0),targets=getCloneTargets(state);fields.replaceChildren();
+ for(let i=0;i<count;i++){
   const label=document.createElement('label');label.textContent='Оригинал '+(i+1);
   const select=document.createElement('select');select.id='cloneOriginal'+i;
   for(const id of ['',...(state.activeMoons||[]).filter(id=>id!=='clone')]){const option=document.createElement('option');option.value=id;option.textContent=id?MOON_TYPES[id].emoji+' '+MOON_TYPES[id].name+' · Ур. '+(state.moonLevels[id]||1):'Не выбран';select.appendChild(option);}
   select.value=targets[i]||'';label.appendChild(select);fields.appendChild(label);
  }
- const summary=document.getElementById('cloneSummary');if(summary)summary.textContent='Оригинал и отражение: по '+Math.round(p.pairScale*100)+'% силы · отражений '+p.copies;
+ const summary=document.getElementById('cloneSummary');if(summary)summary.textContent='Оригинал и отражение: по '+Math.round(p.pairScale*100)+'% силы · отражений '+count;
 }
