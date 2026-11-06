@@ -1,5 +1,7 @@
 const KEY='moon_audio_v1';
 const defaults={muted:false,music:0.14,effects:0.45};
+// Perceived loudness is nonlinear: keep low slider percentages genuinely quiet.
+export function audioGain(value){const level=Math.max(0,Math.min(1,Number(value)||0));return 0.5*level*level;}
 export class AudioEngine {
  constructor(){
   this.settings={...defaults};this.ctx=null;this.musicTimer=null;this.lastClick=0;
@@ -16,8 +18,8 @@ export class AudioEngine {
   }catch{}
  }
  apply(){
-  if(this.radioElement){this.radioElement.volume=this.settings.music;this.radioElement.muted=this.settings.muted;}
-  if(this.ctx){const t=this.ctx.currentTime;this.master.gain.setTargetAtTime(this.settings.muted?0:1,t,0.025);this.musicBus.gain.setTargetAtTime(this.radioActive?0:this.settings.music,t,0.04);this.fxBus.gain.setTargetAtTime(this.settings.effects,t,0.025);}
+  if(this.radioElement){this.radioElement.volume=audioGain(this.settings.music);this.radioElement.muted=this.settings.muted;}
+  if(this.ctx){const t=this.ctx.currentTime;this.master.gain.setTargetAtTime(this.settings.muted?0:1,t,0.025);this.musicBus.gain.setTargetAtTime(this.radioActive?0:audioGain(this.settings.music),t,0.04);this.fxBus.gain.setTargetAtTime(audioGain(this.settings.effects),t,0.025);}
   document.querySelectorAll('[data-audio-volume]').forEach(el=>{el.value=Math.round(this.settings[el.dataset.audioVolume]*100);});
   document.querySelectorAll('[data-audio-output]').forEach(el=>{el.textContent=Math.round(this.settings[el.dataset.audioOutput]*100)+'%';});
   document.querySelectorAll('[data-audio-mute]').forEach(el=>{el.checked=this.settings.muted;});
