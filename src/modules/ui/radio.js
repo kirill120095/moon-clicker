@@ -130,7 +130,7 @@ class GameRadio{
  }
  renderMini(track=radioPlayback(this.current)){
   const root=document.getElementById('radioMini');if(!root)return;
-  root.classList.toggle('hidden',!this.admin);root.classList.toggle('collapsed',this.collapsed);
+  root.classList.toggle('hidden',!this.admin||this.mode==='internet');root.classList.toggle('collapsed',this.collapsed);
   const label=document.getElementById('radioMiniTitle');if(label){label.textContent=track?.title||'Космический фон';label.title=label.textContent;}
   const collapse=document.getElementById('radioMiniCollapse');if(collapse){collapse.textContent=this.collapsed?'⌄':'⌃';collapse.setAttribute('aria-expanded',String(!this.collapsed));collapse.setAttribute('aria-label',this.collapsed?'Развернуть проигрыватель':'Свернуть проигрыватель');}
  }
@@ -201,7 +201,7 @@ class GameRadio{
   await this.control('mode',{p_index:track.index,p_offset:track.offset,[kind==='track'?'p_repeat_track':'p_repeat_playlist']:!this.current[kind==='track'?'repeat_track':'repeat_playlist']});
  }
  setupInternetRadio(){
-  if(this.internetPlayer)return;
+  if(this.internetPlayer){this.setRadioMode(this.mode);return;}
   this.internetPlayer=new Audio();this.internetPlayer.preload='none';
   this.internetPlayer.addEventListener('error',()=>this.internetStatus('Поток недоступен. Попробуй другую станцию.'));
   this.internetPlayer.addEventListener('playing',()=>this.internetStatus('🔴 В эфире: '+(this.internetStations.find(s=>safeRadioStream(s)===this.internetPlayer.src)?.name||'Интернет-радио')));
@@ -225,7 +225,7 @@ class GameRadio{
   }else{
    this.stopInternetRadio();audio.radioElement=this.player;audio.radioActive=!!radioPlayback(this.current);this.tick();
   }
-  audio.apply();
+  audio.apply();this.renderMini();
  }
  async searchInternetRadio(){
   const genre=document.getElementById('internetRadioGenre')?.value||'ambient';
