@@ -176,8 +176,11 @@ gameEngine.init=()=>{
  fortuneWheel.bind(payload=>command('spinWheel',payload),()=>{for(const message of pendingWheelNotices)showToast(message,'success',3500);pendingWheelNotices=[];updateUI();updateShopUI();updateProfileAndLeaders();});fortuneWheel.connect(true);
  gameAdmin.connect(state.user).catch(()=>{});
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
+ let lastPrestigeDay=Math.floor((Date.now()+offset+10800000)/86400000);
  ticker=setInterval(()=>{
   if(!active)return;
+  const prestigeDay=Math.floor((Date.now()+offset+10800000)/86400000);
+  if(prestigeDay!==lastPrestigeDay){lastPrestigeDay=prestigeDay;updateShopUI();updateProfileAndLeaders();}
   const activeBuffs=refreshBuffs();updateLiveCombatProfile();
   if(((state.ufoLevel&&state.ufoNextShotAt<=Date.now()+offset)||state.pendingEchoes>0)&&!document.hidden&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextUfoSync){
    nextUfoSync=Date.now()+250;syncing=true;
@@ -213,7 +216,7 @@ gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks
 gameEngine.buyClickCrystal=(max=false)=>command('buyClickCrystal',{max},true).catch(()=>{});
 gameEngine.setCloneTargets=targets=>command('setCloneTargets',{targets}).catch(()=>{});
 gameEngine.buyClickDamage=(max=false)=>command('buyDamage',{max},true).catch(()=>{});
-gameEngine.ascend=()=>{const summary=getPrestigeSummary(state);if(!summary.canAscend){showToast('Вознесение недоступно: достигните '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня в этом прохождении','info');return;}const count=summary.pendingCoins;if(confirm('Вознестись за '+count+' монет престижа? Весь обычный прогресс будет сброшен. Вечные бонусы, монеты и покупки сохранятся.'))command('ascend').catch(()=>{});};
+gameEngine.ascend=()=>{const summary=getPrestigeSummary(state);if(summary.dailyAscensionsLeft===0){showToast('Лимит: 3 вознесения в день. Обновление в 00:00 МСК','info');return;}if(!summary.canAscend){showToast('Вознесение недоступно: достигните '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня в этом прохождении','info');return;}const count=summary.pendingCoins;if(confirm('Вознестись за '+count+' монет престижа? Весь обычный прогресс будет сброшен. Вечные бонусы, монеты и покупки сохранятся.'))command('ascend').catch(()=>{});};
 gameEngine.buyPrestige=(id,max=false)=>command('buyPrestige',{id,max},true).catch(()=>{});
 gameEngine.buyUfoComboRelay=()=>command('buyUfoComboRelay',{},true).catch(()=>{});
 gameEngine.buyUfoUnit=(max=false)=>command('buyUfoUnit',{max},true).catch(()=>{});
