@@ -850,6 +850,8 @@ export function getUfoMoonDescription(id,level=1) {
 }
 
 export const PRESTIGE_UPGRADES={
+ whiteDamage:{id:'whiteDamage',name:'Белый урон',icon:'🤍',description:'Множитель белого урона: ×1,05, ×1,10, ×1,15…',baseCost:1,maxLevel:Infinity},
+ cloneCopies:{id:'cloneCopies',name:'Дополнительные отражения',icon:'🪞',description:'Третье отражение на 15 уровне Клона, четвёртое на 20 уровне · 50 / 150 🌟',baseCost:50,maxLevel:2},
  reactor:{id:'reactor',name:'Вечный реактор',icon:'⚔️',description:'+25% урона за уровень',baseCost:1,maxLevel:Infinity,damage:0.25},
  treasury:{id:'treasury',name:'Звёздная казна',icon:'💎',description:'+25% добычи кристаллов за уровень',baseCost:1,maxLevel:Infinity,shards:0.25},
  fleet:{id:'fleet',name:'Бессмертная армада',icon:'🛸',description:'+15% урона тарелок за уровень',baseCost:2,maxLevel:Infinity,ufoDamage:0.15},
@@ -880,7 +882,7 @@ export function getPrestigeSummary(state,now=Date.now()+(state.serverClockOffset
  startShards:Math.min(CONSTANTS.SAFE_NUMBER_CAP,(up.capital||0)*PRESTIGE_UPGRADES.capital.shards),
  bossDamage:(up.hunter||0)*PRESTIGE_UPGRADES.hunter.damage,bossTime:(up.hunter||0)*PRESTIGE_UPGRADES.hunter.time,
  archivePerKill:(up.archive||0)*PRESTIGE_UPGRADES.archive.perKill,extraSlots:Math.min(1,up.orbit||0),
- ufoDamage:(up.fleet||0)*PRESTIGE_UPGRADES.fleet.ufoDamage,
+ ufoDamage:(up.fleet||0)*PRESTIGE_UPGRADES.fleet.ufoDamage,whiteDamageMultiplier:1+(up.whiteDamage||0)*0.05,
  rewardMultiplier:1+(p.ascensions||0)*c.REWARD_PER_ASCENSION,
  ufoHaste:Math.min(c.UFO_HASTE_CAP,1-Math.pow(1-PRESTIGE_UPGRADES.clock.ufoHaste,up.clock||0))};
 }
@@ -895,6 +897,7 @@ export function rollCritical(chance,multiplier=2,random=Math.random){
 }
 export function getPrestigeUpgradeCost(id,level){
  if(id==='autoclick')return level>=0?1:Infinity;
+ if(id==='cloneCopies')return level===0?50:level===1?150:Infinity;
  const d=PRESTIGE_UPGRADES[id];
  return d&&level<d.maxLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,d.baseCost+Math.max(1,Math.ceil(d.baseCost*CONSTANTS.PRESTIGE.PRICE_STEP_RATIO))*level+Math.floor(level*level/CONSTANTS.PRESTIGE.PRICE_QUADRATIC_DIVISOR)):Infinity;
 }
@@ -918,8 +921,9 @@ export function getQuestPayout(def,state){
 export function getCloneTargets(state){
  const active=(state.activeMoons||[]).slice(0,state.maxSlots||1);
  if(!active.includes('clone'))return [];
- const count=getMoonMechanicParams('clone',state.moonLevels?.clone||1).copies;
- return [...new Set(state.cloneTargets||[])].filter(id=>id!=='clone'&&active.includes(id)&&Object.hasOwn(MOON_TYPES,id)).slice(0,count);
+ const level=state.moonLevels?.clone||1,up=state.prestige?.upgrades?.cloneCopies||0;
+ const count=getMoonMechanicParams('clone',level).copies+(level>=15&&up>=1?1:0)+(level>=20&&up>=2?1:0);
+ return (state.cloneTargets||[]).filter(id=>id!=='clone'&&active.includes(id)&&Object.hasOwn(MOON_TYPES,id)).slice(0,count);
 }
 
 /** Reflected synergies require real bindings; no virtual clone can clone another. */
@@ -929,13 +933,13 @@ export function getActiveSynergies(state){
  const targets=getCloneTargets(state);if(!targets.length)return result;
  const p=getMoonMechanicParams('clone',state.moonLevels?.clone||1);
  const scaled=bonus=>Object.fromEntries(Object.entries(bonus).map(([key,value])=>[key,value*p.pairScale]));
- for(const target of targets){
-  result.push({key:'clone+'+target,name:CLONE_LINK_NAMES[target],tier:3,tierName:'Зеркальная связь',tierColor:'#a5b4fc',icon:'◈',isClone:true,moons:['clone',target],auraCombo:[],
+ for(const [index,target] of targets.entries()){
+  result.push({key:'clone+'+target+'#'+index,name:CLONE_LINK_NAMES[target],tier:3,tierName:'Зеркальная связь',tierColor:'#a5b4fc',icon:'◈',isClone:true,moons:['clone',target],auraCombo:[],
    description:'Клон отражает «'+MOON_TYPES[target].name+'» ур. '+(state.moonLevels?.[target]||1)+'. Оригинал и отражение по '+Math.round(p.pairScale*100)+'% силы. Бонус связи:',
    ...scaled(CONSTANTS.CLONE.LINK_BONUS)});
  }
- if(targets.length===2){
-  const sorted=[...targets].sort();
+ if(new Set(targets).size>=2){
+  const sorted=[...new Set(targets)].sort();
   result.push({key:'clone+'+sorted.join('+'),name:'Двойной зеркальный резонанс',tier:4,tierName:'Двойное отражение',tierColor:'#c4b5fd',icon:'✧',isClone:true,moons:['clone',...sorted],auraCombo:[],
    description:'Две выбранные связи: '+sorted.map(id=>MOON_TYPES[id].name).join(' + ')+'. Дополнительный бонус за два разных отражения:',
    ...scaled(CONSTANTS.CLONE.DUAL_BONUS)});
@@ -959,7 +963,7 @@ export function getActiveSynergies(state){
 
 export function getMoonPower(state,id){
  if(id==='clone')return 0;
- return getCloneTargets(state).includes(id)?2*getMoonMechanicParams('clone',state.moonLevels?.clone||1).pairScale:1;
+ return 1+getCloneTargets(state).filter(target=>target===id).length*getMoonMechanicParams('clone',state.moonLevels?.clone||1).pairScale;
 }
 export function getEffectiveMoonParams(state,id){
  if(!(state.activeMoons||[]).slice(0,state.maxSlots||1).includes(id)||!Object.hasOwn(MOON_TYPES,id))return null;
@@ -980,9 +984,9 @@ export function getSlotLimit(state){return CONSTANTS.MAX_SLOTS+getPrestigeSummar
 /** Temporary flat damage is recalculated, never written into purchased click damage. */
 export function getBaseDamage(state){
  const base=state.playerData?.click_damage||CONSTANTS.DEFAULTS.CLICK_DAMAGE;
- if(!(state.activeMoons||[]).slice(0,state.maxSlots||1).includes('cosmic'))return base;
+ if(!(state.activeMoons||[]).slice(0,state.maxSlots||1).includes('cosmic'))return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(base*getPrestigeSummary(state).whiteDamageMultiplier));
  const params=getEffectiveMoonParams(state,'cosmic');
- return Math.min(CONSTANTS.SAFE_NUMBER_CAP,base+params.baseDamagePerLevel*(state.currentLevel||1)+params.baseDamagePerKill*(state.moonKills||0));
+ return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round((base+params.baseDamagePerLevel*(state.currentLevel||1)+params.baseDamagePerKill*(state.moonKills||0))*getPrestigeSummary(state).whiteDamageMultiplier));
 }
 
 export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)){
