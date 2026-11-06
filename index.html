@@ -18,7 +18,7 @@
   
   <link rel="stylesheet" href="css/galaxy.css?v=9">
   <link rel="stylesheet" href="css/panel.css?v=9">
-  <link rel="stylesheet" href="css/modal.css?v=9">
+  <link rel="stylesheet" href="css/modal.css?v=prestige-cards-13">
   <link rel="stylesheet" href="css/game.css?v=prestige-visible-11">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
@@ -294,6 +294,19 @@
     </div>
   </div>
 
+  <!-- Подтверждение вознесения: вместо браузерного confirm() -->
+  <div id="ascensionModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="ascensionModalTitle" aria-describedby="ascensionModalDescription">
+    <div class="modal-backdrop" data-ascension-cancel></div>
+    <div class="modal-content ascension-modal-content">
+      <div class="ascension-modal-emblem" aria-hidden="true">🌟</div>
+      <h3 id="ascensionModalTitle" class="modal-title">Новое вознесение</h3>
+      <p id="ascensionModalDescription" class="modal-message">Начните новое прохождение, сохранив вечную силу.</p>
+      <div class="ascension-modal-reward"><span>Вы получите</span><strong id="ascensionModalCoins">🌟 0</strong></div>
+      <div class="ascension-modal-details"><p>↻ Обычный прогресс сбросится</p><p>✓ Вечные бонусы, монеты и покупки сохранятся</p><p>✦ Достижения и квесты обновятся</p></div>
+      <div class="modal-actions ascension-modal-actions"><button type="button" class="btn-modal btn-cancel" data-ascension-cancel>Отмена</button><button type="button" id="ascensionModalConfirm" class="btn-modal btn-confirm">🌟 Вознестись</button></div>
+    </div>
+  </div>
+
   <!-- ============================================================ -->
   <!-- НОВОЕ: МОДАЛКА ВВОДА ПАРОЛЯ (для тестового режима) -->
   <!-- ============================================================ -->
@@ -335,7 +348,7 @@
     "./src/core/config.js": "./src/core/config.js?v=online-presence-9",
     "./src/core/constants.js": "./src/core/constants.js?v=prestige-visible-11",
     "./src/core/state.js": "./src/core/state.js?v=online-presence-9",
-    "./src/index.js": "./src/index.js?v=presence-first-12",
+    "./src/index.js": "./src/index.js?v=prestige-cards-13",
     "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=online-presence-9",
     "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
     "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
@@ -352,16 +365,16 @@
     "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=online-presence-9",
     "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=autoclick-hp-8",
     "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=buy-max-fix-2",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=presence-first-12",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=prestige-cards-13",
     "./src/utils/numbers.js": "./src/utils/numbers.js?v=online-presence-9",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=presence-first-12",
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=prestige-cards-13",
     "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=online-presence-9",
     "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=online-presence-9"
   }
 }
   </script>
-  <script type="module" src="src/index.js?v=presence-first-12"></script>
+  <script type="module" src="src/index.js?v=prestige-cards-13"></script>
 </body>
 </html>
