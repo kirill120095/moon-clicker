@@ -282,7 +282,22 @@ export function updatePrestigeUI(){
  prestigeProfileKey=profile&&!document.getElementById('profilePanel')?.classList.contains('hidden')?profileKey:prestigeProfileKey;
  if(!container||!document.getElementById('prestigeTabContent')?.classList.contains('active'))return;
  const shopKey=JSON.stringify([p,state.prestige?.upgrades]);if(shopKey===prestigeShopKey&&container.childElementCount)return;prestigeShopKey=shopKey;
- container.innerHTML='<h3>🌟 Магазин вечных улучшений</h3><p class="prestige-summary">Монеты престижа: <b>'+p.coins+'</b></p><p class="ufo-description">В этом прохождении: '+p.runRecord+' уровней. При вознесении получите '+p.pendingCoins+' монет. Обычный прогресс сбросится; вечные бонусы и покупки сохранятся. В новом прохождении рубежи снова доступны.</p><button class="btn-action ascend-button" data-ascend '+(p.canAscend?'':'disabled')+'>'+(p.canAscend?'Вознестись · +'+p.pendingCoins+' 🌟':'Вознесение с '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня прохождения')+'</button>'+
+ container.innerHTML='<h3>🌟 Магазин вечных улучшений</h3><div class="prestige-explainer">'+
+ '<p class="prestige-summary">Монеты престижа: <b>🌟 '+p.coins+'</b></p>'+
+ '<h4>Награды за прохождение</h4>'+
+ '<p>🌟 <b>Монеты престижа:</b> за каждые 20 достигнутых уровней — 1 🌟 при вознесении.</p>'+
+ '<p>⚔️ <b>Вечный урон:</b> за каждые 100 достигнутых уровней — постоянный бонус +1% к урону.</p>'+
+ '<p>💎 <b>Вечная награда:</b> за каждые 300 достигнутых уровней — постоянный бонус +5% к осколкам.</p>'+
+ '<p>🎁 <b>Награды заданий:</b> каждое вознесение увеличивает их на 25% от базового значения.</p>'+
+ '<p class="ufo-description">Вечные бонусы сохраняются между прохождениями. Рубежи нового прохождения можно достигать заново.</p>'+
+ '<h4>Текущее прохождение</h4>'+
+ '<p>Достигнуто уровней: <b>'+p.runRecord+'</b></p>'+
+ '<p>При вознесении получите: <b>🌟 '+p.pendingCoins+'</b></p>'+
+ '<p class="ufo-description">Обычный прогресс сбросится, но вечные бонусы и покупки сохранятся. В новом прохождении достижения и квесты обновятся.</p>'+
+ '<h4>Лимит вознесений</h4>'+
+ '<p>Осталось сегодня: <b>'+p.dailyAscensionsLeft+' из '+p.dailyAscensionLimit+'</b></p>'+
+ '<p class="ufo-description">⏱️ Лимит обновляется каждый день ровно в 00:00 МСК. После 3 вознесений кнопка недоступна до следующего дня.</p>'+
+ '</div><button class="btn-action ascend-button" data-ascend '+(p.canAscend?'':'disabled')+'>'+(p.dailyAscensionsLeft===0?'Лимит вознесений исчерпан до 00:00 МСК':p.canAscend?'Вознестись · +'+p.pendingCoins+' 🌟':'Вознесение с '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня прохождения')+'</button>'+
  Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel;return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+Math.min(level,d.maxLevel)+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><div class="purchase-split"><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':formatPrice(cost)+' 🌟')+'</button>'+(d.maxLevel===1?'':'<button class="btn-buy-shop btn-buy-max" data-prestige-upgrade="'+id+'" data-buy-max="true" title="Купить максимум уровней" '+(maxed||p.coins<cost?'disabled':'')+'>MAX</button>')+'</div></div>';}).join('');
 }
 
