@@ -979,7 +979,7 @@ export function updateLiveCombatProfile(){
    heading.append(symbol,label);tile.appendChild(heading);
    const formula=document.createElement('div');formula.className='combat-effect-formula';
    // Keep every value and separator visible; replace only metric names with recognizable symbols.
-   const pieces=details.split(/(крит\\. урон|шанс крита|добыча|урон)/gi);
+   const pieces=details.split(/(крит\. урон|шанс крита|добыча|урон)/gi);
    for(const piece of pieces){
     const key=piece.toLowerCase(),symbol=metricIcons[key];
     if(symbol){const metric=document.createElement('span');metric.className='combat-effect-metric';metric.textContent=symbol;metric.title=piece;metric.setAttribute('aria-label',piece);formula.appendChild(metric);}
