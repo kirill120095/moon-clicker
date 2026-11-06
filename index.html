@@ -18,8 +18,8 @@
   
   <link rel="stylesheet" href="css/galaxy.css?v=9">
   <link rel="stylesheet" href="css/panel.css?v=9">
-  <link rel="stylesheet" href="css/modal.css?v=profile-reset-19">
-  <link rel="stylesheet" href="css/game.css?v=profile-reset-19">
+  <link rel="stylesheet" href="css/modal.css?v=account-settings-21">
+  <link rel="stylesheet" href="css/game.css?v=account-settings-21">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
   <link rel="stylesheet" href="css/neon.css?v=online-presence-9">
@@ -158,13 +158,6 @@
       <div class="panel-content panel-scrollable">
         <div id="profileTabContent" class="tab-content active">
           <div id="profileContent" class="profile-content"></div>
-          <section class="profile-account-actions" aria-label="Управление аккаунтом">
-            <h3 class="profile-account-heading">⚙️ Управление аккаунтом</h3>
-            <div class="profile-actions">
-              <button id="logoutBtn" type="button" class="btn-action btn-logout">🚪 Выйти из аккаунта</button>
-              <button id="resetBtn" type="button" class="btn-action btn-reset">♻️ Сбросить прогресс</button>
-            </div>
-          </section>
           <section id="profilePrestige" class="profile-prestige prestige-stats"></section>
         </div>
         
@@ -195,6 +188,13 @@
  <button id="resetAllProgressBtn" type="button" class="btn-action reset-all-button">⚠ Сбросить прогресс всех аккаунтов</button>
  </section>
  <p class="settings-note">Настройки сохраняются на этом устройстве. Музыка останавливается в скрытой вкладке.</p></section>
+          <section class="profile-account-actions" aria-label="Управление аккаунтом">
+            <h3 class="profile-account-heading">⚙️ Управление аккаунтом</h3>
+            <div class="profile-actions">
+              <button id="logoutBtn" type="button" class="btn-action btn-logout">🚪 Выйти из аккаунта</button>
+              <button id="resetBtn" type="button" class="btn-action btn-reset">♻️ Сбросить прогресс</button>
+            </div>
+          </section>
         </div>   </div>
       
       <button class="panel-edge-close panel-edge-close-left" onclick="window.closePanel('profilePanel')" title="Закрыть">
@@ -368,7 +368,7 @@
     "./src/core/constants.js": "./src/core/constants.js?v=prestige-visible-11",
     "./src/core/state.js": "./src/core/state.js?v=online-presence-9",
     "./src/index.js": "./src/index.js?v=rollback-ten-17",
-    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=profile-reset-19",
+    "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=account-settings-21",
     "./src/modules/auth/validation.js": "./src/modules/auth/validation.js?v=season2-neon-1",
     "./src/modules/game/combat.js": "./src/modules/game/combat.js?v=season2-neon-1",
     "./src/modules/game/game.js": "./src/modules/game/game.js?v=online-presence-9",
@@ -384,11 +384,11 @@
     "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=online-presence-9",
     "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=autoclick-hp-8",
     "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=buy-max-fix-2",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=profile-reset-19",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=account-settings-21",
     "./src/utils/numbers.js": "./src/utils/numbers.js?v=online-presence-9",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=profile-reset-19",
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=account-settings-21",
     "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=online-presence-9",
     "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=online-presence-9"
   }
