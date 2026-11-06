@@ -31,14 +31,19 @@ function readDuration(source){
   media.onerror=()=>finish(Error('Браузер не смог прочитать аудиофайл.'));media.src=source;
  });
 }
+const INTERNET_RADIO_API='https://de1.api.radio-browser.info/json/stations/bytag/';
+export function safeRadioStream(station){
+ const url=station?.url_resolved||station?.url||'';
+ try{const parsed=new URL(url);return parsed.protocol==='https:'?parsed.href:null;}catch{return null;}
+}
 class GameRadio{
- constructor(){this.client=null;this.channel=null;this.timer=null;this.tickTimer=null;this.userId=null;this.current=null;this.player=null;this.bound=false;this.admin=false;this.playlists=[];this.selectedId=null;this.library=[];this.playingKey=null;this.busy=false;this.generation=0;this.refreshPending=null;this.nextRefreshAt=0;this.ownerPending=null;this.nextOwnerCheck=0;this.ownerReady=false;this.collapsed=false;}
+ constructor(){this.client=null;this.channel=null;this.timer=null;this.tickTimer=null;this.userId=null;this.current=null;this.player=null;this.bound=false;this.admin=false;this.playlists=[];this.selectedId=null;this.library=[];this.playingKey=null;this.busy=false;this.generation=0;this.refreshPending=null;this.nextRefreshAt=0;this.ownerPending=null;this.nextOwnerCheck=0;this.ownerReady=false;this.collapsed=false;this.mode='own';this.internetPlayer=null;this.internetStations=[];this.internetPlaying=false;}
  async connect(user){
   if(this.userId===user?.id)return;
   this.disconnect();this.userId=user?.id;if(!this.userId)return;const generation=this.generation;
   const client=await initSupabase();if(generation!==this.generation)return;this.client=client;
   if(!this.player){this.player=new Audio();this.player.preload='metadata';this.player.addEventListener('loadedmetadata',()=>this.tick());this.player.addEventListener('ended',()=>this.tick());this.player.addEventListener('error',()=>{audio.radioActive=false;audio.apply();this.status('Не удалось воспроизвести трек.');});}
-  audio.radioElement=this.player;this.bind();
+  audio.radioElement=this.player;this.bind();this.setupInternetRadio();
   try{this.collapsed=localStorage.getItem('moon-radio-collapsed:'+this.userId)==='true';}catch{}
   this.renderMini();
   this.channel=this.client.channel('moon-radio').on('postgres_changes',{event:'UPDATE',schema:'public',table:'game_radio',filter:'id=eq.1'},event=>{if(generation===this.generation)this.accept(event.new);}).subscribe(status=>{if(status==='SUBSCRIBED'&&generation===this.generation)this.refresh().catch(()=>{});});
@@ -53,7 +58,7 @@ class GameRadio{
   const generation=this.generation,client=this.client;
   const pending=(async()=>{
    const {data,error}=await client.rpc('is_radio_admin');if(generation!==this.generation)return;if(error)throw error;
-   this.admin=data===true;document.getElementById('radioAdmin')?.classList.toggle('hidden',!this.admin);this.renderMini();
+   this.admin=data===true;document.getElementById('radioAdmin')?.classList.toggle('hidden',!this.admin||this.mode==='internet');this.renderMini();
    if(this.admin){
     const results=await Promise.allSettled([this.listPlaylists(),this.listTracks()]);if(generation!==this.generation)return;
     const failed=results.find(r=>r.status==='rejected');if(failed)throw failed.reason;
@@ -75,6 +80,7 @@ class GameRadio{
  accept(row){if(!row||this.current?.version===row.version)return;this.current=row;this.playingKey=null;this.tick();this.renderModes();}
  tick(){
   if(!this.player)return;
+  if(this.mode==='internet'){this.player.pause();return;}
   const track=radioPlayback(this.current);
   this.renderMini(track);
   const label=document.getElementById('radioNowPlaying');if(label)label.textContent=track?'В эфире: '+track.title:'Космический фон';
@@ -92,7 +98,7 @@ class GameRadio{
   if(!document.hidden&&this.player.paused)this.player.play().catch(()=>{});
  }
  play(){this.tick();}
- disconnect(){this.generation++;this.ownerPending=null;this.nextOwnerCheck=0;this.ownerReady=false;this.refreshPending=null;this.nextRefreshAt=0;clearInterval(this.timer);clearInterval(this.tickTimer);this.timer=null;this.tickTimer=null;if(this.channel)Promise.resolve(this.client?.removeChannel(this.channel)).catch(()=>{});this.channel=null;this.player?.pause();this.current=null;this.playingKey=null;this.userId=null;this.admin=false;this.playlists=[];this.selectedId=null;audio.radioActive=false;audio.radioElement=null;audio.apply();document.getElementById('radioAdmin')?.classList.add('hidden');document.getElementById('radioMini')?.classList.add('hidden');}
+ disconnect(){this.generation++;this.ownerPending=null;this.nextOwnerCheck=0;this.ownerReady=false;this.refreshPending=null;this.nextRefreshAt=0;clearInterval(this.timer);clearInterval(this.tickTimer);this.timer=null;this.tickTimer=null;if(this.channel)Promise.resolve(this.client?.removeChannel(this.channel)).catch(()=>{});this.channel=null;this.player?.pause();this.internetPlayer?.pause();if(this.internetPlayer){this.internetPlayer.removeAttribute('src');this.internetPlayer.load();}this.internetPlaying=false;this.current=null;this.playingKey=null;this.userId=null;this.admin=false;this.playlists=[];this.selectedId=null;audio.radioActive=false;audio.radioElement=null;audio.apply();document.getElementById('radioAdmin')?.classList.add('hidden');document.getElementById('radioMini')?.classList.add('hidden');}
  status(text){for(const id of ['radioStatus','radioMiniStatus']){const el=document.getElementById(id);if(el)el.textContent=text;}}
  async run(task){
   if(this.busy)return;this.busy=true;
@@ -193,6 +199,63 @@ class GameRadio{
  async repeat(kind){
   const track=radioPlayback(this.current);if(!track||track.legacy)throw Error('Сначала включите плейлист.');
   await this.control('mode',{p_index:track.index,p_offset:track.offset,[kind==='track'?'p_repeat_track':'p_repeat_playlist']:!this.current[kind==='track'?'repeat_track':'repeat_playlist']});
+ }
+ setupInternetRadio(){
+  if(this.internetPlayer)return;
+  this.internetPlayer=new Audio();this.internetPlayer.preload='none';
+  this.internetPlayer.addEventListener('error',()=>this.internetStatus('Поток недоступен. Попробуй другую станцию.'));
+  this.internetPlayer.addEventListener('playing',()=>this.internetStatus('🔴 В эфире: '+(this.internetStations.find(s=>safeRadioStream(s)===this.internetPlayer.src)?.name||'Интернет-радио')));
+  try{this.mode=localStorage.getItem('moon-radio-mode')==='internet'?'internet':'own';}catch{}
+  const selector=document.getElementById('radioMode');if(selector)selector.value=this.mode;
+  selector?.addEventListener('change',()=>this.setRadioMode(selector.value));
+  document.getElementById('internetRadioSearch')?.addEventListener('click',()=>this.searchInternetRadio());
+  document.getElementById('internetRadioGenre')?.addEventListener('change',()=>this.searchInternetRadio());
+  document.getElementById('internetRadioPlay')?.addEventListener('click',()=>this.playInternetRadio());
+  document.getElementById('internetRadioStop')?.addEventListener('click',()=>this.stopInternetRadio());
+  this.setRadioMode(this.mode);
+ }
+ internetStatus(message){const el=document.getElementById('internetRadioStatus');if(el)el.textContent=message;}
+ setRadioMode(mode){
+  this.mode=mode==='internet'?'internet':'own';
+  try{localStorage.setItem('moon-radio-mode',this.mode);}catch{}
+  const panel=document.getElementById('internetRadioPanel');if(panel)panel.hidden=this.mode!=='internet';
+  const studio=document.getElementById('radioAdmin');studio?.classList.toggle('hidden',this.mode==='internet'||!this.admin);
+  if(this.mode==='internet'){
+   this.player?.pause();audio.radioElement=this.internetPlayer;audio.radioActive=this.internetPlaying;
+  }else{
+   this.stopInternetRadio();audio.radioElement=this.player;audio.radioActive=!!radioPlayback(this.current);this.tick();
+  }
+  audio.apply();
+ }
+ async searchInternetRadio(){
+  const genre=document.getElementById('internetRadioGenre')?.value||'ambient';
+  if(!/^[a-z]+$/.test(genre))return;
+  this.internetStatus('Ищем станции…');
+  try{
+   const response=await fetch(INTERNET_RADIO_API+encodeURIComponent(genre)+'?hidebroken=true&limit=60&order=clickcount&reverse=true',{signal:AbortSignal.timeout(12000)});
+   if(!response.ok)throw Error('Каталог временно недоступен');
+   const data=await response.json();
+   this.internetStations=(Array.isArray(data)?data:[]).filter(s=>safeRadioStream(s)&&s.name).slice(0,25);
+   const select=document.getElementById('internetRadioStations');
+   if(select){select.replaceChildren();for(const [i,station] of this.internetStations.entries()){const option=document.createElement('option');option.value=String(i);option.textContent=station.name.slice(0,100);select.appendChild(option);}}
+   this.internetStatus(this.internetStations.length?'Найдено станций: '+this.internetStations.length+'. Выбери станцию и нажми «Слушать».':'Подходящих HTTPS-потоков не найдено.');
+  }catch{this.internetStatus('Не удалось загрузить станции. Проверь интернет и повтори поиск.');}
+ }
+ async playInternetRadio(){
+  if(this.mode!=='internet')return;
+  const index=Number(document.getElementById('internetRadioStations')?.value);
+  const station=this.internetStations[index],url=safeRadioStream(station);
+  if(!url){this.internetStatus('Сначала найди и выбери станцию.');return;}
+  this.internetPlayer.pause();this.internetPlayer.src=url;this.internetPlaying=true;audio.radioActive=true;audio.radioElement=this.internetPlayer;audio.apply();
+  try{await this.internetPlayer.play();this.internetStatus('🔴 В эфире: '+station.name);}
+  catch{this.stopInternetRadio();this.internetStatus('Браузер не смог включить станцию. Попробуй другую.');}
+ }
+ stopInternetRadio(){
+  this.internetPlaying=false;
+  this.internetPlayer?.pause();
+  if(this.internetPlayer?.getAttribute('src')){this.internetPlayer.removeAttribute('src');this.internetPlayer.load();}
+  if(this.mode==='internet'){audio.radioActive=false;audio.apply();}
+  this.internetStatus('Интернет-радио на паузе.');
  }
  bind(){
   if(this.bound)return;this.bound=true;
