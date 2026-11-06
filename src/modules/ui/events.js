@@ -234,7 +234,6 @@ if (typeof window !== 'undefined') {
 export function initEvents() {
   document.getElementById('applyCloneTargets')?.addEventListener('click',()=>{
    const targets=[...document.querySelectorAll('#cloneTargetFields select')].map(el=>el.value).filter(Boolean);
-   if(new Set(targets).size!==targets.length){showToast('Выберите разные оригиналы','warning');return;}
    gameEngine.setCloneTargets(targets);
   });
   document.addEventListener('click',e=>{const button=e.target.closest?.('[data-prestige-upgrade],[data-ascend]');if(!button||button.disabled)return;if(button.hasAttribute('data-ascend'))gameEngine.ascend();else gameEngine.buyPrestige(button.dataset.prestigeUpgrade,button.dataset.buyMax==='true');});
