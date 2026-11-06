@@ -661,6 +661,8 @@ function _updateProfile() {
   if (!profileContent) return;
   
   if (!state.user) {
+    if(profileContent.dataset.structureKey==='signed-out')return;
+    profileContent.dataset.structureKey='signed-out';
     profileContent.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">👤</div>
@@ -675,9 +677,17 @@ function _updateProfile() {
   const activeMoons = state.activeMoons || [];
   const ownedMoons = state.ownedMoons || [];
   const maxSlots = state.maxSlots || 1;
+  // Server updates (including wheel payouts) must not rebuild the entire profile.
+  // Only changes to its structure (moon cards, synergies, identity) require a rebuild.
+  const structureKey=JSON.stringify([state.user.id,state.user.email,state.user.user_metadata?.username,state.user.app_metadata?.login_mode,data.level||1,title,activeMoons,ownedMoons,activeMoons.map(id=>[id,state.moonLevels?.[id]]),ownedMoons.map(id=>[id,state.moonLevels?.[id]]),maxSlots,getSlotLimit(state),getActiveSynergies(state).map(b=>b.key)]);
+  if(profileContent.dataset.structureKey===structureKey&&profileContent.querySelector('[data-live-stat="critDamage"]')){
+    updateLiveCombatProfile();
+    return;
+  }
+  profileContent.dataset.structureKey=structureKey;
   const combat=getCombatStats(state);
   const totalDamageBonus=combat.damageBonus,totalShardBonus=combat.shardBonus,totalCritChanceBonus=combat.critChanceBonus,totalCritDamageBonus=combat.critDamageBonus;
-  const baseDamage=combat.baseDamage,finalDamage=combat.finalDamage,finalCritChance=Math.round(combat.critChance*100),finalCritDamage=Math.round(combat.critMultiplier*combat.critTier/2*(combat.firstStrikeMultiplier||1)*100);
+  const baseDamage=combat.baseDamage,finalDamage=combat.finalDamage,finalCritChance=Math.round(combat.critChance*100),finalCritMultiplier=(combat.critMultiplier*combat.critTier/2*(combat.firstStrikeMultiplier||1)).toLocaleString('ru-RU',{maximumFractionDigits:2});
 
   let activeMoonsHtml = '';
   activeMoons.forEach(moonId => {
@@ -817,7 +827,7 @@ function _updateProfile() {
           <div class="combat-stat-icon">⚡</div>
           <div class="combat-stat-info">
             <div class="combat-stat-label">Урон крита</div>
-            <div class="combat-stat-value" data-live-stat="critDamage">${formatNumber(combat.critDamage)} · ${finalCritDamage}%</div>
+            <div class="combat-stat-value" data-live-stat="critDamage">${formatNumber(combat.critDamage)} · ${finalCritMultiplier}×</div>
           </div>
         </div>
       </div>
@@ -904,7 +914,7 @@ function _updateProfile() {
         <div class="stat-card">
           <div class="stat-card-icon">👹</div>
           <div class="stat-card-label">Боссов</div>
-          <div class="stat-card-value">${state.bossKills || 0}</div>
+          <div class="stat-card-value" data-live-stat="bossKills">${state.bossKills || 0}</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-icon">🌙</div>
@@ -914,12 +924,12 @@ function _updateProfile() {
         <div class="stat-card">
           <div class="stat-card-icon">🎰</div>
           <div class="stat-card-label">Слотов</div>
-          <div class="stat-card-value">${maxSlots}/${getSlotLimit(state)}</div>
+          <div class="stat-card-value" data-live-stat="slots">${maxSlots}/${getSlotLimit(state)}</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-icon">💎</div>
           <div class="stat-card-label">Всего осколков</div>
-          <div class="stat-card-value">${formatMoney(getVisibleShards(data.shards))}</div>
+          <div class="stat-card-value" data-live-stat="shards">${formatMoney(getVisibleShards(data.shards))}</div>
         </div>
         <div class="stat-card casino-stat-card casino-stat-loss">
           <div class="stat-card-icon">📉</div>
@@ -934,18 +944,19 @@ function _updateProfile() {
         <div class="stat-card">
           <div class="stat-card-icon">⏱️</div>
           <div class="stat-card-label">В игре</div>
-          <div class="stat-card-value">${formatTime(state.totalSecondsPlayed || 0)}</div>
+          <div class="stat-card-value" data-live-stat="playTime">${formatTime(state.totalSecondsPlayed || 0)}</div>
         </div>
       </div>
     </div>
   `;
+  updateLiveCombatProfile();
 }
 
 export function updateLiveCombatProfile(){
  const panel=document.getElementById('profilePanel'),tab=document.getElementById('profileTabContent');
  if(!panel||panel.classList.contains('hidden')||tab&&!tab.classList.contains('active'))return;
  const s=getCombatStats(state),pct=n=>(n*100).toLocaleString('ru-RU',{maximumFractionDigits:2})+'%';
- const values={casinoLost:formatMoney(state.wheelEconomy?.totalLost||0),casinoWon:formatMoney(state.wheelEconomy?.totalWon||0),lifetimeClicks:formatNumber(state.clickCount||0),runClicks:formatNumber(state.runClickCount??state.clickCount??0),moonKills:formatNumber(state.moonKills||0),baseDamage:formatBaseDamage(s.baseDamage),finalDamage:formatNumber(s.finalDamage),critChance:pct(s.critChance),
+ const values={bossKills:String(state.bossKills||0),slots:(state.maxSlots||1)+'/'+getSlotLimit(state),shards:formatMoney(getVisibleShards(state.playerData?.shards)),playTime:formatTime(state.totalSecondsPlayed||0),casinoLost:formatMoney(state.wheelEconomy?.totalLost||0),casinoWon:formatMoney(state.wheelEconomy?.totalWon||0),lifetimeClicks:formatNumber(state.clickCount||0),runClicks:formatNumber(state.runClickCount??state.clickCount??0),moonKills:formatNumber(state.moonKills||0),baseDamage:formatBaseDamage(s.baseDamage),finalDamage:formatNumber(s.finalDamage),critChance:pct(s.critChance),
  critDamage:formatNumber(s.critDamage)+' · '+(s.critMultiplier*s.critTier/2*(s.firstStrikeMultiplier||1)).toLocaleString('ru-RU',{maximumFractionDigits:2})+'×'+(s.extraCritChance?' · '+pct(s.extraCritChance)+' → '+formatNumber(s.nextCritDamage):''),
  damageBonus:'+'+pct(s.damageBonus),shardBonus:'+'+pct(s.shardBonus),critChanceBonus:'+'+pct(s.critChanceBonus),critDamageBonus:'+'+pct(s.critDamageBonus)};
  for(const [key,text]of Object.entries(values)){const el=document.querySelector('[data-live-stat="'+key+'"]');if(el&&el.textContent!==text)el.textContent=text;}
