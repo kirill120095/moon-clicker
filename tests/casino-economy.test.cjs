@@ -46,8 +46,8 @@ test('casino totals are synchronized into client state and rendered live in prof
  assert.match(client,/wheelEconomy:s\.wheelEconomy\|\|\{\}/);
  assert.match(renderer,/data-live-stat="casinoLost"/);
  assert.match(renderer,/data-live-stat="casinoWon"/);
- assert.match(renderer,/casinoLost:formatMoney\(state\.wheelEconomy\?\.totalLost/);
- assert.match(renderer,/casinoWon:formatMoney\(state\.wheelEconomy\?\.totalWon/);
+ assert.match(renderer,/casinoLost:formatMoney\(getVisibleCasinoTotals\(state\.wheelEconomy\)\.totalLost/);
+ assert.match(renderer,/casinoWon:formatMoney\(getVisibleCasinoTotals\(state\.wheelEconomy\)\.totalWon/);
 });
 
 test('casino win/loss counters are frozen until the wheel animation reveals its result',()=>{
