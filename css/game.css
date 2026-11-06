@@ -2480,3 +2480,13 @@
 .casino-stat-card{border:1px solid rgba(166,177,209,.24);background:linear-gradient(135deg,rgba(32,43,68,.65),rgba(17,25,46,.8))}
 .casino-stat-loss .stat-card-value{color:#f0abb3}
 .casino-stat-win .stat-card-value{color:#a7dfc8}
+
+/* Compact active effects: icon tiles with accessible details on hover/focus. */
+.live-combat-effects{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:9px!important;overflow:visible}
+.combat-effect-tile{position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;min-width:0;min-height:78px;padding:9px 5px;border:1px solid rgba(160,176,225,.25);border-radius:13px;background:linear-gradient(145deg,rgba(57,64,101,.55),rgba(24,33,61,.82));color:#e8ecff;cursor:help;outline-offset:2px;text-align:center;transition:transform .15s,border-color .15s,background .15s}
+.combat-effect-tile:hover,.combat-effect-tile:focus-visible{transform:translateY(-2px);border-color:rgba(255,210,111,.7);background:rgba(67,58,111,.9);z-index:3}
+.combat-effect-symbol{font-size:1.55rem;line-height:1.25}
+.combat-effect-label{font-size:.68rem;line-height:1.25;font-weight:700;overflow-wrap:anywhere}
+.combat-effect-tooltip{display:none;position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:max-content;max-width:min(270px,78vw);padding:10px 12px;border:1px solid rgba(255,213,120,.4);border-radius:10px;background:#151e38;box-shadow:0 10px 25px rgba(0,0,0,.45);font-size:.79rem;line-height:1.5;font-weight:400;text-align:left;white-space:normal;overflow-wrap:break-word;pointer-events:none;z-index:10}
+.combat-effect-tile:hover .combat-effect-tooltip,.combat-effect-tile:focus-visible .combat-effect-tooltip{display:block}
+@media(hover:none){.combat-effect-tile:focus .combat-effect-tooltip{display:block}}
