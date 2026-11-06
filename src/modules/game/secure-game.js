@@ -35,7 +35,7 @@ function renderFleet(count){
 
 let nextUfoSync=0,lastErrorToast=0,lastErrorMessage='';
 let active=false,pendingClicks=0,flushTimer=null,ticker=null,ping=null,lastClick=0,offset=0,deadline=null,syncing=false,purchasing=false,clickFlight=null,nextBuffSync=0;
-let autoClickUntil=0,autoClickTicker=null,autoClickLastPreview=0;
+let autoClickUntil=0,autoClickTicker=null;
 let damageVisualTimer=null;
 const damageVisualQueue=[];
 const MAX_DAMAGE_VISUAL_QUEUE=12;
@@ -200,7 +200,9 @@ gameEngine.handleClick=(e,automatic=false)=>{
  if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
  pendingClicks++;previewHits.push({damage:previewDamage(),x:e.clientX,y:e.clientY,automatic});
- if(!automatic||performance.now()-autoClickLastPreview>160){autoClickLastPreview=performance.now();refreshPreview();}
+ // Keep the HP bar in lockstep with each accepted hit, just like holding Space.
+ // This only updates the local visual preview; the server still owns actual damage.
+ refreshPreview();
  if(!automatic||!document.hidden)audio.click();
  animations.playClickVisualFeedback(e,state.finalDamage||previewDamage(),false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,automatic);
  if(automatic){if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),AUTO_CLICK_BATCH_MS);}
