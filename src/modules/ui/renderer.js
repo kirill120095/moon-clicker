@@ -277,7 +277,7 @@ export function updatePrestigeUI(){
  const p=getPrestigeSummary(state),container=document.getElementById('prestigeShop'),profile=document.getElementById('profilePrestige');
  const profileKey=JSON.stringify(p);
  if(profile&&(profileKey!==prestigeProfileKey||!profile.childElementCount)&&!document.getElementById('profilePanel')?.classList.contains('hidden'))profile.innerHTML='<div class="profile-block"><div class="profile-block-header"><span class="block-icon">🌟</span><span class="block-title">Вечный престиж</span></div><div class="stats-grid">'+[
- ['🌟','Монеты',p.coins],['✨','Вознесения',p.ascensions],['⚔️','Урон','+'+Math.round(p.damageBonus*100)+'%'],['💎','Добыча','+'+Math.round(p.shardBonus*100)+'%'],['🎯','Шанс крита','+'+Math.round(p.critBonus*100)+'%'],['🛸','Урон тарелок','+'+Math.round(p.ufoDamage*100)+'%'],['⏱️','Сокращение интервала',Math.round(p.ufoHaste*100)+'%'],['🎁','Награды заданий','×'+p.rewardMultiplier.toLocaleString('ru-RU')],['🔊','Шанс эха',Math.round(p.echoChance*100)+'%'],['🚀','Стартовый капитал',formatMoney(p.startShards)+' 💎'],['👹','Урон боссам','+'+Math.round(p.bossDamage*100)+'%'],['⏳','Время босса','+'+p.bossTime+' с'],['📚','Космос за убийство',(MOON_TYPES.cosmic.mechanicParams.baseDamagePerKill+p.archivePerKill).toLocaleString('ru-RU')],['🌌','Вечные слоты',p.extraSlots],['📈','Рекорд прохождения',p.runRecord],['🔮','При вознесении',p.pendingCoins+' 🌟']
+ ['🌟','Монеты',p.coins],['✨','Вознесения',p.ascensions],['⚔️','Урон','+'+Math.round(p.damageBonus*100)+'%'],['💎','Добыча','+'+Math.round(p.shardBonus*100)+'%'],['🎯','Шанс крита','+'+Math.round(p.critBonus*100)+'%'],['🛸','Урон тарелок','+'+Math.round(p.ufoDamage*100)+'%'],['⏱️','Сокращение интервала кликов тарелки',Math.round(p.ufoHaste*100)+'%'],['🎁','Награды заданий','×'+p.rewardMultiplier.toLocaleString('ru-RU')],['🔊','Шанс эха',Math.round(p.echoChance*100)+'%'],['🚀','Стартовый капитал',formatMoney(p.startShards)+' 💎'],['👹','Урон боссам','+'+Math.round(p.bossDamage*100)+'%'],['⏳','Время босса','+'+p.bossTime+' с'],['📚','Космос за убийство',(MOON_TYPES.cosmic.mechanicParams.baseDamagePerKill+p.archivePerKill).toLocaleString('ru-RU')],['🌌','Вечные слоты',p.extraSlots],['📈','Рекорд прохождения',p.runRecord],['🔮','При вознесении',p.pendingCoins+' 🌟']
  ].map(([icon,label,value])=>'<div class="stat-card"><div class="stat-card-icon">'+icon+'</div><div class="stat-card-label">'+label+'</div><div class="stat-card-value">'+value+'</div></div>').join('')+'</div></div>';
  prestigeProfileKey=profile&&!document.getElementById('profilePanel')?.classList.contains('hidden')?profileKey:prestigeProfileKey;
  if(!container||!document.getElementById('prestigeTabContent')?.classList.contains('active'))return;
@@ -962,7 +962,21 @@ export function updateLiveCombatProfile(){
  if(state.ufoLevel)rows.push('Флот: '+s.ufoCount+' тарелок · '+formatNumber(s.ufoDamage)+' урона · интервал '+(s.ufoInterval/1000).toLocaleString('ru-RU')+' с · урон +'+pct(s.ufoDamageBonus)+' · крит '+pct(s.ufoCritChance)+(s.ufoChainEvery?' · цепь каждые '+s.ufoChainEvery+' выстрелов':''));
  const electric=(state.activeMoons||[]).includes('electric')?getMoonMechanicParams('electric',state.moonLevels?.electric||1):null;
  if(electric)rows.push('Молнии: случайные ×2 / ×5 / ×10; накопление неудач '+(state.runtime?._pityClicks||0));
- const target=document.getElementById('liveCombatEffects'),signature=JSON.stringify(rows);if(target&&target.dataset.signature!==signature){target.replaceChildren();for(const text of rows){const row=document.createElement('div');row.className='combat-effect-card';const split=text.indexOf(':');const title=document.createElement('strong'),value=document.createElement('span');title.textContent=split<0?text:text.slice(0,split);value.textContent=split<0?'Активно':text.slice(split+1).trim();row.appendChild(title);row.appendChild(value);target.appendChild(row);}target.dataset.signature=signature;}
+ const target=document.getElementById('liveCombatEffects'),signature=JSON.stringify(rows);
+ if(target&&target.dataset.signature!==signature){
+  const icons={'Эхо выстрела':'🔊','Ожидают эха':'🔊','Кристалл за клик':'💠','Клон':'🪞','Космическая луна':'🌌','Золотая луна':'🌟','Полное комбо':'✨','Тень':'🌑','Лёд':'🧊','Кровь':'🩸','За текущую луну':'💎','Флот':'🛸','Молнии':'⚡'};
+  target.replaceChildren();
+  for(const text of rows){
+   const split=text.indexOf(':'),title=split<0?text:text.slice(0,split),details=split<0?'Активно':text.slice(split+1).trim();
+   const icon=icons[title]||(title.includes('крит')?'🎯':title.includes('урон')?'⚔️':title.includes('добыч')?'💎':'✨');
+   const tile=document.createElement('div');tile.className='combat-effect-tile';tile.tabIndex=0;tile.setAttribute('aria-label',title+': '+details);tile.title=title+': '+details;
+   const symbol=document.createElement('span');symbol.className='combat-effect-symbol';symbol.textContent=icon;
+   const label=document.createElement('span');label.className='combat-effect-label';label.textContent=title;
+   const tooltip=document.createElement('span');tooltip.className='combat-effect-tooltip';tooltip.textContent=details;
+   tile.append(symbol,label,tooltip);target.appendChild(tile);
+  }
+  target.dataset.signature=signature;
+ }
 }
 
 function refreshLeaderOnlineMarkers(){
