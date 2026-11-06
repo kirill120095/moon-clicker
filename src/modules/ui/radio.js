@@ -98,7 +98,7 @@ class GameRadio{
   if(!document.hidden&&this.player.paused)this.player.play().catch(()=>{});
  }
  play(){this.tick();}
- disconnect(){this.generation++;this.ownerPending=null;this.nextOwnerCheck=0;this.ownerReady=false;this.refreshPending=null;this.nextRefreshAt=0;clearInterval(this.timer);clearInterval(this.tickTimer);this.timer=null;this.tickTimer=null;if(this.channel)Promise.resolve(this.client?.removeChannel(this.channel)).catch(()=>{});this.channel=null;this.player?.pause();this.internetPlayer?.pause();if(this.internetPlayer){this.internetPlayer.removeAttribute('src');this.internetPlayer.load();}this.internetPlaying=false;this.current=null;this.playingKey=null;this.userId=null;this.admin=false;this.playlists=[];this.selectedId=null;audio.radioActive=false;audio.radioElement=null;audio.apply();document.getElementById('radioAdmin')?.classList.add('hidden');document.getElementById('radioMini')?.classList.add('hidden');}
+ disconnect(){this.generation++;this.ownerPending=null;this.nextOwnerCheck=0;this.ownerReady=false;this.refreshPending=null;this.nextRefreshAt=0;clearInterval(this.timer);clearInterval(this.tickTimer);this.timer=null;this.tickTimer=null;if(this.channel)Promise.resolve(this.client?.removeChannel(this.channel)).catch(()=>{});this.channel=null;this.player?.pause();this.internetPlayer?.pause();if(this.internetPlayer){this.internetPlayer.removeAttribute?.('src');this.internetPlayer.load();}this.internetPlaying=false;this.current=null;this.playingKey=null;this.userId=null;this.admin=false;this.playlists=[];this.selectedId=null;audio.radioActive=false;audio.radioElement=null;audio.apply();document.getElementById('radioAdmin')?.classList.add('hidden');document.getElementById('radioMini')?.classList.add('hidden');}
  status(text){for(const id of ['radioStatus','radioMiniStatus']){const el=document.getElementById(id);if(el)el.textContent=text;}}
  async run(task){
   if(this.busy)return;this.busy=true;
@@ -253,7 +253,7 @@ class GameRadio{
  stopInternetRadio(){
   this.internetPlaying=false;
   this.internetPlayer?.pause();
-  if(this.internetPlayer?.getAttribute('src')){this.internetPlayer.removeAttribute('src');this.internetPlayer.load();}
+  if(this.internetPlayer?.getAttribute?.('src')){this.internetPlayer.removeAttribute?.('src');this.internetPlayer.load();}
   if(this.mode==='internet'){audio.radioActive=false;audio.apply();}
   this.internetStatus('Интернет-радио на паузе.');
  }
