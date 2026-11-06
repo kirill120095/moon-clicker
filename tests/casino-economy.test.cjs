@@ -49,3 +49,16 @@ test('casino totals are synchronized into client state and rendered live in prof
  assert.match(renderer,/casinoLost:formatMoney\(state\.wheelEconomy\?\.totalLost/);
  assert.match(renderer,/casinoWon:formatMoney\(state\.wheelEconomy\?\.totalWon/);
 });
+
+test('casino win/loss counters are frozen until the wheel animation reveals its result',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../src/modules/ui/currency-display.js'),'utf8');
+ const wheel=fs.readFileSync(path.join(__dirname,'../src/modules/ui/wheel.js'),'utf8');
+ const renderer=fs.readFileSync(path.join(__dirname,'../src/modules/ui/renderer.js'),'utf8');
+ assert.match(source,/casinoSnapshot=\{totalWon:/);
+ assert.match(source,/getVisibleCasinoTotals\(totals\)/);
+ assert.match(source,/casinoSnapshot=null/);
+ assert.match(wheel,/beginWheelBalance\(state\.wheelEconomy\)/);
+ assert.match(wheel,/revealWheelBalance\(\);this\.onReveal\?\.\(\)/);
+ assert.match(renderer,/getVisibleCasinoTotals\(state\.wheelEconomy\)\.totalWon/);
+ assert.match(renderer,/getVisibleCasinoTotals\(state\.wheelEconomy\)\.totalLost/);
+});
