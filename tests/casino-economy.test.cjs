@@ -39,3 +39,13 @@ test('jump to unlocked level accepts earlier and cleared run levels, rejects loc
  assert.throws(()=>run("applyAction(s,'jumpToLevel',{level:1.5},100200)"));
  assert.throws(()=>run("applyAction(s,'jumpToLevel',{level:0},100200)"));
 });
+
+test('casino totals are synchronized into client state and rendered live in profile',()=>{
+ const client=fs.readFileSync(path.join(__dirname,'../src/modules/game/secure-game.js'),'utf8');
+ const renderer=fs.readFileSync(path.join(__dirname,'../src/modules/ui/renderer.js'),'utf8');
+ assert.match(client,/wheelEconomy:s\.wheelEconomy\|\|\{\}/);
+ assert.match(renderer,/data-live-stat="casinoLost"/);
+ assert.match(renderer,/data-live-stat="casinoWon"/);
+ assert.match(renderer,/casinoLost:formatMoney\(state\.wheelEconomy\?\.totalLost/);
+ assert.match(renderer,/casinoWon:formatMoney\(state\.wheelEconomy\?\.totalWon/);
+});
