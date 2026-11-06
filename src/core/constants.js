@@ -850,7 +850,7 @@ export function getUfoMoonDescription(id,level=1) {
 }
 
 export const PRESTIGE_UPGRADES={
- whiteDamage:{id:'whiteDamage',name:'Белый урон',icon:'🤍',description:'Множитель белого урона: ×1,05, ×1,10, ×1,15…',baseCost:1,maxLevel:Infinity},
+ whiteDamage:{id:'whiteDamage',name:'Белый урон',icon:'🤍',description:'Множитель белого урона: x0.05 за уровень',baseCost:1,maxLevel:Infinity},
  cloneCopies:{id:'cloneCopies',name:'Дополнительные отражения',icon:'🪞',description:'Третье отражение на 15 уровне Клона, четвёртое на 20 уровне · 50 / 150 🌟',baseCost:50,maxLevel:2},
  reactor:{id:'reactor',name:'Вечный реактор',icon:'⚔️',description:'+25% урона за уровень',baseCost:1,maxLevel:Infinity,damage:0.25},
  treasury:{id:'treasury',name:'Звёздная казна',icon:'💎',description:'+25% добычи кристаллов за уровень',baseCost:1,maxLevel:Infinity,shards:0.25},
