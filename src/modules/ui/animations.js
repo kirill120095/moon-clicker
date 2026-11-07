@@ -78,9 +78,9 @@ export class AnimationManager {
     const color = this.getDamageColor(damage, isCrit);
     const glow = this.getDamageGlow(damage, isCrit);
     
-    damageEl.textContent = `-${formatNumber(damage)}`;
+    damageEl.textContent = isCrit ? `⚡ КРИТ! -${formatNumber(damage)}` : `-${formatNumber(damage)}`;
     
-    if (isCrit) damageEl.classList.add('crit');
+    if (isCrit) { damageEl.classList.add('crit'); damageEl.style.zIndex='10050'; }
     if (isBoss) damageEl.classList.add('boss-damage');
     
     damageEl.style.color = color;
