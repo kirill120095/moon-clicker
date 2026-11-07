@@ -75,7 +75,7 @@ function autoClickStep(){
 gameEngine.activateAutoClick=()=>{
  if(!active)return;
  autoClickUntil=Date.now()+autoClickDuration();
- if(autoClickTicker===null)autoClickTicker=setInterval(autoClickStep,57);
+ if(autoClickTicker===null)autoClickTicker=setInterval(autoClickStep,19);
  renderAutoClick();
 };
 const autoButton=document.getElementById('autoClickBtn');
@@ -126,7 +126,7 @@ function apply(result,hits=[],deferNotices=false){
   // Avoid hundreds of animated DOM nodes per batch, but always retain critical hits.
   if(event.source==='manual'&&autoBatch){
     // The optimistic auto-click animation has no crit information. Show confirmed critical hits.
-    if(event.isCrit){queueDamageVisual(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,true,event.isBoss);visibleDamage++;}
+    if(event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,true,event.isBoss);visibleDamage++;}
    }else if(event.source==='manual'&&hits.length>1){
    if(visibleDamage<8||event.isCrit){queueDamageVisual(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
   }else if(visibleDamage<12||event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
