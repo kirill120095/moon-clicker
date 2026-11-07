@@ -69,7 +69,7 @@ export class AnimationManager {
   showDamageNumber(x, y, damage, isCrit = false, isBoss = false) {
     if(document.hidden)return;
     const low=document.documentElement?.classList.contains('low-power');
-    if(low){const now=performance.now();if(now-this._lastLowDamage<75)return;this._lastLowDamage=now;}
+    if(low){const now=performance.now();if(!isCrit&&now-this._lastLowDamage<75)return;this._lastLowDamage=now;}
 
     while(this._damageNodes.length>=(low?8:24))this._damageNodes.shift()?.remove();
     const damageEl = document.createElement('div');this._damageNodes.push(damageEl);
