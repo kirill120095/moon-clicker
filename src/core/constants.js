@@ -938,8 +938,8 @@ export function getActiveSynergies(state){
  const entry=ORIGINAL_SYNERGY_ENTRIES.find(e=>e.moons.length===originals.length&&e.moons.every(id=>originals.includes(id)));
  if(!entry)return [];
  const targets=getCloneTargets(state);
- const copyProduct=originals.reduce((v,id)=>v*(1+targets.filter(t=>t===id).length),1);
- const copyMultiplier=1+0.25*(copyProduct-1);
+ const reflectionCount=targets.filter(id=>originals.includes(id)).length;
+ const copyMultiplier=1+0.20*reflectionCount;
  return [{key:entry.key,...entry.bonus,moons:entry.moons,copyMultiplier,damageBonus:entry.bonus.damageBonus*copyMultiplier,shardBonus:entry.bonus.shardBonus*copyMultiplier,critChanceBonus:0,critDamageBonus:0}];
 }
 
