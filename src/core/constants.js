@@ -726,6 +726,9 @@ export const SYNERGY_BONUSES = {
  }
 }
 
+// Approved exclusive constellation catalog (21/35/35).
+const CONSTELLATION_CATALOG=[{"key":"blood+fire","name":null,"damageBonus":1,"shardBonus":0.2},{"key":"blood+ice","name":null,"damageBonus":0.75,"shardBonus":0.25},{"key":"blood+electric","name":null,"damageBonus":0.85,"shardBonus":0.2},{"key":"blood+shadow","name":null,"damageBonus":0.9,"shardBonus":0.2},{"key":"blood+gold","name":null,"damageBonus":0.55,"shardBonus":0.6},{"key":"blood+cosmic","name":null,"damageBonus":1,"shardBonus":0.3},{"key":"fire+ice","name":null,"damageBonus":0.9,"shardBonus":0.2},{"key":"electric+fire","name":null,"damageBonus":1,"shardBonus":0.2},{"key":"fire+shadow","name":null,"damageBonus":0.95,"shardBonus":0.2},{"key":"fire+gold","name":null,"damageBonus":0.7,"shardBonus":0.4},{"key":"cosmic+fire","name":null,"damageBonus":1,"shardBonus":0.3},{"key":"electric+ice","name":null,"damageBonus":0.9,"shardBonus":0.2},{"key":"ice+shadow","name":null,"damageBonus":0.75,"shardBonus":0.25},{"key":"gold+ice","name":null,"damageBonus":0.4,"shardBonus":0.7},{"key":"cosmic+ice","name":null,"damageBonus":0.9,"shardBonus":0.35},{"key":"electric+shadow","name":null,"damageBonus":0.9,"shardBonus":0.2},{"key":"electric+gold","name":null,"damageBonus":0.65,"shardBonus":0.45},{"key":"cosmic+electric","name":null,"damageBonus":1,"shardBonus":0.3},{"key":"gold+shadow","name":null,"damageBonus":0.45,"shardBonus":0.65},{"key":"cosmic+shadow","name":null,"damageBonus":0.95,"shardBonus":0.35},{"key":"cosmic+gold","name":null,"damageBonus":0.6,"shardBonus":0.7},{"key":"blood+fire+ice","name":"Кипящая кровь","damageBonus":4.8,"shardBonus":1.1},{"key":"blood+electric+fire","name":"Багровый разряд","damageBonus":5.5,"shardBonus":1},{"key":"blood+fire+shadow","name":"Адская тень","damageBonus":5.7,"shardBonus":1},{"key":"blood+fire+gold","name":"Кровавая кузница","damageBonus":4,"shardBonus":2.3},{"key":"blood+cosmic+fire","name":"Адская звезда","damageBonus":6,"shardBonus":1.2},{"key":"blood+electric+ice","name":"Шторм стихий","damageBonus":5.3,"shardBonus":1.1},{"key":"blood+ice+shadow","name":"Призрачный мороз","damageBonus":4.7,"shardBonus":1.3},{"key":"blood+gold+ice","name":"Кровавый клад","damageBonus":3.5,"shardBonus":2.6},{"key":"blood+cosmic+ice","name":"Багровая комета","damageBonus":5.4,"shardBonus":1.4},{"key":"blood+electric+shadow","name":"Теневой импульс","damageBonus":5.6,"shardBonus":1},{"key":"blood+electric+gold","name":"Золотой разряд крови","damageBonus":4.2,"shardBonus":2.2},{"key":"blood+cosmic+electric","name":"Пульсар крови","damageBonus":5.9,"shardBonus":1.2},{"key":"blood+gold+shadow","name":"Проклятое золото","damageBonus":3.7,"shardBonus":2.5},{"key":"blood+cosmic+shadow","name":"Тёмная дыра","damageBonus":6,"shardBonus":1.2},{"key":"blood+cosmic+gold","name":"Кровавая галактика","damageBonus":4.3,"shardBonus":2.8},{"key":"electric+fire+ice","name":"Перегрузка стихий","damageBonus":5.7,"shardBonus":1},{"key":"fire+ice+shadow","name":"Пламя вечной зимы","damageBonus":5.2,"shardBonus":1.1},{"key":"fire+gold+ice","name":"Закалённое богатство","damageBonus":3.9,"shardBonus":2.4},{"key":"cosmic+fire+ice","name":"Звёздный термошок","damageBonus":5.8,"shardBonus":1.3},{"key":"electric+fire+shadow","name":"Чёрная гроза","damageBonus":5.9,"shardBonus":1},{"key":"electric+fire+gold","name":"Грозовая сокровищница","damageBonus":4.5,"shardBonus":2.2},{"key":"cosmic+electric+fire","name":"Сверхновая","damageBonus":6,"shardBonus":1.4},{"key":"fire+gold+shadow","name":"Пепел империи","damageBonus":4.3,"shardBonus":2.3},{"key":"cosmic+fire+shadow","name":"Пламя бездны","damageBonus":6,"shardBonus":1.3},{"key":"cosmic+fire+gold","name":"Солнечная корона","damageBonus":4,"shardBonus":2},{"key":"electric+ice+shadow","name":"Тихая буря","damageBonus":5.3,"shardBonus":1.1},{"key":"electric+gold+ice","name":"Электроледяной клад","damageBonus":3.6,"shardBonus":2.7},{"key":"cosmic+electric+ice","name":"Квантовый шторм","damageBonus":5.9,"shardBonus":1.3},{"key":"gold+ice+shadow","name":"Сокровища вечной ночи","damageBonus":3.2,"shardBonus":2.9},{"key":"cosmic+ice+shadow","name":"Абсолютная тьма","damageBonus":5.6,"shardBonus":1.4},{"key":"cosmic+gold+ice","name":"Хранилище звёзд","damageBonus":3.5,"shardBonus":3},{"key":"electric+gold+shadow","name":"Теневой рынок молний","damageBonus":4,"shardBonus":2.4},{"key":"cosmic+electric+shadow","name":"Чёрный пульсар","damageBonus":6,"shardBonus":1.3},{"key":"cosmic+electric+gold","name":"Золотой пульсар","damageBonus":4.5,"shardBonus":2.8},{"key":"cosmic+gold+shadow","name":"Звёздный торговец","damageBonus":3.8,"shardBonus":3},{"key":"blood+electric+fire+ice","name":"Стихийный апокалипсис","damageBonus":17,"shardBonus":4},{"key":"blood+fire+ice+shadow","name":"Багровое затмение","damageBonus":16.5,"shardBonus":4},{"key":"blood+fire+gold+ice","name":"Плавильня богов","damageBonus":12.5,"shardBonus":7},{"key":"blood+cosmic+fire+ice","name":"Криозвёздный ад","damageBonus":18.5,"shardBonus":4.5},{"key":"blood+electric+fire+shadow","name":"Демонический шторм","damageBonus":19,"shardBonus":4},{"key":"blood+electric+fire+gold","name":"Золотой катаклизм","damageBonus":14,"shardBonus":6.5},{"key":"blood+cosmic+electric+fire","name":"Сердце сверхновой","damageBonus":20,"shardBonus":4.5},{"key":"blood+fire+gold+shadow","name":"Проклятая сокровищница","damageBonus":13,"shardBonus":7.5},{"key":"blood+cosmic+fire+shadow","name":"Конец света","damageBonus":20,"shardBonus":4.5},{"key":"blood+cosmic+fire+gold","name":"Кровавое солнце","damageBonus":15.5,"shardBonus":7},{"key":"blood+electric+ice+shadow","name":"Безмолвная буря","damageBonus":17,"shardBonus":4},{"key":"blood+electric+gold+ice","name":"Ледяная казна","damageBonus":11.5,"shardBonus":8},{"key":"blood+cosmic+electric+ice","name":"Абсолютный ноль","damageBonus":18.5,"shardBonus":4.5},{"key":"blood+gold+ice+shadow","name":"Призрачное наследство","damageBonus":10.5,"shardBonus":8.5},{"key":"blood+cosmic+ice+shadow","name":"Холодная бездна","damageBonus":18,"shardBonus":4.5},{"key":"blood+cosmic+gold+ice","name":"Астральные сокровища","damageBonus":12,"shardBonus":9},{"key":"blood+electric+gold+shadow","name":"Тёмный монетный шторм","damageBonus":13.5,"shardBonus":7},{"key":"blood+cosmic+electric+shadow","name":"Разлом реальности","damageBonus":19.5,"shardBonus":4.5},{"key":"blood+cosmic+electric+gold","name":"Империя молний","damageBonus":15,"shardBonus":8},{"key":"blood+cosmic+gold+shadow","name":"Багровая империя","damageBonus":14,"shardBonus":8.5},{"key":"electric+fire+ice+shadow","name":"Хаос четырёх стихий","damageBonus":19,"shardBonus":4},{"key":"electric+fire+gold+ice","name":"Небесная кузница","damageBonus":14,"shardBonus":7},{"key":"cosmic+electric+fire+ice","name":"Первозданный взрыв","damageBonus":20,"shardBonus":4.5},{"key":"fire+gold+ice+shadow","name":"Проклятый слиток","damageBonus":13,"shardBonus":7.5},{"key":"cosmic+fire+ice+shadow","name":"Затмение стихий","damageBonus":19,"shardBonus":4.5},{"key":"cosmic+fire+gold+ice","name":"Солнечный кристалл","damageBonus":14.5,"shardBonus":8.5},{"key":"electric+fire+gold+shadow","name":"Чёрная золотая буря","damageBonus":15,"shardBonus":7},{"key":"cosmic+electric+fire+shadow","name":"Гибель галактики","damageBonus":20,"shardBonus":4.5},{"key":"cosmic+electric+fire+gold","name":"Золотая сверхновая","damageBonus":14,"shardBonus":5},{"key":"cosmic+fire+gold+shadow","name":"Корона затмения","damageBonus":15.5,"shardBonus":8.5},{"key":"electric+gold+ice+shadow","name":"Ледяной монолит","damageBonus":12,"shardBonus":8},{"key":"cosmic+electric+ice+shadow","name":"Квантовая бездна","damageBonus":19,"shardBonus":4.5},{"key":"cosmic+electric+gold+ice","name":"Кристальная галактика","damageBonus":13.5,"shardBonus":9},{"key":"cosmic+gold+ice+shadow","name":"Замёрзшая вечность","damageBonus":11.5,"shardBonus":9},{"key":"cosmic+electric+gold+shadow","name":"Тёмная сингулярность","damageBonus":15,"shardBonus":8.5}];
+for(const recipe of CONSTELLATION_CATALOG){const old=SYNERGY_BONUSES[recipe.key]||{};SYNERGY_BONUSES[recipe.key]={...old,...recipe,name:recipe.name||old.name,tier:recipe.key.split('+').length,tierName:'Созвездие',critChanceBonus:0,critDamageBonus:0,description:'Созвездие '+(recipe.name||old.name)};}
 // Cache requirements once; combat only tests membership in the active set.
 const ORIGINAL_SYNERGY_ENTRIES=Object.entries(SYNERGY_BONUSES).map(([key,bonus])=>({key,bonus,moons:key.split('+')}));
 const CLONE_LINK_NAMES={normal:'Зеркальное комбо',blood:'Зеркальная ярость',ice:'Зеркальный мороз',shadow:'Зеркальная тень',electric:'Зеркальный разряд',fire:'Зеркальный жар',gold:'Зеркальное богатство',cosmic:'Зеркальная вселенная'};
@@ -928,37 +931,13 @@ export function getCloneTargets(state){
 
 /** Reflected synergies require real bindings; no virtual clone can clone another. */
 export function getActiveSynergies(state){
- const active=new Set((state.activeMoons||[]).slice(0,state.maxSlots||1));
- const result=ORIGINAL_SYNERGY_ENTRIES.filter(entry=>entry.moons.every(id=>active.has(id))).map(entry=>({key:entry.key,...entry.bonus,moons:entry.moons}));
- const targets=getCloneTargets(state);if(!targets.length)return result;
- const p=getMoonMechanicParams('clone',state.moonLevels?.clone||1);
- const scaled=bonus=>Object.fromEntries(Object.entries(bonus).map(([key,value])=>[key,value*p.pairScale]));
- for(const [index,target] of targets.entries()){
-  result.push({key:'clone+'+target+'#'+index,name:CLONE_LINK_NAMES[target],tier:3,tierName:'Зеркальная связь',tierColor:'#a5b4fc',icon:'◈',isClone:true,moons:['clone',target],auraCombo:[],
-   description:'Клон отражает «'+MOON_TYPES[target].name+'» ур. '+(state.moonLevels?.[target]||1)+'. Оригинал и отражение по '+Math.round(p.pairScale*100)+'% силы. Бонус связи:',
-   ...scaled(CONSTANTS.CLONE.LINK_BONUS)});
- }
- if(new Set(targets).size>=2){
-  const sorted=[...new Set(targets)].sort();
-  result.push({key:'clone+'+sorted.join('+'),name:'Двойной зеркальный резонанс',tier:4,tierName:'Двойное отражение',tierColor:'#c4b5fd',icon:'✧',isClone:true,moons:['clone',...sorted],auraCombo:[],
-   description:'Две выбранные связи: '+sorted.map(id=>MOON_TYPES[id].name).join(' + ')+'. Дополнительный бонус за два разных отражения:',
-   ...scaled(CONSTANTS.CLONE.DUAL_BONUS)});
- }
- const originals=[...active].filter(id=>id!=='normal'&&id!=='clone'&&Object.hasOwn(MOON_TYPES,id)).sort();
- const used=new Set(result.map(b=>b.key.split('+').sort().join('+')));
- const addGroup=group=>{
-  if(!group.some(id=>targets.includes(id)))return;
-  const key=['clone',...group].sort().join('+');if(used.has(key))return;used.add(key);
-  const four=group.length===3;
-  result.push({key,name:four?'Зеркальное созвездие':'Зеркальный союз: '+group.map(id=>MOON_TYPES[id].name).join(' + '),tier:four?5:3,tierName:four?'Зеркальное созвездие':'Зеркальный союз',tierColor:four?'#c4b5fd':'#a5b4fc',icon:'◈',isClone:true,moons:['clone',...group],auraCombo:[],
-   description:'Связь Клона: '+group.filter(id=>targets.includes(id)).map(id=>MOON_TYPES[id].name).join(' + ')+'. В сочетании участвуют '+group.map(id=>MOON_TYPES[id].name).join(', ')+'.',
-   ...scaled(four?CONSTANTS.CLONE.GROUP_FOUR:CONSTANTS.CLONE.GROUP_THREE)});
- };
- for(let a=0;a<originals.length;a++)for(let b=a+1;b<originals.length;b++){
-  addGroup([originals[a],originals[b]]);
-  for(let d=b+1;d<originals.length;d++)addGroup([originals[a],originals[b],originals[d]]);
- }
- return result;
+ const originals=[...new Set((state.activeMoons||[]).slice(0,state.maxSlots||1))].filter(id=>id!=='normal'&&id!=='clone'&&Object.hasOwn(MOON_TYPES,id)).sort();
+ if(originals.length<2||originals.length>4)return [];
+ const entry=ORIGINAL_SYNERGY_ENTRIES.find(e=>e.moons.length===originals.length&&e.moons.every(id=>originals.includes(id)));
+ if(!entry)return [];
+ const targets=getCloneTargets(state);
+ const copyMultiplier=originals.reduce((v,id)=>v*(1+targets.filter(t=>t===id).length),1);
+ return [{key:entry.key,...entry.bonus,moons:entry.moons,copyMultiplier,damageBonus:entry.bonus.damageBonus*copyMultiplier,shardBonus:entry.bonus.shardBonus*copyMultiplier,critChanceBonus:0,critDamageBonus:0}];
 }
 
 export function getMoonPower(state,id){
@@ -1003,9 +982,11 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
   if(id==='cosmic')add('cosmic-level','Космическое масштабирование',m.damagePerLevel*state.currentLevel,m.shardPerLevel*state.currentLevel,(m.critChancePerLevel||0)*state.currentLevel,m.critDamagePerLevel*state.currentLevel);
   if(id==='gold'&&m.shardToDamageRatio>0)add('gold-wealth','Золотой дождь',(state.playerData?.shards||0)*m.shardToDamageRatio);
  }
- for(const b of getActiveSynergies(state))add(b.key,b.name,b.damageBonus||0,b.shardBonus||0,b.critChanceBonus||0,b.critDamageBonus||0);
+ const constellation=getActiveSynergies(state)[0];
+ const synergyDamage=constellation?.damageBonus||0,synergyShards=constellation?.shardBonus||0;
+ if(constellation)sources.push({id:constellation.key,name:constellation.name,damage:synergyDamage,shards:synergyShards,crit:0,critDamage:0});
  if(active.includes('normal')&&active.length>1)add('normal-link','Связь обычной луны',.05,.05);
- const passive={totalDamageBonus:damage,totalShardBonus:shards,totalCritChanceBonus:crit,totalCritDamageBonus:critDamage};
+ const passive={totalDamageBonus:(1+damage)*(1+synergyDamage)-1,totalShardBonus:(1+shards)*(1+synergyShards)-1,totalCritChanceBonus:crit,totalCritDamageBonus:critDamage};
  for(const [id,key]of [['normal','_comboClicks'],['fire','_fireStacks'],['shadow','_shadowCritStacks']]){
   const m=params(id),last=id==='normal'?Math.max(state.lastClickAt||0,state.lastAutoClickAt||0,state.lastComboAt||0):Math.max(state.lastClickAt||0,state.lastAutoClickAt||0);
   if(m&&last&&now-last>=(m.resetTimeout||15000))runtime[key]=0;
@@ -1021,11 +1002,11 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  if(boss&&p.bossDamage)add('hunter','Охотник на боссов',p.bossDamage);
  if(boss&&blood&&ratio<blood.hpThreshold)add('blood-boss','Кровавая ярость',blood.damageBonus);
  const base=getBaseDamage(state),baseDamageBonus=base-(state.playerData?.click_damage||CONSTANTS.DEFAULTS.CLICK_DAMAGE);
- const steadyDamage=Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(base*(1+damage))));
+ const steadyDamage=Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(base*(1+damage)*(1+synergyDamage))));
  if(electric&&(runtime._superconductorClicksLeft||0)>0)add('superconductor','Сверхпроводник · '+runtime._superconductorClicksLeft+' ударов',electric.superconductorBonus);
  const nextPierce=!!(ice?.pierceInterval>0&&((runtime._clickCounter||0)+1)%ice.pierceInterval===0);
  const execute=!!(boss&&blood?.executeThreshold>0&&ratio<=blood.executeThreshold);
- let finalDamage=Math.max(1,Math.round(base*(1+damage)));
+ let finalDamage=Math.max(1,Math.round(base*(1+damage)*(1+synergyDamage)));
  if(execute)finalDamage=Math.max(finalDamage,Math.round(base*(state.moonHP/base+1)));
  let chance=Math.max(0,.05+crit);
  const firstStrike=!!(shadow?.firstStrikeCrit&&!runtime._firstStrikeUsed&&runtime._newMoon);
@@ -1033,12 +1014,12 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  const firstStrikeMultiplier=firstStrike?(shadow.firstStrikeMultiplier||1):1;
  const critMultiplier=2+critDamage,tier=chance>=1?Math.floor(chance)+1:2,extraChance=chance>=1?chance-Math.floor(chance):0;
  const fullCombo=!!(normal?.shardBonusOnFullStack&&combo>=normal.maxStacks),goldMultiplier=gold?(boss?gold.bossMultiplier:gold.normalMultiplier):1;
- const rewardMultiplier=(1+shards)*goldMultiplier*(fullCombo?1+normal.shardBonusOnFullStack:1);
+ const rewardMultiplier=(1+shards)*(1+synergyShards)*goldMultiplier*(fullCombo?1+normal.shardBonusOnFullStack:1);
  const c=CONSTANTS.MOON_REWARD,level=state.currentLevel||1;
- let reward=Math.max(1,Math.round(Math.floor(c.BASE+level*c.PER_LEVEL+Math.pow(level,c.EXPONENT)*c.GROWTH)*(boss?c.BOSS_MULTIPLIER:1)*(1+shards)));
+ let reward=Math.max(1,Math.round(Math.floor(c.BASE+level*c.PER_LEVEL+Math.pow(level,c.EXPONENT)*c.GROWTH)*(boss?c.BOSS_MULTIPLIER:1)*(1+shards)*(1+synergyShards)));
  if(gold)reward=Math.round(reward*goldMultiplier);if(fullCombo)reward=Math.round(reward*(1+normal.shardBonusOnFullStack));
  const ufo=getUfoBonuses(state,runtime),interval=Math.max(CONSTANTS.UFO.MIN_INTERVAL,Math.round((CONSTANTS.UFO.BASE_INTERVAL-Math.max(0,(state.ufoLevel||0)-1)*CONSTANTS.UFO.INTERVAL_REDUCTION)*(1-ufo.haste)));
- return {passive,sources,runtime,baseDamage:base,baseDamageBonus,echoChance:p.echoChance,echoDamage:p.echoDamage,crystalsPerClick:state.clickCrystalLevel||0,cloneTargets:getCloneTargets(state),finalDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,finalDamage),damageBonus:damage,shardBonus:rewardMultiplier-1,critChance:chance,critChanceBonus:chance-.05,critDamageBonus:critDamage,critMultiplier,critTier:tier,extraCritChance:extraChance,critDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(Math.round(finalDamage*critMultiplier*tier/2)*firstStrikeMultiplier)),nextCritDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(Math.round(finalDamage*critMultiplier*(tier+1)/2)*firstStrikeMultiplier)),nextPierce,firstStrike,firstStrikeMultiplier,execute,
+ return {passive,sources,runtime,baseDamage:base,baseDamageBonus,echoChance:p.echoChance,echoDamage:p.echoDamage,crystalsPerClick:state.clickCrystalLevel||0,cloneTargets:getCloneTargets(state),finalDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,finalDamage),damageBonus:(1+damage)*(1+synergyDamage)-1,shardBonus:rewardMultiplier-1,critChance:chance,critChanceBonus:chance-.05,critDamageBonus:critDamage,critMultiplier,critTier:tier,extraCritChance:extraChance,critDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(Math.round(finalDamage*critMultiplier*tier/2)*firstStrikeMultiplier)),nextCritDamage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(Math.round(finalDamage*critMultiplier*(tier+1)/2)*firstStrikeMultiplier)),nextPierce,firstStrike,firstStrikeMultiplier,execute,
  moonReward:Math.min(CONSTANTS.SAFE_NUMBER_CAP,reward),ufoDamage:state.ufoLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(steadyDamage*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+ufo.damage)))):0,ufoInterval:interval,ufoCount:state.ufoCount||0,goldMultiplier,fullCombo,ufoCritChance:ufo.critChance,ufoCritMultiplier:ufo.critMultiplier,ufoChainEvery:ufo.chainEvery,ufoDamageBonus:ufo.damage,ufoHaste:ufo.haste,ufoRewardMultiplier:ufo.rewardMultiplier,superconductorHits:runtime._superconductorClicksLeft||0};
 }
 
