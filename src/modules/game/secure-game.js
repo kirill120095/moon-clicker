@@ -51,7 +51,7 @@ function queueDamageVisual(x,y,damage,isCrit,isBoss){
   const hit=damageVisualQueue.shift();
   if(hit)animations.showDamageNumber(hit.x,hit.y,hit.damage,hit.isCrit,hit.isBoss);
   if(!damageVisualQueue.length)clearDamageVisuals();
- },105);
+ },135);
 }
 function clearDamageVisuals(){damageVisualQueue.length=0;if(damageVisualTimer!==null)clearInterval(damageVisualTimer);damageVisualTimer=null;}
 const AUTO_CLICK_BATCH_MS=300; // Server requests stay batched; the same click handler runs immediately for each hit.
@@ -126,7 +126,7 @@ function apply(result,hits=[],deferNotices=false){
   // Avoid hundreds of animated DOM nodes per batch, but always retain critical hits.
   if(event.source==='manual'&&autoBatch){
     // The optimistic auto-click animation has no crit information. Show confirmed critical hits.
-    if(event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,true,event.isBoss);visibleDamage++;}
+    if(event.isCrit){queueDamageVisual(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,true,event.isBoss);visibleDamage++;}
    }else if(event.source==='manual'&&hits.length>1){
    if(visibleDamage<8||event.isCrit){queueDamageVisual(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
   }else if(visibleDamage<12||event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
