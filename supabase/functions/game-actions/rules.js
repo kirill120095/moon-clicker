@@ -293,7 +293,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
     }
     
     const newQuests = {};
-    ['clicker', 'hunter', 'collector', 'progress'].forEach(category => {
+    ['clicker', 'hunter', 'collector', 'progress', 'moons', 'synergies'].forEach(category => {
       const pool = questsByCategory[category] || [];
       if (pool.length === 0) return;
       const rq = pool[Math.floor(Math.random() * pool.length)];
@@ -319,7 +319,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   }
   
 
-  updateQuestProgress(type, amount = 1) {
+  updateQuestProgress(type, amount = 1, uniqueKey = null) {
     const quests = state.quests || {};
     let updated = false;
     
@@ -328,6 +328,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
       const questData = QUESTS[questId];
       if (!questData || questData.type !== type) continue;
       
+      if(uniqueKey!==null){const seen=questState.seen||[];if(seen.includes(uniqueKey))continue;questState.seen=[...seen.slice(-31),uniqueKey];}
       const newProgress = Math.min(questState.target, (questState.progress || 0) + amount);
       questState.progress = newProgress;
       
@@ -492,12 +493,13 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   state.wheelEconomy={pressure:Math.max(0,Math.min(config.MAX_PRESSURE,(Number(economy.pressure)||0)+(delta>0?Math.max(1,Number(multiplier)-1):-1))),spins:Math.min(cap,(economy.spins||0)+1),wagered:Math.min(cap,(economy.wagered||0)+bet),payouts:Math.min(cap,(economy.payouts||0)+payout),totalWon:Math.min(cap,(economy.totalWon||0)+Math.max(0,delta)),totalLost:Math.min(cap,(economy.totalLost||0)+Math.max(0,-delta)),houseNet:Math.max(-cap,Math.min(cap,(economy.houseNet||0)-delta))};
 
  } else if(action==='buyClickCrystal'){
-  buyLevels(payload.max===true,()=>state.playerData.shards>=getClickCrystalCost(state.clickCrystalLevel),()=>{spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;});
+  buyLevels(payload.max===true,()=>state.playerData.shards>=getClickCrystalCost(state.clickCrystalLevel),()=>{spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;rules.updateQuestProgress('crystalUpgrade');});
  } else if(action==='setCloneTargets'){
   if(!state.activeMoons.includes('clone'))throw Error('Активируйте Клона');
   const targets=payload.targets,level=state.moonLevels.clone||1,up=state.prestige?.upgrades?.cloneCopies||0,count=getMoonMechanicParams('clone',level).copies+(level>=15&&up>=1?1:0)+(level>=20&&up>=2?1:0);
   if(!Array.isArray(targets)||!targets.length||targets.length>count||targets.some(id=>id==='clone'||!state.activeMoons.includes(id)||!state.ownedMoons.includes(id)))throw Error('Выберите активные оригиналы');
-  state.cloneTargets=[...targets];
+  const changed=JSON.stringify(state.cloneTargets)!==JSON.stringify(targets);
+  state.cloneTargets=[...targets];if(changed)rules.updateQuestProgress('cloneTune');
  } else if(action==='buyDamage'){
   const level=state.playerData.click_damage_level;
   if(level>=CONSTANTS.LIMITS.MAX_CLICK_DAMAGE_LEVEL)throw Error('Максимальный уровень');
@@ -511,7 +513,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  } else if(action==='buyUfo'){
   if(state.currentLevel<CONSTANTS.UFO.UNLOCK_LEVEL)throw Error('Тарелка доступна с '+CONSTANTS.UFO.UNLOCK_LEVEL+' уровня');
   if(state.ufoLevel>=CONSTANTS.UFO.MAX_LEVEL)throw Error('Тарелка улучшена полностью');
-  buyLevels(payload.max===true,()=>state.ufoLevel<CONSTANTS.UFO.MAX_LEVEL&&state.playerData.shards>=Math.floor(CONSTANTS.UFO.BASE_COST*Math.pow(CONSTANTS.UFO.COST_MULTIPLIER,state.ufoLevel)),()=>{spend(Math.floor(CONSTANTS.UFO.BASE_COST*Math.pow(CONSTANTS.UFO.COST_MULTIPLIER,state.ufoLevel)));state.ufoLevel++;state.ufoCount=Math.max(1,state.ufoCount);state.ufoLastShotAt=now;});
+  buyLevels(payload.max===true,()=>state.ufoLevel<CONSTANTS.UFO.MAX_LEVEL&&state.playerData.shards>=Math.floor(CONSTANTS.UFO.BASE_COST*Math.pow(CONSTANTS.UFO.COST_MULTIPLIER,state.ufoLevel)),()=>{spend(Math.floor(CONSTANTS.UFO.BASE_COST*Math.pow(CONSTANTS.UFO.COST_MULTIPLIER,state.ufoLevel)));state.ufoLevel++;state.ufoCount=Math.max(1,state.ufoCount);state.ufoLastShotAt=now;rules.updateQuestProgress('ufoUpgrade');});
  } else if(action==='buyUfoComboRelay'){
   if(state.ufoComboRelay)throw Error('Комбо-ретранслятор уже куплен');
   if(!state.ownedMoons.includes('electric'))throw Error('Сначала купите Электрическую луну');
@@ -530,11 +532,11 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
    const access=getMoonPurchaseAccess(state,moon.id);
    if(access.requiredMoon)throw Error('Сначала купите луну «'+MOON_TYPES[access.requiredMoon].name+'»');
    if(!access.levelUnlocked)throw Error('Нужен рекорд текущего забега: '+moon.unlockLevel);
-   spend(moon.cost);state.ownedMoons.push(moon.id);state.moonLevels[moon.id]=1;
+   spend(moon.cost);state.ownedMoons.push(moon.id);state.moonLevels[moon.id]=1;rules.updateQuestProgress('moonBuy');
   }else{
    const level=state.moonLevels[moon.id];
    if(!state.ownedMoons.includes(moon.id)||!level||level>=CONSTANTS.LIMITS.MAX_MOON_LEVEL)throw Error('Улучшение недоступно');
-   buyLevels(payload.max===true,()=>state.moonLevels[moon.id]<CONSTANTS.LIMITS.MAX_MOON_LEVEL&&state.playerData.shards>=getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id]),()=>{spend(getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id]));state.moonLevels[moon.id]++;});
+   buyLevels(payload.max===true,()=>state.moonLevels[moon.id]<CONSTANTS.LIMITS.MAX_MOON_LEVEL&&state.playerData.shards>=getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id]),()=>{spend(getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id]));state.moonLevels[moon.id]++;rules.updateQuestProgress('moonUpgrade');});
   }
  } else if(action==='toggleMoon'){
   if(!state.ownedMoons.includes(payload.id))throw Error('Луна не куплена');
@@ -542,6 +544,9 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   if(i>=0){if(state.activeMoons.length<=1)throw Error('Нужна хотя бы одна луна');state.activeMoons.splice(i,1);}
   else if(state.activeMoons.length<state.maxSlots)state.activeMoons.push(payload.id);else {state.activeMoons.shift();state.activeMoons.push(payload.id);}
   state.activeMoon=state.activeMoons[state.activeMoons.length-1];
+  rules.updateQuestProgress('moonSwitch');
+  const elements=state.activeMoons.filter(id=>['blood','fire','ice','electric','shadow','gold','cosmic'].includes(id));
+  if(elements.length>=2)rules.updateQuestProgress('synergy',1,[...elements].sort().join(':'));
   if(payload.id==='clone'&&state.activeMoons.includes('clone')&&!state.cloneTargets.length)state.cloneTargets=state.activeMoons.filter(id=>id!=='clone').slice(0,getMoonMechanicParams('clone',state.moonLevels.clone||1).copies);
  } else if(action==='lock'){state.levelLocked=!state.levelLocked;
  } else if(action==='rollback'||action==='rollbackFive'){if(state.currentLevel>1){state.currentLevel=Math.max(1,state.currentLevel-(action==='rollbackFive'?CONSTANTS.ROLLBACK_LEVELS:1));startMoon();}
