@@ -75,7 +75,7 @@ function autoClickStep(){
 gameEngine.activateAutoClick=()=>{
  if(!active)return;
  autoClickUntil=Date.now()+autoClickDuration();
- if(autoClickTicker===null)autoClickTicker=setInterval(autoClickStep,65);
+ if(autoClickTicker===null)autoClickTicker=setInterval(autoClickStep,57);
  renderAutoClick();
 };
 const autoButton=document.getElementById('autoClickBtn');
