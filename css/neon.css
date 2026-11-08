@@ -345,3 +345,15 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #fortuneTabContent[data-outcome="red"] .fortune-outcome{background:#54233c;border-color:#d4548c;color:#ffd5e8}
 #fortuneTabContent[data-outcome="black"] .fortune-outcome{background:#1d2d59;border-color:#7b9fe3;color:#dce9ff}
 #fortuneTabContent[data-outcome="zero"] .fortune-outcome{background:#526987;border-color:#b4cee9;color:#fff}
+
+/* Item inventory */
+.moon-inventory{margin:18px 0;padding:16px;border:1px solid #7165ad;border-radius:16px;background:linear-gradient(145deg,#1e2140,#11172d);color:#e9e6ff}
+.moon-inventory h3{margin:0 0 8px;color:#e8ddff}
+.moon-inventory p{font-size:12px;color:#bbb6df;line-height:1.5}
+.moon-inventory-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:10px}
+.moon-inventory-item{padding:12px;border:1px solid #4c527c;border-radius:12px;background:#171d35;display:grid;gap:10px}
+.moon-inventory-item strong{font-size:14px;color:#f1e9ff}
+.moon-inventory-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.moon-inventory-actions button{font-size:11px;min-height:34px;padding:6px;border:1px solid #7472aa;border-radius:8px;color:#eae6ff;background:#292c50;cursor:pointer}
+.moon-inventory-actions button:hover:not(:disabled){background:#44477d}
+.moon-inventory-actions button:disabled{opacity:.4;cursor:default}
