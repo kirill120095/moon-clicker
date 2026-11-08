@@ -137,15 +137,9 @@ async function init() {
     const rendererModule = await safeImport('./modules/ui/renderer.js', 'Renderer');
     const { createStars } = rendererModule;
     
-    // 4. Загрузка events (с fallback на старый путь)
+    // Events live in modules/ui; do not mask a module error with a missing legacy path.
     console.log('[App] Шаг 3/4: Загрузка events...');
-    let eventsModule;
-    try {
-      eventsModule = await safeImport('./modules/ui/events.js', 'Events (новый путь)');
-    } catch (error) {
-      console.warn('[App] ⚠️  Новый путь не сработал, пробуем старый...');
-      eventsModule = await safeImport('./modules/events/events.js', 'Events (старый путь)');
-    }
+    const eventsModule = await safeImport('./modules/ui/events.js', 'Events');
     const { initEvents } = eventsModule;
     
     // 5. Загрузка auth
