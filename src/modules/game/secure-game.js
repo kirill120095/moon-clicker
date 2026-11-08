@@ -331,7 +331,7 @@ function updateLunarLuckWidget(){
  let el=document.getElementById('lunarLuckWidget');
  if(!el){el=document.createElement('section');el.id='lunarLuckWidget';el.style.cssText='padding:14px;margin:12px 0;border:1px solid #7565a8;border-radius:12px;background:#17182b;color:#f4ecff';host.prepend(el);}
  const luck=state.lunarLuck||{},progress=Math.max(0,Math.min(100,luck.progress||0));
- el.innerHTML='<strong>🌙 Лунная удача — '+progress.toFixed(2)+'%</strong><div style="height:10px;border-radius:9px;background:#34334b;margin:10px 0;overflow:hidden"><div style="width:'+progress+'%;height:100%;background:#aa8cf4"></div></div><small>Лунный резонанс: награда зависит от времени победы, сложности луны и частоты уничтожений. Слабые луны дают меньше. Награда: 1 Лунная пыль.</small><p style="margin:8px 0">Лунная пыль: '+(luck.dust||0)+'</p><button type="button" id="claimLunarLuckButton" '+(progress<100?'disabled':'')+'>Забрать награду</button>';
+ el.innerHTML='<strong>🌙 Лунная удача — '+progress.toFixed(2)+'%</strong><div style="height:10px;border-radius:9px;background:#34334b;margin:10px 0;overflow:hidden"><div style="width:'+progress+'%;height:100%;background:#aa8cf4"></div></div><small>Лунная удача накапливается за победы над лунами. Заполни шкалу, чтобы получить Лунную пыль — ресурс для будущего улучшения слотов экипировки.</small><p style="margin:8px 0">Лунная пыль: '+(luck.dust||0)+'</p><button type="button" id="claimLunarLuckButton" '+(progress<100?'disabled':'')+'>Забрать награду</button>';
  el.querySelector('button').onclick=()=>window.claimLunarLuck?.();
 }
 state.subscribe?.('lunarLuck',updateLunarLuckWidget);
