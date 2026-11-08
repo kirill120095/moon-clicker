@@ -6,7 +6,7 @@ export function freshState(username='Игрок') {
  playerData:{username,shards:0,click_damage:CONSTANTS.DEFAULTS.CLICK_DAMAGE,click_damage_level:0},
  activeMoon:'normal',activeMoons:['normal'],ownedMoons:['normal'],moonLevels:{normal:1},
  maxSlots:1,echoQueue:[],echoPending:0,cloneTargets:[],clickCrystalLevel:0,moonKills:0,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
- tokens:CONSTANTS.CLICK_BURST,lastActionAt:0,bossDeadline:null,lastQuestDay:''};
+ tokens:CONSTANTS.CLICK_BURST,lastActionAt:0,bossDeadline:null,lastQuestDay:'',lunarLuck:{progress:0,fragments:0,dust:0,claims:0}};
 }
 export function applyAction(raw, action, payload={}, now=Date.now(), trusted={}) {
  let state=structuredClone(raw);
@@ -22,9 +22,9 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   if(current>=CONSTANTS.PRESTIGE.DAILY_ASCENSION_LIMIT)throw Error('Лимит: 3 вознесения в день. Следующее доступно после 00:00 МСК.');
   const summary=getPrestigeSummary(state,now);if(!summary.canAscend)throw Error('Новые монеты престижа появятся на следующем рубеже '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровней');
   const p=structuredClone(state.prestige);p.coins=(p.coins||0)+summary.pendingCoins;p.runDamageSteps=0;p.runShardSteps=0;p.ascensions=(p.ascensions||0)+1;p.dailyAscensionDay=today;p.dailyAscensionCount=current+1;
-  const wheelEconomy=structuredClone(state.wheelEconomy||{}),wheelResult=state.wheelResult;
+  const wheelEconomy=structuredClone(state.wheelEconomy||{}),wheelResult=state.wheelResult,lunarLuck=structuredClone(state.lunarLuck||{progress:0,fragments:0,dust:0,claims:0});
   const record=state.maxLevel,serial=(state.moonSerial||1)+1,name=state.playerData.username,totalClicks=state.clickCount;
-  state=freshState(name);state.wheelEconomy=wheelEconomy;state.wheelResult=wheelResult;state.clickCount=totalClicks;state.maxLevel=record;state.moonSerial=serial;state.prestige=p;state.playerData.shards=getPrestigeSummary(state).startShards;action='load';
+  state=freshState(name);state.lunarLuck=lunarLuck;state.wheelEconomy=wheelEconomy;state.wheelResult=wheelResult;state.clickCount=totalClicks;state.maxLevel=record;state.moonSerial=serial;state.prestige=p;state.playerData.shards=getPrestigeSummary(state).startShards;action='load';
  }
  state.maxSlots=Math.min(getSlotLimit(state),Math.max(1+getPrestigeSummary(state).extraSlots,state.maxSlots||1));
  state.clickCrystalLevel=Number.isSafeInteger(state.clickCrystalLevel)&&state.clickCrystalLevel>=0?state.clickCrystalLevel:0;
@@ -34,6 +34,10 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  state.ufoLevel=state.ufoLevel||0;
  state.ufoCount=Math.min(state.ownedMoons.length,state.ufoCount||(state.ufoLevel?1:0));
  state.moonSerial=state.moonSerial||1;
+ state.lunarLuck=state.lunarLuck||{progress:0,fragments:0,dust:0,claims:0};
+ state.lunarLuck.progress=Math.max(0,Math.min(100,Math.floor(Number(state.lunarLuck.progress)||0)));
+ state.lunarLuck.fragments=Math.max(0,Math.floor(Number(state.lunarLuck.fragments)||0));
+ state.lunarLuck.dust=Math.max(0,Math.floor(Number(state.lunarLuck.dust)||0));
  state.moonKills=Number.isSafeInteger(state.moonKills)&&state.moonKills>=0?Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills):0;
  state.activeMoon=state.activeMoons[state.activeMoons.length-1];
  state.effects=[];state.claimSummary=null;
@@ -418,6 +422,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   state.moonHP=Math.max(0,state.moonHP-damage);
   if(state.moonHP===0){
    state.moonKills=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills+1);
+   state.lunarLuck.progress=Math.min(100,state.lunarLuck.progress+(boss?10:2));
    event.reward=moonReward(bonuses);
    if(source==='ufo')event.reward=Math.max(1,Math.floor(event.reward*getUfoBonuses(state,rules).rewardMultiplier));
    event.reward=credit(event.reward);rules.updateQuestProgress('shard',event.reward);
@@ -478,6 +483,9 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
    const echo=getPrestigeSummary(state),repeats=rollEchoRepeats(echo.echoChance);
    if(repeats){state.echoQueue.push({count:repeats,damage:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(result.finalDamage*echo.echoDamage))),isCrit:result.isCrit});drainEchoes();}
   }
+ } else if(action==='claimLunarLuck'){
+  if(state.lunarLuck.progress<100)throw Error('Лунная удача ещё не накоплена');
+  state.lunarLuck.progress=0;state.lunarLuck.fragments+=5;state.lunarLuck.dust+=1;state.lunarLuck.claims=(state.lunarLuck.claims||0)+1;
  } else if(action==='spinWheel'){
   if(trusted.canSpinWheel!==true)throw Object.assign(Error('Требуется подтверждённая игровая сессия'),{code:'FORBIDDEN'});
   const bet=payload.bet,choice=payload.choice,config=CONSTANTS.WHEEL,index=trusted.wheelIndex;
