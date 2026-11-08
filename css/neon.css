@@ -276,3 +276,16 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #fortuneTabContent .fortune-spin{background:linear-gradient(100deg,#8776e9,#b29af5);color:#16152b;min-height:53px;border-radius:13px}
 #fortuneTabContent .fortune-odds{color:#a9a8d0;line-height:1.6}
 @media(max-width:420px){#fortuneTabContent .fortune-choice-grid{gap:5px}#fortuneTabContent .fortune-choice-face{min-height:66px;padding:7px 2px}#fortuneTabContent .fortune-stage{margin:14px auto}}
+
+/* Stable roulette layout: avoid height-dependent wheel resizing while results change */
+#fortuneTabContent .fortune-stage{width:min(100%,510px)!important;max-width:510px;min-width:0;aspect-ratio:1;flex-shrink:0;contain:layout paint;overflow:visible}
+#fortuneTabContent .fortune-result{height:78px;min-height:78px;max-height:78px;overflow:hidden;box-sizing:border-box}
+#fortuneTabContent .fortune-result strong{font-size:clamp(17px,3.2vw,24px);line-height:1.2}
+#fortuneTabContent .fortune-result span{max-width:100%;line-height:1.35}
+#fortuneTabContent .fortune-dialog{transition:none!important;animation:none!important}
+#fortuneTabContent .fortune-rotor{backface-visibility:hidden;transform:translateZ(0);contain:paint}
+#fortuneTabContent .fortune-rotor svg{filter:none!important}
+#fortuneTabContent .fortune-halo{filter:blur(20px)}
+#fortuneTabContent .fortune-win .fortune-result strong{animation:none!important}
+#fortuneTabContent .fortune-particles i{box-shadow:none}
+@media(max-width:480px){#fortuneTabContent .fortune-stage{width:min(100%,440px)!important}#fortuneTabContent .fortune-result{height:72px;min-height:72px;max-height:72px}}
