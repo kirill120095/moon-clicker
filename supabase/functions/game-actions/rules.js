@@ -439,7 +439,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
     if(now-luck.windowStartedAt>=30000||now<luck.windowStartedAt){luck.windowStartedAt=now;luck.windowKills=0;}
     const farmFactor=luck.windowKills<5?1:luck.windowKills<15?0.5:0.2;
     luck.windowKills++;
-    const gain=(boss?1:0.25)*timeFactor*difficultyFactor*farmFactor;
+    const gain=0.25*timeFactor*difficultyFactor*farmFactor;
     luck.progress=Math.min(100,Math.round((luck.progress+gain)*100)/100);
    event.reward=moonReward(bonuses);
    if(source==='ufo')event.reward=Math.max(1,Math.floor(event.reward*getUfoBonuses(state,rules).rewardMultiplier));
