@@ -480,18 +480,18 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   }
  } else if(action==='spinWheel'){
   if(trusted.canSpinWheel!==true)throw Object.assign(Error('Требуется подтверждённая игровая сессия'),{code:'FORBIDDEN'});
-  const bet=payload.bet,config=CONSTANTS.WHEEL,index=trusted.wheelIndex;
-  if(!Number.isSafeInteger(bet)||bet<1||bet>state.playerData.shards)throw Error('Укажите целую ставку в пределах баланса');
+  const bet=payload.bet,choice=payload.choice,config=CONSTANTS.WHEEL,index=trusted.wheelIndex;
+  const before=state.playerData.shards,maxBet=Math.floor(before*config.MAX_BET_FRACTION);
+  if(!Number.isSafeInteger(bet)||bet<1||bet>maxBet)throw Error('Максимальная ставка — 5% баланса. Минимальный баланс для вращения: 20 кристаллов.');
+  if(!['red','black','zero'].includes(choice))throw Error('Выберите красное, чёрное или зеро');
   if(!Number.isInteger(index)||index<0||index>=config.SECTORS.length)throw Error('Не удалось определить сектор');
   if(state.wheelResult&&now-state.wheelResult.at<config.COOLDOWN_MS)throw Object.assign(Error('Дождитесь окончания вращения'),{code:'RATE_LIMIT'});
-  if(payload.acceptBankruptcy!==true)throw Error('Подтвердите риск потери всего баланса');
-  const before=state.playerData.shards,multiplier=config.SECTORS[index];
-  const payout=multiplier==='bankrupt'?0:Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(bet*multiplier));
-  state.playerData.shards=multiplier==='bankrupt'?0:Math.min(CONSTANTS.SAFE_NUMBER_CAP,before-bet+payout);
-  state.wheelResult={at:now,index,bet,multiplier,payout,balanceBefore:before,balanceAfter:state.playerData.shards,delta:state.playerData.shards-before};
+  const sector=config.SECTORS[index],multiplier=sector===choice?(choice==='zero'?36:2):0;
+  const payout=Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(bet*multiplier));
+  state.playerData.shards=Math.min(CONSTANTS.SAFE_NUMBER_CAP,before-bet+payout);
+  state.wheelResult={at:now,index,bet,choice,sector,multiplier,payout,balanceBefore:before,balanceAfter:state.playerData.shards,delta:state.playerData.shards-before};
   const economy=state.wheelEconomy||{},delta=state.wheelResult.delta,cap=CONSTANTS.SAFE_NUMBER_CAP;
-  state.wheelEconomy={pressure:Math.max(0,Math.min(config.MAX_PRESSURE,(Number(economy.pressure)||0)+(delta>0?Math.max(1,Number(multiplier)-1):-1))),spins:Math.min(cap,(economy.spins||0)+1),wagered:Math.min(cap,(economy.wagered||0)+bet),payouts:Math.min(cap,(economy.payouts||0)+payout),totalWon:Math.min(cap,(economy.totalWon||0)+Math.max(0,delta)),totalLost:Math.min(cap,(economy.totalLost||0)+Math.max(0,-delta)),houseNet:Math.max(-cap,Math.min(cap,(economy.houseNet||0)-delta))};
-
+  state.wheelEconomy={pressure:0,spins:Math.min(cap,(economy.spins||0)+1),wagered:Math.min(cap,(economy.wagered||0)+bet),payouts:Math.min(cap,(economy.payouts||0)+payout),totalWon:Math.min(cap,(economy.totalWon||0)+Math.max(0,delta)),totalLost:Math.min(cap,(economy.totalLost||0)+Math.max(0,-delta)),houseNet:Math.max(-cap,Math.min(cap,(economy.houseNet||0)-delta))};
  } else if(action==='buyClickCrystal'){
   buyLevels(payload.max===true,()=>state.playerData.shards>=getClickCrystalCost(state.clickCrystalLevel),()=>{spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;rules.updateQuestProgress('crystalUpgrade');});
  } else if(action==='setCloneTargets'){
