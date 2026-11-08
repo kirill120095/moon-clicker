@@ -85,20 +85,22 @@ export class FortuneWheel {
   this.button.disabled=true;for(const element of this.form.elements)element.disabled=true;
   this.root.querySelector('.fortune-close').disabled=true;
   this.message(randomWheelHeadline(),'Колесо вращается…');
+  const choice=this.form.querySelector('input[name="choice"]:checked')?.value||'red';
   const moving=this.motion(),started=performance.now();
   const idle=moving?this.rotor.animate([{transform:'rotate('+this.angle+'deg)'},{transform:'rotate('+(this.angle+360)+'deg)'}],{duration:900,iterations:Infinity,easing:'linear'}):null;
   if(idle)this.animations.push(idle);
   try{
-   const response=await this.spin({bet,choice:this.form.querySelector('input[name="choice"]:checked')?.value||'red'});
+   const response=await this.spin({bet,choice});
    if(generation!==this.generation)return;
    const result=response?.state?.wheelResult;
    if(!result||!Number.isInteger(result.index))throw Error('Нет подтверждённого результата. Баланс уточнится при обновлении.');
    const from=this.angle+(moving?(performance.now()-started)/900*360:0);
+   this.rotor.style.transform='rotate('+from+'deg)';
    idle?.cancel();
    const target=wheelStopAngle(result.index,CONSTANTS.WHEEL.VISUAL_WEIGHTS,from);
    if(moving)await this.track(this.rotor.animate([{transform:'rotate('+from+'deg)'},{transform:'rotate('+target+'deg)'}],{duration:CONSTANTS.WHEEL.SPIN_MS,easing:'cubic-bezier(.12,.65,.12,1)',fill:'forwards'}));
    if(generation!==this.generation)return;
-   this.angle=target%360;this.rotor.style.transform='rotate('+this.angle+'deg)';
+   this.angle=target%360;this.rotor.style.transform='rotate('+target+'deg)';
    for(const animation of this.animations)animation.cancel();this.animations=[];
    revealWheelBalance();this.onReveal?.();resultRevealed=true;
    const bankrupt=false,win=result.delta>0;
