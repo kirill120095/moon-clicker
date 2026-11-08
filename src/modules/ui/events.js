@@ -98,7 +98,9 @@ if (typeof window !== 'undefined') {
   };
 
   window.switchShopTab = (tabName) => {
-    if(tabName==='fortune'&&!fortuneWheel.allowed)return;
+    if(tabName==='fortune'&&!fortuneWheel.allowed){
+      if(state.user?.id){fortuneWheel.connect(true);}else{showToast('Сначала войдите в аккаунт','info');return;}
+    }
     fortuneWheel.close();
     const panel = document.getElementById('shopPanel');
     if (!panel) return;
@@ -114,7 +116,9 @@ if (typeof window !== 'undefined') {
     const targetContent = document.getElementById(`${tabName}TabContent`);
     if (targetContent) targetContent.classList.add('active');
     
-    if(tabName==='fortune'){fortuneWheel.open();}
+    if(tabName==='fortune'){
+      try{fortuneWheel.open();}catch(error){console.error('[Fortune] Ошибка открытия',error);showToast('Ошибка открытия рулетки: '+error.message,'warning');}
+    }
     else if (tabName === 'shop' || tabName === 'moons') {
       if (window.updateShopUI) window.updateShopUI();
     } else if (tabName === 'prestige') {
