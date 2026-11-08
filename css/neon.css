@@ -357,3 +357,19 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .moon-inventory-actions button{font-size:11px;min-height:34px;padding:6px;border:1px solid #7472aa;border-radius:8px;color:#eae6ff;background:#292c50;cursor:pointer}
 .moon-inventory-actions button:hover:not(:disabled){background:#44477d}
 .moon-inventory-actions button:disabled{opacity:.4;cursor:default}
+
+/* Inventory: visible fixed-size slot grid */
+.moon-inventory .moon-inventory-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:14px}
+.moon-inventory-slot{position:relative;aspect-ratio:1;min-width:0;width:100%;border:1px solid #555b88;border-radius:10px;background:linear-gradient(145deg,#222844,#12182e);box-shadow:inset 0 2px 8px #090d2080;display:flex;align-items:center;justify-content:center;padding:3px;color:#e9e5ff}
+.moon-inventory-slot.empty{opacity:.8;border-style:dashed}
+.moon-inventory-slot.empty:after{content:'+';font-size:19px;font-weight:300;color:#464d72}
+.moon-inventory-slot.occupied{cursor:pointer;border-color:#9185d2;background:radial-gradient(circle at 50% 30%,#3a396b,#191b38)}
+.moon-inventory-slot.occupied:hover{border-color:#d0baff;box-shadow:0 0 12px #9884ef60}
+.moon-inventory-slot.selected{border:2px solid #d8b6ff;box-shadow:0 0 0 2px #8b6fcb70,0 0 17px #9b75ff65}
+.moon-slot-icon{font-size:clamp(19px,5vw,32px);line-height:1}
+.moon-slot-rarity,.moon-slot-lock,.moon-slot-keep{position:absolute;font-size:10px;font-weight:800;line-height:1}
+.moon-slot-rarity{right:5px;bottom:5px;color:#e4d2ff}
+.moon-slot-lock{left:4px;top:4px}.moon-slot-keep{right:5px;top:4px;color:#ffe3a2}
+.moon-inventory-details{display:grid;gap:12px;margin-top:14px;padding:13px;border:1px solid #6e619e;border-radius:12px;background:#161b34}
+.moon-inventory-hint{margin:12px 0 0}
+@media(max-width:380px){.moon-inventory .moon-inventory-grid{gap:5px}.moon-inventory-slot{border-radius:7px}.moon-slot-icon{font-size:21px}}
