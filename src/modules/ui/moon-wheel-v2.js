@@ -106,7 +106,7 @@ export class FortuneWheel {
    const from=this.angle+(moving?(performance.now()-started)/900*360:0);
    this.rotor.style.transform='rotate('+from+'deg)';
    idle?.cancel();
-   const target=wheelStopAngle(result.index,CONSTANTS.WHEEL.VISUAL_WEIGHTS,from);
+   const target=wheelStopAngle(displayIndex(result.index),DISPLAY_SECTORS.length,from);
    if(moving)await this.track(this.rotor.animate([{transform:'rotate('+from+'deg)'},{transform:'rotate('+target+'deg)'}],{duration:CONSTANTS.WHEEL.SPIN_MS,easing:'cubic-bezier(.12,.65,.12,1)',fill:'forwards'}));
    if(generation!==this.generation)return;
    this.angle=target%360;this.rotor.style.transform='rotate('+target+'deg)';
