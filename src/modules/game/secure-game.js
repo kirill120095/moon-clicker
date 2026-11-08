@@ -262,7 +262,7 @@ const ITEM_NAMES={moonstone:'Лунный камень',orbit:'Кольцо ор
 let selectedInventoryItemId=null;
 const ITEM_ICONS={moonstone:'🌙',orbit:'🪐',comet:'☄️',starlight:'✨'};
 function renderItemInventory(){
- const tab=document.getElementById('shopTabContent');if(!tab)return;
+ const tab=document.getElementById('inventoryMount');if(!tab)return;
  let host=document.getElementById('moonInventory');
  if(!host){host=document.createElement('section');host.id='moonInventory';host.className='moon-inventory';tab.append(host);}
  const inv=state.inventory||{capacity:20,keepLimit:3,items:[]},items=inv.items||[];
@@ -271,6 +271,19 @@ function renderItemInventory(){
  host.replaceChildren();
  const title=document.createElement('h3');title.textContent='🎒 Лунный инвентарь';host.append(title);
  const status=document.createElement('p');status.className='moon-inventory-status';status.textContent=items.length+' / '+inv.capacity+' слотов занято · Сохранение: '+kept+' / '+inv.keepLimit;host.append(status);
+ const selected=items.find(i=>i.id===selectedInventoryItemId);
+ const info=document.createElement('section');info.className='moon-inventory-info';host.append(info);
+ if(selected){
+  const itemName=(ITEM_NAMES[selected.type]||selected.type);
+  const heading=document.createElement('h4');heading.textContent=(ITEM_ICONS[selected.type]||'💠')+' '+itemName+' · редкость '+selected.rarity;info.append(heading);
+  const descriptions={moonstone:'Кристалл, впитавший свет древних лун.',orbit:'Артефакт, удерживающий энергию лунной орбиты.',comet:'Осколок странствующей кометы с космической энергией.',starlight:'Амулет, наполненный сиянием далёких звёзд.'};
+  const description=document.createElement('p');description.textContent=descriptions[selected.type]||'Загадочный лунный артефакт.';info.append(description);
+  const effect=document.createElement('p');effect.className='moon-inventory-effect';effect.textContent='Эффект: пока не активен. Бонусы предметов появятся вместе с экипировкой на луны.';info.append(effect);
+  const flags=document.createElement('p');flags.textContent='Осколки при разборе: '+(2**(selected.rarity-1))+' · '+(selected.locked?'🔒 Защищён':'Без защиты')+' · '+(selected.keep?'★ Сохранится при перерождении':'Не выбран для сохранения');info.append(flags);
+ }else{
+  const heading=document.createElement('h4');heading.textContent='✧ Выбери предмет';info.append(heading);
+  const description=document.createElement('p');description.textContent='Нажми на занятый слот, чтобы увидеть описание, редкость и доступные действия.';info.append(description);
+ }
  const grid=document.createElement('div');grid.className='moon-inventory-grid';grid.setAttribute('aria-label','Слоты инвентаря');host.append(grid);
  for(let index=0;index<inv.capacity;index++){
   const item=items[index];
@@ -287,7 +300,6 @@ function renderItemInventory(){
   }else{slot.disabled=true;slot.setAttribute('aria-label','Пустой слот '+(index+1));}
   grid.append(slot);
  }
- const selected=items.find(i=>i.id===selectedInventoryItemId);
  if(!selected){const hint=document.createElement('p');hint.className='moon-inventory-hint';hint.textContent=items.length?'Нажми на предмет, чтобы открыть действия.':'Пусто. Предмет выдаётся за каждый третий сбор Лунной удачи.';host.append(hint);return;}
  const details=document.createElement('section');details.className='moon-inventory-details';host.append(details);
  const name=document.createElement('strong');name.textContent=(ITEM_ICONS[selected.type]||'💠')+' '+(ITEM_NAMES[selected.type]||selected.type)+' · редкость '+selected.rarity;details.append(name);
@@ -298,7 +310,20 @@ function renderItemInventory(){
  add(selected.keep?'★ Не сохранять':'☆ Сохранить','keepItem',{id:selected.id},!selected.keep&&kept>=inv.keepLimit);
  const partner=items.find(i=>i.id!==selected.id&&i.type===selected.type&&i.rarity===selected.rarity&&!i.locked);
  add('✦ Объединить','mergeItems',{id:selected.id,otherId:partner?.id},selected.locked||!partner);
- const salvage=document.createElement('button');salvage.type='button';salvage.textContent='Разобрать · +'+(2**(selected.rarity-1))+' оск.';salvage.disabled=!!selected.locked;salvage.onclick=()=>{if(confirm('Разобрать «'+name.textContent+'»? Предмет исчезнет без возможности восстановления.'))act('salvageItem',{id:selected.id});};buttons.append(salvage);
+ const salvage=document.createElement('button');salvage.type='button';salvage.textContent='Разобрать · +'+(2**(selected.rarity-1))+' оск.';salvage.disabled=!!selected.locked;salvage.onclick=()=>openInventorySalvage(selected);buttons.append(salvage);
+}
+
+function openInventorySalvage(item){
+ const modal=document.getElementById('inventorySalvageModal');if(!modal)return;
+ const name=ITEM_NAMES[item.type]||item.type;
+ modal.querySelector('#inventorySalvageMessage').textContent='«'+name+'» (редкость '+item.rarity+') исчезнет навсегда. Ты получишь '+(2**(item.rarity-1))+' лунных осколков. Отменить разбор нельзя.';
+ const confirmButton=modal.querySelector('#inventorySalvageConfirm');
+ const cancel=()=>{modal.classList.add('hidden');modal.removeEventListener('keydown',onKey);};
+ const onKey=e=>{if(e.key==='Escape'){e.preventDefault();cancel();}};
+ modal.querySelectorAll('[data-inventory-salvage-cancel]').forEach(b=>b.onclick=cancel);
+ confirmButton.disabled=false;
+ confirmButton.onclick=()=>{confirmButton.disabled=true;cancel();command('salvageItem',{id:item.id}).catch(()=>{});};
+ modal.classList.remove('hidden');modal.addEventListener('keydown',onKey);confirmButton.focus();
 }
 
 function updateLunarLuckWidget(){
