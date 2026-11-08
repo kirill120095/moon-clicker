@@ -289,3 +289,11 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #fortuneTabContent .fortune-win .fortune-result strong{animation:none!important}
 #fortuneTabContent .fortune-particles i{box-shadow:none}
 @media(max-width:480px){#fortuneTabContent .fortune-stage{width:min(100%,440px)!important}#fortuneTabContent .fortune-result{height:72px;min-height:72px;max-height:72px}}
+
+/* Force palette even for older in-memory wheel SVG markup */
+#fortuneTabContent .fortune-rotor svg path{stroke:#d7c9ff!important;stroke-opacity:.7!important}
+#fortuneTabContent .fortune-rotor svg path:first-of-type{fill:#39b9c6!important}
+#fortuneTabContent .fortune-rotor svg path:nth-of-type(even){fill:#a66af2!important}
+#fortuneTabContent .fortune-rotor svg path:nth-of-type(odd):not(:first-of-type){fill:#34365d!important}
+#fortuneTabContent .fortune-rotor svg circle{stroke:#b7a5ff!important}
+#fortuneTabContent .fortune-rotor svg text{fill:#f5f0ff!important}
