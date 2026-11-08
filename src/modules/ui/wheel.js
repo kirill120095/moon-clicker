@@ -46,9 +46,9 @@ export class FortuneWheel {
    root.innerHTML=`
    <section class="fortune-dialog" aria-labelledby="fortuneTitle"><div class="fortune-header"><div><span class="fortune-eyebrow">КАЗИНО ФОРТУНЫ · КРИСТАЛЛЫ</span><h2 id="fortuneTitle">Колесо фортуны</h2></div><button type="button" class="fortune-close" aria-label="Закрыть">×</button></div>
    <div class="fortune-stage"><div class="fortune-halo"></div><div class="fortune-pointer" aria-hidden="true"></div><div class="fortune-rotor"></div><div class="fortune-hub" aria-hidden="true">✦</div><div class="fortune-particles" aria-hidden="true"></div></div>
-   <div class="fortune-result" role="status" aria-live="polite"><strong>Испытай свою удачу</strong><span>☠ Банкротство: 3% · результат рассчитывается сервером</span></div>
-   <p class="fortune-balance"></p><form class="fortune-form"><label>Ставка · 💎<input name="bet" type="number" inputmode="numeric" min="1" step="1" required value="100"></label><div class="fortune-presets"><button type="button" data-part="0.1" title="Ставка 10% баланса">10%</button><button type="button" data-part="0.5" title="Ставка 50% баланса">50%</button><button type="button" data-part="1" title="Ставка 100% баланса">100%</button></div><label class="fortune-consent"><input name="risk" type="checkbox" required>Понимаю: сектор «Банкротство» обнулит весь текущий баланс.</label><button class="fortune-spin" type="submit">ВРАЩАТЬ <span>✦</span></button></form>
-   <p class="fortune-odds">Красный ✕ — потеря ставки · ☠ — банкротство (3%) · ×2 / ×5 / ×10 — выплата со ставкой. Только игровые кристаллы.</p></section>`;
+   <div class="fortune-result" role="status" aria-live="polite"><strong>Лунная рулетка</strong><span>37 секторов · открытые вероятности</span></div>
+   <p class="fortune-balance"></p><form class="fortune-form"><label>Выбор сектора<select name="choice"><option value="red">🔴 Красное · 18/37 · ×2</option><option value="black">⚫ Чёрное · 18/37 · ×2</option><option value="zero">🟢 Зеро · 1/37 · ×36</option></select></label><label>Ставка · 💎<input name="bet" type="number" inputmode="numeric" min="1" step="1" required value="1"></label><div class="fortune-presets"><button type="button" data-part="0.01">1%</button><button type="button" data-part="0.025">2,5%</button><button type="button" data-part="0.05">5%</button></div><button class="fortune-spin" type="submit">ВРАЩАТЬ <span>✦</span></button></form>
+   <p class="fortune-odds">Красное: 48,65% · Чёрное: 48,65% · Зеро: 2,70%. Максимальная ставка — 5% баланса. Выплаты включают ставку. Вероятности постоянны.</p></section>
    this.root=root;document.querySelector('#shopPanel .panel-content').append(root);
    this.dialog=root.querySelector('.fortune-dialog');this.rotor=root.querySelector('.fortune-rotor');this.result=root.querySelector('.fortune-result');this.form=root.querySelector('form');this.button=root.querySelector('.fortune-spin');
    this.draw();
@@ -56,16 +56,16 @@ export class FortuneWheel {
    this.form.addEventListener('submit',event=>{event.preventDefault();this.play();});
    for(const button of root.querySelectorAll('[data-part]'))button.addEventListener('click',()=>this.setBetFraction(Number(button.dataset.part)));
   }
-  this.root.classList.add('hidden');this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.message('Испытай свою удачу','☠ Банкротство: 3% · результат рассчитывается сервером');
+  this.root.classList.add('hidden');this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.message('Лунная рулетка','Выбери цвет или зеро · результат рассчитывается сервером');
  }
- setBetFraction(part){if(this.busy)return;const balance=Math.floor(getVisibleShards(state.playerData?.shards));this.form.elements.bet.value=Math.min(balance,Math.max(1,Math.floor(balance*Math.max(0,Math.min(1,part)))));}
+ setBetFraction(part){if(this.busy)return;const balance=Math.floor(getVisibleShards(state.playerData?.shards));this.form.elements.bet.value=Math.min(Math.floor(balance*.05),Math.max(1,Math.floor(balance*Math.max(0,Math.min(.05,part)))));}
  draw(){
-  const sectors=CONSTANTS.WHEEL.SECTORS,weights=CONSTANTS.WHEEL.VISUAL_WEIGHTS,total=weights.reduce((n,w)=>n+w,0),colors=['#58214e','#096b76','#52408e','#83541c','#25637b','#642345','#9a6320','#4c3980','#13727b','#354a87','#341c35','#6b3a70'];
+  const sectors=CONSTANTS.WHEEL.SECTORS,count=sectors.length;
   const point=(r,a)=>[200+r*Math.cos(a*Math.PI/180),200+r*Math.sin(a*Math.PI/180)];
-  this.rotor.innerHTML='<svg viewBox="0 0 400 400" aria-label="Секторы колеса">'+sectors.map((m,i)=>{
-   const start=-90+weights.slice(0,i).reduce((n,w)=>n+w,0)*360/total,width=weights[i]*360/total,center=start+width/2,a=point(190,start),b=point(190,start+width),t=point(139,center);
-   return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(m===0?'#4c1b35':m==='bankrupt'?'#120b18':colors[i])+'" stroke="#ffdf9a" stroke-opacity=".45"/><text x="'+t[0]+'" y="'+t[1]+'" transform="rotate('+(center+90)+' '+t.join(' ')+')" text-anchor="middle" dominant-baseline="middle" fill="'+(m===0?'#ff728e':'#fff4d7')+'" font-size="'+(m==='bankrupt'?10:m===0?30:23)+'" font-weight="900">'+(m==='bankrupt'?'☠':m===0?'✕':'×'+String(m))+'</text>';
-  }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#ffdc89" stroke-width="8"/>'+Array.from({length:24},(_,i)=>{const p=point(194,i*15);return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3" fill="#fff5c4"/>';}).join('')+'</svg>';
+  this.rotor.innerHTML='<svg viewBox="0 0 400 400" aria-label="37 секторов европейской рулетки">'+sectors.map((sector,i)=>{
+   const start=-90+i*360/count,width=360/count,center=start+width/2,a=point(190,start),b=point(190,start+width),t=point(157,center);
+   return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(sector==='zero'?'#16824d':sector==='red'?'#b42f43':'#222b3c')+'" stroke="#ffdf9a" stroke-opacity=".5"/><text x="'+t[0]+'" y="'+t[1]+'" transform="rotate('+(center+90)+' '+t.join(' ')+')" text-anchor="middle" dominant-baseline="middle" fill="#fff4d7" font-size="12" font-weight="800">'+i+'</text>';
+  }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#ffdc89" stroke-width="8"/></svg>';
  }
  close(){if(!this.root)return;this.root.classList.add('hidden');this.root.classList.remove('active');}
  open(){if(!this.allowed)return;this.root.classList.remove('hidden');this.root.classList.add('active');this.refreshBalance();}
@@ -76,7 +76,7 @@ export class FortuneWheel {
  async play(){
   if(!this.allowed||this.busy||!this.spin||!this.form.reportValidity())return;
   const bet=Number(this.form.elements.bet.value);
-  if(!Number.isSafeInteger(bet)||bet<1||bet>getVisibleShards(state.playerData?.shards)){this.message('Проверь ставку','Нужно целое число в пределах твоего баланса');return;}
+  if(!Number.isSafeInteger(bet)||bet<1||bet>Math.floor(getVisibleShards(state.playerData?.shards)*.05)){this.message('Проверь ставку','Ставка должна быть целой и не превышать 5% баланса');return;}
   for(const animation of this.animations)animation.cancel();this.animations=[];
   this.busy=true;beginWheelBalance(state.wheelEconomy);let resultRevealed=false;const generation=this.generation;
   this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.root.classList.add('fortune-busy');
@@ -87,7 +87,7 @@ export class FortuneWheel {
   const idle=moving?this.rotor.animate([{transform:'rotate('+this.angle+'deg)'},{transform:'rotate('+(this.angle+360)+'deg)'}],{duration:900,iterations:Infinity,easing:'linear'}):null;
   if(idle)this.animations.push(idle);
   try{
-   const response=await this.spin({bet,acceptBankruptcy:true});
+   const response=await this.spin({bet,choice:this.form.elements.choice.value});
    if(generation!==this.generation)return;
    const result=response?.state?.wheelResult;
    if(!result||!Number.isInteger(result.index))throw Error('Нет подтверждённого результата. Баланс уточнится при обновлении.');
@@ -99,11 +99,11 @@ export class FortuneWheel {
    this.angle=target%360;this.rotor.style.transform='rotate('+this.angle+'deg)';
    for(const animation of this.animations)animation.cancel();this.animations=[];
    revealWheelBalance();this.onReveal?.();resultRevealed=true;
-   const bankrupt=result.multiplier==='bankrupt',win=result.delta>0;
+   const bankrupt=false,win=result.delta>0;
    this.root.classList.add(bankrupt?'fortune-bankrupt':win?'fortune-win':'fortune-loss');
    const number=n=>n.toLocaleString('ru-RU');
-   this.message(bankrupt?'БАНКРОТСТВО':win?'+'+number(result.delta)+' 💎':result.delta===0?'Без изменения баланса':'−'+number(-result.delta)+' 💎',
-    bankrupt?'Баланс после вращения: 0 💎':result.multiplier===0?'✕ Ставка проиграна':'Выплата: '+number(result.payout)+' 💎 · '+(result.multiplier===1?'×1':'×'+String(result.multiplier).replace('.',',')));
+   this.message(win?'+'+number(result.delta)+' 💎':result.delta===0?'Без изменения баланса':'−'+number(-result.delta)+' 💎',
+    'Выпало: '+(result.sector==='red'?'🔴 Красное':result.sector==='black'?'⚫ Чёрное':'🟢 Зеро')+' · выплата: '+number(result.payout)+' 💎');
    if(win){audio.purchase();if(moving&&!document.documentElement?.classList.contains('low-power'))this.confetti();}
    else if(moving)await this.track(this.result.animate([{transform:'translateX(0)'},{transform:'translateX(-7px)'},{transform:'translateX(7px)'},{transform:'translateX(0)'}],{duration:350}));
   }catch(error){if(generation===this.generation)this.message('Вращение не подтверждено',error.message||'Проверь соединение и баланс перед новой ставкой.');}
