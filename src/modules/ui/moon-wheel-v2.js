@@ -36,6 +36,15 @@ export function randomWheelHeadline(random=Math.random()) {
  return WHEEL_DARK_HUMOR_LINES[pick<WHEEL_DARK_HUMOR_LINES.length?pick:WHEEL_DARK_HUMOR_LINES.length-1];
 }
 
+const DISPLAY_SECTORS=Object.freeze(Array.from({length:17},(_,i)=>i===0?'zero':i%2?'red':'black'));
+// Server result stays on the original 37 equally likely sectors.
+// The larger display sectors are cosmetic; 0 has one position, each color eight.
+function displayIndex(serverIndex){
+ const sector=CONSTANTS.WHEEL.SECTORS[serverIndex];
+ if(sector==='zero')return 0;
+ const matching=[];DISPLAY_SECTORS.forEach((value,i)=>{if(value===sector)matching.push(i);});
+ return matching[Math.floor(Math.random()*matching.length)];
+}
 export class FortuneWheel {
  constructor(){this.allowed=false;this.busy=false;this.generation=0;this.animations=[];this.angle=0;this.timer=null;}
  bind(spin,onReveal){this.spin=spin;this.onReveal=onReveal;}
@@ -46,9 +55,9 @@ export class FortuneWheel {
    root.innerHTML=`
    <section class="fortune-dialog" aria-labelledby="fortuneTitle"><div class="fortune-header"><div><span class="fortune-eyebrow">КАЗИНО ФОРТУНЫ · КРИСТАЛЛЫ</span><h2 id="fortuneTitle">Лунная рулетка</h2></div><button type="button" class="fortune-close" aria-label="Закрыть">×</button></div>
    <div class="fortune-stage"><div class="fortune-halo"></div><div class="fortune-pointer" aria-hidden="true"></div><div class="fortune-rotor"></div><div class="fortune-hub" aria-hidden="true">✦</div><div class="fortune-particles" aria-hidden="true"></div></div>
-   <div class="fortune-result" role="status" aria-live="polite"><strong>Лунная рулетка</strong><span>37 секторов · открытые вероятности</span></div>
+   <div class="fortune-result" role="status" aria-live="polite"><strong>Лунная рулетка</strong><span>17 крупных секторов · прежние вероятности</span></div>
    <p class="fortune-balance"></p><form class="fortune-form"><fieldset class="fortune-choice"><legend>Выбери сектор</legend><div class="fortune-choice-grid"><label class="fortune-choice-option fortune-choice-red"><input type="radio" name="choice" value="red" checked><span class="fortune-choice-face"><b>Аметист</b><small>48,65% · ×2</small></span></label><label class="fortune-choice-option fortune-choice-black"><input type="radio" name="choice" value="black"><span class="fortune-choice-face"><b>Лунная тень</b><small>48,65% · ×2</small></span></label><label class="fortune-choice-option fortune-choice-zero"><input type="radio" name="choice" value="zero"><span class="fortune-choice-face"><b>Лунный свет</b><small>2,70% · ×36</small></span></label></div></fieldset><label>Ставка · 💎<input name="bet" type="number" inputmode="numeric" min="1" step="1" required value="1"></label><div class="fortune-presets"><button type="button" data-part="0.01">1%</button><button type="button" data-part="0.025">2,5%</button><button type="button" data-part="0.05">5%</button></div><button class="fortune-spin" type="submit">ВРАЩАТЬ <span>✦</span></button></form>
-   <p class="fortune-odds">Красное: 48,65% · Чёрное: 48,65% · Зеро: 2,70%. Максимальная ставка — 5% баланса. Выплаты включают ставку. Вероятности постоянны.</p></section>`;
+   <p class="fortune-odds">Аметист: 48,65% · Лунная тень: 48,65% · Лунный свет: 2,70%. Внешний размер секторов не отражает вероятность. Максимальная ставка — 5% баланса. Выплаты включают ставку. Вероятности постоянны.</p></section>`;
    this.root=root;document.querySelector('#shopPanel .panel-content').append(root);
    this.dialog=root.querySelector('.fortune-dialog');this.rotor=root.querySelector('.fortune-rotor');this.result=root.querySelector('.fortune-result');this.form=root.querySelector('form');this.button=root.querySelector('.fortune-spin');
    this.draw();
@@ -62,9 +71,9 @@ export class FortuneWheel {
  }
  setBetFraction(part){if(this.busy)return;const balance=Math.floor(getVisibleShards(state.playerData?.shards));this.form.elements.bet.value=Math.min(Math.floor(balance*.05),Math.max(1,Math.floor(balance*Math.max(0,Math.min(.05,part)))));}
  draw(){
-  const sectors=CONSTANTS.WHEEL.SECTORS,count=sectors.length;
+  const sectors=DISPLAY_SECTORS,count=sectors.length;
   const point=(r,a)=>[200+r*Math.cos(a*Math.PI/180),200+r*Math.sin(a*Math.PI/180)];
-  this.rotor.innerHTML='<svg viewBox="0 0 400 400" aria-label="37 секторов европейской рулетки">'+sectors.map((sector,i)=>{
+  this.rotor.innerHTML='<svg viewBox="0 0 400 400" aria-label="17 крупных декоративных секторов; вероятности указаны на кнопках">'+sectors.map((sector,i)=>{
    const start=-90+i*360/count,width=360/count,center=start+width/2,a=point(190,start),b=point(190,start+width),t=point(157,center);
    return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(sector==='zero'?'#8098b9':sector==='red'?'#b93670':'#1d2d59')+'" stroke="#a9c7ee" stroke-opacity=".8"/>';
   }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#dcecff" stroke-width="8"/></svg>';
