@@ -430,7 +430,17 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   state.moonHP=Math.max(0,state.moonHP-damage);
   if(state.moonHP===0){
    state.moonKills=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills+1);
-   state.lunarLuck.progress=Math.min(100,state.lunarLuck.progress+(boss?10:2));
+   // Lunar resonance: elapsed fight time, relative toughness and farming fatigue.
+    const luck=state.lunarLuck;
+    const fightSeconds=Math.max(0,(now-(luck.moonStartedAt||now))/1000);
+    const hitsToDefeat=state.maxHP/Math.max(1,finalDamage());
+    const timeFactor=fightSeconds<1?0.1:fightSeconds<5?0.5:fightSeconds<15?2:fightSeconds<30?5:8;
+    const difficultyFactor=hitsToDefeat<2?0.25:hitsToDefeat<8?0.7:hitsToDefeat<30?1:1.25;
+    if(now-luck.windowStartedAt>=30000||now<luck.windowStartedAt){luck.windowStartedAt=now;luck.windowKills=0;}
+    const farmFactor=luck.windowKills<5?1:luck.windowKills<15?0.5:0.2;
+    luck.windowKills++;
+    const gain=(boss?1:0.25)*timeFactor*difficultyFactor*farmFactor;
+    luck.progress=Math.min(100,Math.round((luck.progress+gain)*100)/100);
    event.reward=moonReward(bonuses);
    if(source==='ufo')event.reward=Math.max(1,Math.floor(event.reward*getUfoBonuses(state,rules).rewardMultiplier));
    event.reward=credit(event.reward);rules.updateQuestProgress('shard',event.reward);
