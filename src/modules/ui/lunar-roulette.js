@@ -66,8 +66,8 @@ export class FortuneWheel {
   const point=(r,a)=>[200+r*Math.cos(a*Math.PI/180),200+r*Math.sin(a*Math.PI/180)];
   this.rotor.innerHTML='<svg viewBox="0 0 400 400" aria-label="37 секторов европейской рулетки">'+sectors.map((sector,i)=>{
    const start=-90+i*360/count,width=360/count,center=start+width/2,a=point(190,start),b=point(190,start+width),t=point(157,center);
-   return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(sector==='zero'?'#16824d':sector==='red'?'#b42f43':'#222b3c')+'" stroke="#ffdf9a" stroke-opacity=".5"/><text x="'+t[0]+'" y="'+t[1]+'" transform="rotate('+(center+90)+' '+t.join(' ')+')" text-anchor="middle" dominant-baseline="middle" fill="#fff4d7" font-size="12" font-weight="800">'+i+'</text>';
-  }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#ffdc89" stroke-width="8"/></svg>';
+   return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(sector==='zero'?'#39b9c6':sector==='red'?'#a66af2':'#34365d')+'" stroke="#d4c7ff" stroke-opacity=".65"/><text x="'+t[0]+'" y="'+t[1]+'" transform="rotate('+(center+90)+' '+t.join(' ')+')" text-anchor="middle" dominant-baseline="middle" fill="#f5f0ff" font-size="12" font-weight="800">'+i+'</text>';
+  }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#b7a5ff" stroke-width="8"/></svg>';
  }
  close(){if(!this.root)return;this.root.classList.add('hidden');this.root.classList.remove('active');}
  open(){if(!this.allowed)return;this.root.classList.remove('hidden');this.root.classList.add('active');this.refreshBalance();}
