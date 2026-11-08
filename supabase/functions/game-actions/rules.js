@@ -57,7 +57,8 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  state.lunarLuck.moonStartedAt=Number.isFinite(state.lunarLuck.moonStartedAt)?Math.min(now,Math.max(0,state.lunarLuck.moonStartedAt)):now;
  state.lunarLuck.windowStartedAt=Number.isFinite(state.lunarLuck.windowStartedAt)?Math.min(now,Math.max(0,state.lunarLuck.windowStartedAt)):now;
  state.lunarLuck.windowKills=Math.max(0,Math.min(10000,Math.floor(Number(state.lunarLuck.windowKills)||0)));
- state.lunarLuck.fragments=Math.max(0,Math.floor(Number(state.lunarLuck.fragments)||0));
+ state.lunarLuck.dust=Math.max(0,Math.floor(Number(state.lunarLuck.dust)||0))+Math.floor(Math.max(0,Number(state.lunarLuck.fragments)||0)/5);
+ state.lunarLuck.fragments=0;
  state.lunarLuck.dust=Math.max(0,Math.floor(Number(state.lunarLuck.dust)||0));
  state.moonKills=Number.isSafeInteger(state.moonKills)&&state.moonKills>=0?Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills):0;
  state.activeMoon=state.activeMoons[state.activeMoons.length-1];
@@ -553,9 +554,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
    if(item.locked)throw Error('Сначала снимите защиту с предмета');
    if(Object.values(state.equipment).some(m=>m.some(x=>x.itemId===item.id)))throw Error('Сначала снимите предмет с луны');
    inv.items=items.filter(i=>i.id!==item.id);
-   state.lunarLuck.fragments+=2**(item.rarity-1);
-   const dust=Math.floor(state.lunarLuck.fragments/5);
-   state.lunarLuck.fragments%=5;state.lunarLuck.dust+=dust;
+   state.lunarLuck.dust+=2**(item.rarity-1);
   }else{
    const other=items.find(i=>i.id===payload.otherId);
    if(!other||other.id===item.id||other.type!==item.type||other.rarity!==item.rarity)throw Error('Для объединения нужны два одинаковых предмета одной редкости');
