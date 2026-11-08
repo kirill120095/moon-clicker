@@ -55,7 +55,7 @@ export class FortuneWheel {
    root.innerHTML=`
    <section class="fortune-dialog" aria-labelledby="fortuneTitle"><div class="fortune-header"><div><span class="fortune-eyebrow">КАЗИНО ФОРТУНЫ · КРИСТАЛЛЫ</span><h2 id="fortuneTitle">Лунная рулетка</h2></div><button type="button" class="fortune-close" aria-label="Закрыть">×</button></div>
    <div class="fortune-stage"><div class="fortune-halo"></div><div class="fortune-pointer" aria-hidden="true"></div><div class="fortune-rotor"></div><div class="fortune-hub" aria-hidden="true">✦</div><div class="fortune-particles" aria-hidden="true"></div></div>
-   <div class="fortune-result" role="status" aria-live="polite"><strong>Лунная рулетка</strong><span>17 крупных секторов · прежние вероятности</span></div>
+   <div class="fortune-outcome" role="status" hidden></div><div class="fortune-result" role="status" aria-live="polite"><strong>Лунная рулетка</strong><span>17 крупных секторов · прежние вероятности</span></div>
    <p class="fortune-balance"></p><form class="fortune-form"><fieldset class="fortune-choice"><legend>Выбери сектор</legend><div class="fortune-choice-grid"><label class="fortune-choice-option fortune-choice-red"><input type="radio" name="choice" value="red" checked><span class="fortune-choice-face"><b>Аметист</b><small>48,65% · ×2</small></span></label><label class="fortune-choice-option fortune-choice-black"><input type="radio" name="choice" value="black"><span class="fortune-choice-face"><b>Лунная тень</b><small>48,65% · ×2</small></span></label><label class="fortune-choice-option fortune-choice-zero"><input type="radio" name="choice" value="zero"><span class="fortune-choice-face"><b>Лунный свет</b><small>2,70% · ×36</small></span></label></div></fieldset><label>Ставка · 💎<input name="bet" type="number" inputmode="numeric" min="1" step="1" required value="1"></label><div class="fortune-presets"><button type="button" data-part="0.01">1%</button><button type="button" data-part="0.025">2,5%</button><button type="button" data-part="0.05">5%</button></div><button class="fortune-spin" type="submit">ВРАЩАТЬ <span>✦</span></button></form>
    <p class="fortune-odds">Аметист: 48,65% · Лунная тень: 48,65% · Лунный свет: 2,70%. Внешний размер секторов не отражает вероятность. Максимальная ставка — 5% баланса. Выплаты включают ставку. Вероятности постоянны.</p></section>`;
    this.root=root;document.querySelector('#shopPanel .panel-content').append(root);
@@ -93,6 +93,7 @@ export class FortuneWheel {
   this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.root.classList.add('fortune-busy');
   this.button.disabled=true;for(const element of this.form.elements)element.disabled=true;
   this.root.querySelector('.fortune-close').disabled=true;
+  const outcome=this.root.querySelector('.fortune-outcome');if(outcome)outcome.hidden=true;
   this.message('Лунная рулетка','');
   const choice=this.form.querySelector('input[name="choice"]:checked')?.value||'red';
   const moving=this.motion(),started=performance.now();
@@ -106,7 +107,9 @@ export class FortuneWheel {
    const from=this.angle+(moving?(performance.now()-started)/900*360:0);
    this.rotor.style.transform='rotate('+from+'deg)';
    idle?.cancel();
-   const target=wheelStopAngle(displayIndex(result.index),DISPLAY_SECTORS.length,from);
+   // Each SVG wedge begins at -90deg; land the pointer on its midpoint, not its border.
+   const visualIndex=displayIndex(result.index);
+   const target=wheelStopAngle(visualIndex+0.5,DISPLAY_SECTORS.length,from);
    if(moving)await this.track(this.rotor.animate([{transform:'rotate('+from+'deg)'},{transform:'rotate('+target+'deg)'}],{duration:CONSTANTS.WHEEL.SPIN_MS,easing:'cubic-bezier(.12,.65,.12,1)',fill:'forwards'}));
    if(generation!==this.generation)return;
    this.angle=target%360;this.rotor.style.transform='rotate('+target+'deg)';
@@ -114,6 +117,10 @@ export class FortuneWheel {
    revealWheelBalance();this.onReveal?.();resultRevealed=true;
    const bankrupt=false,win=result.delta>0;
    this.root.classList.add(bankrupt?'fortune-bankrupt':win?'fortune-win':'fortune-loss');
+   this.root.dataset.outcome=result.sector;
+   const outcomeLabel=result.sector==='red'?'Аметист':result.sector==='black'?'Лунная тень':'Лунный свет';
+   const indicator=this.root.querySelector('.fortune-outcome');
+   if(indicator){indicator.textContent='ВЫПАЛО: '+outcomeLabel;indicator.hidden=false;}
    const number=n=>n.toLocaleString('ru-RU');
    this.message(win?'+'+number(result.delta)+' 💎':result.delta===0?'Без изменения баланса':'−'+number(-result.delta)+' 💎',
     'Выпало: '+(result.sector==='red'?'💜 Аметист':result.sector==='black'?'🌌 Лунная тень':'✨ Лунный свет')+' · выплата: '+number(result.payout)+' 💎');
