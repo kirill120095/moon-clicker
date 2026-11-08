@@ -44,19 +44,21 @@ export class FortuneWheel {
   if(!this.root){
    const root=document.createElement('div');root.id='fortuneTabContent';root.className='tab-content hidden';
    root.innerHTML=`
-   <section class="fortune-dialog" aria-labelledby="fortuneTitle"><div class="fortune-header"><div><span class="fortune-eyebrow">КАЗИНО ФОРТУНЫ · КРИСТАЛЛЫ</span><h2 id="fortuneTitle">Колесо фортуны</h2></div><button type="button" class="fortune-close" aria-label="Закрыть">×</button></div>
+   <section class="fortune-dialog" aria-labelledby="fortuneTitle"><div class="fortune-header"><div><span class="fortune-eyebrow">КАЗИНО ФОРТУНЫ · КРИСТАЛЛЫ</span><h2 id="fortuneTitle">Лунная рулетка</h2></div><button type="button" class="fortune-close" aria-label="Закрыть">×</button></div>
    <div class="fortune-stage"><div class="fortune-halo"></div><div class="fortune-pointer" aria-hidden="true"></div><div class="fortune-rotor"></div><div class="fortune-hub" aria-hidden="true">✦</div><div class="fortune-particles" aria-hidden="true"></div></div>
    <div class="fortune-result" role="status" aria-live="polite"><strong>Лунная рулетка</strong><span>37 секторов · открытые вероятности</span></div>
-   <p class="fortune-balance"></p><form class="fortune-form"><label>Выбор сектора<select name="choice"><option value="red">🔴 Красное · 18/37 · ×2</option><option value="black">⚫ Чёрное · 18/37 · ×2</option><option value="zero">🟢 Зеро · 1/37 · ×36</option></select></label><label>Ставка · 💎<input name="bet" type="number" inputmode="numeric" min="1" step="1" required value="1"></label><div class="fortune-presets"><button type="button" data-part="0.01">1%</button><button type="button" data-part="0.025">2,5%</button><button type="button" data-part="0.05">5%</button></div><button class="fortune-spin" type="submit">ВРАЩАТЬ <span>✦</span></button></form>
+   <p class="fortune-balance"></p><form class="fortune-form"><fieldset class="fortune-choice"><legend>Выбери сектор</legend><div class="fortune-choice-grid"><label class="fortune-choice-option fortune-choice-red"><input type="radio" name="choice" value="red" checked><span class="fortune-choice-face"><b>Красное</b><small>48,65% · ×2</small></span></label><label class="fortune-choice-option fortune-choice-black"><input type="radio" name="choice" value="black"><span class="fortune-choice-face"><b>Чёрное</b><small>48,65% · ×2</small></span></label><label class="fortune-choice-option fortune-choice-zero"><input type="radio" name="choice" value="zero"><span class="fortune-choice-face"><b>Зеро</b><small>2,70% · ×36</small></span></label></div></fieldset><label>Ставка · 💎<input name="bet" type="number" inputmode="numeric" min="1" step="1" required value="1"></label><div class="fortune-presets"><button type="button" data-part="0.01">1%</button><button type="button" data-part="0.025">2,5%</button><button type="button" data-part="0.05">5%</button></div><button class="fortune-spin" type="submit">ВРАЩАТЬ <span>✦</span></button></form>
    <p class="fortune-odds">Красное: 48,65% · Чёрное: 48,65% · Зеро: 2,70%. Максимальная ставка — 5% баланса. Выплаты включают ставку. Вероятности постоянны.</p></section>`;
    this.root=root;document.querySelector('#shopPanel .panel-content').append(root);
    this.dialog=root.querySelector('.fortune-dialog');this.rotor=root.querySelector('.fortune-rotor');this.result=root.querySelector('.fortune-result');this.form=root.querySelector('form');this.button=root.querySelector('.fortune-spin');
    this.draw();
    root.querySelector('.fortune-close').addEventListener('click',()=>{this.close();window.switchShopTab?.('achievements');});
    this.form.addEventListener('submit',event=>{event.preventDefault();this.play();});
+   this.form.querySelectorAll('input[name="choice"]').forEach(input=>input.addEventListener('change',()=>this.root.dataset.choice=input.value));
+   this.root.dataset.choice='red';
    for(const button of root.querySelectorAll('[data-part]'))button.addEventListener('click',()=>this.setBetFraction(Number(button.dataset.part)));
   }
-  this.root.classList.add('hidden');this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.message('Лунная рулетка','Выбери цвет или зеро · результат рассчитывается сервером');
+  this.root.dataset.choice=this.form.querySelector('input[name="choice"]:checked')?.value||'red';this.root.classList.add('hidden');this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.message('Лунная рулетка','Выбери цвет или зеро · результат рассчитывается сервером');
  }
  setBetFraction(part){if(this.busy)return;const balance=Math.floor(getVisibleShards(state.playerData?.shards));this.form.elements.bet.value=Math.min(Math.floor(balance*.05),Math.max(1,Math.floor(balance*Math.max(0,Math.min(.05,part)))));}
  draw(){
@@ -87,7 +89,7 @@ export class FortuneWheel {
   const idle=moving?this.rotor.animate([{transform:'rotate('+this.angle+'deg)'},{transform:'rotate('+(this.angle+360)+'deg)'}],{duration:900,iterations:Infinity,easing:'linear'}):null;
   if(idle)this.animations.push(idle);
   try{
-   const response=await this.spin({bet,choice:this.form.elements.choice.value});
+   const response=await this.spin({bet,choice:this.form.querySelector('input[name="choice"]:checked')?.value||'red'});
    if(generation!==this.generation)return;
    const result=response?.state?.wheelResult;
    if(!result||!Number.isInteger(result.index))throw Error('Нет подтверждённого результата. Баланс уточнится при обновлении.');
