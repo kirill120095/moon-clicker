@@ -269,7 +269,7 @@ function renderItemInventory(){
  const kept=items.filter(i=>i.keep).length;
  if(!items.some(i=>i.id===selectedInventoryItemId))selectedInventoryItemId=null;
  host.replaceChildren();
- const title=document.createElement('h3');title.textContent='🎒 Лунный инвентарь';host.append(title);
+ const title=document.createElement('h3');title.textContent='🌙 Лунный инвентарь';host.append(title);
  const status=document.createElement('p');status.className='moon-inventory-status';status.textContent=items.length+' / '+inv.capacity+' слотов занято · Сохранение: '+kept+' / '+inv.keepLimit;host.append(status);
  const selected=items.find(i=>i.id===selectedInventoryItemId);
  const info=document.createElement('section');info.className='moon-inventory-info';host.append(info);
