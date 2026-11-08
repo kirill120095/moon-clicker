@@ -98,7 +98,7 @@ function apply(result,hits=[],deferNotices=false){
  const previousQuests=state.quests||{},previousAchievements=state.achievements||{};
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
- appState.setMany({runtime:{...(s.runtime||{})},lastClickAt:s.lastClickAt,lastAutoClickAt:s.lastAutoClickAt||0,lastComboAt:s.lastComboAt,serverClockOffset:offset,prestige:s.prestige,prestigeSummary:s.prestigeSummary,wheelEconomy:s.wheelEconomy||{},runMaxLevel:s.runMaxLevel,moonSerial:s.moonSerial,ufoCount:s.ufoCount||0,ufoComboRelay:!!s.ufoComboRelay,gameCompleted:s.gameCompleted,maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,finalCritChance:s.finalCritChance,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
+ appState.setMany({runtime:{...(s.runtime||{})},lastClickAt:s.lastClickAt,lastAutoClickAt:s.lastAutoClickAt||0,lastComboAt:s.lastComboAt,serverClockOffset:offset,prestige:s.prestige,prestigeSummary:s.prestigeSummary,inventory:s.inventory,lunarLuck:s.lunarLuck,wheelEconomy:s.wheelEconomy||{},runMaxLevel:s.runMaxLevel,moonSerial:s.moonSerial,ufoCount:s.ufoCount||0,ufoComboRelay:!!s.ufoComboRelay,gameCompleted:s.gameCompleted,maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,finalCritChance:s.finalCritChance,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
  clickCount:s.clickCount,runClickCount:s.runClickCount??s.clickCount,totalSecondsPlayed:s.totalSecondsPlayed,playerData:{...s.playerData,level:s.currentLevel,total_clicks:s.clickCount,total_seconds_played:s.totalSecondsPlayed},
  pendingEchoes:s.echoPending||0,cloneTargets:s.cloneTargets||[],clickCrystalLevel:s.clickCrystalLevel||0,activeMoon:s.activeMoon,activeMoons:s.activeMoons,ownedMoons:s.ownedMoons,moonLevels:s.moonLevels,
  maxSlots:s.maxSlots,moonKills:s.moonKills||0,bossKills:s.bossKills,quests:s.quests,achievements:s.achievements,
@@ -110,7 +110,7 @@ function apply(result,hits=[],deferNotices=false){
  gameEngine.recalcMoonBonuses(false);refreshBuffs();updateUI();updateShopUI();updateQuestAndAchievementUI();renderAutoClick();
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
  updateLiveCombatProfile();
- renderFleet(s.ufoCount||(s.ufoLevel?1:0));
+ renderFleet(s.ufoCount||(s.ufoLevel?1:0));renderItemInventory();
  const announce=message=>{if(deferNotices)pendingWheelNotices=[...pendingWheelNotices,message].slice(-32);else showToast(message,'success',3500);};
  if(ready){
   for(const [id,q]of Object.entries(s.quests||{}))if(q.completed&&!previousQuests[id]?.completed)announce('🎯 Квест выполнен: '+(QUESTS[id]?.name||id));
@@ -257,6 +257,36 @@ gameEngine.claimAchievementReward=(id,tier)=>command('claimAchievement',{id,tier
 gameEngine.resetProgress=()=>command('reset');
 // Lunar Luck is earned through moon defeats, independently of casino bets.
 window.claimLunarLuck=()=>command('claimLunarLuck');
+
+const ITEM_NAMES={moonstone:'Лунный камень',orbit:'Кольцо орбиты',comet:'Осколок кометы',starlight:'Звёздный амулет'};
+function renderItemInventory(){
+ const tab=document.getElementById('shopTabContent');if(!tab)return;
+ let host=document.getElementById('moonInventory');
+ if(!host){host=document.createElement('section');host.id='moonInventory';host.className='moon-inventory';tab.append(host);}
+ const inv=state.inventory||{capacity:20,keepLimit:3,items:[]},items=inv.items||[];
+ const kept=items.filter(i=>i.keep).length;
+ host.replaceChildren();
+ const title=document.createElement('h3');title.textContent='🎒 Лунный инвентарь';host.append(title);
+ const status=document.createElement('p');status.textContent=items.length+' / '+inv.capacity+' предметов · Сохранение: '+kept+' / '+inv.keepLimit+' · Награда: предмет за каждую третью Лунную удачу';host.append(status);
+ if(!items.length){const empty=document.createElement('p');empty.textContent='Предметов пока нет. Заполняй шкалу Лунной удачи и забирай награды.';host.append(empty);return;}
+ const grid=document.createElement('div');grid.className='moon-inventory-grid';host.append(grid);
+ const act=(action,payload)=>command(action,payload).catch(()=>{});
+ for(const item of items){
+  const card=document.createElement('article');card.className='moon-inventory-item';
+  const name=document.createElement('strong');name.textContent=(ITEM_NAMES[item.type]||item.type)+' · редкость '+item.rarity;card.append(name);
+  const buttons=document.createElement('div');buttons.className='moon-inventory-actions';card.append(buttons);
+  function add(label,action,payload,disabled=false){
+   const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=disabled;b.onclick=()=>act(action,payload);buttons.append(b);
+  }
+  add(item.locked?'🔒 Защищён':'🔓 Защитить','lockItem',{id:item.id});
+  add(item.keep?'★ Сохранится':'☆ Сохранить','keepItem',{id:item.id},!item.keep&&kept>=inv.keepLimit);
+  const partner=items.find(i=>i.id!==item.id&&i.type===item.type&&i.rarity===item.rarity&&!i.locked);
+  add('✦ Объединить','mergeItems',{id:item.id,otherId:partner?.id},item.locked||!partner);
+  const salvage=document.createElement('button');salvage.type='button';salvage.textContent='Разобрать · +'+(2**(item.rarity-1))+' оск.';salvage.disabled=!!item.locked;salvage.onclick=()=>{if(confirm('Разобрать «'+name.textContent+'»? Предмет исчезнет без возможности восстановления.'))act('salvageItem',{id:item.id});};buttons.append(salvage);
+  grid.append(card);
+ }
+}
+
 function updateLunarLuckWidget(){
  const host=document.querySelector('#shopPanel .panel-content');if(!host)return;
  let el=document.getElementById('lunarLuckWidget');
