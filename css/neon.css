@@ -326,3 +326,15 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #fortuneTabContent .fortune-choice-red input:checked+.fortune-choice-face{border-color:#ffadd2!important;box-shadow:0 0 0 2px #ff5da880,0 0 25px #ff5da865!important}
 #fortuneTabContent .fortune-choice-black input:checked+.fortune-choice-face{border-color:#a8c6ff!important;box-shadow:0 0 0 2px #6b93eb80,0 0 25px #6b93eb65!important}
 #fortuneTabContent .fortune-choice-zero input:checked+.fortune-choice-face{border-color:#fff!important;box-shadow:0 0 0 2px #e8f3ff90,0 0 25px #dcecff70!important}
+
+/* Dark lunar palette v14 */
+#fortuneTabContent .fortune-rotor svg path:first-of-type{fill:#8098b9!important}
+#fortuneTabContent .fortune-rotor svg path:nth-of-type(even){fill:#b93670!important}
+#fortuneTabContent .fortune-rotor svg path:nth-of-type(odd):not(:first-of-type){fill:#1d2d59!important}
+#fortuneTabContent .fortune-choice-red .fortune-choice-face{background:linear-gradient(145deg,#692343,#2d162e)!important;border-color:#b93670!important;color:#f4d9e7}
+#fortuneTabContent .fortune-choice-black .fortune-choice-face{background:linear-gradient(145deg,#253765,#111a35)!important;border-color:#526da3!important;color:#d7e4ff}
+#fortuneTabContent .fortune-choice-zero .fortune-choice-face{background:linear-gradient(145deg,#8098b9,#3e587d)!important;border-color:#9db2cf!important;color:#f2f7ff}
+#fortuneTabContent .fortune-choice-zero .fortune-choice-face small{color:#e1ebfa}
+#fortuneTabContent .fortune-choice-red input:checked+.fortune-choice-face{border-color:#dc6d9c!important;box-shadow:0 0 0 2px #b9367080,0 0 20px #b9367060!important}
+#fortuneTabContent .fortune-choice-black input:checked+.fortune-choice-face{border-color:#819cda!important;box-shadow:0 0 0 2px #526da380,0 0 20px #526da360!important}
+#fortuneTabContent .fortune-choice-zero input:checked+.fortune-choice-face{border-color:#c6d9f0!important;box-shadow:0 0 0 2px #8098b980,0 0 20px #8098b960!important}
