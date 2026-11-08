@@ -528,7 +528,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
    state.lunarLuck.dust-=cost;slot.level=1;
   }else if(action==='upgradeEquipSlot'){
    if(!slot.level||slot.level>=30)throw Error('Улучшение слота недоступно');
-   const cost=Math.ceil(3*slot.level*Math.pow(1.5,moonOrder));
+   const cost=Math.ceil(15*Math.pow(2.5,slot.level-1)*Math.pow(1.8,moonOrder));
    if(state.lunarLuck.dust<cost)throw Error('Недостаточно Лунной пыли');
    state.lunarLuck.dust-=cost;slot.level++;
   }else if(action==='unequipItem'){
