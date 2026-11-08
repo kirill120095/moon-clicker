@@ -512,6 +512,11 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  } else if(action==='claimLunarLuck'){
   if(state.lunarLuck.progress<100)throw Error('Лунная удача ещё не накоплена');
   state.lunarLuck.progress=0;state.lunarLuck.fragments+=5;state.lunarLuck.dust+=1;state.lunarLuck.claims=(state.lunarLuck.claims||0)+1;
+  if(state.lunarLuck.claims%3===0&&state.inventory.items.length<state.inventory.capacity){
+   const types=['moonstone','orbit','comet','starlight'];
+   const type=types[Math.floor(state.lunarLuck.claims/3-1)%types.length];
+   state.inventory.items.push({id:state.inventory.nextId++,type,rarity:1,locked:false,keep:false});
+  }
  } else if(action==='spinWheel'){
   if(trusted.canSpinWheel!==true)throw Object.assign(Error('Требуется подтверждённая игровая сессия'),{code:'FORBIDDEN'});
   const bet=payload.bet,choice=payload.choice,config=CONSTANTS.WHEEL,index=trusted.wheelIndex;
