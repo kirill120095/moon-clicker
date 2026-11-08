@@ -66,7 +66,7 @@ export class FortuneWheel {
   const point=(r,a)=>[200+r*Math.cos(a*Math.PI/180),200+r*Math.sin(a*Math.PI/180)];
   this.rotor.innerHTML='<svg viewBox="0 0 400 400" aria-label="37 секторов европейской рулетки">'+sectors.map((sector,i)=>{
    const start=-90+i*360/count,width=360/count,center=start+width/2,a=point(190,start),b=point(190,start+width),t=point(157,center);
-   return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(sector==='zero'?'#e8f3ff':sector==='red'?'#ff5da8':'#304a86')+'" stroke="#a9c7ee" stroke-opacity=".8"/>';
+   return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(sector==='zero'?'#8098b9':sector==='red'?'#b93670':'#1d2d59')+'" stroke="#a9c7ee" stroke-opacity=".8"/>';
   }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#dcecff" stroke-width="8"/></svg>';
  }
  close(){if(!this.root)return;this.root.classList.add('hidden');this.root.classList.remove('active');}
@@ -84,7 +84,7 @@ export class FortuneWheel {
   this.root.classList.remove('fortune-win','fortune-loss','fortune-bankrupt');this.root.classList.add('fortune-busy');
   this.button.disabled=true;for(const element of this.form.elements)element.disabled=true;
   this.root.querySelector('.fortune-close').disabled=true;
-  this.message(randomWheelHeadline(),'Колесо вращается…');
+  this.message('Лунная рулетка','');
   const choice=this.form.querySelector('input[name="choice"]:checked')?.value||'red';
   const moving=this.motion(),started=performance.now();
   const idle=moving?this.rotor.animate([{transform:'rotate('+this.angle+'deg)'},{transform:'rotate('+(this.angle+360)+'deg)'}],{duration:900,iterations:Infinity,easing:'linear'}):null;
