@@ -373,3 +373,16 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .moon-inventory-details{display:grid;gap:12px;margin-top:14px;padding:13px;border:1px solid #6e619e;border-radius:12px;background:#161b34}
 .moon-inventory-hint{margin:12px 0 0}
 @media(max-width:380px){.moon-inventory .moon-inventory-grid{gap:5px}.moon-inventory-slot{border-radius:7px}.moon-slot-icon{font-size:21px}}
+
+/* Profile inventory tab and item inspector */
+#profilePanel .inventory-tab-emblem{display:inline-grid;place-items:center;width:20px;height:20px;border:1px solid #a988f9;border-radius:6px;background:radial-gradient(circle,#704ec1,#23204e);color:#e5d4ff;font-size:19px;text-shadow:0 0 8px #e6aaff;box-shadow:0 0 12px #8b61ef88;margin-right:3px}
+#profilePanel .panel-tabs{flex-wrap:wrap}
+#inventoryTabContent .moon-inventory{margin:8px 0;border-color:#7770ba}
+#inventoryTabContent .moon-inventory-info{margin:13px 0 15px;padding:14px;border:1px solid #7764b0;border-radius:12px;background:linear-gradient(140deg,#282449,#151a35);box-shadow:inset 0 1px 0 #c4b2ff22}
+#inventoryTabContent .moon-inventory-info h4{margin:0 0 8px;color:#f0dfff;font-size:16px}
+#inventoryTabContent .moon-inventory-info p{margin:6px 0;font-size:12px;line-height:1.55}
+#inventoryTabContent .moon-inventory-info .moon-inventory-effect{color:#b8d5ff}
+#inventoryTabContent .moon-inventory-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.inventory-salvage-modal{border:1px solid #af77c9!important;background:linear-gradient(145deg,#29213e,#141a30)!important;box-shadow:0 0 35px #a252bd44!important}
+.inventory-salvage-emblem{margin:0 auto 12px;width:60px;height:60px;display:grid;place-items:center;border:2px solid #d28aff;border-radius:18px;background:#37234f;color:#e5b6ff;font-size:34px;text-shadow:0 0 16px #e3a0ff;box-shadow:0 0 25px #a35ac66b}
+.inventory-salvage-modal .btn-confirm{background:linear-gradient(110deg,#a44c8b,#c265a3)!important;color:white!important}
