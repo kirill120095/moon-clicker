@@ -6,7 +6,7 @@ export function freshState(username='Игрок') {
  playerData:{username,shards:0,click_damage:CONSTANTS.DEFAULTS.CLICK_DAMAGE,click_damage_level:0},
  activeMoon:'normal',activeMoons:['normal'],ownedMoons:['normal'],moonLevels:{normal:1},
  maxSlots:1,echoQueue:[],echoPending:0,cloneTargets:[],clickCrystalLevel:0,moonKills:0,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
- tokens:CONSTANTS.CLICK_BURST,lastActionAt:0,bossDeadline:null,lastQuestDay:'',inventory:{capacity:20,keepLimit:3,nextId:1,items:[]},lunarLuck:{progress:0,fragments:0,dust:0,claims:0}};
+ tokens:CONSTANTS.CLICK_BURST,lastActionAt:0,bossDeadline:null,lastQuestDay:'',inventory:{capacity:20,keepLimit:3,nextId:1,items:[]},lunarLuck:{progress:0,fragments:0,dust:0,claims:0,moonStartedAt:0,windowStartedAt:0,windowKills:0}};
 }
 export function applyAction(raw, action, payload={}, now=Date.now(), trusted={}) {
  let state=structuredClone(raw);
@@ -40,7 +40,10 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  state.inventory.items=Array.isArray(state.inventory.items)?state.inventory.items.filter(i=>i&&typeof i.id==='number'&&typeof i.type==='string'&&Number.isInteger(i.rarity)&&i.rarity>=1&&i.rarity<=30).slice(0,state.inventory.capacity):[];
  state.inventory.nextId=Math.max(1,Math.floor(Number(state.inventory.nextId)||1),...state.inventory.items.map(i=>i.id+1));
  state.lunarLuck=state.lunarLuck||{progress:0,fragments:0,dust:0,claims:0};
- state.lunarLuck.progress=Math.max(0,Math.min(100,Math.floor(Number(state.lunarLuck.progress)||0)));
+ state.lunarLuck.progress=Math.max(0,Math.min(100,Math.round((Number(state.lunarLuck.progress)||0)*100)/100));
+ state.lunarLuck.moonStartedAt=Number.isFinite(state.lunarLuck.moonStartedAt)?Math.min(now,Math.max(0,state.lunarLuck.moonStartedAt)):now;
+ state.lunarLuck.windowStartedAt=Number.isFinite(state.lunarLuck.windowStartedAt)?Math.min(now,Math.max(0,state.lunarLuck.windowStartedAt)):now;
+ state.lunarLuck.windowKills=Math.max(0,Math.min(10000,Math.floor(Number(state.lunarLuck.windowKills)||0)));
  state.lunarLuck.fragments=Math.max(0,Math.floor(Number(state.lunarLuck.fragments)||0));
  state.lunarLuck.dust=Math.max(0,Math.floor(Number(state.lunarLuck.dust)||0));
  state.moonKills=Number.isSafeInteger(state.moonKills)&&state.moonKills>=0?Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills):0;
@@ -393,7 +396,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   const mechanicIdle=id==='normal'?now-Math.max(activity||now,state.lastComboAt||0):idle;
   if(action!=='toggleMoon'&&action!=='setCloneTargets'&&mechanicIdle>=timeout)rules[counter]=0;
  }
- function startMoon(){state.moonSerial++;state.maxHP=getMaxHPForLevel(state.currentLevel);state.moonHP=state.maxHP;
+ function startMoon(){state.lunarLuck.moonStartedAt=now;state.moonSerial++;state.maxHP=getMaxHPForLevel(state.currentLevel);state.moonHP=state.maxHP;
  rules._clickCounter=0;rules._pityClicks=0;rules._firstStrikeUsed=false;rules._newMoon=true;
  const ice=rules._getMechanicParamsForActiveMoon('ice');
  state.bossDuration=CONSTANTS.BOSS_TIMER*(1+(ice?.timerBonus||0))+getPrestigeSummary(state).bossTime;
