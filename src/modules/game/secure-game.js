@@ -255,6 +255,19 @@ gameEngine.claimAllAchievements=()=>collectAll('claimAllAchievements','claimAllA
 gameEngine.claimQuestReward=id=>command('claimQuest',{id},true).catch(()=>{});
 gameEngine.claimAchievementReward=(id,tier)=>command('claimAchievement',{id,tier},true).catch(()=>{});
 gameEngine.resetProgress=()=>command('reset');
+// Lunar Luck is earned through moon defeats, independently of casino bets.
+window.claimLunarLuck=()=>command('claimLunarLuck');
+function updateLunarLuckWidget(){
+ const host=document.querySelector('#shopPanel .panel-content');if(!host)return;
+ let el=document.getElementById('lunarLuckWidget');
+ if(!el){el=document.createElement('section');el.id='lunarLuckWidget';el.style.cssText='padding:14px;margin:12px 0;border:1px solid #7565a8;border-radius:12px;background:#17182b;color:#f4ecff';host.prepend(el);}
+ const luck=state.lunarLuck||{},progress=Math.max(0,Math.min(100,luck.progress||0));
+ el.innerHTML='<strong>🌙 Лунная удача — '+progress+'%</strong><div style="height:10px;border-radius:9px;background:#34334b;margin:10px 0;overflow:hidden"><div style="width:'+progress+'%;height:100%;background:#aa8cf4"></div></div><small>Победы над лунами: +2%, над боссами: +10%. Награда: 5 осколков = 1 Лунная пыль.</small><p style="margin:8px 0">Лунная пыль: '+(luck.dust||0)+'</p><button type="button" id="claimLunarLuckButton" '+(progress<100?'disabled':'')+'>Забрать награду</button>';
+ el.querySelector('button').onclick=()=>window.claimLunarLuck?.();
+}
+state.subscribe?.('lunarLuck',updateLunarLuckWidget);
+setInterval(updateLunarLuckWidget,2000);
+
 gameEngine.toggleTestMode=()=>showToast('Тестовый режим отключён в защищённом сезоне','info');
 
 const moonButton=document.getElementById('moonWrapper');moonButton?.addEventListener('keydown',e=>{if(e.code==='Space'&&autoClickUntil>Date.now()){e.preventDefault();return;}if(e.code==='Space'||e.code==='Enter'){e.preventDefault();const r=moonButton.getBoundingClientRect();gameEngine.handleClick({clientX:r.x+r.width/2,clientY:r.y+r.height/2});}});
