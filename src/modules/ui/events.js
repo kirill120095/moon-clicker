@@ -27,6 +27,13 @@ if (typeof window !== 'undefined') {
       panel.classList.add('hidden');
       updateToggleButton(panelId, false);
     } else {
+      const otherId=panelId==='profilePanel'?'shopPanel':'profilePanel';
+      const other=document.getElementById(otherId);
+      if(other&&!other.classList.contains('hidden')){
+        if(otherId==='shopPanel')fortuneWheel.close();
+        other.classList.add('hidden');
+        updateToggleButton(otherId,false);
+      }
       panel.classList.remove('hidden');
       updateToggleButton(panelId, true);
       refreshPanelOnOpen(panelId);
