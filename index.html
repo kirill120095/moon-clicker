@@ -150,6 +150,7 @@
       <div class="panel-header">
         <div class="panel-tabs">
           <button class="panel-tab active" data-tab="profile" onclick="window.switchProfileTab('profile')">👤 Профиль</button>
+          <button class="panel-tab" data-tab="inventory" onclick="window.switchProfileTab('inventory')"><span class="inventory-tab-emblem" aria-hidden="true">✧</span> Инвентарь</button>
           <button class="panel-tab" data-tab="leaders" onclick="window.switchProfileTab('leaders')">🏅 Топ</button>
           <button class="panel-tab" data-tab="settings" onclick="window.switchProfileTab('settings')">⚙️ Настр</button>
         </div>
@@ -161,6 +162,7 @@
           <section id="profilePrestige" class="profile-prestige prestige-stats"></section>
         </div>
         
+        <div id="inventoryTabContent" class="tab-content"><div id="inventoryMount"></div></div>
         <div id="leadersTabContent" class="tab-content">
           <div id="leadersList" class="leaders-list"></div>
         </div>
@@ -305,6 +307,18 @@
   <!-- ============================================================ -->
   <!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ -->
   <!-- ============================================================ -->
+  <div id="inventorySalvageModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="inventorySalvageTitle" aria-describedby="inventorySalvageMessage">
+    <div class="modal-backdrop" data-inventory-salvage-cancel></div>
+    <div class="modal-content inventory-salvage-modal">
+      <div class="inventory-salvage-emblem" aria-hidden="true">✦</div>
+      <h3 class="modal-title" id="inventorySalvageTitle">Разобрать предмет?</h3>
+      <p class="modal-message" id="inventorySalvageMessage"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal btn-cancel" data-inventory-salvage-cancel>Отмена</button>
+        <button type="button" class="btn-modal btn-confirm" id="inventorySalvageConfirm">Разобрать</button>
+      </div>
+    </div>
+  </div>
   <div id="confirmModal" class="modal hidden">
     <div class="modal-backdrop" onclick="window.closeModal('confirmModal')"></div>
     <div class="modal-content">
