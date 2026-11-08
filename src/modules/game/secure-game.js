@@ -266,9 +266,7 @@ function renderMoonEquipment(){
  host.replaceChildren();
  const heading=document.createElement('h3');heading.textContent='🌙 Экипировка лун';host.append(heading);
  const note=document.createElement('p');note.textContent='Выбери открытый слот, затем перетащи предмет из инвентаря справа или нажми на него. Улучшения сохраняются навсегда.';host.append(note);
- const layout=document.createElement('div');layout.className='moon-equip-layout';host.append(layout);
- const moons=document.createElement('div');moons.className='moon-equip-moons';layout.append(moons);
- const panel=document.createElement('aside');panel.className='moon-equip-picker';layout.append(panel);
+ const moons=document.createElement('div');moons.className='moon-equip-moons';host.append(moons);
  const equipped=new Set(Object.values(state.equipment||{}).flat().map(x=>x.itemId).filter(x=>x!=null));
  const items=state.inventory?.items||[];
  const validSelection=chosenEquipSlot&&state.equipment?.[chosenEquipSlot.moonId]?.[chosenEquipSlot.slotIndex]?.level;
@@ -306,18 +304,30 @@ function renderMoonEquipment(){
    }
   }
  }
- const title=document.createElement('h4');title.textContent='🎒 Инвентарь';panel.append(title);
- const help=document.createElement('p');help.textContent=chosenEquipSlot?'Перетащи предмет на выбранный слот или нажми на предмет для установки.':'Нажми на открытый слот луны, чтобы выбрать предмет.';panel.append(help);
- const grid=document.createElement('div');grid.className='moon-equip-picker-grid';panel.append(grid);
- for(const item of items){
+ let panel=document.getElementById('moonEquipFloatingInventory');
+ if(!chosenEquipSlot){panel?.remove();return;}
+ if(!panel){panel=document.createElement('aside');panel.id='moonEquipFloatingInventory';panel.className='moon-equip-floating';document.body.append(panel);}
+ panel.replaceChildren();
+ const titleBar=document.createElement('div');titleBar.className='moon-equip-floating-title';panel.append(titleBar);
+ const title=document.createElement('h3');title.textContent='🌙 Лунный инвентарь';titleBar.append(title);
+ const close=document.createElement('button');close.type='button';close.textContent='✕';close.title='Закрыть инвентарь';close.onclick=()=>{chosenEquipSlot=null;renderMoonEquipment();};titleBar.append(close);
+ const target=state.equipment?.[chosenEquipSlot.moonId]?.[chosenEquipSlot.slotIndex];
+ const moon=MOON_TYPES[chosenEquipSlot.moonId];
+ const help=document.createElement('p');help.textContent='Выбран: '+(moon?.name||'Луна')+' · слот '+(chosenEquipSlot.slotIndex+1)+' · редкость до '+target.level+'. Перетащи предмет на слот слева или нажми на предмет.';panel.append(help);
+ const grid=document.createElement('div');grid.className='moon-equip-floating-grid';panel.append(grid);
+ const capacity=state.inventory?.capacity||20;
+ for(let i=0;i<capacity;i++){
+  const item=items[i],tile=document.createElement('button');tile.type='button';tile.className='moon-equip-floating-item';grid.append(tile);
+  if(!item){tile.disabled=true;tile.classList.add('empty');tile.textContent='+';continue;}
   const available=!equipped.has(item.id);
-  const target=chosenEquipSlot&&state.equipment?.[chosenEquipSlot.moonId]?.[chosenEquipSlot.slotIndex];
   const fits=available&&target?.level>=item.rarity&&target?.itemId==null;
-  const tile=document.createElement('button');tile.type='button';tile.className='moon-equip-item';tile.textContent=(ITEM_ICONS[item.type]||'💠')+' +'+item.rarity;tile.title=(ITEM_NAMES[item.type]||item.type)+(available?'':' · уже установлен');tile.disabled=!fits;tile.draggable=!!fits;
+  tile.textContent=(ITEM_ICONS[item.type]||'💠')+' +'+item.rarity;
+  tile.title=(ITEM_NAMES[item.type]||item.type)+' · редкость '+item.rarity+(available?'':' · уже установлен');
+  tile.disabled=!fits;tile.draggable=!!fits;
   tile.ondragstart=e=>{if(fits)e.dataTransfer.setData('text/plain',String(item.id));};
   tile.onclick=()=>{if(fits)command('equipItem',{moonId:chosenEquipSlot.moonId,slotIndex:chosenEquipSlot.slotIndex,id:item.id}).catch(()=>{});};
-  grid.append(tile);
  }
+
 }
 const ITEM_ICONS={moonstone:'🌙',orbit:'🪐',comet:'☄️',starlight:'✨'};
 function renderItemInventory(){
@@ -339,7 +349,7 @@ function renderItemInventory(){
   const descriptions={moonstone:'Кристалл, впитавший свет древних лун.',orbit:'Артефакт, удерживающий энергию лунной орбиты.',comet:'Осколок странствующей кометы с космической энергией.',starlight:'Амулет, наполненный сиянием далёких звёзд.'};
   const description=document.createElement('p');description.textContent=descriptions[selected.type]||'Загадочный лунный артефакт.';info.append(description);
   const effect=document.createElement('p');effect.className='moon-inventory-effect';effect.textContent='Эффект: пока не активен. Бонусы предметов появятся вместе с экипировкой на луны.';info.append(effect);
-  const flags=document.createElement('p');flags.textContent='Осколки при разборе: '+(2**(selected.rarity-1))+' · '+(selected.locked?'🔒 Защищён':'Без защиты')+' · '+(selected.keep?'★ Сохранится при перерождении':'Не выбран для сохранения');info.append(flags);
+  const flags=document.createElement('p');flags.textContent='Лунная пыль при разборе: '+(2**(selected.rarity-1))+' · '+(selected.locked?'🔒 Защищён':'Без защиты')+' · '+(selected.keep?'★ Сохранится при перерождении':'Не выбран для сохранения');info.append(flags);
  }else{
   const heading=document.createElement('h4');heading.textContent='✧ Выбери предмет';info.append(heading);
   const description=document.createElement('p');description.textContent='Нажми на занятый слот, чтобы увидеть описание, редкость и доступные действия.';info.append(description);
@@ -370,13 +380,13 @@ function renderItemInventory(){
  add(selected.keep?'★ Не сохранять':'☆ Сохранить','keepItem',{id:selected.id},!selected.keep&&kept>=inv.keepLimit);
  const partner=items.find(i=>i.id!==selected.id&&i.type===selected.type&&i.rarity===selected.rarity&&!i.locked);
  add('✦ Объединить','mergeItems',{id:selected.id,otherId:partner?.id},selected.locked||!partner);
- const salvage=document.createElement('button');salvage.type='button';salvage.textContent='Разобрать · +'+(2**(selected.rarity-1))+' оск.';salvage.disabled=!!selected.locked;salvage.onclick=()=>openInventorySalvage(selected);buttons.append(salvage);
+ const salvage=document.createElement('button');salvage.type='button';salvage.textContent='Разобрать · +'+(2**(selected.rarity-1))+' пыли';salvage.disabled=!!selected.locked;salvage.onclick=()=>openInventorySalvage(selected);buttons.append(salvage);
 }
 
 function openInventorySalvage(item){
  const modal=document.getElementById('inventorySalvageModal');if(!modal)return;
  const name=ITEM_NAMES[item.type]||item.type;
- modal.querySelector('#inventorySalvageMessage').textContent='«'+name+'» (редкость '+item.rarity+') исчезнет навсегда. Ты получишь '+(2**(item.rarity-1))+' лунных осколков. Отменить разбор нельзя.';
+ modal.querySelector('#inventorySalvageMessage').textContent='«'+name+'» (редкость '+item.rarity+') исчезнет навсегда. Ты получишь '+(2**(item.rarity-1))+' Лунной пыли. Отменить разбор нельзя.';
  const confirmButton=modal.querySelector('#inventorySalvageConfirm');
  const cancel=()=>{modal.classList.add('hidden');modal.removeEventListener('keydown',onKey);};
  const onKey=e=>{if(e.key==='Escape'){e.preventDefault();cancel();}};
