@@ -1,5 +1,5 @@
 import { maskWheelDelta } from '../ui/currency-display.js';
-import { fortuneWheel } from '../ui/wheel.js';
+import { fortuneWheel } from '../ui/lunar-roulette.js';
 import { gameAdmin } from '../ui/admin.js';
 import { gameEngine } from './game.js';
 import { appState, state } from '../../core/state.js';
