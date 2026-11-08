@@ -416,3 +416,19 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #moonEquipmentMount .moon-equip-slot.can-select{cursor:pointer}
 #moonEquipmentMount .moon-equip-slot.is-selected,#moonEquipmentMount .moon-equip-slot.drag-over{border-color:#e6b5ff;box-shadow:0 0 16px #a873ff88;background:#3d2d6a}
 @media(max-width:540px){#moonEquipmentMount .moon-equip-layout{grid-template-columns:minmax(0,1fr) minmax(115px,.8fr);gap:6px}#moonEquipmentMount .moon-equip-slot{padding:6px 2px}#moonEquipmentMount .moon-equip-slot button{font-size:9px}#lunarLuckWidget .moon-luck-resource strong{font-size:19px}}
+
+/* Floating full-size inventory opens to the right of the profile sidebar, over the moon scene */
+#moonEquipFloatingInventory{position:fixed;z-index:1500;top:55px;left:clamp(335px,30vw,470px);width:min(440px,calc(100vw - 355px));max-height:calc(100dvh - 85px);overflow:auto;padding:20px;border:1px solid #b393f2;border-radius:18px;background:linear-gradient(155deg,#272044 0%,#14172f 100%);color:#f2eaff;box-shadow:0 18px 70px #000b,0 0 30px #8e62da66}
+#moonEquipFloatingInventory .moon-equip-floating-title{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#moonEquipFloatingInventory h3{margin:0;font-size:20px;color:#e8d8ff}
+#moonEquipFloatingInventory .moon-equip-floating-title button{border:1px solid #806ab7;border-radius:9px;background:#3c305e;color:white;padding:7px 12px;cursor:pointer}
+#moonEquipFloatingInventory>p{font-size:13px;line-height:1.5;color:#c9bbe6;margin:14px 0}
+#moonEquipFloatingInventory .moon-equip-floating-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+#moonEquipFloatingInventory .moon-equip-floating-item{min-height:65px;min-width:0;border:1px solid #937bc5;border-radius:11px;background:radial-gradient(circle at top,#3b3164,#1b1c39);font-size:20px;color:#fff;cursor:grab;box-shadow:inset 0 1px 0 #ffffff22}
+#moonEquipFloatingInventory .moon-equip-floating-item:not(:disabled):hover{border-color:#e5b9ff;box-shadow:0 0 14px #9c6de988}
+#moonEquipFloatingInventory .moon-equip-floating-item:disabled{opacity:.38;cursor:not-allowed}
+#moonEquipFloatingInventory .moon-equip-floating-item.empty{border-style:dashed;background:#191a31;font-size:15px;color:#696186}
+#moonEquipmentMount .moon-equip-moons{width:100%}
+#moonEquipmentMount .moon-equip-moon{max-width:none}
+#lunarLuckWidget .moon-luck-resources{grid-template-columns:1fr}
+@media(max-width:760px){#moonEquipFloatingInventory{left:5vw;top:10vh;width:90vw;max-height:80dvh;padding:14px}#moonEquipFloatingInventory .moon-equip-floating-item{min-height:53px}}
