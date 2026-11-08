@@ -472,3 +472,39 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 @media(max-width:760px){
  #moonEquipFloatingInventory{top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,520px);max-height:88dvh}
 }
+
+/* Panel layout correction: do not transform .app (it contains fixed panels). */
+@media(min-width:1100px){
+ body:has(#profilePanel:not(.hidden)):not(:has(#shopPanel:not(.hidden))) .app,
+ body:has(#shopPanel:not(.hidden)):not(:has(#profilePanel:not(.hidden))) .app{transform:none!important}
+ #profilePanel,#shopPanel{width:min(36vw,610px);max-width:none}
+}
+@media(min-width:1500px){#profilePanel,#shopPanel{width:min(34vw,680px)}}
+@media(min-width:761px) and (max-width:1099px){#profilePanel,#shopPanel{width:min(47vw,490px);max-width:none}}
+/* Always show the opposite edge button, and dock the active button outside its panel. */
+#profileToggleBtn,#shopToggleBtn{z-index:180!important}
+#profileToggleBtn.panel-open{left:min(36vw,610px);right:auto}
+#shopToggleBtn.panel-open{right:min(36vw,610px);left:auto}
+@media(min-width:1500px){
+ #profileToggleBtn.panel-open{left:min(34vw,680px)}
+ #shopToggleBtn.panel-open{right:min(34vw,680px)}
+}
+@media(min-width:761px) and (max-width:1099px){
+ #profileToggleBtn.panel-open{left:min(47vw,490px)}
+ #shopToggleBtn.panel-open{right:min(47vw,490px)}
+}
+@media(max-width:760px){
+ #profileToggleBtn.panel-open{left:auto;right:0}
+ #shopToggleBtn.panel-open{right:auto;left:0}
+ #profileToggleBtn,#shopToggleBtn{z-index:180!important}
+}
+/* Floating inventory is adjacent to the real left panel edge, not on top of it. */
+@media(min-width:1100px){
+ #moonEquipFloatingInventory{left:calc(min(36vw,610px) + 18px);width:min(590px,calc(100vw - min(36vw,610px) - 42px));top:50%;transform:translateY(-50%)}
+}
+@media(min-width:1500px){
+ #moonEquipFloatingInventory{left:calc(min(34vw,680px) + 18px);width:min(590px,calc(100vw - min(34vw,680px) - 42px))}
+}
+@media(min-width:761px) and (max-width:1099px){
+ #moonEquipFloatingInventory{left:calc(min(47vw,490px) + 12px);width:calc(100vw - min(47vw,490px) - 28px)}
+}
