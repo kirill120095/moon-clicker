@@ -338,3 +338,10 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #fortuneTabContent .fortune-choice-red input:checked+.fortune-choice-face{border-color:#dc6d9c!important;box-shadow:0 0 0 2px #b9367080,0 0 20px #b9367060!important}
 #fortuneTabContent .fortune-choice-black input:checked+.fortune-choice-face{border-color:#819cda!important;box-shadow:0 0 0 2px #526da380,0 0 20px #526da360!important}
 #fortuneTabContent .fortune-choice-zero input:checked+.fortune-choice-face{border-color:#c6d9f0!important;box-shadow:0 0 0 2px #8098b980,0 0 20px #8098b960!important}
+
+/* Winning sector is centered under pointer; readable fixed-height result badge */
+#fortuneTabContent .fortune-outcome{height:42px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;margin:0 auto 5px;padding:8px 18px;width:fit-content;max-width:100%;border-radius:999px;background:#293552;border:1px solid #7892bf;color:#f3f6ff;font-size:15px;font-weight:850;letter-spacing:.5px;text-align:center}
+#fortuneTabContent .fortune-outcome[hidden]{visibility:hidden;display:flex!important}
+#fortuneTabContent[data-outcome="red"] .fortune-outcome{background:#54233c;border-color:#d4548c;color:#ffd5e8}
+#fortuneTabContent[data-outcome="black"] .fortune-outcome{background:#1d2d59;border-color:#7b9fe3;color:#dce9ff}
+#fortuneTabContent[data-outcome="zero"] .fortune-outcome{background:#526987;border-color:#b4cee9;color:#fff}
