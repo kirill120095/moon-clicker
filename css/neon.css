@@ -432,3 +432,43 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #moonEquipmentMount .moon-equip-moon{max-width:none}
 #lunarLuckWidget .moon-luck-resources{grid-template-columns:1fr}
 @media(max-width:760px){#moonEquipFloatingInventory{left:5vw;top:10vh;width:90vw;max-height:80dvh;padding:14px}#moonEquipFloatingInventory .moon-equip-floating-item{min-height:53px}}
+
+/* Expanded desktop side panels; reserve a visible central gameplay lane. */
+@media(min-width:1100px){
+ #profilePanel,#shopPanel{width:clamp(470px,36vw,610px);max-width:none}
+ #profilePanel .panel-content,#shopPanel .panel-content{padding:22px 24px}
+ #profilePanel .panel-tabs,#shopPanel .panel-tabs{padding:12px;gap:7px}
+ #profilePanel .panel-tab,#shopPanel .panel-tab{min-height:48px;font-size:13px}
+ #inventoryTabContent .moon-inventory-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+ #inventoryTabContent .moon-inventory-slot{min-height:78px}
+ #moonEquipmentMount .moon-equip-slot{padding:13px 9px}
+ #moonEquipmentMount .moon-equip-slot button{font-size:12px;padding:9px 5px}
+ #moonEquipmentMount .moon-equip-slot strong{font-size:12px}
+ #moonEquipmentMount .moon-equip-slot p{font-size:12px}
+ #shopPanel .panel-header{container-type:normal}
+ #shopPanel .panel-tab{font-size:12px}
+ body:has(#profilePanel:not(.hidden)):not(:has(#shopPanel:not(.hidden))) .app{transform:translateX(min(17vw,235px))}
+ body:has(#shopPanel:not(.hidden)):not(:has(#profilePanel:not(.hidden))) .app{transform:translateX(max(-17vw,-235px))}
+ .app{transition:transform .32s ease}
+}
+@media(min-width:1500px){
+ #profilePanel,#shopPanel{width:clamp(550px,34vw,680px)}
+}
+@media(min-width:761px) and (max-width:1099px){
+ #profilePanel,#shopPanel{width:min(47vw,490px);max-width:none}
+ #profilePanel .panel-content,#shopPanel .panel-content{padding:17px}
+}
+@media(max-width:760px){
+ #profilePanel,#shopPanel{width:min(100vw,520px);max-width:100vw}
+ #profilePanel .panel-content,#shopPanel .panel-content{padding:16px}
+}
+/* A larger, vertically centered floating inventory, outside the sidebar. */
+@media(min-width:761px){
+ #moonEquipFloatingInventory{left:clamp(430px,39vw,720px);top:50%;transform:translateY(-50%);width:min(550px,calc(100vw - clamp(430px,39vw,720px) - 22px));max-height:min(780px,88dvh);padding:25px}
+ #moonEquipFloatingInventory .moon-equip-floating-item{min-height:83px;font-size:24px}
+ #moonEquipFloatingInventory .moon-equip-floating-grid{gap:12px}
+ #moonEquipFloatingInventory h3{font-size:23px}
+}
+@media(max-width:760px){
+ #moonEquipFloatingInventory{top:50%;left:50%;transform:translate(-50%,-50%);width:min(94vw,520px);max-height:88dvh}
+}
