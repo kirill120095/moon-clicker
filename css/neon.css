@@ -312,3 +312,17 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #fortuneTabContent .fortune-choice-black input:checked+.fortune-choice-face{border-color:#a2aeff;box-shadow:0 0 0 2px #5362cf80,0 0 28px #5362cf75}
 #fortuneTabContent .fortune-choice-zero input:checked+.fortune-choice-face{border-color:#b2fff8;box-shadow:0 0 0 2px #75fff180,0 0 28px #75fff175}
 #fortuneTabContent .fortune-choice-face b{font-size:clamp(12px,2.5vw,17px)}
+
+/* Lunar palette 13: neon rose / sapphire / moon pearl */
+#fortuneTabContent .fortune-rotor svg path:first-of-type{fill:#e8f3ff!important}
+#fortuneTabContent .fortune-rotor svg path:nth-of-type(even){fill:#ff5da8!important}
+#fortuneTabContent .fortune-rotor svg path:nth-of-type(odd):not(:first-of-type){fill:#304a86!important}
+#fortuneTabContent .fortune-rotor svg path{stroke:#a9c7ee!important;stroke-opacity:.75!important}
+#fortuneTabContent .fortune-rotor svg circle{stroke:#dcecff!important}
+#fortuneTabContent .fortune-choice-red .fortune-choice-face{background:linear-gradient(145deg,#96335e,#401c3d)!important;border-color:#ff5da8!important;color:#ffe1f0}
+#fortuneTabContent .fortune-choice-black .fortune-choice-face{background:linear-gradient(145deg,#304a86,#19284d)!important;border-color:#6b93eb!important;color:#e4edff}
+#fortuneTabContent .fortune-choice-zero .fortune-choice-face{background:linear-gradient(145deg,#d7e7ff,#8faed6)!important;border-color:#f3faff!important;color:#152949}
+#fortuneTabContent .fortune-choice-zero .fortune-choice-face small{color:#29466b}
+#fortuneTabContent .fortune-choice-red input:checked+.fortune-choice-face{border-color:#ffadd2!important;box-shadow:0 0 0 2px #ff5da880,0 0 25px #ff5da865!important}
+#fortuneTabContent .fortune-choice-black input:checked+.fortune-choice-face{border-color:#a8c6ff!important;box-shadow:0 0 0 2px #6b93eb80,0 0 25px #6b93eb65!important}
+#fortuneTabContent .fortune-choice-zero input:checked+.fortune-choice-face{border-color:#fff!important;box-shadow:0 0 0 2px #e8f3ff90,0 0 25px #dcecff70!important}
