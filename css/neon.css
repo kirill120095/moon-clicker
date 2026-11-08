@@ -508,3 +508,17 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 @media(min-width:761px) and (max-width:1099px){
  #moonEquipFloatingInventory{left:calc(min(47vw,490px) + 12px);width:calc(100vw - min(47vw,490px) - 28px)}
 }
+
+/* Fine-tune expanded panel boundaries to preserve game controls and moon. */
+@media(min-width:1100px) and (max-width:1499px){
+ #profilePanel,#shopPanel{width:min(32vw,530px)!important}
+ #profileToggleBtn.panel-open{left:min(32vw,530px)!important}
+ #shopToggleBtn.panel-open{right:min(32vw,530px)!important}
+ #moonEquipFloatingInventory{left:calc(min(32vw,530px) + 14px)!important;width:min(560px,calc(100vw - min(32vw,530px) - 32px))!important}
+}
+@media(min-width:1500px){
+ #profilePanel,#shopPanel{width:min(30vw,600px)!important}
+ #profileToggleBtn.panel-open{left:min(30vw,600px)!important}
+ #shopToggleBtn.panel-open{right:min(30vw,600px)!important}
+ #moonEquipFloatingInventory{left:calc(min(30vw,600px) + 14px)!important;width:min(560px,calc(100vw - min(30vw,600px) - 32px))!important}
+}
