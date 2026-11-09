@@ -296,7 +296,7 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #fortuneTabContent .fortune-rotor svg path:nth-of-type(even){fill:#a66af2!important}
 #fortuneTabContent .fortune-rotor svg path:nth-of-type(odd):not(:first-of-type){fill:#34365d!important}
 #fortuneTabContent .fortune-rotor svg circle{stroke:#b7a5ff!important}
-#fortuneTabContent .fortune-rotor svg text{fill:#f5f0ff!important}
+#fortuneTabContent .fortune-sector-label{paint-order:stroke fill;stroke:#12162b;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
 
 /* Neon moon palette — consistent wheel and choice cards */
 #fortuneTabContent .fortune-rotor svg path:first-of-type{fill:#75fff1!important}
@@ -304,7 +304,6 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #fortuneTabContent .fortune-rotor svg path:nth-of-type(odd):not(:first-of-type){fill:#5362cf!important}
 #fortuneTabContent .fortune-rotor svg path{stroke:#d6b9ff!important;stroke-opacity:.8!important}
 #fortuneTabContent .fortune-rotor svg circle{stroke:#cfabff!important}
-#fortuneTabContent .fortune-rotor svg text{display:none!important}
 #fortuneTabContent .fortune-choice-red .fortune-choice-face{background:linear-gradient(145deg,#7339a9,#371b62)!important;border-color:#a95be0;color:#f6dcff}
 #fortuneTabContent .fortune-choice-black .fortune-choice-face{background:linear-gradient(145deg,#39469c,#202656)!important;border-color:#6676df;color:#e1e7ff}
 #fortuneTabContent .fortune-choice-zero .fortune-choice-face{background:linear-gradient(145deg,#167e83,#124b60)!important;border-color:#64ded6;color:#dcfffc}

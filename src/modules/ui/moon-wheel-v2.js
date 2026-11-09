@@ -68,9 +68,9 @@ export class FortuneWheel {
   const count=sectors.length;
   const point=(r,a)=>[200+r*Math.cos(a*Math.PI/180),200+r*Math.sin(a*Math.PI/180)];
   this.rotor.innerHTML='<svg viewBox="0 0 400 400" aria-label="17 секторов с множителями выплаты">'+sectors.map((sector,i)=>{
-   const start=-90+i*360/count,width=360/count,center=start+width/2,a=point(190,start),b=point(190,start+width),t=point(157,center);
+   const start=-90+i*360/count,width=360/count,center=start+width/2,a=point(190,start),b=point(190,start+width),t=point(146,center);
    const wedge='<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(sector==='zero'?'#8098b9':sector==='red'?'#b93670':'#1d2d59')+'" stroke="#a9c7ee" stroke-opacity=".8"/>';
-   const label='<text x="'+t[0]+'" y="'+t[1]+'" transform="rotate('+(center+90)+' '+t.join(' ')+')" text-anchor="middle" dominant-baseline="central" fill="'+(sector==='zero'?'#101b34':'#fff')+'" font-family="system-ui" font-size="20" font-weight="700">×'+multipliers[i]+'</text>';
+   const label='<text class="fortune-sector-label" x="'+t[0]+'" y="'+t[1]+'" transform="rotate('+(center+90)+' '+t.join(' ')+')" text-anchor="middle" dominant-baseline="central" fill="#fff" font-family="system-ui" font-size="25" font-weight="800">×'+multipliers[i]+'</text>';
    return wedge+label;
   }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#dcecff" stroke-width="8"/></svg>';
  }
