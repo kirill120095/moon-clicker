@@ -4,7 +4,7 @@
 import { appState, state } from '../../core/state.js';
 import { 
   CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, ACHIEVEMENTS, QUESTS, RARITY_CONFIG,
-  rollCritical, getBaseDamage, getEffectiveMoonParams, getCombatStats, getActiveSynergies, getCloneTargets, getSlotLimit, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonUpgradeCostForLevel
+  rollCritical, getBaseDamage, getEffectiveMoonParams, getCombatStats, getActiveSynergies, getCloneTargets, getSlotLimit, getPrestigeUpgradeCost, getMoonPurchaseAccess, getMoonMechanicParams, getMoonLevelLimit, getMoonUpgradeCostForLevel
 } from '../../core/constants.js';
 import { 
   getMaxHPForLevel, isBossLevel, getSlotUpgradeCost 
@@ -1140,11 +1140,12 @@ export class GameEngine {
     // Проверка уровня убрана — прокачка доступна всегда
     
     const currentLevel = state.moonLevels[moonId] || 1;
-    if (currentLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
+    const cloneUpgrades = state.prestige?.upgrades?.cloneCopies || 0;
+    if (currentLevel >= getMoonLevelLimit(moonId,cloneUpgrades)) {
       return showToast('⚠️ Макс. уровень', 'warning');
     }
     
-    const cost = getMoonUpgradeCostForLevel(moonId, currentLevel);
+    const cost = getMoonUpgradeCostForLevel(moonId, currentLevel, cloneUpgrades);
     
     if (!state.testMode && (state.playerData?.shards || 0) < cost) {
       return showToast(`⚠️ Нужно ${cost} 💎`, 'warning');

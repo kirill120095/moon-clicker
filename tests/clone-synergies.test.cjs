@@ -41,3 +41,10 @@ test('server damage, combat profile and the constellation UI agree after changin
  c.state=run('s');vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/game/game.js'),'utf8')),c);
  assert.equal(run("gameEngine.recalcMoonBonuses().activeSynergies[0].key"),run("getActiveSynergies(state)[0].key"));
 });
+test('only First Synergy is offered, and legacy higher tiers cannot be collected',()=>{
+ const {run}=setup();constellation(run);
+ assert.equal(run('ACHIEVEMENTS.synergyHunter.tiers.map(t=>t.level).join()'),'bronze');
+ run("s.achievements.synergyHunter={silver:'unclaimed',gold:'unclaimed'};s=applyAction(s,'load',{},100000)");
+ assert.equal(run('s.achievements.synergyHunter.bronze'),'unclaimed');
+ assert.throws(()=>run("applyAction(s,'claimAchievement',{id:'synergyHunter',tier:'silver'},100001)"),/недоступна/);
+});

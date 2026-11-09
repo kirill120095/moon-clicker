@@ -10,7 +10,7 @@ import {
   CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, 
   QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, 
   SYNERGY_BONUSES, RARITY_CONFIG,
-  getMoonMechanicParams, getProgressReward, getQuestPayout, getEffectiveMoonParams, getCloneTargets, getMoonPower, getSlotLimit, getClickCrystalCost, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, getPrestigeUpgradeCost, getMoonPurchaseAccess, MOON_ORDER, getCombatStats, PRESTIGE_UPGRADES
+  getMoonMechanicParams, getProgressReward, getQuestPayout, getEffectiveMoonParams, getCloneTargets, getCloneCopyLimit, getMoonPower, getSlotLimit, getClickCrystalCost, getMoonLevelLimit, getMoonUpgradeCostForLevel, getUfoMoonDescription, getPrestigeSummary, getPrestigeUpgradeCost, getMoonPurchaseAccess, MOON_ORDER, getCombatStats, PRESTIGE_UPGRADES
 } from '../../core/constants.js';
 import { getMaxHPForLevel, getTitle, getClickUpgradeCost } from '../../core/config.js';
 import { escapeHTML } from '../../utils/security.js';
@@ -302,7 +302,7 @@ export function updatePrestigeUI(){
  '<p class="prestige-note">Обновление каждый день ровно в <b>00:00 МСК</b>.</p></section></div>'+
  '<button class="btn-action ascend-button prestige-ascend-button" data-ascend '+(p.canAscend?'':'disabled')+'>'+(p.dailyAscensionsLeft===0?'Лимит исчерпан до 00:00 МСК':p.canAscend?'🌟 Вознестись · +'+p.pendingCoins+' 🌟':'Вознесение доступно с '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровня')+'</button>'+
  '<h3 class="prestige-upgrade-heading">🛍️ Магазин вечных улучшений</h3></div>'+
- Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel,locked=id==='cloneCopies'&&(state.moonLevels?.clone||0)<(level===0?15:20);return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+Math.min(level,d.maxLevel)+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><div class="purchase-split"><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||locked||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':formatPrice(cost)+' 🌟')+'</button>'+(d.maxLevel===1?'':'<button class="btn-buy-shop btn-buy-max" data-prestige-upgrade="'+id+'" data-buy-max="true" title="Купить максимум уровней" '+(maxed||locked||p.coins<cost?'disabled':'')+'>MAX</button>')+'</div></div>';}).join('');
+ Object.entries(PRESTIGE_UPGRADES).map(([id,d])=>{const level=state.prestige?.upgrades?.[id]||0,cost=getPrestigeUpgradeCost(id,level),maxed=level>=d.maxLevel;return '<div class="prestige-item"><h4>'+d.icon+' '+d.name+'</h4><p>'+d.description+' · Ур. '+Math.min(level,d.maxLevel)+' / '+(d.maxLevel===Infinity?'∞':d.maxLevel)+'</p><div class="purchase-split"><button class="btn-buy-shop" data-prestige-upgrade="'+id+'" '+(maxed||p.coins<cost?'disabled':'')+'>'+(maxed?'Куплено':formatPrice(cost)+' 🌟')+'</button>'+(d.maxLevel===1?'':'<button class="btn-buy-shop btn-buy-max" data-prestige-upgrade="'+id+'" data-buy-max="true" title="Купить максимум уровней" '+(maxed||p.coins<cost?'disabled':'')+'>MAX</button>')+'</div></div>';}).join('');
 }
 
 function _updateUfoShop() {
@@ -399,7 +399,8 @@ function _updateMoonShop() {
   const container = document.getElementById('moonShopItems');
   if (!container) return;
   const money=getVisibleShards(state.playerData?.shards);
-  const affordability=Object.entries(MOON_TYPES).map(([id,m])=>[getMoonPurchaseAccess(state,id).unlocked,money>=m.cost,money>=getMoonUpgradeCostForLevel(id,state.moonLevels[id]||1)]);
+  const cloneUpgrades=state.prestige?.upgrades?.cloneCopies||0;
+  const affordability=Object.entries(MOON_TYPES).map(([id,m])=>[getMoonPurchaseAccess(state,id).unlocked,money>=m.cost,money>=getMoonUpgradeCostForLevel(id,state.moonLevels[id]||1,cloneUpgrades)]);
   const key=JSON.stringify([state.activeMoons,state.ownedMoons,state.moonLevels,state.maxSlots,state.cloneTargets,state.prestige?.upgrades,affordability,state.testMode]);
   if(key===moonShopKey&&container.childElementCount)return;moonShopKey=key;
 
@@ -412,6 +413,7 @@ function _updateMoonShop() {
     const access=getMoonPurchaseAccess(state,id);
     const isLockedByLevel=!access.levelUnlocked,isLockedByMoon=!!access.requiredMoon;
     const moonLevel = owned ? (state.moonLevels[id] || 1) : 0;
+    const maxMoonLevel = getMoonLevelLimit(id,cloneUpgrades);
     
     const canBuy = !owned && !isLockedByLevel && !isLockedByMoon &&
       (state.testMode || (getVisibleShards(state.playerData?.shards)) >= moon.cost) &&
@@ -419,7 +421,7 @@ function _updateMoonShop() {
     
     // Актуальные параметры с учётом прокачки
     const currentParams = owned ? getMoonMechanicParams(id, moonLevel) : null;
-    const nextParams = owned && moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL 
+    const nextParams = owned && moonLevel < maxMoonLevel
       ? getMoonMechanicParams(id, moonLevel + 1) 
       : null;
     
@@ -485,9 +487,9 @@ function _updateMoonShop() {
     
     // Цена прокачки
     const rarity = RARITY_CONFIG[moon.rarity] || RARITY_CONFIG.common;
-    const upgradeCost = owned ? getMoonUpgradeCostForLevel(id, moonLevel) : 0;
+    const upgradeCost = owned ? getMoonUpgradeCostForLevel(id, moonLevel, cloneUpgrades) : 0;
     const displayUpgradeCost = state.testMode ? 0 : upgradeCost;
-    const canUpgrade = owned && moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL &&
+    const canUpgrade = owned && moonLevel < maxMoonLevel &&
       (state.testMode || (getVisibleShards(state.playerData?.shards)) >= upgradeCost);
     
     const displayCost = state.testMode ? 0 : moon.cost;
@@ -501,9 +503,9 @@ function _updateMoonShop() {
         actionsHtml += `<button class="btn-moon-activate" onclick="window.toggleMoonActive('${id}')">Активировать</button>`;
       }
       
-      if (moonLevel < CONSTANTS.LIMITS.MAX_MOON_LEVEL) {
+      if (moonLevel < maxMoonLevel) {
         actionsHtml += `<div class="purchase-split"><button title="${formatExact(displayUpgradeCost)} 💎" class="btn-moon-upgrade ${canUpgrade ? 'can-afford' : 'cannot-afford'}" ${canUpgrade ? '' : 'disabled'} onclick="window.gameEngine.upgradeMoon('${id}')">
-          ${canUpgrade ? `⬆️ ${formatPrice(displayUpgradeCost)} 💎` : (moonLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL ? 'MAX' : `Нужно ${formatPrice(displayUpgradeCost)} 💎`)}
+          ${canUpgrade ? `⬆️ ${formatPrice(displayUpgradeCost)} 💎` : `Нужно ${formatPrice(displayUpgradeCost)} 💎`}
         </button><button class="btn-moon-upgrade btn-buy-max ${canUpgrade ? 'can-afford' : 'cannot-afford'}" ${canUpgrade ? '' : 'disabled'} onclick="window.gameEngine.upgradeMoon('${id}',true)" title="Купить максимум уровней">MAX</button></div>`;
       } else {
         actionsHtml += `<button class="btn-moon-upgrade cannot-afford" disabled>MAX УРОВЕНЬ</button>`;
@@ -532,7 +534,7 @@ function _updateMoonShop() {
         <div class="moon-shop-desc">${escapeHTML(moon.shopDescription || moon.description || '')}</div>
         
         <div class="ufo-moon-trait">${escapeHTML(getUfoMoonDescription(id,moonLevel||1))}</div>
-        ${owned ? `<div class="moon-shop-status"><div class="moon-level">⭐ Уровень: ${moonLevel} / ${CONSTANTS.LIMITS.MAX_MOON_LEVEL}</div></div>` : ''}
+        ${owned ? `<div class="moon-shop-status"><div class="moon-level">⭐ Уровень: ${moonLevel} / ${maxMoonLevel}</div></div>` : ''}
         ${isLockedByLevel && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔒 Нужен ${moon.unlockLevel} уровень в текущем забеге</div></div>` : ''}
         ${isLockedByMoon && !owned ? `<div class="moon-shop-status"><div class="moon-locked">🔗 Сначала купите: ${escapeHTML(MOON_TYPES[access.requiredMoon].name)}</div></div>` : ''}
         
@@ -1411,7 +1413,7 @@ function _updateCloneControls(){
  const root=document.getElementById('cloneControls'),fields=document.getElementById('cloneTargetFields');if(!root||!fields)return;
  const enabled=(state.activeMoons||[]).includes('clone');root.classList.toggle('hidden',!enabled);if(!enabled)return;
  const key=JSON.stringify([state.activeMoons,state.moonLevels,state.cloneTargets,state.prestige?.upgrades?.cloneCopies]);if(key===cloneControlKey&&fields.childElementCount)return;cloneControlKey=key;
- const p=getMoonMechanicParams('clone',state.moonLevels.clone||1),level=state.moonLevels.clone||1,up=state.prestige?.upgrades?.cloneCopies||0,count=p.copies+(level>=15&&up>=1?1:0)+(level>=20&&up>=2?1:0),targets=getCloneTargets(state);fields.replaceChildren();
+ const count=getCloneCopyLimit(state),targets=getCloneTargets(state);fields.replaceChildren();
  for(let i=0;i<count;i++){
   const label=document.createElement('label');label.textContent='Оригинал '+(i+1);
   const select=document.createElement('select');select.id='cloneOriginal'+i;

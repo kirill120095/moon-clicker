@@ -411,7 +411,7 @@ function renderItemInventory(){
   }else{slot.disabled=true;slot.setAttribute('aria-label','Пустой слот '+(index+1));}
   grid.append(slot);
  }
- if(!selected){const hint=document.createElement('p');hint.className='moon-inventory-hint';hint.textContent=items.length?'Нажми на предмет, чтобы открыть действия.':'Пусто. Предмет выдаётся за каждый третий сбор Лунной удачи.';host.append(hint);return;}
+ if(!selected){const hint=document.createElement('p');hint.className='moon-inventory-hint';hint.textContent=items.length?'Нажми на предмет, чтобы открыть действия.':'Пусто. Предмет выдаётся за каждый третий сбор Лунной пыли.';host.append(hint);return;}
  const details=document.createElement('section');details.className='moon-inventory-details';host.append(details);
  const name=document.createElement('strong');name.textContent=(ITEM_ICONS[selected.type]||'💠')+' '+(ITEM_NAMES[selected.type]||selected.type)+' · редкость '+selected.rarity;details.append(name);
  const buttons=document.createElement('div');buttons.className='moon-inventory-actions';details.append(buttons);
@@ -445,7 +445,7 @@ function updateLunarLuckWidget(){
  let el=document.getElementById('lunarLuckWidget');
  if(!el){
   el=document.createElement('section');el.id='lunarLuckWidget';
-  el.innerHTML='<header><h3>🌙 Лунная удача</h3><strong data-luck-progress></strong></header><div class="moon-luck-meter" role="progressbar" aria-label="Лунная удача"><span></span></div><p>Побеждай луны, чтобы накопить удачу и получить пыль для экипировки.</p><div class="moon-luck-resources"><div class="moon-luck-resource"><span>✧ Лунная пыль</span><strong data-luck-dust></strong></div></div><button type="button" class="moon-luck-claim" id="claimLunarLuckButton">✦ Забрать награду</button>';
+  el.innerHTML='<header><h3>🌙 Лунная пыль</h3><strong data-luck-progress></strong></header><div class="moon-luck-meter" role="progressbar" aria-label="Накопление лунной пыли"><span></span></div><p>За каждую побеждённую луну шкала растёт. Чем выше уровень луны, тем больше прирост. На 100% можно забрать пыль для экипировки.</p><div class="moon-luck-resources"><div class="moon-luck-resource"><span>✧ Пыль в запасе</span><strong data-luck-dust></strong></div></div><button type="button" class="moon-luck-claim" id="claimLunarLuckButton">✦ Забрать пыль</button>';
   el.querySelector('button').onclick=()=>command('claimLunarLuck').catch(()=>{});
   host.prepend(el);
  }
@@ -454,7 +454,7 @@ function updateLunarLuckWidget(){
  if(meter.getAttribute('aria-valuenow')!==value){
   meter.setAttribute('aria-valuenow',value);
   meter.firstElementChild.style.transform='scaleX('+progress/100+')';
-  el.querySelector('[data-luck-progress]').textContent=progress.toFixed(2)+'%';
+  el.querySelector('[data-luck-progress]').textContent=progress.toLocaleString('ru-RU',{maximumFractionDigits:4})+'%';
   el.querySelector('button').disabled=progress<100;
  }
  const dust=el.querySelector('[data-luck-dust]'),dustValue=String(luck.dust||0);

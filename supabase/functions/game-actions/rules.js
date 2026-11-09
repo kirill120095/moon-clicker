@@ -1,4 +1,4 @@
-import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, rollEchoRepeats, getProgressReward, getQuestPayout, getBaseDamage, getEffectiveMoonParams, getCombatStats, getSlotLimit, getClickCrystalCost, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonUpgradeCostForLevel, getUfoBonuses, getPrestigeSummary, getMoscowDay, PRESTIGE_UPGRADES } from './constants.js';
+import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, rollEchoRepeats, getProgressReward, getQuestPayout, getBaseDamage, getEffectiveMoonParams, getCombatStats, getSlotLimit, getClickCrystalCost, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonLevelLimit, getMoonUpgradeCostForLevel, getCloneCopyLimit, getLunarDustGain, getUfoBonuses, getPrestigeSummary, getMoscowDay, PRESTIGE_UPGRADES } from './constants.js';
 import { getMaxHPForLevel, getSlotUpgradeCost, getClickUpgradeCost } from './config.js';
 const showToast=()=>{},updateQuestUI=()=>{},updateAchievementUI=()=>{},updateProfileAndLeaders=()=>{};
 export function freshState(username='Игрок') {
@@ -6,7 +6,7 @@ export function freshState(username='Игрок') {
  playerData:{username,shards:0,click_damage:CONSTANTS.DEFAULTS.CLICK_DAMAGE,click_damage_level:0},
  activeMoon:'normal',activeMoons:['normal'],ownedMoons:['normal'],moonLevels:{normal:1},
  maxSlots:1,echoQueue:[],echoPending:0,cloneTargets:[],clickCrystalLevel:0,moonKills:0,bossKills:0,levelLocked:false,testMode:false,quests:{},achievements:{},runtime:{},
- tokens:CONSTANTS.CLICK_BURST,lastActionAt:0,bossDeadline:null,lastQuestDay:'',inventory:{capacity:20,keepLimit:3,nextId:1,items:[]},equipment:{},lunarLuck:{progress:0,fragments:0,dust:0,claims:0,moonStartedAt:0,windowStartedAt:0,windowKills:0}};
+ tokens:CONSTANTS.CLICK_BURST,lastActionAt:0,bossDeadline:null,lastQuestDay:'',inventory:{capacity:20,keepLimit:3,nextId:1,items:[]},equipment:{},lunarLuck:{progress:0,dust:0,claims:0}};
 }
 export function applyAction(raw, action, payload={}, now=Date.now(), trusted={}) {
  let state=structuredClone(raw);
@@ -22,7 +22,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   if(current>=CONSTANTS.PRESTIGE.DAILY_ASCENSION_LIMIT)throw Error('Лимит: 3 вознесения в день. Следующее доступно после 00:00 МСК.');
   const summary=getPrestigeSummary(state,now);if(!summary.canAscend)throw Error('Новые монеты престижа появятся на следующем рубеже '+CONSTANTS.PRESTIGE.COIN_EVERY+' уровней');
   const p=structuredClone(state.prestige);p.coins=(p.coins||0)+summary.pendingCoins;p.runDamageSteps=0;p.runShardSteps=0;p.ascensions=(p.ascensions||0)+1;p.dailyAscensionDay=today;p.dailyAscensionCount=current+1;
-  const equipment=structuredClone(state.equipment||{}),wheelEconomy=structuredClone(state.wheelEconomy||{}),wheelResult=state.wheelResult,inventory=structuredClone(state.inventory||{capacity:20,keepLimit:3,nextId:1,items:[]}),lunarLuck=structuredClone(state.lunarLuck||{progress:0,fragments:0,dust:0,claims:0});
+  const equipment=structuredClone(state.equipment||{}),wheelEconomy=structuredClone(state.wheelEconomy||{}),wheelResult=state.wheelResult,inventory=structuredClone(state.inventory||{capacity:20,keepLimit:3,nextId:1,items:[]}),lunarLuck=structuredClone(state.lunarLuck||{progress:0,dust:0,claims:0});
   const record=state.maxLevel,serial=(state.moonSerial||1)+1,name=state.playerData.username,totalClicks=state.clickCount;
   state=freshState(name);state.equipment=equipment;state.inventory={...inventory,items:inventory.items.filter(item=>item.keep===true).slice(0,inventory.keepLimit)};state.lunarLuck=lunarLuck;state.wheelEconomy=wheelEconomy;state.wheelResult=wheelResult;state.clickCount=totalClicks;state.maxLevel=record;state.moonSerial=serial;state.prestige=p;state.playerData.shards=getPrestigeSummary(state).startShards;action='load';
  }
@@ -52,14 +52,13 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   equippedIds.add(slot.itemId);
  }
  state.inventory.nextId=Math.max(1,Math.floor(Number(state.inventory.nextId)||1),...state.inventory.items.map(i=>i.id+1));
- state.lunarLuck=state.lunarLuck||{progress:0,fragments:0,dust:0,claims:0};
- state.lunarLuck.progress=Math.max(0,Math.min(100,Math.round((Number(state.lunarLuck.progress)||0)*100)/100));
- state.lunarLuck.moonStartedAt=Number.isFinite(state.lunarLuck.moonStartedAt)?Math.min(now,Math.max(0,state.lunarLuck.moonStartedAt)):now;
- state.lunarLuck.windowStartedAt=Number.isFinite(state.lunarLuck.windowStartedAt)?Math.min(now,Math.max(0,state.lunarLuck.windowStartedAt)):now;
- state.lunarLuck.windowKills=Math.max(0,Math.min(10000,Math.floor(Number(state.lunarLuck.windowKills)||0)));
- state.lunarLuck.dust=Math.max(0,Math.floor(Number(state.lunarLuck.dust)||0))+Math.floor(Math.max(0,Number(state.lunarLuck.fragments)||0)/5);
- state.lunarLuck.fragments=0;
- state.lunarLuck.dust=Math.max(0,Math.floor(Number(state.lunarLuck.dust)||0));
+ const savedDust=state.lunarLuck||{},dustScale=CONSTANTS.LUNAR_DUST.PROGRESS_SCALE;
+ const roundDustProgress=progress=>Math.max(0,Math.min(100,Math.round(progress*dustScale)/dustScale));
+ state.lunarLuck={
+  progress:roundDustProgress(Number(savedDust.progress)||0),
+  dust:Math.max(0,Math.floor(Number(savedDust.dust)||0))+Math.floor(Math.max(0,Number(savedDust.fragments)||0)/5),
+  claims:Math.max(0,Math.floor(Number(savedDust.claims)||0))
+ };
  state.moonKills=Number.isSafeInteger(state.moonKills)&&state.moonKills>=0?Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills):0;
  state.activeMoon=state.activeMoons[state.activeMoons.length-1];
  state.effects=[];state.claimSummary=null;
@@ -410,7 +409,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   const mechanicIdle=id==='normal'?now-Math.max(activity||now,state.lastComboAt||0):idle;
   if(action!=='toggleMoon'&&action!=='setCloneTargets'&&mechanicIdle>=timeout)rules[counter]=0;
  }
- function startMoon(){state.lunarLuck.moonStartedAt=now;state.moonSerial++;state.maxHP=getMaxHPForLevel(state.currentLevel);state.moonHP=state.maxHP;
+ function startMoon(){state.moonSerial++;state.maxHP=getMaxHPForLevel(state.currentLevel);state.moonHP=state.maxHP;
  rules._clickCounter=0;rules._pityClicks=0;rules._firstStrikeUsed=false;rules._newMoon=true;
  const ice=rules._getMechanicParamsForActiveMoon('ice');
  state.bossDuration=CONSTANTS.BOSS_TIMER*(1+(ice?.timerBonus||0))+getPrestigeSummary(state).bossTime;
@@ -444,17 +443,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   state.moonHP=Math.max(0,state.moonHP-damage);
   if(state.moonHP===0){
    state.moonKills=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills+1);
-   // Lunar resonance: elapsed fight time, relative toughness and farming fatigue.
-    const luck=state.lunarLuck;
-    const fightSeconds=Math.max(0,(now-(luck.moonStartedAt||now))/1000);
-    const hitsToDefeat=state.maxHP/Math.max(1,finalDamage());
-    const timeFactor=fightSeconds<1?0.1:fightSeconds<5?0.5:fightSeconds<15?2:fightSeconds<30?5:8;
-    const difficultyFactor=hitsToDefeat<2?0.25:hitsToDefeat<8?0.7:hitsToDefeat<30?1:1.25;
-    if(now-luck.windowStartedAt>=30000||now<luck.windowStartedAt){luck.windowStartedAt=now;luck.windowKills=0;}
-    const farmFactor=luck.windowKills<5?1:luck.windowKills<15?0.5:0.2;
-    luck.windowKills++;
-    const gain=0.25*timeFactor*difficultyFactor*farmFactor;
-    luck.progress=Math.min(100,Math.round((luck.progress+gain)*100)/100);
+   if(state.lunarLuck.progress<100)state.lunarLuck.progress=roundDustProgress(state.lunarLuck.progress+getLunarDustGain(state.currentLevel));
    event.reward=moonReward(bonuses);
    if(source==='ufo')event.reward=Math.max(1,Math.floor(event.reward*getUfoBonuses(state,rules).rewardMultiplier));
    event.reward=credit(event.reward);rules.updateQuestProgress('shard',event.reward);
@@ -564,7 +553,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
    item.rarity++;item.keep=false;inv.items=items.filter(i=>i.id!==other.id);
   }
  } else if(action==='claimLunarLuck'){
-  if(state.lunarLuck.progress<100)throw Error('Лунная удача ещё не накоплена');
+  if(state.lunarLuck.progress<100)throw Error('Шкала Лунной пыли ещё не заполнена');
   state.lunarLuck.progress=0;state.lunarLuck.dust+=1;state.lunarLuck.claims=(state.lunarLuck.claims||0)+1;
   if(state.lunarLuck.claims%3===0&&state.inventory.items.length<state.inventory.capacity){
    const types=['moonstone','orbit','comet','starlight'];
@@ -575,7 +564,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   if(trusted.canSpinWheel!==true)throw Object.assign(Error('Требуется подтверждённая игровая сессия'),{code:'FORBIDDEN'});
   const bet=payload.bet,choice=payload.choice,config=CONSTANTS.WHEEL,index=trusted.wheelIndex;
   const before=state.playerData.shards,maxBet=Math.floor(before*config.MAX_BET_FRACTION);
-  if(!Number.isSafeInteger(bet)||bet<1||bet>maxBet)throw Error('Максимальная ставка — 5% баланса. Минимальный баланс для вращения: 20 кристаллов.');
+  if(!Number.isSafeInteger(bet)||bet<1||bet>maxBet)throw Error('Максимальная ставка — '+(config.MAX_BET_FRACTION*100)+'% баланса. Минимальный баланс для вращения: '+Math.ceil(1/config.MAX_BET_FRACTION)+' кристалла.');
   if(!['red','black','zero'].includes(choice))throw Error('Выберите красное, чёрное или зеро');
   if(!Number.isInteger(index)||index<0||index>=config.SECTORS.length)throw Error('Не удалось определить сектор');
   if(state.wheelResult&&now-state.wheelResult.at<config.COOLDOWN_MS)throw Object.assign(Error('Дождитесь окончания вращения'),{code:'RATE_LIMIT'});
@@ -589,7 +578,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   buyLevels(payload.max===true,()=>state.playerData.shards>=getClickCrystalCost(state.clickCrystalLevel),()=>{spend(getClickCrystalCost(state.clickCrystalLevel));state.clickCrystalLevel++;rules.updateQuestProgress('crystalUpgrade');});
  } else if(action==='setCloneTargets'){
   if(!state.activeMoons.includes('clone'))throw Error('Активируйте Клона');
-  const targets=payload.targets,level=state.moonLevels.clone||1,up=state.prestige?.upgrades?.cloneCopies||0,count=getMoonMechanicParams('clone',level).copies+(level>=15&&up>=1?1:0)+(level>=20&&up>=2?1:0);
+  const targets=payload.targets,count=getCloneCopyLimit(state);
   if(!Array.isArray(targets)||!targets.length||targets.length>count||targets.some(id=>id==='clone'||!state.activeMoons.includes(id)||!state.ownedMoons.includes(id)))throw Error('Выберите активные оригиналы');
   const changed=JSON.stringify(state.cloneTargets)!==JSON.stringify(targets);
   state.cloneTargets=[...targets];if(changed)rules.updateQuestProgress('cloneTune');
@@ -601,8 +590,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   if(!Object.hasOwn(PRESTIGE_UPGRADES,payload.id))throw Error('Неизвестное улучшение престижа');
   const def=PRESTIGE_UPGRADES[payload.id],p=state.prestige,level=p.upgrades?.[payload.id]||0;
   if(level>=def.maxLevel)throw Error('Улучшение уже куплено');
-   if(payload.id==='cloneCopies'&&(state.moonLevels?.clone||0)<(level===0?15:20))throw Error('Для улучшения нужен Клон уровня '+(level===0?15:20));
-  buyLevels(payload.max===true&&def.maxLevel!==1,()=>{const l=p.upgrades?.[payload.id]||0;return l<def.maxLevel&&(payload.id!=='cloneCopies'||(state.moonLevels?.clone||0)>=(l===0?15:20))&&(p.coins||0)>=getPrestigeUpgradeCost(payload.id,l);},()=>{const l=p.upgrades?.[payload.id]||0;p.coins-=getPrestigeUpgradeCost(payload.id,l);p.upgrades=p.upgrades||{};p.upgrades[payload.id]=l+1;if(payload.id==='orbit')state.maxSlots=Math.min(getSlotLimit(state),state.maxSlots+1);if(payload.id==='hunter'&&state.bossDeadline){state.bossDeadline+=def.time*1000;state.bossDuration=(state.bossDuration||CONSTANTS.BOSS_TIMER)+def.time;}});
+  buyLevels(payload.max===true&&def.maxLevel!==1,()=>{const l=p.upgrades?.[payload.id]||0;return l<def.maxLevel&&(p.coins||0)>=getPrestigeUpgradeCost(payload.id,l);},()=>{const l=p.upgrades?.[payload.id]||0;p.coins-=getPrestigeUpgradeCost(payload.id,l);p.upgrades=p.upgrades||{};p.upgrades[payload.id]=l+1;if(payload.id==='orbit')state.maxSlots=Math.min(getSlotLimit(state),state.maxSlots+1);if(payload.id==='hunter'&&state.bossDeadline){state.bossDeadline+=def.time*1000;state.bossDuration=(state.bossDuration||CONSTANTS.BOSS_TIMER)+def.time;}});
  } else if(action==='buyUfo'){
   if(state.currentLevel<CONSTANTS.UFO.UNLOCK_LEVEL)throw Error('Тарелка доступна с '+CONSTANTS.UFO.UNLOCK_LEVEL+' уровня');
   if(state.ufoLevel>=CONSTANTS.UFO.MAX_LEVEL)throw Error('Тарелка улучшена полностью');
@@ -627,9 +615,10 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
    if(!access.levelUnlocked)throw Error('Нужен рекорд текущего забега: '+moon.unlockLevel);
    spend(moon.cost);state.ownedMoons.push(moon.id);state.moonLevels[moon.id]=1;rules.updateQuestProgress('moonBuy');
   }else{
-   const level=state.moonLevels[moon.id];
-   if(!state.ownedMoons.includes(moon.id)||!level||level>=CONSTANTS.LIMITS.MAX_MOON_LEVEL)throw Error('Улучшение недоступно');
-   buyLevels(payload.max===true,()=>state.moonLevels[moon.id]<CONSTANTS.LIMITS.MAX_MOON_LEVEL&&state.playerData.shards>=getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id]),()=>{spend(getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id]));state.moonLevels[moon.id]++;rules.updateQuestProgress('moonUpgrade');});
+   const level=state.moonLevels[moon.id],cloneUpgrades=state.prestige?.upgrades?.cloneCopies||0,limit=getMoonLevelLimit(moon.id,cloneUpgrades);
+   if(!state.ownedMoons.includes(moon.id)||!level||level>=limit)throw Error('Улучшение недоступно');
+   const price=()=>getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id],cloneUpgrades);
+   buyLevels(payload.max===true,()=>state.moonLevels[moon.id]<limit&&state.playerData.shards>=price(),()=>{spend(price());state.moonLevels[moon.id]++;rules.updateQuestProgress('moonUpgrade');});
   }
  } else if(action==='toggleMoon'){
   if(!state.ownedMoons.includes(payload.id))throw Error('Луна не куплена');
@@ -640,7 +629,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   rules.updateQuestProgress('moonSwitch');
   const elements=state.activeMoons.filter(id=>['blood','fire','ice','electric','shadow','gold','cosmic'].includes(id));
   if(elements.length>=2)rules.updateQuestProgress('synergy',1,[...elements].sort().join(':'));
-  if(payload.id==='clone'&&state.activeMoons.includes('clone')&&!state.cloneTargets.length)state.cloneTargets=state.activeMoons.filter(id=>id!=='clone').slice(0,getMoonMechanicParams('clone',state.moonLevels.clone||1).copies);
+  if(payload.id==='clone'&&state.activeMoons.includes('clone')&&!state.cloneTargets.length)state.cloneTargets=state.activeMoons.filter(id=>id!=='clone').slice(0,getCloneCopyLimit(state));
  } else if(action==='lock'){state.levelLocked=!state.levelLocked;
  } else if(action==='rollback'||action==='rollbackFive'){if(state.currentLevel>1){state.currentLevel=Math.max(1,state.currentLevel-(action==='rollbackFive'?CONSTANTS.ROLLBACK_LEVELS:1));startMoon();}
   } else if(action==='jumpToLevel'){

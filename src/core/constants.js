@@ -28,8 +28,9 @@ export const CONSTANTS = {
   CLICK_TOKEN_CAPACITY: 36,
   ROLLBACK_LEVELS: 10,
   PRESTIGE: { DAILY_ASCENSION_LIMIT: 3, DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 20, REWARD_PER_ASCENSION: 0.25, UFO_HASTE_CAP: 0.95, PRICE_STEP_RATIO: 0.2, PRICE_QUADRATIC_DIVISOR: 10 },
-  WHEEL: { COOLDOWN_MS: 5200, SPIN_MS: 3200, MAX_BET_FRACTION: 0.05, SECTORS: Array.from({length:37},(_,i)=>i===0?'zero':i%2?'red':'black'), WEIGHTS: Array(37).fill(1), VISUAL_WEIGHTS: Array(37).fill(1) },
+  WHEEL: { COOLDOWN_MS: 5200, SPIN_MS: 3200, MAX_BET_FRACTION: 0.5, SECTORS: Array.from({length:37},(_,i)=>i===0?'zero':i%2?'red':'black'), WEIGHTS: Array(37).fill(1), VISUAL_WEIGHTS: Array(37).fill(1) },
   ECHO: { MAX_HITS_PER_ACTION: 128, MAX_QUEUED_BURSTS: 64 },
+  LUNAR_DUST: { PROGRESS_SCALE: 10000, BASE_GAIN: 0.0001, LEVEL_EXPONENT: 1.5, SOFT_CAP: 2 },
   UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, MIN_INTERVAL: 100, COMBO_RELAY_COST: 1000000, MAX_SHOTS_PER_ACTION: 32, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, UNIT_BASE_COST: 2400, UNIT_COST_MULTIPLIER: 2, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { rewardMultiplier: 0.5 }, cosmic: { damagePerLevel: 0.001 } } },
   MOON_REWARD: { BASE: 5, PER_LEVEL: 2, EXPONENT: 1.5, GROWTH: 0.5, BOSS_MULTIPLIER: 2.5 },
 
@@ -756,7 +757,7 @@ export const ACHIEVEMENTS = {
   shardCollector: { id: 'shardCollector', category: 'wealth', categoryName: 'Богатство', icon: '💎', tiers: [{ level: 'bronze', target: 1000, name: 'Первая тысяча', description: 'Накопите 1 000 осколков', reward: 63 }, { level: 'silver', target: 10000, name: 'Десять тысяч', description: 'Накопите 10 000 осколков', reward: 500 }, { level: 'gold', target: 100000, name: 'Сто тысяч!', description: 'Накопите 100 000 осколков', reward: 2500 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.playerData?.shards || 0) >= tier.target; } },
   shardMillionaire: { id: 'shardMillionaire', category: 'wealth', categoryName: 'Богатство', icon: '💰', tiers: [{ level: 'bronze', target: 500000, name: 'Полмиллиона', description: 'Накопите 500 000 осколков', reward: 7500 }, { level: 'silver', target: 2000000, name: 'Мультимиллионер', description: 'Накопите 2 000 000 осколков', reward: 25000 }, { level: 'gold', target: 10000000, name: 'Миллиардер', description: 'Накопите 10 000 000 осколков', reward: 125000 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.playerData?.shards || 0) >= tier.target; } },
   slotMaster: { id: 'slotMaster', category: 'slots', categoryName: 'Слоты', icon: '🎰', tiers: [{ level: 'bronze', target: 2, name: 'Двойной слот', description: 'Откройте 2 слота', reward: 250 }, { level: 'silver', target: 3, name: 'Три слота', description: 'Откройте 3 слота', reward: 1250 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.maxSlots || 1) >= tier.target; } },
-  synergyHunter: { id: 'synergyHunter', category: 'synergies', categoryName: 'Синергии', icon: '🔗', tiers: [{ level: 'bronze', target: 1, name: 'Первая синергия', description: 'Активируйте 1 синергию', reward: 188 }, { level: 'silver', target: 3, name: 'Мастер комбинаций', description: 'Активируйте 3 синергии', reward: 1250 }, { level: 'gold', target: 5, name: 'Синергетический бог', description: 'Активируйте 5 синергий', reward: 5000 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; const active = (state?.activeMoons || []).slice(0, state?.maxSlots || 1); return getActiveSynergies(state).length >= tier.target; } },
+  synergyHunter: { id: 'synergyHunter', category: 'synergies', categoryName: 'Синергии', icon: '🔗', tiers: [{ level: 'bronze', target: 1, name: 'Первая синергия', description: 'Активируйте созвездие', reward: 188 }], check: (state, tier) => tier?.target === 1 && getActiveSynergies(state).length === 1 },
   timePlayed: { id: 'timePlayed', category: 'time', categoryName: 'Время', icon: '⏱️', tiers: [{ level: 'bronze', target: 3600, name: 'Первый час', description: 'Сыграйте 1 час', reward: 125 }, { level: 'silver', target: 36000, name: '10 часов', description: 'Сыграйте 10 часов', reward: 2500 }, { level: 'gold', target: 360000, name: '100 часов!', description: 'Сыграйте 100 часов', reward: 25000 }], check: (state, tier) => { if (!tier || typeof tier.target !== 'number') return false; return (state?.totalSecondsPlayed || 0) >= tier.target; } }
 };
 
@@ -832,9 +833,20 @@ export function getMoonMechanicParams(moonId, moonLevel) {
 // ============================================================
 // ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: Получить цену прокачки луны
 // ============================================================
-export function getMoonUpgradeCostForLevel(moonId, currentLevel) {
+export function getLunarDustGain(level) {
+  const {BASE_GAIN,LEVEL_EXPONENT,SOFT_CAP}=CONSTANTS.LUNAR_DUST;
+  const gain=BASE_GAIN*Math.pow(level,LEVEL_EXPONENT);
+  return gain/(1+gain/SOFT_CAP);
+}
+
+export function getMoonLevelLimit(moonId, cloneUpgrades=0) {
+  const extra = moonId==='clone' ? Math.min(PRESTIGE_UPGRADES.cloneCopies.maxLevel,Math.max(0,cloneUpgrades)) * PRESTIGE_UPGRADES.cloneCopies.levelsPerPurchase : 0;
+  return CONSTANTS.LIMITS.MAX_MOON_LEVEL + extra;
+}
+
+export function getMoonUpgradeCostForLevel(moonId, currentLevel, cloneUpgrades=0) {
   const moon = MOON_TYPES[moonId];
-  if (!moon || currentLevel >= CONSTANTS.LIMITS.MAX_MOON_LEVEL) return Infinity;
+  if (!moon || currentLevel >= getMoonLevelLimit(moonId,cloneUpgrades)) return Infinity;
   
   const rarityCost=MOON_UPGRADE_BASE_COSTS[moon.rarity]||100;
   const baseCost=MOON_ORDER.indexOf(moonId)>=MOON_ORDER.indexOf('ice')?Math.max(rarityCost,moon.cost*CONSTANTS.MOON_UPGRADE_COST_RATIO):rarityCost;
@@ -877,7 +889,7 @@ export function getUfoMoonDescription(id,level=1) {
 
 export const PRESTIGE_UPGRADES={
  whiteDamage:{id:'whiteDamage',name:'Белый урон',icon:'🤍',description:'Множитель белого урона: x0.05 за уровень',baseCost:1,maxLevel:Infinity},
- cloneCopies:{id:'cloneCopies',name:'Дополнительные отражения',icon:'🪞',description:'Позволяет клону создать еще одну копию',baseCost:50,maxLevel:2},
+ cloneCopies:{id:'cloneCopies',name:'Дополнительные отражения',icon:'🪞',description:'+5 доступных уровней Клона за покупку. Третье отражение открывается на 15-м уровне Клона, четвёртое — на 20-м.',baseCost:50,maxLevel:2,levelsPerPurchase:5},
  reactor:{id:'reactor',name:'Вечный реактор',icon:'⚔️',description:'+25% урона за уровень',baseCost:1,maxLevel:Infinity,damage:0.25},
  treasury:{id:'treasury',name:'Звёздная казна',icon:'💎',description:'+25% добычи кристаллов за уровень',baseCost:1,maxLevel:Infinity,shards:0.25},
  fleet:{id:'fleet',name:'Бессмертная армада',icon:'🛸',description:'+15% урона тарелок за уровень',baseCost:2,maxLevel:Infinity,ufoDamage:0.15},
@@ -944,12 +956,16 @@ export function getQuestPayout(def,state){
 /** Pure live view of the same passive and temporary combat modifiers used by the server. */
 
 /** At most two distinct active originals; reflections never reflect reflections. */
+export function getCloneCopyLimit(state){
+ const level=state.moonLevels?.clone||1,up=state.prestige?.upgrades?.cloneCopies||0;
+ const unlocked=Math.floor((level-CONSTANTS.LIMITS.MAX_MOON_LEVEL)/PRESTIGE_UPGRADES.cloneCopies.levelsPerPurchase);
+ return getMoonMechanicParams('clone',level).copies+Math.max(0,Math.min(up,unlocked,PRESTIGE_UPGRADES.cloneCopies.maxLevel));
+}
+
 export function getCloneTargets(state){
  const active=(state.activeMoons||[]).slice(0,state.maxSlots||1);
  if(!active.includes('clone'))return [];
- const level=state.moonLevels?.clone||1,up=state.prestige?.upgrades?.cloneCopies||0;
- const count=getMoonMechanicParams('clone',level).copies+(level>=15&&up>=1?1:0)+(level>=20&&up>=2?1:0);
- return (state.cloneTargets||[]).filter(id=>id!=='clone'&&active.includes(id)&&Object.hasOwn(MOON_TYPES,id)).slice(0,count);
+ return (state.cloneTargets||[]).filter(id=>id!=='clone'&&active.includes(id)&&Object.hasOwn(MOON_TYPES,id)).slice(0,getCloneCopyLimit(state));
 }
 
 /** Reflected synergies require real bindings; no virtual clone can clone another. */

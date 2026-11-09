@@ -61,6 +61,30 @@ test('every original shares effective mechanics, passives and UFO strength with 
   assert.ok(run("getUfoBonuses(s).haste")<1);
  }
 });
+test('each prestige purchase unlocks five Clone levels without granting them directly',()=>{
+ const run=setup();
+ run("var s=freshState();s.maxSlots=2;s.activeMoons=['normal','clone'];s.ownedMoons=[...s.activeMoons];s.moonLevels.clone=10;s.prestige.coins=200;s.playerData.shards=1e12;");
+ assert.throws(()=>run("applyAction(s,'upgradeMoon',{id:'clone'},100000)"),/недоступно/);
+ run("s=applyAction(s,'buyPrestige',{id:'cloneCopies'},100000);");
+ assert.equal(run('s.moonLevels.clone'),10);
+ assert.equal(run("getMoonLevelLimit('clone',s.prestige.upgrades.cloneCopies)"),15);
+ assert.equal(run('getCloneCopyLimit(s)'),2);
+ run("s=applyAction(s,'upgradeMoon',{id:'clone',max:true},100001);");
+ assert.equal(run('s.moonLevels.clone'),15);
+ assert.equal(run('getCloneCopyLimit(s)'),3);
+ run("s=applyAction(s,'buyPrestige',{id:'cloneCopies'},100002);s=applyAction(s,'upgradeMoon',{id:'clone',max:true},100003);");
+ assert.equal(run('s.moonLevels.clone'),20);
+ assert.equal(run('getCloneCopyLimit(s)'),4);
+ assert.equal(run("getMoonLevelLimit('normal',s.prestige.upgrades.cloneCopies)"),10);
+ assert.throws(()=>run("applyAction(s,'upgradeMoon',{id:'clone'},100004)"),/недоступно/);
+ run("s.runMaxLevel=20;s=applyAction(s,'ascend',{},100005)");
+ assert.equal(run('s.moonLevels.clone'),undefined);
+ assert.equal(run("getMoonLevelLimit('clone',s.prestige.upgrades.cloneCopies)"),20);
+});
+test('prestige can unlock Clone levels before the Clone is bought',()=>{
+ const run=setup();
+ assert.equal(run("var s=freshState();s.prestige.coins=200;applyAction(s,'buyPrestige',{id:'cloneCopies',max:true},100000).prestige.upgrades.cloneCopies"),2);
+});
 test('four active originals unlock a constellation and UI separates moons from ordinary shop',()=>{
  const run=setup();assert.equal(run("Object.keys(SYNERGY_BONUSES).filter(k=>k.split('+').length===4).length"),35);
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),shop=html.slice(html.indexOf('id="shopTabContent"'),html.indexOf('id="moonsTabContent"'));
