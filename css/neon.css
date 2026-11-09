@@ -443,12 +443,6 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #moonEquipFloatingInventory button:focus-visible,#moonEquipmentMount button:focus-visible{outline:2px solid #bce8ff;outline-offset:2px}
 #moonEquipFloatingInventory{overscroll-behavior:contain}
 .low-power #moonEquipFloatingInventory{box-shadow:0 10px 24px #0008}
-@media(min-width:1100px) and (max-width:1499px){
- body:has(#shopPanel:not(.hidden)) #moonEquipFloatingInventory{width:min(560px,calc(100vw - 2 * min(32vw,530px) - 28px))!important}
-}
-@media(min-width:1500px){
- body:has(#shopPanel:not(.hidden)) #moonEquipFloatingInventory{width:min(570px,calc(100vw - 2 * min(30vw,600px) - 28px))!important}
-}
 @media(max-width:760px){#moonEquipFloatingInventory{left:5vw;top:10vh;width:90vw;max-height:80dvh;padding:14px}#moonEquipFloatingInventory .moon-equip-floating-item{min-height:53px}}
 
 /* Expanded desktop side panels; reserve a visible central gameplay lane. */
@@ -527,16 +521,26 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
  #moonEquipFloatingInventory{left:calc(min(47vw,490px) + 12px);width:calc(100vw - min(47vw,490px) - 28px)}
 }
 
-/* Fine-tune expanded panel boundaries to preserve game controls and moon. */
-@media(min-width:1100px) and (max-width:1499px){
- #profilePanel,#shopPanel{width:min(32vw,530px)!important}
- #profileToggleBtn.panel-open{left:min(32vw,530px)!important}
- #shopToggleBtn.panel-open{right:min(32vw,530px)!important}
- #moonEquipFloatingInventory{left:calc(min(32vw,530px) + 14px)!important;width:min(560px,calc(100vw - min(32vw,530px) - 32px))!important}
-}
-@media(min-width:1500px){
- #profilePanel,#shopPanel{width:min(30vw,600px)!important}
- #profileToggleBtn.panel-open{left:min(30vw,600px)!important}
- #shopToggleBtn.panel-open{right:min(30vw,600px)!important}
- #moonEquipFloatingInventory{left:calc(min(30vw,600px) + 14px)!important;width:min(560px,calc(100vw - min(30vw,600px) - 32px))!important}
+/* Keep a centered gameplay lane when either desktop panel is open. */
+@media(min-width:900px){
+ body{
+  --orbit-panel-width:min(34vw,640px,calc((100vw - 360px) / 2));
+  --orbit-center-width:calc(100vw - 2 * var(--orbit-panel-width));
+ }
+ #profilePanel,#shopPanel{width:var(--orbit-panel-width);max-width:none}
+ #profileToggleBtn.panel-open{left:var(--orbit-panel-width)}
+ #shopToggleBtn.panel-open{right:var(--orbit-panel-width)}
+ #profileToggleBtn.panel-open,#shopToggleBtn.panel-open{top:78px;transform:none}
+ #profilePanel .panel-edge-close,#shopPanel .panel-edge-close{display:none}
+ body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .moon-wrapper{
+  --orbit-moon-size:min(clamp(280px,38svh,420px),calc(var(--orbit-center-width) - 64px));
+  width:var(--orbit-moon-size)!important;height:var(--orbit-moon-size)!important;
+ }
+ body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .moon-info-below{max-width:min(520px,calc(var(--orbit-center-width) - 24px))}
+ body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .buffs-container{max-width:min(700px,calc(var(--orbit-center-width) - 24px))}
+ #moonEquipFloatingInventory{
+  left:calc(var(--orbit-panel-width) + 14px);
+  width:min(560px,calc(100vw - var(--orbit-panel-width) - 28px));
+ }
+ body:has(#shopPanel:not(.hidden)) #moonEquipFloatingInventory{width:min(560px,calc(var(--orbit-center-width) - 28px))}
 }
