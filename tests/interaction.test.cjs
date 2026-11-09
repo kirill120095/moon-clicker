@@ -13,6 +13,52 @@ function setup(){
  vm.createContext(context);vm.runInContext(source,context);
  return{context,engine,state,calls,result,ticks,get hpUpdates(){return hpUpdates;},get buffUpdates(){return buffUpdates;},advance(ms){now+=ms;perf+=ms;}};
 }
+test('inventory skips closed panels and rebuilds only when displayed data changes',async()=>{
+ const s=setup();
+ let hidden=true,selected=false,rebuilds=0,removed=0;
+ const classList={contains:token=>token==='hidden'?hidden:selected};
+ const picker={remove(){removed++;}};
+ const elements={profilePanel:{classList},inventoryTabContent:{classList},moonEquipFloatingInventory:picker};
+ s.context.document.getElementById=id=>elements[id]||null;
+ s.context.renderItemInventory=()=>{rebuilds++;};
+ s.context.renderMoonEquipment=()=>{rebuilds++;};
+ await s.engine.init();
+ assert.equal(rebuilds,0);
+ hidden=false;
+ s.engine.refreshInventory();
+ assert.equal(rebuilds,0);
+ selected=true;
+ s.engine.refreshInventory();
+ assert.equal(rebuilds,2);
+ s.state.inventory={capacity:20,items:[]};
+ s.engine.refreshInventory();
+ for(let i=0;i<18;i++){
+  s.state.inventory=structuredClone(s.state.inventory);
+  s.state.lunarLuck={progress:i,dust:0};
+  s.engine.refreshInventory();
+ }
+ assert.equal(rebuilds,6);
+ s.state.lunarLuck.dust++;
+ s.engine.refreshInventory();
+ assert.equal(rebuilds,8);
+ vm.runInContext("chosenEquipSlot={moonId:'normal',slotIndex:0}",s.context);
+ s.engine.closeEquipmentPicker();
+ assert.equal(removed,1);
+ assert.equal(vm.runInContext('chosenEquipSlot',s.context),null);
+});
+test('auto-click reads moon geometry only when a hit can enter the queue',async()=>{
+ const s=setup();
+ let reads=0;
+ s.context.document.getElementById=id=>id==='moonWrapper'?{getBoundingClientRect(){reads++;return {left:10,top:10,width:20,height:20};},addEventListener(){}}:null;
+ await s.engine.init();
+ s.engine.activateAutoClick();
+ const step=s.ticks.find(t=>t.fn.name==='autoClickStep').fn;
+ step();
+ for(let i=0;i<4;i++){s.advance(19);step();}
+ assert.equal(reads,1);
+ s.advance(19);step();
+ assert.equal(reads,2);
+});
 test('combo uses server last-click time corrected for clock skew and ticks while idle',async()=>{
  const s=setup();await s.engine.init();assert.equal(s.engine._lastActivityTime,899000);assert.equal(s.engine._getActiveBuffs()[0].timeLeft,9);
  s.advance(3000);const tick=s.ticks.find(t=>t.ms===250).fn;tick();assert.equal(s.engine._getActiveBuffs()[0].timeLeft,6);assert.ok(s.buffUpdates>=2);

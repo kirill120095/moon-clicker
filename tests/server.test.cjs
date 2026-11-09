@@ -11,7 +11,12 @@ test('unowned moons cannot be activated',()=>{assert.throws(()=>setup()("applyAc
 test('state input is not modified by failed actions',()=>{const run=setup();assert.equal(run("var s=freshState();try{applyAction(s,'buyDamage',{},100000)}catch{};s.playerData.shards"),0);});
 test('HP and level cap stay within safe integer range',()=>{const run=setup();assert.equal(run('Number.isSafeInteger(getMaxHPForLevel(CONSTANTS.MAX_PLAYER_LEVEL))'),true);});
 
-test('browser and server balance definitions are identical',()=>{assert.equal(fs.readFileSync(path.join(root,'src/core/constants.js'),'utf8'),fs.readFileSync(path.join(root,'supabase/functions/game-actions/constants.js'),'utf8'));assert.equal(fs.readFileSync(path.join(root,'src/core/config.js'),'utf8'),fs.readFileSync(path.join(root,'supabase/functions/game-actions/config.js'),'utf8'));});
+test('browser and server share balance definitions, with independent presentation settings',()=>{
+ const read=p=>fs.readFileSync(path.join(root,p),'utf8').replace(/\r\n/g,'\n');
+ const balance=src=>src.replace(/SPIN_MS: \d+, /,'').replace(/^ *MAX_LEADERS: \d+,\n/m,'');
+ assert.equal(balance(read('src/core/constants.js')),balance(read('supabase/functions/game-actions/constants.js')));
+ assert.equal(read('src/core/config.js'),read('supabase/functions/game-actions/config.js'));
+});
 
 test('background sync cannot keep idle combo stacks alive',()=>{const run=setup();assert.equal(run("var s=applyAction(freshState(),'click',{count:12},100000);s=applyAction(s,'sync',{},110000);s=applyAction(s,'sync',{},116000);s.runtime._comboClicks"),0);});
 test('fire moon reaches the twenty stacks described in the shop',()=>{const run=setup();assert.equal(run("var s=freshState();s.activeMoons=['fire'];s.ownedMoons.push('fire');s.moonLevels.fire=1;for(let i=1;i<=100;i++)s=applyAction(s,'click',{count:1},100000+i*100);s.runtime._fireStacks"),100);});

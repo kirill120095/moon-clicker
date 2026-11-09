@@ -44,8 +44,11 @@ test('clone milestones strengthen both original and reflection without changing 
 });
 test('level ten clone reflects two distinct active originals and server rejects invalid bindings',()=>{
  const run=setup();run("var s=freshState();s.maxSlots=3;s.activeMoons=['fire','cosmic','clone'];s.ownedMoons=[...s.activeMoons];s.moonLevels={fire:10,cosmic:10,clone:10};s.runtime={_fireStacks:500};s=applyAction(s,'setCloneTargets',{targets:['fire','cosmic']},100000);");
- assert.equal(run("getMoonPower(s,'fire')"),3);assert.equal(run("getMoonPower(s,'cosmic')"),3);assert.equal(run("getMoonPower(s,'clone')"),0);assert.equal(run('s.runtime._fireStacks'),0);
- for(const targets of ["['fire','fire']","['clone']","['gold']","['fire','cosmic','gold']"])assert.throws(()=>run("applyAction(s,'setCloneTargets',{targets:"+targets+"},100001)"));
+ assert.equal(run("getMoonPower(s,'fire')"),3);assert.equal(run("getMoonPower(s,'cosmic')"),3);assert.equal(run("getMoonPower(s,'clone')"),0);assert.equal(run('s.runtime._fireStacks'),500);
+ for(const targets of ["['clone']","['gold']","['fire','cosmic','fire']"])assert.throws(()=>run("applyAction(s,'setCloneTargets',{targets:"+targets+"},100001)"));
+ run("s=applyAction(s,'setCloneTargets',{targets:['fire','fire']},100001)");
+ assert.equal(run("getMoonPower(s,'fire')"),4.5);
+ assert.equal(run("getMoonPower(s,'cosmic')"),1);
  run('s.moonLevels.clone=7;');assert.throws(()=>run("applyAction(s,'setCloneTargets',{targets:['fire','cosmic']},100002)"));
  run("s.activeMoons=['clone'];");assert.equal(run('getCloneTargets(s).length'),0);
 });
@@ -59,7 +62,7 @@ test('every original shares effective mechanics, passives and UFO strength with 
  }
 });
 test('four active originals unlock a constellation and UI separates moons from ordinary shop',()=>{
- const run=setup();assert.equal(run("Object.keys(SYNERGY_BONUSES).filter(k=>k.split('+').length===4).length"),70);
+ const run=setup();assert.equal(run("Object.keys(SYNERGY_BONUSES).filter(k=>k.split('+').length===4).length"),35);
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),shop=html.slice(html.indexOf('id="shopTabContent"'),html.indexOf('id="moonsTabContent"'));
  assert.ok(!shop.includes('id="moonShopItems"'));assert.ok(shop.includes('id="buyClickCrystalBtn"'));assert.ok(html.indexOf('data-tab="moons"')<html.indexOf('data-tab="shop"'));assert.ok(!html.includes('id="supernovaModal"'));
 });

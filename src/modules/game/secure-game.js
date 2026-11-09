@@ -55,6 +55,7 @@ function queueDamageVisual(x,y,damage,isCrit,isBoss){
 }
 function clearDamageVisuals(){damageVisualQueue.length=0;if(damageVisualTimer!==null)clearInterval(damageVisualTimer);damageVisualTimer=null;}
 const AUTO_CLICK_BATCH_MS=300; // Server requests stay batched; the same click handler runs immediately for each hit.
+const MIN_CLICK_INTERVAL=1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1;
 function autoClickDuration(){return 15000+15000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
 function renderAutoClick(){
  const button=document.getElementById('autoClickBtn'),stopButton=document.getElementById('autoClickStopBtn'),label=document.getElementById('autoClickLabel'),timer=document.getElementById('autoClickTimer');
@@ -67,6 +68,7 @@ function renderAutoClick(){
 function stopAutoClick(flushPending=true){autoClickUntil=0;if(autoClickTicker!==null){clearInterval(autoClickTicker);autoClickTicker=null;}renderAutoClick();if(flushPending&&active&&pendingClicks&&!clickFlight)flush().catch(()=>{});}
 function autoClickStep(){
  if(!active||Date.now()>=autoClickUntil){stopAutoClick();return;}
+ if(purchasing||pendingClicks>=CONSTANTS.CLICK_BURST||performance.now()-lastClick<MIN_CLICK_INTERVAL)return;
  // Reuse the exact same click path as a held Space key; no synthetic DOM event or focus changes.
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  if(!rect)return;
@@ -96,7 +98,6 @@ function apply(result,hits=[],deferNotices=false){
   if(localStorage.getItem(key)!==s.resetId){localStorage.removeItem('moon_completed_'+state.user.id);localStorage.setItem(key,s.resetId);}
  }catch{}
  const previousQuests=state.quests||{},previousAchievements=state.achievements||{};
- const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  offset=result.serverNow-Date.now();deadline=s.bossDeadline;gameEngine.combat._totalDuration=s.bossDuration||CONSTANTS.BOSS_TIMER;
  appState.setMany({runtime:{...(s.runtime||{})},lastClickAt:s.lastClickAt,lastAutoClickAt:s.lastAutoClickAt||0,lastComboAt:s.lastComboAt,serverClockOffset:offset,prestige:s.prestige,prestigeSummary:s.prestigeSummary,inventory:s.inventory,equipment:s.equipment,lunarLuck:s.lunarLuck,wheelEconomy:s.wheelEconomy||{},runMaxLevel:s.runMaxLevel,moonSerial:s.moonSerial,ufoCount:s.ufoCount||0,ufoComboRelay:!!s.ufoComboRelay,gameCompleted:s.gameCompleted,maxLevel:s.maxLevel,ufoLevel:s.ufoLevel||0,ufoDamage:s.ufoDamage,ufoInterval:s.ufoInterval,ufoNextShotAt:s.ufoNextShotAt,finalDamage:s.finalDamage,finalCritChance:s.finalCritChance,moonReward:s.moonReward,ufoMoonReward:s.ufoMoonReward,currentLevel:s.currentLevel,moonHP:s.moonHP,maxHP:s.maxHP,
  clickCount:s.clickCount,runClickCount:s.runClickCount??s.clickCount,totalSecondsPlayed:s.totalSecondsPlayed,playerData:{...s.playerData,level:s.currentLevel,total_clicks:s.clickCount,total_seconds_played:s.totalSecondsPlayed},
@@ -110,7 +111,9 @@ function apply(result,hits=[],deferNotices=false){
  gameEngine.recalcMoonBonuses(false);refreshBuffs();updateUI();updateShopUI();updateQuestAndAchievementUI();renderAutoClick();
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
  updateLiveCombatProfile();
- renderFleet(s.ufoCount||(s.ufoLevel?1:0));renderItemInventory();renderMoonEquipment();
+ renderFleet(s.ufoCount||(s.ufoLevel?1:0));
+ gameEngine.refreshInventory();
+ updateLunarLuckWidget();
  const announce=message=>{if(deferNotices)pendingWheelNotices=[...pendingWheelNotices,message].slice(-32);else showToast(message,'success',3500);};
  if(ready){
   for(const [id,q]of Object.entries(s.quests||{}))if(q.completed&&!previousQuests[id]?.completed)announce('🎯 Квест выполнен: '+(QUESTS[id]?.name||id));
@@ -118,10 +121,12 @@ function apply(result,hits=[],deferNotices=false){
  }
  ready=true;
 
+ if(document.hidden||!s.effects?.length)return;
+ const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
+ if(!rect)return;
  let index=0,visibleDamage=0;
  const autoBatch=hits.some(hit=>hit.automatic);
  for(const event of s.effects||[]){
-  if(!rect)continue;
   const position=event.source==='manual'?hits[index++]:null;
   // Avoid hundreds of animated DOM nodes per batch, but always retain critical hits.
   if(event.source==='manual'&&autoBatch){
@@ -200,16 +205,18 @@ gameEngine.init=()=>{
  })();
  const tracked=pending.finally(()=>{if(initializing===tracked)initializing=null;});initializing=tracked;return tracked;
 };
-gameEngine.destroy=()=>{db.leaderboardPresence?.stop();stopAutoClick(false);clearDamageVisuals();initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;oldDestroy();};
+gameEngine.destroy=()=>{db.leaderboardPresence?.stop();stopAutoClick(false);clearDamageVisuals();initGeneration++;initializing=null;gameAdmin.disconnect();fortuneWheel.disconnect();radio.disconnect();active=false;ready=false;pendingWheelNotices=[];lastRevision=0;pendingClicks=0;previewHits=[];gameEngine._previewDamage=0;clearTimeout(flushTimer);clearInterval(ticker);clearInterval(ping);flushTimer=null;ticker=null;ping=null;resetInventory();oldDestroy();};
 gameEngine.handleClick=(e,automatic=false)=>{
- if(!active||purchasing||performance.now()-lastClick<1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1)return;lastClick=performance.now();
+ const now=performance.now();
+ if(!active||purchasing||now-lastClick<MIN_CLICK_INTERVAL)return;lastClick=now;
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
- pendingClicks++;previewHits.push({damage:previewDamage(),x:e.clientX,y:e.clientY,automatic});
+ const damage=previewDamage();
+ pendingClicks++;previewHits.push({damage,x:e.clientX,y:e.clientY,automatic});
  // Keep the HP bar in lockstep with each accepted hit, just like holding Space.
  // This only updates the local visual preview; the server still owns actual damage.
  refreshPreview();
  if(!automatic||!document.hidden)audio.click();
- animations.playClickVisualFeedback(e,state.finalDamage||previewDamage(),false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,automatic);
+ animations.playClickVisualFeedback(e,state.finalDamage||damage,false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,automatic);
  if(automatic){if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),AUTO_CLICK_BATCH_MS);}
  else if(!clickFlight)flush().catch(()=>{});
 };
@@ -255,12 +262,37 @@ gameEngine.claimAllAchievements=()=>collectAll('claimAllAchievements','claimAllA
 gameEngine.claimQuestReward=id=>command('claimQuest',{id},true).catch(()=>{});
 gameEngine.claimAchievementReward=(id,tier)=>command('claimAchievement',{id,tier},true).catch(()=>{});
 gameEngine.resetProgress=()=>command('reset');
-// Lunar Luck is earned through moon defeats, independently of casino bets.
-window.claimLunarLuck=()=>command('claimLunarLuck');
 
 const ITEM_NAMES={moonstone:'Лунный камень',orbit:'Кольцо орбиты',comet:'Осколок кометы',starlight:'Звёздный амулет'};
 let selectedInventoryItemId=null;
 let chosenEquipSlot=null;
+let inventoryKey=null;
+
+gameEngine.refreshInventory=()=>{
+ const tab=document.getElementById('inventoryTabContent');
+ if(!active||!tab?.classList.contains('active')||document.getElementById('profilePanel')?.classList.contains('hidden'))return;
+ const key=JSON.stringify([state.inventory,state.equipment,state.ownedMoons,state.lunarLuck?.dust]);
+ if(key===inventoryKey)return;
+ inventoryKey=key;
+ renderItemInventory();
+ renderMoonEquipment();
+};
+
+gameEngine.closeEquipmentPicker=()=>{
+ if(!chosenEquipSlot)return;
+ chosenEquipSlot=null;
+ document.getElementById('moonEquipFloatingInventory')?.remove();
+ inventoryKey=null;
+};
+
+function resetInventory(){
+ gameEngine.closeEquipmentPicker();
+ selectedInventoryItemId=null;
+ inventoryKey=null;
+ for(const id of ['inventoryMount','moonEquipmentMount'])document.getElementById(id)?.replaceChildren();
+ document.getElementById('lunarLuckWidget')?.remove();
+}
+
 function renderMoonEquipment(){
  const host=document.getElementById('moonEquipmentMount');if(!host)return;
  host.replaceChildren();
@@ -268,19 +300,19 @@ function renderMoonEquipment(){
  const note=document.createElement('p');note.textContent='Выбери открытый слот, затем перетащи предмет из инвентаря справа или нажми на него. Улучшения сохраняются навсегда.';host.append(note);
  const moons=document.createElement('div');moons.className='moon-equip-moons';host.append(moons);
  const equipped=new Set(Object.values(state.equipment||{}).flat().map(x=>x.itemId).filter(x=>x!=null));
- const items=state.inventory?.items||[];
- const validSelection=chosenEquipSlot&&state.equipment?.[chosenEquipSlot.moonId]?.[chosenEquipSlot.slotIndex]?.level;
+ const items=state.inventory?.items||[],itemsById=new Map(items.map(item=>[item.id,item]));
+ const ownedMoons=state.ownedMoons||[];
+ const validSelection=chosenEquipSlot&&ownedMoons.includes(chosenEquipSlot.moonId)&&state.equipment?.[chosenEquipSlot.moonId]?.[chosenEquipSlot.slotIndex]?.level;
  if(chosenEquipSlot&&!validSelection)chosenEquipSlot=null;
- for(const [moonId,moon] of Object.entries(MOON_TYPES)){
+ for(const [moonOrder,[moonId,moon]] of Object.entries(MOON_TYPES).entries()){
   if(moonId==='clone')continue;
-  const owned=(state.ownedMoons||[]).includes(moonId);
+  const owned=ownedMoons.includes(moonId);
   const block=document.createElement('section');block.className='moon-equip-moon';moons.append(block);
   const label=document.createElement('h4');label.textContent=(moon.emoji||'🌙')+' '+moon.name+(owned?'':' 🔒');block.append(label);
   const row=document.createElement('div');row.className='moon-equip-slots';block.append(row);
-  const moonOrder=Object.keys(MOON_TYPES).indexOf(moonId);
   for(let i=0;i<3;i++){
    const slot=state.equipment?.[moonId]?.[i]||{level:0,itemId:null};
-   const item=items.find(x=>x.id===slot.itemId);
+   const item=itemsById.get(slot.itemId);
    const cell=document.createElement('div');cell.className='moon-equip-slot';row.append(cell);
    const selected=chosenEquipSlot?.moonId===moonId&&chosenEquipSlot?.slotIndex===i;
    cell.classList.toggle('is-selected',selected);
@@ -290,10 +322,13 @@ function renderMoonEquipment(){
    if(!slot.level){const cost=Math.ceil([5,15,35][i]*Math.pow(1.5,moonOrder));btn('Открыть · '+cost+' ✧','unlockEquipSlot',{},(state.lunarLuck?.dust||0)<cost);}
    else{
     if(owned){
-     cell.classList.add('can-select');
-     cell.tabIndex=0;cell.setAttribute('role','button');cell.setAttribute('aria-label','Выбрать слот '+(i+1)+' луны '+moon.name);
-     cell.onclick=()=>{chosenEquipSlot={moonId,slotIndex:i};renderMoonEquipment();};
-     cell.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cell.click();}};
+     if(!item){
+      const choose=document.createElement('button');
+      choose.type='button';choose.className='moon-equip-choose';choose.textContent=selected?'Инвентарь открыт':'Выбрать предмет';
+      choose.setAttribute('aria-expanded',String(selected));choose.setAttribute('aria-label','Выбрать предмет для слота '+(i+1)+' луны '+moon.name);
+      choose.onclick=()=>{chosenEquipSlot={moonId,slotIndex:i};renderMoonEquipment();document.getElementById('moonEquipFloatingInventory')?.querySelector('button')?.focus();};
+      cell.append(choose);
+     }
      cell.ondragover=e=>{if(!item){e.preventDefault();cell.classList.add('drag-over');}};
      cell.ondragleave=()=>cell.classList.remove('drag-over');
      cell.ondrop=e=>{e.preventDefault();cell.classList.remove('drag-over');if(item)return;const id=Number(e.dataTransfer.getData('text/plain'));if(id)command('equipItem',{moonId,slotIndex:i,id}).catch(()=>{});};
@@ -306,11 +341,18 @@ function renderMoonEquipment(){
  }
  let panel=document.getElementById('moonEquipFloatingInventory');
  if(!chosenEquipSlot){panel?.remove();return;}
- if(!panel){panel=document.createElement('aside');panel.id='moonEquipFloatingInventory';panel.className='moon-equip-floating';document.body.append(panel);}
+ if(!panel){panel=document.createElement('aside');panel.id='moonEquipFloatingInventory';panel.className='moon-equip-floating';panel.setAttribute('aria-label','Лунный инвентарь');document.body.append(panel);}
  panel.replaceChildren();
  const titleBar=document.createElement('div');titleBar.className='moon-equip-floating-title';panel.append(titleBar);
  const title=document.createElement('h3');title.textContent='🌙 Лунный инвентарь';titleBar.append(title);
- const close=document.createElement('button');close.type='button';close.textContent='✕';close.title='Закрыть инвентарь';close.onclick=()=>{chosenEquipSlot=null;renderMoonEquipment();};titleBar.append(close);
+ const close=document.createElement('button');close.type='button';close.textContent='✕';close.setAttribute('aria-label','Закрыть инвентарь');
+ close.onclick=()=>{
+  const index=Array.from(host.querySelectorAll('.moon-equip-choose')).findIndex(button=>button.getAttribute('aria-expanded')==='true');
+  gameEngine.closeEquipmentPicker();gameEngine.refreshInventory();
+  host.querySelectorAll('.moon-equip-choose')[index]?.focus();
+ };
+ panel.onkeydown=event=>{if(event.key==='Escape'){event.preventDefault();close.click();}};
+ titleBar.append(close);
  const target=state.equipment?.[chosenEquipSlot.moonId]?.[chosenEquipSlot.slotIndex];
  const moon=MOON_TYPES[chosenEquipSlot.moonId];
  const help=document.createElement('p');help.textContent='Выбран: '+(moon?.name||'Луна')+' · слот '+(chosenEquipSlot.slotIndex+1)+' · редкость до '+target.level+'. Перетащи предмет на слот слева или нажми на предмет.';panel.append(help);
@@ -339,7 +381,6 @@ function renderItemInventory(){
  if(!items.some(i=>i.id===selectedInventoryItemId))selectedInventoryItemId=null;
  host.replaceChildren();
  const title=document.createElement('h3');title.textContent='🌙 Лунный инвентарь';host.append(title);
- renderMoonEquipment();
  const status=document.createElement('p');status.className='moon-inventory-status';status.textContent=items.length+' / '+inv.capacity+' слотов занято · Сохранение: '+kept+' / '+inv.keepLimit;host.append(status);
  const selected=items.find(i=>i.id===selectedInventoryItemId);
  const info=document.createElement('section');info.className='moon-inventory-info';host.append(info);
@@ -397,15 +438,29 @@ function openInventorySalvage(item){
 }
 
 function updateLunarLuckWidget(){
- const host=document.querySelector('#shopPanel .panel-content');if(!host)return;
+ if(!active)return;
+ const shop=document.getElementById('shopPanel');
+ if(!shop||shop.classList.contains('hidden'))return;
+ const host=shop.querySelector('.panel-content');if(!host)return;
  let el=document.getElementById('lunarLuckWidget');
- if(!el){el=document.createElement('section');el.id='lunarLuckWidget';el.style.cssText='padding:14px;margin:12px 0;border:1px solid #7565a8;border-radius:12px;background:#17182b;color:#f4ecff';host.prepend(el);}
+ if(!el){
+  el=document.createElement('section');el.id='lunarLuckWidget';
+  el.innerHTML='<header><h3>🌙 Лунная удача</h3><strong data-luck-progress></strong></header><div class="moon-luck-meter" role="progressbar" aria-label="Лунная удача"><span></span></div><p>Побеждай луны, чтобы накопить удачу и получить пыль для экипировки.</p><div class="moon-luck-resources"><div class="moon-luck-resource"><span>✧ Лунная пыль</span><strong data-luck-dust></strong></div></div><button type="button" class="moon-luck-claim" id="claimLunarLuckButton">✦ Забрать награду</button>';
+  el.querySelector('button').onclick=()=>command('claimLunarLuck').catch(()=>{});
+  host.prepend(el);
+ }
  const luck=state.lunarLuck||{},progress=Math.max(0,Math.min(100,luck.progress||0));
- el.innerHTML='<strong>🌙 Лунная удача — '+progress.toFixed(2)+'%</strong><div style="height:10px;border-radius:9px;background:#34334b;margin:10px 0;overflow:hidden"><div style="width:'+progress+'%;height:100%;background:#aa8cf4"></div></div><small>Лунная удача накапливается за победы над лунами. Заполни шкалу, чтобы получить Лунную пыль — ресурс для улучшения слотов экипировки.</small><div class="moon-luck-resources"><div class="moon-luck-resource"><span>✧ Лунная пыль</span><strong>'+(luck.dust||0)+'</strong></div></div><button type="button" class="moon-luck-claim" id="claimLunarLuckButton" '+(progress<100?'disabled':'')+'>✦ Забрать награду</button>';
- el.querySelector('button').onclick=()=>window.claimLunarLuck?.();
+ const meter=el.querySelector('.moon-luck-meter'),value=String(progress);
+ if(meter.getAttribute('aria-valuenow')!==value){
+  meter.setAttribute('aria-valuenow',value);
+  meter.firstElementChild.style.transform='scaleX('+progress/100+')';
+  el.querySelector('[data-luck-progress]').textContent=progress.toFixed(2)+'%';
+  el.querySelector('button').disabled=progress<100;
+ }
+ const dust=el.querySelector('[data-luck-dust]'),dustValue=String(luck.dust||0);
+ if(dust.textContent!==dustValue)dust.textContent=dustValue;
 }
-state.subscribe?.('lunarLuck',updateLunarLuckWidget);
-setInterval(updateLunarLuckWidget,2000);
+gameEngine.refreshLunarLuck=updateLunarLuckWidget;
 
 gameEngine.toggleTestMode=()=>showToast('Тестовый режим отключён в защищённом сезоне','info');
 

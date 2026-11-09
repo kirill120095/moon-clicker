@@ -431,6 +431,24 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #moonEquipmentMount .moon-equip-moons{width:100%}
 #moonEquipmentMount .moon-equip-moon{max-width:none}
 #lunarLuckWidget .moon-luck-resources{grid-template-columns:1fr}
+#lunarLuckWidget{margin:0 0 14px;padding:14px;border:1px solid #7865ad;border-radius:15px;background:radial-gradient(ellipse at top right,#3c3060,#171b33 72%);color:#eee8ff}
+#lunarLuckWidget header{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+#lunarLuckWidget h3{margin:0;font-size:15px}
+#lunarLuckWidget [data-luck-progress]{color:#d7bdff;font-variant-numeric:tabular-nums}
+#lunarLuckWidget>p{margin:8px 0;color:#d4cbe7;font-size:12px;line-height:1.45}
+.moon-luck-meter{height:7px;margin:10px 0 0;overflow:hidden;border-radius:10px;background:#101329}
+.moon-luck-meter>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#9f7bfa,#76e3ed);transform:scaleX(0);transform-origin:left;transition:transform .18s ease-out}
+.low-power .moon-luck-meter>span{transition:none}
+#moonEquipmentMount .moon-equip-choose[aria-expanded=true]{border-color:#d8b7ff;background:#49366c;color:#fff}
+#moonEquipFloatingInventory button:focus-visible,#moonEquipmentMount button:focus-visible{outline:2px solid #bce8ff;outline-offset:2px}
+#moonEquipFloatingInventory{overscroll-behavior:contain}
+.low-power #moonEquipFloatingInventory{box-shadow:0 10px 24px #0008}
+@media(min-width:1100px) and (max-width:1499px){
+ body:has(#shopPanel:not(.hidden)) #moonEquipFloatingInventory{width:min(560px,calc(100vw - 2 * min(32vw,530px) - 28px))!important}
+}
+@media(min-width:1500px){
+ body:has(#shopPanel:not(.hidden)) #moonEquipFloatingInventory{width:min(570px,calc(100vw - 2 * min(30vw,600px) - 28px))!important}
+}
 @media(max-width:760px){#moonEquipFloatingInventory{left:5vw;top:10vh;width:90vw;max-height:80dvh;padding:14px}#moonEquipFloatingInventory .moon-equip-floating-item{min-height:53px}}
 
 /* Expanded desktop side panels; reserve a visible central gameplay lane. */

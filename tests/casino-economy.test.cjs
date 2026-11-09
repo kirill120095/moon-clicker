@@ -1,15 +1,20 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'');
 function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return s=>vm.runInContext(s,c);}
-test('house expected payout never exceeds 79 percent and bankruptcy stays exactly 3 percent',()=>{
- const run=setup();let last=Infinity;
- for(let pressure=0;pressure<=50;pressure++){const result=JSON.parse(run("JSON.stringify((()=>{const s={wheelEconomy:{pressure:"+pressure+"}},w=getWheelWeights(s);return {total:w.reduce((a,b)=>a+b),bank:w[10],rtp:w.reduce((sum,p,i)=>sum+p*(typeof CONSTANTS.WHEEL.SECTORS[i]==='number'?CONSTANTS.WHEEL.SECTORS[i]:0),0)/10000};})())"));assert.equal(result.total,10000);assert.equal(result.bank,300);assert.ok(result.rtp<=.79+1e-12);assert.ok(result.rtp<=last);last=result.rtp;}
+test('each choice pays 36/37 of the stake on average regardless of past wins',()=>{
+ const run=setup();
+ for(const pressure of [0,25,50])for(const [choice,multiplier] of [['red',2],['black',2],['zero',36]]){
+  const weights=JSON.parse(run('JSON.stringify(getWheelWeights({wheelEconomy:{pressure:'+pressure+'}}))'));
+  const sectors=JSON.parse(run('JSON.stringify(CONSTANTS.WHEEL.SECTORS)'));
+  const winners=weights.reduce((sum,weight,index)=>sum+(sectors[index]===choice?weight:0),0);
+  assert.equal(winners*multiplier/weights.reduce((sum,n)=>sum+n,0),36/37);
+ }
 });
-test('wins increase house pressure proportionally and losses reduce it without trusting payload',()=>{
- const run=setup();run("var s=freshState();s.playerData.shards=10000;s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true,pressure:0},100000,{canSpinWheel:true,wheelIndex:5})");
- assert.equal(run('s.wheelEconomy.pressure'),9);assert.equal(run('s.wheelEconomy.wagered'),100);assert.equal(run('s.wheelEconomy.payouts'),1000);assert.equal(run('s.wheelEconomy.houseNet'),-900);assert.equal(run('s.wheelEconomy.totalWon'),900);assert.equal(run('s.wheelEconomy.totalLost'),0);
- run("s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true,pressure:-100},106000,{canSpinWheel:true,wheelIndex:0})");assert.equal(run('s.wheelEconomy.pressure'),8);assert.equal(run('s.wheelEconomy.houseNet'),-800);assert.equal(run('s.wheelEconomy.totalWon'),900);assert.equal(run('s.wheelEconomy.totalLost'),100);
- run("s.currentLevel=20;s=applyAction(s,'ascend',{},112000)");assert.equal(run('s.wheelEconomy.pressure'),8);assert.equal(run('s.wheelEconomy.totalWon'),900);assert.equal(run('s.wheelEconomy.totalLost'),100);
+test('roulette totals use server payouts and survive ascension',()=>{
+ const run=setup();run("var s=freshState();s.playerData.shards=10000;s=applyAction(s,'spinWheel',{bet:100,choice:'red',payout:999999},100000,{canSpinWheel:true,wheelIndex:5})");
+ assert.equal(run('s.wheelEconomy.wagered'),100);assert.equal(run('s.wheelEconomy.payouts'),200);assert.equal(run('s.wheelEconomy.houseNet'),-100);assert.equal(run('s.wheelEconomy.totalWon'),100);assert.equal(run('s.wheelEconomy.totalLost'),0);
+ run("s=applyAction(s,'spinWheel',{bet:100,choice:'red'},106000,{canSpinWheel:true,wheelIndex:0})");assert.equal(run('s.wheelEconomy.houseNet'),0);assert.equal(run('s.wheelEconomy.totalWon'),100);assert.equal(run('s.wheelEconomy.totalLost'),100);
+ run("s.currentLevel=20;s=applyAction(s,'ascend',{},112000)");assert.equal(run('s.wheelEconomy.totalWon'),100);assert.equal(run('s.wheelEconomy.totalLost'),100);
 });
 test('visible balance holds only the roulette delta and keeps normal game income visible',()=>{
  const c={};vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/currency-display.js'),'utf8')),c);
@@ -29,7 +34,7 @@ test('return to record uses only this run, refreshes combat and never pays for t
  run("s=applyAction(s,'ascend',{},100300)");assert.equal(run('s.runMaxLevel'),1);assert.throws(()=>run("applyAction(s,'returnToRecord',{},100400)"));
 });
 
-test('bankruptcy records full balance lost, not only the stake',()=>{const run=setup();run("var s=freshState();s.playerData.shards=1500;s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},100000,{canSpinWheel:true,wheelIndex:10})");assert.equal(run('s.playerData.shards'),0);assert.equal(run('s.wheelEconomy.totalLost'),1500);assert.equal(run('s.wheelEconomy.totalWon'),0);});
+test('zero against a red bet takes only the stake',()=>{const run=setup();run("var s=freshState();s.playerData.shards=1500;s=applyAction(s,'spinWheel',{bet:75,choice:'red'},100000,{canSpinWheel:true,wheelIndex:0})");assert.equal(run('s.playerData.shards'),1425);assert.equal(run('s.wheelEconomy.totalLost'),75);assert.equal(run('s.wheelEconomy.totalWon'),0);});
 
 test('jump to unlocked level accepts earlier and cleared run levels, rejects locked or invalid targets',()=>{
  const run=setup();run("var s=freshState();s.currentLevel=25;s.runMaxLevel=25;s.maxLevel=1000;s=applyAction(s,'jumpToLevel',{level:5},100000)");
@@ -52,7 +57,7 @@ test('casino totals are synchronized into client state and rendered live in prof
 
 test('casino win/loss counters are frozen until the wheel animation reveals its result',()=>{
  const source=fs.readFileSync(path.join(__dirname,'../src/modules/ui/currency-display.js'),'utf8');
- const wheel=fs.readFileSync(path.join(__dirname,'../src/modules/ui/wheel.js'),'utf8');
+ const wheel=fs.readFileSync(path.join(__dirname,'../src/modules/ui/moon-wheel-v2.js'),'utf8');
  const renderer=fs.readFileSync(path.join(__dirname,'../src/modules/ui/renderer.js'),'utf8');
  assert.match(source,/casinoSnapshot=\{totalWon:/);
  assert.match(source,/getVisibleCasinoTotals\(totals\)/);

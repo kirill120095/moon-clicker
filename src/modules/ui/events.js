@@ -23,9 +23,7 @@ if (typeof window !== 'undefined') {
     const isOpen = !panel.classList.contains('hidden');
     
     if (isOpen) {
-      if(panelId==='shopPanel')fortuneWheel.close();
-      panel.classList.add('hidden');
-      updateToggleButton(panelId, false);
+      window.closePanel(panelId);
     } else {
       panel.classList.remove('hidden');
       updateToggleButton(panelId, true);
@@ -36,17 +34,19 @@ if (typeof window !== 'undefined') {
   function updateToggleButton(panelId, isOpen) {
     if (panelId === 'profilePanel') {
       const btn = document.getElementById('profileToggleBtn');
-      if (btn) btn.classList.toggle('panel-open', isOpen);
+      if (btn) {btn.classList.toggle('panel-open', isOpen);btn.setAttribute('aria-expanded', String(isOpen));}
     } else if (panelId === 'shopPanel') {
       const btn = document.getElementById('shopToggleBtn');
-      if (btn) btn.classList.toggle('panel-open', isOpen);
+      if (btn) {btn.classList.toggle('panel-open', isOpen);btn.setAttribute('aria-expanded', String(isOpen));}
     }
   }
 
   function refreshPanelOnOpen(panelId) {
     if (panelId === 'profilePanel') {
+      gameEngine.refreshInventory?.();
       if (window.updateProfileAndLeaders) window.updateProfileAndLeaders();
     } else if (panelId === 'shopPanel') {
+      gameEngine.refreshLunarLuck?.();
       if(document.querySelector('#shopPanel .panel-tab.active')?.dataset.tab==='fortune')fortuneWheel.open();
       if (window.updateShopUI) window.updateShopUI();
       if (window.updateQuestUI) window.updateQuestUI();
@@ -56,12 +56,15 @@ if (typeof window !== 'undefined') {
 
   window.closeAllPanels = () => {
     fortuneWheel.close();
+    gameEngine.closeEquipmentPicker?.();
     document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
-    document.querySelectorAll('.side-toggle-btn').forEach(btn => btn.classList.remove('panel-open'));
+    updateToggleButton('profilePanel', false);
+    updateToggleButton('shopPanel', false);
   };
 
   window.closePanel = (panelId) => {
     if(panelId==='shopPanel')fortuneWheel.close();
+    if(panelId==='profilePanel')gameEngine.closeEquipmentPicker?.();
     const panel = document.getElementById(panelId);
     if (panel) {
       panel.classList.add('hidden');
@@ -91,6 +94,9 @@ if (typeof window !== 'undefined') {
     
     const targetContent = document.getElementById(`${tabName}TabContent`);
     if (targetContent) targetContent.classList.add('active');
+
+    if(tabName==='inventory')gameEngine.refreshInventory?.();
+    else gameEngine.closeEquipmentPicker?.();
     
     if (tabName === 'leaders' || tabName === 'profile') {
       if (window.updateProfileAndLeaders) window.updateProfileAndLeaders();

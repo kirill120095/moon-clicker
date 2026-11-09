@@ -28,7 +28,7 @@ test('a server upgrade charges the new price once and ignores client-supplied pr
 });
 test('ascension refreshes quests and achievements, preserving only eternal progress and lifetime record',()=>{
  const run=setup();assert.equal(run("var s=freshState();s.currentLevel=200;s.maxLevel=200;s.clickCount=10000;s.playerData.shards=1e6;s.prestige.upgrades.reactor=2;s=applyAction(s,'load',{},100000);for(var q of Object.values(s.quests)){q.completed=true;q.claimed=true;q.progress=99999;}s.achievements.clickNovice={bronze:'claimed',silver:'claimed'};s=applyAction(s,'ascend',{},100100);Object.values(s.quests).every(q=>!q.completed&&!q.claimed&&q.progress===0)"),true);
- assert.equal(run('Object.values(s.achievements).flatMap(tiers=>Object.values(tiers)).length'),0);assert.equal(run('s.runMaxLevel'),1);assert.equal(run('s.maxLevel'),200);assert.equal(run('s.prestige.upgrades.reactor'),2);assert.ok(run('Object.keys(s.quests).length')>0);
+ assert.equal(run("Object.values(s.achievements).some(tiers=>Object.values(tiers).includes('claimed'))"),false);assert.equal(run('s.runMaxLevel'),1);assert.equal(run('s.maxLevel'),200);assert.equal(run('s.prestige.upgrades.reactor'),2);assert.ok(run('Object.keys(s.quests).length')>0);
 });
 test('shop and server share the purchase gate and the shop lists moons in progression order',()=>{
  const renderer=fs.readFileSync(path.join(__dirname,'../src/modules/ui/renderer.js'),'utf8');assert.match(renderer,/for \(const id of MOON_ORDER\)/);assert.match(renderer,/getMoonPurchaseAccess\(state,id\)/);

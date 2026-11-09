@@ -5,54 +5,83 @@ test('wheel rejects forged session, payout and outcome in client payload without
  const run=setup();run('var s=freshState();s.playerData.shards=1000;var before=JSON.stringify(s)');
  assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true,canSpinWheel:true,wheelIndex:6,payout:999999},100000)"),/сессия/);assert.equal(run('JSON.stringify(s)===before'),true);
 });
-test('every sector pays from server-selected outcome including losing stakes and full bankruptcy',()=>{
+test('every sector pays from the server outcome and ignores forged payload winnings',()=>{
  const run=setup();
- for(let index=0;index<12;index++){
-  run("var s=freshState();s.playerData.shards=1000;var next=applyAction(s,'spinWheel',{bet:101,acceptBankruptcy:true,wheelIndex:6,payout:999999},100000,{canSpinWheel:true,wheelIndex:"+index+"});");
-  const m=run('CONSTANTS.WHEEL.SECTORS['+index+']'),expected=m==='bankrupt'?0:899+Math.floor(101*m);
-  assert.equal(run('next.playerData.shards'),expected);assert.equal(run('next.wheelResult.index'),index);assert.equal(run('next.wheelResult.delta'),expected-1000);assert.equal(run('s.playerData.shards'),1000);
+ for(let index=0;index<37;index++){
+  const sector=run('CONSTANTS.WHEEL.SECTORS['+index+']');
+  for(const choice of ['red','black','zero']){
+   run("var s=freshState();s.playerData.shards=1000;var next=applyAction(s,'spinWheel',{bet:50,choice:"+JSON.stringify(choice)+",wheelIndex:6,payout:999999},100000,{canSpinWheel:true,wheelIndex:"+index+"});");
+   const expected=950+(sector===choice?50*(choice==='zero'?36:2):0);
+   assert.equal(run('next.playerData.shards'),expected);assert.equal(run('next.wheelResult.index'),index);assert.equal(run('next.wheelResult.delta'),expected-1000);assert.equal(run('s.playerData.shards'),1000);
+  }
  }
 });
-test('invalid stakes, missing bankruptcy consent, bad outcomes and rapid spins cannot change funds',()=>{
+test('invalid stakes, choices, bad outcomes and rapid spins cannot change funds',()=>{
  const run=setup();run('var s=freshState();s.playerData.shards=1000;var trusted={canSpinWheel:true,wheelIndex:1}');
- for(const bet of [0,-1,1.1,1001,NaN,Infinity,'100'])assert.throws(()=>run("applyAction(s,'spinWheel',{bet:"+JSON.stringify(bet)+",acceptBankruptcy:true},100000,trusted)"));
- assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100},100000,trusted)"));
- assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},100000,{canSpinWheel:true,wheelIndex:12})"));
- run("s=applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},100000,trusted);var before=JSON.stringify(s)");
- assert.throws(()=>run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},105199,trusted)"),/окончания/);assert.equal(run('JSON.stringify(s)===before'),true);
- assert.equal(run("applyAction(s,'spinWheel',{bet:100,acceptBankruptcy:true},105200,trusted).playerData.shards"),1200);
+ for(const bet of [0,-1,1.1,51,1001,NaN,Infinity,'50'])assert.throws(()=>run("applyAction(s,'spinWheel',{bet:"+JSON.stringify(bet)+",choice:'red'},100000,trusted)"),/ставка/);
+ assert.throws(()=>run("applyAction(s,'spinWheel',{bet:50},100000,trusted)"),/Выберите/);
+ assert.throws(()=>run("applyAction(s,'spinWheel',{bet:50,choice:'red'},100000,{canSpinWheel:true,wheelIndex:37})"),/сектор/);
+ run("s=applyAction(s,'spinWheel',{bet:50,choice:'red'},100000,trusted);var before=JSON.stringify(s),nextAt=100000+CONSTANTS.WHEEL.COOLDOWN_MS");
+ assert.throws(()=>run("applyAction(s,'spinWheel',{bet:50,choice:'red'},nextAt-1,trusted)"),/окончания/);assert.equal(run('JSON.stringify(s)===before'),true);
+ assert.equal(run("applyAction(s,'spinWheel',{bet:50,choice:'red'},nextAt,trusted).playerData.shards"),1100);
 });
 test('wheel caps huge winnings and does not increment combat clicks or kill counters',()=>{
- const run=setup();run("var s=freshState();s.playerData.shards=CONSTANTS.SAFE_NUMBER_CAP;s=applyAction(s,'spinWheel',{bet:s.playerData.shards,acceptBankruptcy:true},100000,{canSpinWheel:true,wheelIndex:6})");
+ const run=setup();run("var s=freshState();s.playerData.shards=CONSTANTS.SAFE_NUMBER_CAP;s=applyAction(s,'spinWheel',{bet:Math.floor(s.playerData.shards*.05),choice:'zero'},100000,{canSpinWheel:true,wheelIndex:0})");
  assert.equal(run('s.playerData.shards'),Number.MAX_SAFE_INTEGER);assert.equal(run('s.clickCount'),0);assert.equal(run('s.moonKills'),0);assert.equal(run('s.bossKills'),0);
 });
 function uiSetup(){
  const nodes={},animations=[],particles=[];let spinCalls=0,resolveSpin,cleared=0;
- const classes=new Set(),form={elements:{bet:{value:'100'},risk:{}},reportValidity:()=>true};form.elements[Symbol.iterator]=function*(){yield this.bet;yield this.risk;};
+ const classes=new Set(),form={elements:{bet:{value:'50'}},reportValidity:()=>true,querySelector:()=>({value:'red'})};form.elements[Symbol.iterator]=function*(){yield this.bet;};
  const result={replaceChildren(){},append(){},animate(){return {finished:Promise.resolve(),cancel(){}};}},rotor={style:{},animate(frames,options){const a={frames,options,cancelled:false,cancel(){this.cancelled=true;},finished:Promise.resolve()};animations.push(a);return a;}};
  const holder={replaceChildren(){particles.length=0;},append(p){particles.push(p);}};
- nodes['.fortune-rotor']=rotor;nodes['.fortune-result']=result;nodes['form']=form;nodes['.fortune-spin']={};nodes['.fortune-close']={};nodes['.fortune-particles']=holder;
- const c={CONSTANTS:{WHEEL:{SECTORS:[0,2,5,0,2,10,5,2,0,0,'bankrupt',2],WEIGHTS:[97,97,97,97,97,97,97,97,97,97,33,97],VISUAL_WEIGHTS:[97,97,97,97,97,97,97,97,97,97,33,97],SPIN_MS:5200}},state:{playerData:{shards:1000}},audio:{purchase(){}},document:{getElementById:()=>null,createElement:()=>({style:{setProperty(){}},textContent:''})},window:{matchMedia:()=>({matches:false})},performance:{now:()=>100},setTimeout:()=>1,clearTimeout:()=>{cleared++;},console};
- vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/currency-display.js'),'utf8'))+'\n'+strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/wheel.js'),'utf8')),c);
- const wheel=vm.runInContext('fortuneWheel',c);wheel.root={classList:{add:x=>classes.add(x),remove:(...xs)=>xs.forEach(x=>classes.delete(x))},querySelector:s=>nodes[s]};wheel.dialog={close(){},showModal(){}};wheel.rotor=rotor;wheel.result=result;wheel.form=form;wheel.button=nodes['.fortune-spin'];wheel.allowed=true;wheel.message=(...args)=>{wheel.lastMessage=args;};wheel.bind(()=>{spinCalls++;return new Promise(r=>{resolveSpin=r;});});
+ nodes['.fortune-rotor']=rotor;nodes['.fortune-result']=result;nodes['form']=form;nodes['.fortune-spin']={};nodes['.fortune-close']={};nodes['.fortune-particles']=holder;nodes['.fortune-outcome']={hidden:true,textContent:''};
+ const c={state:{playerData:{shards:1000}},audio:{purchase(){}},document:{getElementById:()=>null,createElement:()=>({style:{setProperty(){}},textContent:''})},window:{matchMedia:()=>({matches:false})},performance:{now:()=>100},setTimeout:()=>1,clearTimeout:()=>{cleared++;},console};
+ vm.createContext(c);vm.runInContext(['core/constants.js','modules/ui/currency-display.js','modules/ui/moon-wheel-v2.js'].map(file=>strip(fs.readFileSync(path.join(__dirname,'../src',file),'utf8'))).join('\n'),c);
+ const wheel=vm.runInContext('fortuneWheel',c);wheel.root={dataset:{},classList:{add:x=>classes.add(x),remove:(...xs)=>xs.forEach(x=>classes.delete(x))},querySelector:s=>nodes[s]};wheel.rotor=rotor;wheel.result=result;wheel.form=form;wheel.button=nodes['.fortune-spin'];wheel.allowed=true;wheel.message=(...args)=>{wheel.lastMessage=args;};wheel.bind(()=>{spinCalls++;return new Promise(r=>{resolveSpin=r;});});
  return {wheel,animations,particles,classes,form,c,get calls(){return spinCalls;},get cleared(){return cleared;},resolve(result){resolveSpin({state:{wheelResult:result}});}};
 }
 test('every wheel sector lands at pointer after seven full revolutions even from fractional angles',()=>{
  const s=uiSetup();
- for(const start of [0,30,359,1423.25])for(let i=0;i<12;i++){
-  const angle=vm.runInContext('wheelStopAngle('+i+',12,'+start+')',s.c);assert.ok(angle-start>=2520);assert.ok(Math.abs(((angle+i*30)%360))<1e-7);
+ for(const start of [0,30,359,1423.25])for(let i=0;i<17;i++){
+  const center=(i+.5)*360/17,angle=vm.runInContext('wheelStopAngle('+(i+.5)+',17,'+start+')',s.c);assert.ok(angle-start>=2520);assert.ok(Math.abs((angle+center)/360-Math.round((angle+center)/360))<1e-10);
  }
 });
 test('a slow result cannot start a second spin and confirmed reward stops on correct sector',async()=>{
  const s=uiSetup(),pending=s.wheel.play();await s.wheel.play();assert.equal(s.calls,1);assert.equal(s.form.elements.bet.disabled,true);
- s.resolve({index:6,multiplier:5,payout:500,delta:400});await pending;assert.ok(Math.abs(s.wheel.angle-(360-(6*97+48.5)*360/1100))<1e-7);assert.equal(s.wheel.busy,false);assert.equal(s.form.elements.bet.disabled,false);assert.ok(s.classes.has('fortune-win'));assert.equal(s.particles.length,28);assert.ok(s.animations.every(a=>a.cancelled));assert.match(s.wheel.lastMessage[0],/400/);
+ s.resolve({index:1,sector:'red',multiplier:2,payout:100,delta:50});await pending;
+ const visualIndex=Math.round((360-s.wheel.angle)*17/360-.5);
+ assert.equal(visualIndex%2,1);
+ assert.ok(Math.abs(s.wheel.angle-(360-(visualIndex+.5)*360/17))<1e-7);
+ assert.equal(s.wheel.busy,false);assert.equal(s.form.elements.bet.disabled,false);assert.ok(s.classes.has('fortune-win'));assert.equal(s.particles.length,28);assert.ok(s.animations.every(a=>a.cancelled));assert.match(s.wheel.lastMessage[0],/50/);
 });
 test('logout cancels animation and late server result cannot expose or restart wheel',async()=>{
- const s=uiSetup(),pending=s.wheel.play();s.wheel.disconnect();s.resolve({index:6,multiplier:5,payout:500,delta:400});await pending;
+ const s=uiSetup(),pending=s.wheel.play();s.wheel.disconnect();s.resolve({index:1,sector:'red',multiplier:2,payout:100,delta:50});await pending;
  assert.equal(s.wheel.allowed,false);assert.equal(s.wheel.busy,false);assert.equal(s.wheel.animations.length,0);assert.equal(s.particles.length,0);assert.ok(s.animations.every(a=>a.cancelled));assert.ok(s.classes.has('hidden'));assert.equal(s.form.elements.bet.disabled,false);
 });
+test('the wheel reveals the result before the server cooldown ends, then re-enables the button',async()=>{
+ const s=uiSetup();
+ let now=100000;
+ const timers=[];
+ s.c.Date={now:()=>now};
+ s.c.setTimeout=(fn,ms)=>{timers.push({fn,ms});return timers.length;};
+ const pending=s.wheel.play();
+ s.resolve({index:1,sector:'red',payout:100,delta:50,at:now});
+ await pending;
+ assert.ok(s.classes.has('fortune-win'));
+ assert.equal(s.wheel.button.disabled,true);
+ await s.wheel.play();
+ assert.equal(s.calls,1);
+ const cooldown=timers.find(timer=>timer.ms===5200);
+ assert.ok(cooldown);
+ now+=5200;
+ cooldown.fn();
+ assert.equal(s.wheel.button.disabled,false);
+ s.wheel.disconnect();
+ assert.equal(s.wheel.root.dataset.outcome,undefined);
+ assert.equal(s.wheel.root.querySelector('.fortune-outcome').hidden,true);
+});
 test('reduced motion lands without spinning or confetti',async()=>{
- const s=uiSetup();s.c.window.matchMedia=()=>({matches:true});const pending=s.wheel.play();s.resolve({index:1,multiplier:2,payout:200,delta:100});await pending;assert.equal(s.animations.length,0);assert.equal(s.particles.length,0);assert.ok(Math.abs(s.wheel.angle-(360-145.5*360/1100))<1e-7);
+ const s=uiSetup();s.c.window.matchMedia=()=>({matches:true});const pending=s.wheel.play();s.resolve({index:0,sector:'zero',multiplier:0,payout:0,delta:-50});await pending;assert.equal(s.animations.length,0);assert.equal(s.particles.length,0);assert.ok(Math.abs(s.wheel.angle-(360-180/17))<1e-7);
 });
 
 async function edgeSetup({authorized=true,conflict=false,cached=false,missingToken=false}={}){
@@ -83,13 +112,14 @@ test('cached request never runs wheel payout again',async()=>{
  const s=await edgeSetup({cached:true});assert.equal(s.response.status,200);assert.equal(s.contexts.length,0);assert.equal(s.commits,1);
 });
 
-test('10000 integer tickets give exactly 3 percent bankruptcy and house-positive expected return',()=>{
- const run=setup(),counts=Array(12).fill(0);
- for(let ticket=0;ticket<10000;ticket++)counts[run('getWheelSectorIndex('+ticket+')')]++;
- assert.deepEqual(counts,[1658,650,200,1658,650,70,200,650,1657,1657,300,650]);assert.equal(counts[10]/10000,.03);for(const [m,n] of [[2,4],[5,2],[0,4],[10,1]])assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m==="+m+").length"),n);assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(m=>m===.5||m===1).length"),0);
- for(const ticket of [-1,10000,.5])assert.throws(()=>run('getWheelSectorIndex('+ticket+')'));
+test('37 equally likely tickets give 18 red, 18 black and one zero',()=>{
+ const run=setup(),counts=Array(37).fill(0);
+ for(let ticket=0;ticket<37;ticket++)counts[run('getWheelSectorIndex('+ticket+')')]++;
+ assert.deepEqual(counts,Array(37).fill(1));
+ for(const [sector,n] of [['red',18],['black',18],['zero',1]])assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(s=>s==='"+sector+"').length"),n);
+ for(const ticket of [-1,37,.5])assert.throws(()=>run('getWheelSectorIndex('+ticket+')'));
 });
-test('weighted wheel stops in exact center of every visible sector including narrow bankruptcy',()=>{
+test('weighted wheel angle helper still stops in the center of nonuniform sectors',()=>{
  const s=uiSetup(),weights=[97,97,97,97,97,97,97,97,97,97,33,97];let start=0;
  for(let i=0;i<weights.length;i++){const center=(start+weights[i]/2)*360/1100;const angle=vm.runInContext('wheelStopAngle('+i+','+JSON.stringify(weights)+',1391.25)',s.c);assert.ok(angle>=1391.25+2520);assert.ok(Math.abs((angle+center)%360)<1e-7);start+=weights[i];}
 });
@@ -97,7 +127,7 @@ test('fortune tab follows achievements, switches within panel and closes with ot
  const active=new Set(),contentActive=new Set();let opened=0,closed=0;
  const classes=()=>({add:x=>active.add(x),remove:x=>active.delete(x),contains:x=>active.has(x),toggle(x,on){if(on)active.add(x);else active.delete(x);}});
  const fortune={allowed:true,open(){opened++;},close(){closed++;}},panel={classList:classes(),querySelectorAll:()=>[]},content={classList:{add:x=>contentActive.add(x)}};
- const c={window:{},fortuneWheel:fortune,document:{addEventListener(){},getElementById:id=>id==='shopPanel'?panel:id==='fortuneTabContent'?content:null},console};vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/events.js'),'utf8')),c);
+ const c={window:{},state:{},gameEngine:{},showToast(){},fortuneWheel:fortune,document:{addEventListener(){},getElementById:id=>id==='shopPanel'?panel:id==='fortuneTabContent'?content:null},console};vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/ui/events.js'),'utf8')),c);
  c.window.switchShopTab('fortune');assert.equal(opened,1);assert.ok(contentActive.has('active'));c.window.switchShopTab('achievements');assert.equal(closed,2);
  fortune.allowed=false;c.window.switchShopTab('fortune');assert.equal(opened,1);c.window.closePanel('shopPanel');assert.equal(closed,3);
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');assert.ok(html.indexOf('id="fortuneTabButton"')>html.indexOf('data-tab="achievements"'));assert.match(html,/id="fortuneTabButton" class="panel-tab hidden"/);
@@ -111,11 +141,11 @@ test('public fortune still refuses requests with no authentication token',async(
  const s=await edgeSetup({missingToken:true});assert.equal(s.response.status,401);assert.equal(s.loads,0);assert.equal(s.commits,0);assert.equal(s.roleCalls,0);assert.equal(s.randomCalls,0);
 });
 
-test('all-in preset fills the exact visible balance without starting a spin',()=>{
- const s=uiSetup();s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),1000);assert.equal(s.calls,0);s.wheel.busy=true;s.c.state.playerData.shards=1500;s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),1000);
+test('maximum preset fills five percent of the visible balance without starting a spin',()=>{
+ const s=uiSetup();s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),50);assert.equal(s.calls,0);s.wheel.busy=true;s.c.state.playerData.shards=1500;s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),50);
  s.wheel.busy=false;s.c.state.playerData.shards=0;s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),0);assert.equal(s.calls,0);
 });
 
-test('a lost stake shows a red-cross outcome rather than a zero multiplier reward',async()=>{
- const s=uiSetup(),pending=s.wheel.play();s.resolve({index:0,multiplier:0,payout:0,delta:-100});await pending;assert.match(s.wheel.lastMessage[1],/Ставка проиграна/);assert.doesNotMatch(s.wheel.lastMessage[1],/×0/);
+test('a lost stake shows the lost amount and the actual sector',async()=>{
+ const s=uiSetup(),pending=s.wheel.play();s.resolve({index:0,sector:'zero',multiplier:0,payout:0,delta:-50});await pending;assert.match(s.wheel.lastMessage[0],/−50/);assert.match(s.wheel.lastMessage[1],/Лунный свет/);assert.doesNotMatch(s.wheel.lastMessage[1],/×0/);
 });

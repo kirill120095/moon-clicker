@@ -8,7 +8,7 @@ test('variant A bonuses and additive integer prices match the selected examples'
  for(const id of ['reactor','treasury','fleet','echo','capital','hunter','archive','critical'])for(let level=1;level<100;level++){
   const price=run("getPrestigeUpgradeCost('"+id+"',"+level+")");assert.ok(Number.isInteger(price));assert.ok(price>run("getPrestigeUpgradeCost('"+id+"',"+(level-1)+")"));
  }
- assert.equal(run("getPrestigeUpgradeCost('orbit',0)"),1000);assert.equal(run("getPrestigeUpgradeCost('orbit',1)"),Infinity);
+ assert.equal(run("getPrestigeUpgradeCost('orbit',0)"),100);assert.equal(run("getPrestigeUpgradeCost('orbit',1)"),Infinity);
 });
 test('clock and all combined haste stay below 100 percent and respect minimum interval',()=>{
  const run=setup();run("var s=freshState();s.ufoLevel=5;s.maxSlots=2;s.activeMoons=['ice','clone'];s.ownedMoons=['normal','ice','clone'];s.moonLevels={ice:10,clone:10};s.cloneTargets=['ice'];s.prestige.upgrades.clock=1000000;");

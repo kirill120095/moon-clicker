@@ -46,7 +46,7 @@ function displayIndex(serverIndex){
  return matching[Math.floor(Math.random()*matching.length)];
 }
 export class FortuneWheel {
- constructor(){this.allowed=false;this.busy=false;this.generation=0;this.animations=[];this.angle=0;this.timer=null;}
+ constructor(){this.allowed=false;this.busy=false;this.generation=0;this.animations=[];this.angle=0;this.timer=null;this.nextSpinAt=0;this.cooldownTimer=null;}
  bind(spin,onReveal){this.spin=spin;this.onReveal=onReveal;}
  connect(allowed){
   this.disconnect();this.allowed=allowed;document.getElementById('fortuneTabButton')?.classList.toggle('hidden',!allowed);if(!allowed)return;
@@ -82,10 +82,17 @@ export class FortuneWheel {
  open(){if(!this.allowed)return;this.root.classList.remove('hidden');this.root.classList.add('active');this.refreshBalance();}
  message(title,detail){this.result.replaceChildren();const strong=document.createElement('strong'),span=document.createElement('span');strong.textContent=title;span.textContent=detail;this.result.append(strong,span);}
  refreshBalance(){const node=this.root?.querySelector('.fortune-balance');if(node)node.textContent='Баланс: '+getVisibleShards(state.playerData?.shards).toLocaleString('ru-RU')+' 💎';}
+ refreshSpinButton(){
+  clearTimeout(this.cooldownTimer);this.cooldownTimer=null;
+  const remaining=this.nextSpinAt-Date.now();
+  this.button.disabled=this.busy||remaining>0;
+  this.button.title=remaining>0?'Следующее вращение скоро станет доступно':'';
+  if(remaining>0&&!this.busy)this.cooldownTimer=setTimeout(()=>this.refreshSpinButton(),remaining);
+ }
  motion(){return !document.documentElement?.classList.contains('reduce-effects')&&!document.body?.classList.contains('reduce-effects')&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches;}
  track(animation){this.animations.push(animation);return animation.finished.catch(()=>{});}
  async play(){
-  if(!this.allowed||this.busy||!this.spin||!this.form.reportValidity())return;
+  if(!this.allowed||this.busy||Date.now()<this.nextSpinAt||!this.spin||!this.form.reportValidity())return;
   const bet=Number(this.form.elements.bet.value);
   if(!Number.isSafeInteger(bet)||bet<1||bet>Math.floor(getVisibleShards(state.playerData?.shards)*.05)){this.message('Проверь ставку','Ставка должна быть целой и не превышать 5% баланса');return;}
   for(const animation of this.animations)animation.cancel();this.animations=[];
@@ -104,6 +111,7 @@ export class FortuneWheel {
    if(generation!==this.generation)return;
    const result=response?.state?.wheelResult;
    if(!result||!Number.isInteger(result.index))throw Error('Нет подтверждённого результата. Баланс уточнится при обновлении.');
+   if(Number.isFinite(result.at))this.nextSpinAt=result.at+CONSTANTS.WHEEL.COOLDOWN_MS-(state.serverClockOffset||0);
    const from=this.angle+(moving?(performance.now()-started)/900*360:0);
    this.rotor.style.transform='rotate('+from+'deg)';
    idle?.cancel();
@@ -115,8 +123,8 @@ export class FortuneWheel {
    this.angle=target%360;this.rotor.style.transform='rotate('+target+'deg)';
    for(const animation of this.animations)animation.cancel();this.animations=[];
    revealWheelBalance();this.onReveal?.();resultRevealed=true;
-   const bankrupt=false,win=result.delta>0;
-   this.root.classList.add(bankrupt?'fortune-bankrupt':win?'fortune-win':'fortune-loss');
+   const win=result.delta>0;
+   this.root.classList.add(win?'fortune-win':'fortune-loss');
    this.root.dataset.outcome=result.sector;
    const outcomeLabel=result.sector==='red'?'Красное':result.sector==='black'?'Чёрное':'Лунный свет';
    const indicator=this.root.querySelector('.fortune-outcome');
@@ -127,7 +135,7 @@ export class FortuneWheel {
    if(win){audio.purchase();if(moving&&!document.documentElement?.classList.contains('low-power'))this.confetti();}
    else if(moving)await this.track(this.result.animate([{transform:'translateX(0)'},{transform:'translateX(-7px)'},{transform:'translateX(7px)'},{transform:'translateX(0)'}],{duration:350}));
   }catch(error){if(generation===this.generation)this.message('Вращение не подтверждено',error.message||'Проверь соединение и баланс перед новой ставкой.');}
-  finally{if(generation===this.generation){idle?.cancel();if(!resultRevealed){revealWheelBalance();this.onReveal?.();}this.refreshBalance();this.busy=false;this.root.classList.remove('fortune-busy');for(const element of this.form.elements)element.disabled=false;this.root.querySelector('.fortune-close').disabled=false;this.button.disabled=false;}}
+  finally{if(generation===this.generation){idle?.cancel();if(!resultRevealed){revealWheelBalance();this.onReveal?.();}this.refreshBalance();this.busy=false;this.root.classList.remove('fortune-busy');for(const element of this.form.elements)element.disabled=false;this.root.querySelector('.fortune-close').disabled=false;this.refreshSpinButton();}}
  }
  confetti(){
   const holder=this.root.querySelector('.fortune-particles');holder.replaceChildren();
@@ -136,8 +144,9 @@ export class FortuneWheel {
  }
  disconnect(){
   revealWheelBalance();document.getElementById('fortuneTabButton')?.classList.add('hidden');this.generation++;this.allowed=false;this.busy=false;clearTimeout(this.timer);this.timer=null;
+  clearTimeout(this.cooldownTimer);this.cooldownTimer=null;this.nextSpinAt=0;
   for(const animation of this.animations)animation.cancel();this.animations=[];
-  if(this.root){this.root.classList.add('hidden');this.root.classList.remove('fortune-busy');this.root.querySelector('.fortune-particles').replaceChildren();for(const element of this.form.elements)element.disabled=false;this.root.querySelector('.fortune-close').disabled=false;}
+  if(this.root){this.close();this.root.classList.remove('fortune-busy');delete this.root.dataset.outcome;this.root.querySelector('.fortune-outcome').hidden=true;this.root.querySelector('.fortune-particles').replaceChildren();for(const element of this.form.elements)element.disabled=false;this.root.querySelector('.fortune-close').disabled=false;this.refreshSpinButton();}
  }
 }
 export const fortuneWheel=new FortuneWheel();
