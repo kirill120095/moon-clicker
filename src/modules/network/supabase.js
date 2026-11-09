@@ -15,6 +15,16 @@ let _initPromise = null;
 let _writeQueue = Promise.resolve();
 let _actionQueue = Promise.resolve();
 let _snapshot=null,_snapshotRevision=0,_retryAt=0,_failures=0;
+let _actionSession=0;
+
+function resetActionSession() {
+  _actionSession++;
+  _actionQueue=Promise.resolve();
+  _snapshot=null;
+  _snapshotRevision=0;
+  _retryAt=0;
+  _failures=0;
+}
 
 /**
  * Ждёт загрузки библиотеки Supabase с CDN
@@ -134,23 +144,46 @@ export const db = {
   leaderboardPresence,
   action(action, payload = {}) {
     const request_id = crypto.randomUUID();
+    const session = _actionSession;
+    const checkSession = () => {
+      if(session!==_actionSession)throw new Error('Игровая сессия изменилась.');
+    };
     const run = async () => {
-      if(Date.now()<_retryAt){const error=new Error('Сервер временно недоступен. Повторим соединение через несколько секунд.');error.code='SERVICE_UNAVAILABLE';throw error;}
+      checkSession();
       const client = await initSupabase();
-      const result = await client.functions.invoke('game-actions', { body: { action, payload, request_id, snapshot:_snapshot } });
-      if (result.error) {
+      for(let attempt=0;;attempt++){
+        const delay=_retryAt-Date.now();
+        if(delay>0)await new Promise(resolve=>setTimeout(resolve,delay));
+        checkSession();
+        // Keep the request ID if the server committed but its response was lost.
+        let result;
+        try{
+          result=await client.functions.invoke('game-actions', { body: { action, payload, request_id, snapshot:_snapshot } });
+        }catch(error){result={error};}
+        checkSession();
+        if(!result.error){
+          _retryAt=0;
+          _failures=0;
+          if(result.data?.error){const error=new Error(result.data.error);error.code=result.data.code;recordDiagnostic('game',action,error.code,error);throw error;}
+          if(action==='load')recordDiagnostic('game','load','OK','Сохранение загружено');
+          if(result.data.snapshot&&result.data.revision>=_snapshotRevision){_snapshot=result.data.snapshot;_snapshotRevision=result.data.revision;}
+          return result.data;
+        }
         let message = 'Сервер недоступен. Повторите действие.';
         let code='NETWORK_ERROR',status=result.error.context?.status||0;
         try { const body = await result.error.context.json(); message = body.error || message;code=body.code||code; } catch {}
-        if(status>=500||!status){_failures++;_retryAt=Date.now()+Math.min(30000,2000*Math.pow(2,_failures-1));}
+        checkSession();
+        const temporary=status>=500||!status;
+        if(temporary){_failures++;_retryAt=Date.now()+Math.min(30000,2000*Math.pow(2,_failures-1));}
+        else{_failures=0;_retryAt=0;}
         recordDiagnostic('game',action,code,message);
-        const error=new Error(message);error.code=code;error.status=status;throw error;
+        if(!temporary||attempt>0){
+          const error=new Error(temporary?'Сервер пока недоступен. Попробуйте через несколько секунд.':message);
+          error.code=code;
+          error.status=status;
+          throw error;
+        }
       }
-      if (result.data?.error){const error=new Error(result.data.error);error.code=result.data.code;recordDiagnostic('game',action,error.code,error);throw error;}
-      _retryAt=0;_failures=0;
-      if(action==='load')recordDiagnostic('game','load','OK','Сохранение загружено');
-      if(result.data.snapshot&&result.data.revision>=_snapshotRevision){_snapshot=result.data.snapshot;_snapshotRevision=result.data.revision;}
-      return result.data;
     };
     const pending = _actionQueue.then(run);
     _actionQueue = pending.catch(() => {});
@@ -175,7 +208,7 @@ export const db = {
   // AUTH: ВХОД С ПАРОЛЕМ
   // ============================================================
   async signInWithPassword(identifier, password) {
-    _snapshot=null;_snapshotRevision=0;_retryAt=0;_failures=0;
+    resetActionSession();
     try {
       const client = await initSupabase();
       const email = identifier.includes('@') ? identifier.trim() : identifier.trim().toLowerCase() + '@players.moon-clicker.invalid';
@@ -231,7 +264,7 @@ export const db = {
   // AUTH: ВЫХОД
   // ============================================================
   async signOut() {
-    _snapshot=null;_snapshotRevision=0;
+    resetActionSession();
     try {
       const client = await initSupabase();
       const { error } = await client.auth.signOut();

@@ -18,8 +18,10 @@ test('every sector pays from the server outcome and ignores forged payload winni
 });
 test('invalid stakes, choices, bad outcomes and rapid spins cannot change funds',()=>{
  const run=setup();run('var s=freshState();s.playerData.shards=1000;var trusted={canSpinWheel:true,wheelIndex:1}');
- for(const bet of [0,-1,1.1,501,1001,NaN,Infinity,'50'])assert.throws(()=>run("applyAction(s,'spinWheel',{bet:"+JSON.stringify(bet)+",choice:'red'},100000,trusted)"),/ставка/);
+ for(const bet of [0,-1,1.1,1001,NaN,Infinity,'50'])assert.throws(()=>run("applyAction(s,'spinWheel',{bet:"+JSON.stringify(bet)+",choice:'red'},100000,trusted)"),/ставка/);
  assert.equal(run("applyAction(s,'spinWheel',{bet:500,choice:'red'},100000,trusted).playerData.shards"),1500);
+ assert.equal(run("applyAction(s,'spinWheel',{bet:1000,choice:'red'},100000,trusted).playerData.shards"),2000);
+ assert.equal(run("applyAction(s,'spinWheel',{bet:1000,choice:'black'},100000,trusted).playerData.shards"),0);
  assert.throws(()=>run("applyAction(s,'spinWheel',{bet:50},100000,trusted)"),/Выберите/);
  assert.throws(()=>run("applyAction(s,'spinWheel',{bet:50,choice:'red'},100000,{canSpinWheel:true,wheelIndex:37})"),/сектор/);
  run("s=applyAction(s,'spinWheel',{bet:50,choice:'red'},100000,trusted);var before=JSON.stringify(s),nextAt=100000+CONSTANTS.WHEEL.COOLDOWN_MS");
@@ -142,8 +144,8 @@ test('public fortune still refuses requests with no authentication token',async(
  const s=await edgeSetup({missingToken:true});assert.equal(s.response.status,401);assert.equal(s.loads,0);assert.equal(s.commits,0);assert.equal(s.roleCalls,0);assert.equal(s.randomCalls,0);
 });
 
-test('maximum preset fills half of the visible balance without starting a spin',()=>{
- const s=uiSetup();s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),500);assert.equal(s.calls,0);s.wheel.busy=true;s.c.state.playerData.shards=1500;s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),500);
+test('maximum preset fills the entire visible balance without starting a spin',()=>{
+ const s=uiSetup();s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),1000);assert.equal(s.calls,0);s.wheel.busy=true;s.c.state.playerData.shards=1500;s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),1000);
  s.wheel.busy=false;s.c.state.playerData.shards=0;s.wheel.setBetFraction(1);assert.equal(Number(s.form.elements.bet.value),0);assert.equal(s.calls,0);
 });
 

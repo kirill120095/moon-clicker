@@ -569,7 +569,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   if(trusted.canSpinWheel!==true)throw Object.assign(Error('Требуется подтверждённая игровая сессия'),{code:'FORBIDDEN'});
   const bet=payload.bet,choice=payload.choice,config=CONSTANTS.WHEEL,index=trusted.wheelIndex;
   const before=state.playerData.shards,maxBet=Math.floor(before*config.MAX_BET_FRACTION);
-  if(!Number.isSafeInteger(bet)||bet<1||bet>maxBet)throw Error('Максимальная ставка — '+(config.MAX_BET_FRACTION*100)+'% баланса. Минимальный баланс для вращения: '+Math.ceil(1/config.MAX_BET_FRACTION)+' кристалла.');
+  if(!Number.isSafeInteger(bet)||bet<1||bet>maxBet)throw Error('Максимальная ставка — '+(config.MAX_BET_FRACTION*100)+'% баланса. Минимальный баланс для вращения: '+Math.ceil(1/config.MAX_BET_FRACTION)+' 💎.');
   if(!['red','black','zero'].includes(choice))throw Error('Выберите красное, чёрное или зеро');
   if(!Number.isInteger(index)||index<0||index>=config.SECTORS.length)throw Error('Не удалось определить сектор');
   if(state.wheelResult&&now-state.wheelResult.at<config.COOLDOWN_MS)throw Object.assign(Error('Дождитесь окончания вращения'),{code:'RATE_LIMIT'});

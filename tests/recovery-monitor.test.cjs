@@ -24,12 +24,32 @@ test('diagnostics redact credentials and keep only a bounded local history',()=>
  const safe=vm.runInContext('safeDiagnosticMessage('+JSON.stringify(secret)+')',c);assert.doesNotMatch(safe,/private|abc123|test@example|aaaaaaaa/);
  vm.runInContext("for(var i=0;i<150;i++)recordDiagnostic('game','load','ERR'+i,'Unavailable');",c);assert.equal(vm.runInContext('getDiagnostics().length',c),100);
 });
-test('Data API failures pause queued requests instead of immediately hammering the server',async()=>{
- let now=100000,calls=0;const client={functions:{invoke:async()=>{calls++;return{error:{context:{status:503,json:async()=>({error:'Unavailable',code:'PGRST003'})}}};}}};
- const c={window:{supabase:{createClient:()=>client},localStorage:{}},crypto:{randomUUID:()=> '00000000-0000-4000-8000-000000000001'},Date:{now:()=>now},recordDiagnostic(){},console,Promise,Error};
+test('a temporary failure retries the same request after the pause and preserves the queue order',async()=>{
+ let now=100000,id=0;
+ const calls=[],delays=[];
+ const client={functions:{invoke:async(_name,{body})=>{
+  calls.push({action:body.action,id:body.request_id,time:now});
+  if(calls.length===1)return{error:{context:{status:503,json:async()=>({error:'Unavailable',code:'PGRST003'})}}};
+  return{data:{revision:calls.length}};
+ }}};
+ const c={window:{supabase:{createClient:()=>client},localStorage:{}},crypto:{randomUUID:()=>String(++id)},Date:{now:()=>now},setTimeout(resolve,delay){delays.push(delay);now+=delay;resolve();},recordDiagnostic(){},console,Promise,Error};
  vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/network/supabase.js'),'utf8')),c);
- await assert.rejects(vm.runInContext("db.action('load')",c));await assert.rejects(vm.runInContext("db.action('load')",c));assert.equal(calls,1);
- now+=2100;await assert.rejects(vm.runInContext("db.action('load')",c));assert.equal(calls,2);
+ await Promise.all(vm.runInContext("[db.action('spinWheel'),db.action('click')]",c));
+ assert.deepEqual(delays,[2000]);
+ assert.deepEqual(calls,[{action:'spinWheel',id:'1',time:100000},{action:'spinWheel',id:'1',time:102000},{action:'click',id:'2',time:102000}]);
+});
+test('sign-out cancels the pending network retry',async()=>{
+ let calls=0,wake;
+ const client={auth:{signOut:async()=>({})},functions:{invoke:async()=>{calls++;return{error:{context:{status:503}}};}}};
+ const c={window:{supabase:{createClient:()=>client},localStorage:{}},crypto:{randomUUID:()=> 'retry-id'},Date,setTimeout(resolve){wake=resolve;},recordDiagnostic(){},console,Promise,Error};
+ vm.createContext(c);vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/modules/network/supabase.js'),'utf8')),c);
+ const rejected=assert.rejects(vm.runInContext("db.action('click')",c),/сессия изменилась/);
+ await new Promise(setImmediate);
+ assert.equal(typeof wake,'function');
+ await vm.runInContext('db.signOut()',c);
+ wake();
+ await rejected;
+ assert.equal(calls,1);
 });
 test('API outages do not trigger a second game_load inside the action error handler',async()=>{
  const {stripTypeScriptTypes}=require('node:module'),{webcrypto}=require('node:crypto');

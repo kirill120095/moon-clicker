@@ -238,7 +238,7 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .low-power .fortune-particles{display:none}
 #performanceMode{min-width:0;max-width:190px;padding:8px;border:1px solid #64748b;border-radius:8px;background:#101b30;color:#e2e8f0}
 
-#fortuneTabContent .fortune-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+#fortuneTabContent .fortune-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 #fortuneTabContent .fortune-form{grid-template-columns:minmax(0,1fr) minmax(132px,auto)}
 @media(max-width:380px){#fortuneTabContent .fortune-form{gap:6px}#fortuneTabContent .fortune-stage{width:min(100%,clamp(128px,calc(100dvh - 490px),280px))}}
 
