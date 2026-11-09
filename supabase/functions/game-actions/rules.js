@@ -53,7 +53,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
  }
  state.inventory.nextId=Math.max(1,Math.floor(Number(state.inventory.nextId)||1),...state.inventory.items.map(i=>i.id+1));
  const savedDust=state.lunarLuck||{},dustScale=CONSTANTS.LUNAR_DUST.PROGRESS_SCALE;
- const roundDustProgress=progress=>Math.max(0,Math.min(100,Math.round(progress*dustScale)/dustScale));
+ const roundDustProgress=progress=>Math.max(0,Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.round(progress*dustScale)))/dustScale;
  state.lunarLuck={
   progress:roundDustProgress(Number(savedDust.progress)||0),
   dust:Math.max(0,Math.floor(Number(savedDust.dust)||0))+Math.floor(Math.max(0,Number(savedDust.fragments)||0)/5),
@@ -443,7 +443,7 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   state.moonHP=Math.max(0,state.moonHP-damage);
   if(state.moonHP===0){
    state.moonKills=Math.min(CONSTANTS.SAFE_NUMBER_CAP,state.moonKills+1);
-   if(state.lunarLuck.progress<100)state.lunarLuck.progress=roundDustProgress(state.lunarLuck.progress+getLunarDustGain(state.currentLevel));
+   state.lunarLuck.progress=roundDustProgress(state.lunarLuck.progress+getLunarDustGain(state.currentLevel));
    event.reward=moonReward(bonuses);
    if(source==='ufo')event.reward=Math.max(1,Math.floor(event.reward*getUfoBonuses(state,rules).rewardMultiplier));
    event.reward=credit(event.reward);rules.updateQuestProgress('shard',event.reward);
@@ -553,11 +553,16 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
    item.rarity++;item.keep=false;inv.items=items.filter(i=>i.id!==other.id);
   }
  } else if(action==='claimLunarLuck'){
-  if(state.lunarLuck.progress<100)throw Error('Шкала Лунной пыли ещё не заполнена');
-  state.lunarLuck.progress=0;state.lunarLuck.dust+=1;state.lunarLuck.claims=(state.lunarLuck.claims||0)+1;
-  if(state.lunarLuck.claims%3===0&&state.inventory.items.length<state.inventory.capacity){
-   const types=['moonstone','orbit','comet','starlight'];
-   const type=types[Math.floor(state.lunarLuck.claims/3-1)%types.length];
+  const luck=state.lunarLuck,reward=Math.floor(luck.progress/100);
+  if(reward===0)throw Error('Шкала Лунной пыли ещё не заполнена');
+  const previousDrops=Math.floor(luck.claims/3);
+  luck.progress=roundDustProgress(luck.progress-reward*100);
+  luck.dust+=reward;
+  luck.claims+=reward;
+  const types=['moonstone','orbit','comet','starlight'];
+  const drops=Math.floor(luck.claims/3);
+  for(let i=previousDrops;i<drops&&state.inventory.items.length<state.inventory.capacity;i++){
+   const type=types[i%types.length];
    state.inventory.items.push({id:state.inventory.nextId++,type,rarity:1,locked:false,keep:false});
   }
  } else if(action==='spinWheel'){

@@ -445,17 +445,22 @@ function updateLunarLuckWidget(){
  let el=document.getElementById('lunarLuckWidget');
  if(!el){
   el=document.createElement('section');el.id='lunarLuckWidget';
-  el.innerHTML='<header><h3>🌙 Лунная пыль</h3><strong data-luck-progress></strong></header><div class="moon-luck-meter" role="progressbar" aria-label="Накопление лунной пыли"><span></span></div><p>За каждую побеждённую луну шкала растёт. Чем выше уровень луны, тем больше прирост. На 100% можно забрать пыль для экипировки.</p><div class="moon-luck-resources"><div class="moon-luck-resource"><span>✧ Пыль в запасе</span><strong data-luck-dust></strong></div></div><button type="button" class="moon-luck-claim" id="claimLunarLuckButton">✦ Забрать пыль</button>';
+  el.innerHTML='<header><h3>🌙 Лунная пыль</h3><strong data-luck-progress></strong></header><div class="moon-luck-meter" role="progressbar" aria-label="До следующей порции лунной пыли"><span></span></div><p>Каждая побеждённая луна заполняет шкалу. Чем выше её уровень, тем больше прирост. Каждые 100% добавляют 1 пыль к награде.</p><div class="moon-luck-resources"><div class="moon-luck-resource"><span>✦ Готово к сбору</span><strong data-luck-ready></strong></div><div class="moon-luck-resource"><span>✧ Пыль в запасе</span><strong data-luck-dust></strong></div></div><button type="button" class="moon-luck-claim" id="claimLunarLuckButton" disabled>✦ Забрать всё</button>';
   el.querySelector('button').onclick=()=>command('claimLunarLuck').catch(()=>{});
   host.prepend(el);
  }
- const luck=state.lunarLuck||{},progress=Math.max(0,Math.min(100,luck.progress||0));
+ const luck=state.lunarLuck||{},total=Math.max(0,luck.progress||0);
+ const ready=Math.floor(total/100),progress=total%100;
  const meter=el.querySelector('.moon-luck-meter'),value=String(progress);
  if(meter.getAttribute('aria-valuenow')!==value){
   meter.setAttribute('aria-valuenow',value);
   meter.firstElementChild.style.transform='scaleX('+progress/100+')';
   el.querySelector('[data-luck-progress]').textContent=progress.toLocaleString('ru-RU',{maximumFractionDigits:4})+'%';
-  el.querySelector('button').disabled=progress<100;
+ }
+ const pending=el.querySelector('[data-luck-ready]'),readyValue=String(ready);
+ if(pending.textContent!==readyValue){
+  pending.textContent=readyValue;
+  el.querySelector('button').disabled=ready===0;
  }
  const dust=el.querySelector('[data-luck-dust]'),dustValue=String(luck.dust||0);
  if(dust.textContent!==dustValue)dust.textContent=dustValue;

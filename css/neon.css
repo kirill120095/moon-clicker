@@ -430,7 +430,6 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 #moonEquipFloatingInventory .moon-equip-floating-item.empty{border-style:dashed;background:#191a31;font-size:15px;color:#696186}
 #moonEquipmentMount .moon-equip-moons{width:100%}
 #moonEquipmentMount .moon-equip-moon{max-width:none}
-#lunarLuckWidget .moon-luck-resources{grid-template-columns:1fr}
 #lunarLuckWidget{margin:0 0 14px;padding:14px;border:1px solid #7865ad;border-radius:15px;background:radial-gradient(ellipse at top right,#3c3060,#171b33 72%);color:#eee8ff}
 #lunarLuckWidget header{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 #lunarLuckWidget h3{margin:0;font-size:15px}

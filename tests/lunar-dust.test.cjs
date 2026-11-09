@@ -33,9 +33,22 @@ test('existing dust, progress and claim count survive the formula change',()=>{
  assert.equal(run('s.lunarLuck.progress'),99.99);
  assert.throws(()=>run("applyAction(s,'claimLunarLuck',{},100001)"),/не заполнена/);
  run("s.currentLevel=100;s.playerData.click_damage=1e9;s=applyAction(s,'click',{count:1},100001)");
- assert.equal(run('s.lunarLuck.progress'),100);
+ assert.equal(run('s.lunarLuck.progress'),100.0852);
  run("s=applyAction(s,'claimLunarLuck',{},100002)");
  assert.equal(run('s.lunarLuck.dust'),8);
- assert.equal(run('s.lunarLuck.progress'),0);
+ assert.equal(run('s.lunarLuck.progress'),.0852);
  assert.equal(run('s.inventory.items.length'),1);
+});
+
+test('dust keeps accumulating after the first reward and a claim pays all completed cycles',()=>{
+ const run=setup();
+ run("var s=freshState();s.currentLevel=100;s.levelLocked=true;s.playerData.click_damage=1e15;s.lunarLuck={progress:599.9,dust:5,claims:2};s=applyAction(s,'click',{count:2},100000);s=applyAction(s,'load',{},100001)");
+ assert.equal(run('s.lunarLuck.progress'),600.0904);
+ assert.equal(run('s.lunarLuck.dust'),5);
+ run("s=applyAction(s,'claimLunarLuck',{},100002)");
+ assert.equal(run('s.lunarLuck.dust'),11);
+ assert.equal(run('s.lunarLuck.progress'),.0904);
+ assert.equal(run('s.lunarLuck.claims'),8);
+ assert.equal(run("s.inventory.items.map(item=>item.type).join(',')"),'moonstone,orbit');
+ assert.throws(()=>run("applyAction(s,'claimLunarLuck',{},100003)"),/не заполнена/);
 });
