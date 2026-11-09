@@ -39,7 +39,7 @@ export const CONSTANTS = {
     VISUAL_WEIGHTS: Array(17).fill(1)
   },
   ECHO: { MAX_HITS_PER_ACTION: 128, MAX_QUEUED_BURSTS: 64 },
-  LUNAR_DUST: { PROGRESS_SCALE: 10000, BASE_GAIN: 0.0001, LEVEL_EXPONENT: 1.5, SOFT_CAP: 2 },
+  LUNAR_DUST: { PROGRESS_SCALE: 1000000, BASE_GAIN: 0.0001, LEVEL_EXPONENT: 1.5, SOFT_CAP: 2, GAIN_DIVISOR: 20 },
   UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, MIN_INTERVAL: 100, COMBO_RELAY_COST: 1000000, MAX_SHOTS_PER_ACTION: 32, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, UNIT_BASE_COST: 2400, UNIT_COST_MULTIPLIER: 2, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { rewardMultiplier: 0.5 }, cosmic: { damagePerLevel: 0.001 } } },
   MOON_REWARD: { BASE: 5, PER_LEVEL: 2, EXPONENT: 1.5, GROWTH: 0.5, BOSS_MULTIPLIER: 2.5 },
 
@@ -843,9 +843,9 @@ export function getMoonMechanicParams(moonId, moonLevel) {
 // ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: Получить цену прокачки луны
 // ============================================================
 export function getLunarDustGain(level) {
-  const {BASE_GAIN,LEVEL_EXPONENT,SOFT_CAP}=CONSTANTS.LUNAR_DUST;
+  const {BASE_GAIN,LEVEL_EXPONENT,SOFT_CAP,GAIN_DIVISOR}=CONSTANTS.LUNAR_DUST;
   const gain=BASE_GAIN*Math.pow(level,LEVEL_EXPONENT);
-  return gain/(1+gain/SOFT_CAP);
+  return gain/(1+gain/SOFT_CAP)/GAIN_DIVISOR;
 }
 
 export function getMoonLevelLimit(moonId, cloneUpgrades=0) {

@@ -455,7 +455,7 @@ function updateLunarLuckWidget(){
  if(meter.getAttribute('aria-valuenow')!==value){
   meter.setAttribute('aria-valuenow',value);
   meter.firstElementChild.style.transform='scaleX('+progress/100+')';
-  el.querySelector('[data-luck-progress]').textContent=progress.toLocaleString('ru-RU',{maximumFractionDigits:4})+'%';
+  el.querySelector('[data-luck-progress]').textContent=progress.toLocaleString('ru-RU',{maximumFractionDigits:6})+'%';
  }
  const pending=el.querySelector('[data-luck-ready]'),readyValue=String(ready);
  if(pending.textContent!==readyValue){
