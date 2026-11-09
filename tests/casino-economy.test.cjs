@@ -3,7 +3,7 @@ const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').rep
 function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return s=>vm.runInContext(s,c);}
 test('sector multipliers determine expected payout regardless of past wins',()=>{
  const run=setup();
- for(const pressure of [0,25,50])for(const [choice,expected] of [['red',54/37],['black',54/37],['zero',50/37]]){
+ for(const pressure of [0,25,50])for(const [choice,expected] of [['red',45/37],['black',45/37],['zero',50/37]]){
   const weights=JSON.parse(run('JSON.stringify(getWheelWeights({wheelEconomy:{pressure:'+pressure+'}}))'));
   const sectors=JSON.parse(run('JSON.stringify(CONSTANTS.WHEEL.SECTORS)'));
   const payouts=JSON.parse(run('JSON.stringify(CONSTANTS.WHEEL.MULTIPLIERS)'));

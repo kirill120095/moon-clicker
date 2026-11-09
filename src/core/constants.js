@@ -33,7 +33,7 @@ export const CONSTANTS = {
     SPIN_MS: 3200,
     MAX_BET_FRACTION: 1,
     SECTORS: Array.from({length:17},(_,i)=>i===0?'zero':i%2?'red':'black'),
-    MULTIPLIERS: [50,2,2,3,3,2,2,5,5,2,2,3,3,2,2,5,5],
+    MULTIPLIERS: [50,2,2,2,2,2,2,5,5,2,2,3,3,2,2,2,2],
     // Each color keeps 18/37 of the probability, and Moonlight keeps 1/37.
     WEIGHTS: [4,...Array(16).fill(9)],
     VISUAL_WEIGHTS: Array(17).fill(1)

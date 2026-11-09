@@ -7,7 +7,7 @@ test('wheel rejects forged session, payout and outcome in client payload without
 });
 test('every sector pays from the server outcome and ignores forged payload winnings',()=>{
  const run=setup();
- const payouts=[50,2,2,3,3,2,2,5,5,2,2,3,3,2,2,5,5];
+ const payouts=[50,2,2,2,2,2,2,5,5,2,2,3,3,2,2,2,2];
  for(let index=0;index<payouts.length;index++){
   const sector=run('CONSTANTS.WHEEL.SECTORS['+index+']');
   for(const choice of ['red','black','zero']){
