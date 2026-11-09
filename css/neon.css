@@ -530,7 +530,8 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
  #profilePanel,#shopPanel{width:var(--orbit-panel-width);max-width:none}
  #profileToggleBtn.panel-open{left:var(--orbit-panel-width)}
  #shopToggleBtn.panel-open{right:var(--orbit-panel-width)}
- #profileToggleBtn.panel-open,#shopToggleBtn.panel-open{top:78px;transform:none}
+ #profileToggleBtn.panel-open,#shopToggleBtn.panel-open{top:12px;transform:none;flex-direction:row;gap:6px;min-height:34px;padding:5px 9px}
+ #profileToggleBtn.panel-open .toggle-icon,#shopToggleBtn.panel-open .toggle-icon{font-size:16px}
  #profilePanel .panel-edge-close,#shopPanel .panel-edge-close{display:none}
  body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .moon-wrapper{
   --orbit-moon-size:min(clamp(280px,38svh,420px),calc(var(--orbit-center-width) - 64px));
