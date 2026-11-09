@@ -524,24 +524,42 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 /* Keep a centered gameplay lane when either desktop panel is open. */
 @media(min-width:900px){
  body{
-  --orbit-panel-width:min(34vw,640px,calc((100vw - 360px) / 2));
+  --orbit-panel-width:min(34.6vw,calc((100vw - 350px) / 2));
   --orbit-center-width:calc(100vw - 2 * var(--orbit-panel-width));
+  --orbit-panel-padding:clamp(16px,1.7vw,27px);
+  --orbit-panel-text:clamp(13px,1.08vw,16px);
+  --orbit-panel-title:clamp(16px,1.35vw,20px);
  }
  #profilePanel,#shopPanel{width:var(--orbit-panel-width);max-width:none}
- #profileToggleBtn.panel-open{left:var(--orbit-panel-width)}
- #shopToggleBtn.panel-open{right:var(--orbit-panel-width)}
- #profileToggleBtn.panel-open,#shopToggleBtn.panel-open{top:12px;transform:none;flex-direction:row;gap:6px;min-height:34px;padding:5px 9px}
+ #profilePanel .panel-content,#shopPanel .panel-content{padding:var(--orbit-panel-padding);font-size:var(--orbit-panel-text)}
+ #profilePanel .panel-tab,#shopPanel .panel-tab{font-size:clamp(11px,1.02vw,14px);min-height:clamp(43px,3.7vw,57px)}
+ :is(#profilePanel,#shopPanel) :is(.block-title,.shop-section-title,.moon-shop-name,.quest-name,.prestige-item h4){font-size:var(--orbit-panel-title)}
+ :is(#profilePanel,#shopPanel) :is(.btn-buy-shop,.btn-action){font-size:var(--orbit-panel-text);min-height:clamp(40px,3.35vw,53px)}
+ #profilePanel .stat-card-value{font-size:clamp(17px,1.45vw,23px)}
+ #profileToggleBtn.panel-open{left:calc(var(--orbit-panel-width) - 17px)}
+ #shopToggleBtn.panel-open{right:calc(var(--orbit-panel-width) - 17px)}
+ #profileToggleBtn.panel-open,#shopToggleBtn.panel-open{top:50%;transform:translateY(-50%);width:32px;min-height:52px;justify-content:center;padding:0;border-radius:9px}
  #profileToggleBtn.panel-open .toggle-icon,#shopToggleBtn.panel-open .toggle-icon{font-size:16px}
+ #profileToggleBtn.panel-open .toggle-label,#shopToggleBtn.panel-open .toggle-label{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}
  #profilePanel .panel-edge-close,#shopPanel .panel-edge-close{display:none}
  body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .moon-wrapper{
-  --orbit-moon-size:min(clamp(280px,38svh,420px),calc(var(--orbit-center-width) - 64px));
+  --orbit-moon-size:min(clamp(280px,38svh,420px),calc(var(--orbit-center-width) - 96px));
   width:var(--orbit-moon-size)!important;height:var(--orbit-moon-size)!important;
  }
- body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .moon-info-below{max-width:min(520px,calc(var(--orbit-center-width) - 24px))}
- body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .buffs-container{max-width:min(700px,calc(var(--orbit-center-width) - 24px))}
+ body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .moon-container{margin-bottom:14px}
+ body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .moon-info-below{max-width:min(520px,calc(var(--orbit-center-width) - 32px))}
+ body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .buffs-container{max-width:min(700px,calc(var(--orbit-center-width) - 32px));padding:6px}
+ body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .buff-card{min-width:min(146px,100%)}
  #moonEquipFloatingInventory{
   left:calc(var(--orbit-panel-width) + 14px);
   width:min(560px,calc(100vw - var(--orbit-panel-width) - 28px));
  }
  body:has(#shopPanel:not(.hidden)) #moonEquipFloatingInventory{width:min(560px,calc(var(--orbit-center-width) - 28px))}
+}
+@media(min-width:900px) and (max-width:1099px){
+ #shopPanel .panel-tabs{padding-inline:5px;gap:2px}
+ #shopPanel .panel-tab{font-size:clamp(9px,calc(1.15vw - 1px),12px)}
+}
+@media(min-width:900px) and (max-height:760px){
+ body:has(#profilePanel:not(.hidden),#shopPanel:not(.hidden)) .app{padding-top:46px}
 }
