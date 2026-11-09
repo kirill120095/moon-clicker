@@ -573,10 +573,11 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   if(!['red','black','zero'].includes(choice))throw Error('Выберите красное, чёрное или зеро');
   if(!Number.isInteger(index)||index<0||index>=config.SECTORS.length)throw Error('Не удалось определить сектор');
   if(state.wheelResult&&now-state.wheelResult.at<config.COOLDOWN_MS)throw Object.assign(Error('Дождитесь окончания вращения'),{code:'RATE_LIMIT'});
-  const sector=config.SECTORS[index],multiplier=sector===choice?(choice==='zero'?36:2):0;
+  const sector=config.SECTORS[index],sectorMultiplier=config.MULTIPLIERS[index];
+  const multiplier=sector===choice?sectorMultiplier:0;
   const payout=Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.floor(bet*multiplier));
   state.playerData.shards=Math.min(CONSTANTS.SAFE_NUMBER_CAP,before-bet+payout);
-  state.wheelResult={at:now,index,bet,choice,sector,multiplier,payout,balanceBefore:before,balanceAfter:state.playerData.shards,delta:state.playerData.shards-before};
+  state.wheelResult={at:now,index,bet,choice,sector,sectorMultiplier,multiplier,payout,balanceBefore:before,balanceAfter:state.playerData.shards,delta:state.playerData.shards-before};
   const economy=state.wheelEconomy||{},delta=state.wheelResult.delta,cap=CONSTANTS.SAFE_NUMBER_CAP;
   state.wheelEconomy={pressure:0,spins:Math.min(cap,(economy.spins||0)+1),wagered:Math.min(cap,(economy.wagered||0)+bet),payouts:Math.min(cap,(economy.payouts||0)+payout),totalWon:Math.min(cap,(economy.totalWon||0)+Math.max(0,delta)),totalLost:Math.min(cap,(economy.totalLost||0)+Math.max(0,-delta)),houseNet:Math.max(-cap,Math.min(cap,(economy.houseNet||0)-delta))};
  } else if(action==='buyClickCrystal'){

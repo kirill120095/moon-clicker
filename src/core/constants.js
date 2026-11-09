@@ -28,7 +28,16 @@ export const CONSTANTS = {
   CLICK_TOKEN_CAPACITY: 36,
   ROLLBACK_LEVELS: 10,
   PRESTIGE: { DAILY_ASCENSION_LIMIT: 3, DAMAGE_EVERY: 100, DAMAGE_PER_STEP: 0.01, SHARDS_EVERY: 300, SHARDS_PER_STEP: 0.05, COIN_EVERY: 20, REWARD_PER_ASCENSION: 0.25, UFO_HASTE_CAP: 0.95, PRICE_STEP_RATIO: 0.2, PRICE_QUADRATIC_DIVISOR: 10 },
-  WHEEL: { COOLDOWN_MS: 5200, SPIN_MS: 3200, MAX_BET_FRACTION: 1, SECTORS: Array.from({length:37},(_,i)=>i===0?'zero':i%2?'red':'black'), WEIGHTS: Array(37).fill(1), VISUAL_WEIGHTS: Array(37).fill(1) },
+  WHEEL: {
+    COOLDOWN_MS: 5200,
+    SPIN_MS: 3200,
+    MAX_BET_FRACTION: 1,
+    SECTORS: Array.from({length:17},(_,i)=>i===0?'zero':i%2?'red':'black'),
+    MULTIPLIERS: [50,2,2,3,3,2,2,5,5,2,2,3,3,2,2,5,5],
+    // Each color keeps 18/37 of the probability, and Moonlight keeps 1/37.
+    WEIGHTS: [4,...Array(16).fill(9)],
+    VISUAL_WEIGHTS: Array(17).fill(1)
+  },
   ECHO: { MAX_HITS_PER_ACTION: 128, MAX_QUEUED_BURSTS: 64 },
   LUNAR_DUST: { PROGRESS_SCALE: 10000, BASE_GAIN: 0.0001, LEVEL_EXPONENT: 1.5, SOFT_CAP: 2 },
   UFO: { UNLOCK_LEVEL: 5, BASE_COST: 400, COST_MULTIPLIER: 1.8, MAX_LEVEL: 5, BASE_INTERVAL: 3000, MIN_INTERVAL: 100, COMBO_RELAY_COST: 1000000, MAX_SHOTS_PER_ACTION: 32, INTERVAL_REDUCTION: 400, DAMAGE_MULTIPLIER: 0.5, MAX_IDLE_MS: 5000, UNIT_BASE_COST: 2400, UNIT_COST_MULTIPLIER: 2, MOON_BUFF_SCALE: 0.05, MOON_BUFFS: { normal: { comboDamage: 0.10 }, blood: { bossDamage: 0.20 }, ice: { haste: 0.10 }, shadow: { critChance: 0.08, critMultiplier: 1.5 }, fire: { damage: 0.15 }, electric: { chainEvery: 5, chainMultiplier: 1.5 }, gold: { rewardMultiplier: 0.5 }, cosmic: { damagePerLevel: 0.001 } } },
@@ -543,18 +552,18 @@ export const MOON_TYPES = {
       3: {
         icon: '🎯',
         name: 'Золотой клик I',
-        description: '2,5% шанс получить +25 💎 за клик',
+        description: '25% шанс получить +25 💎 за клик',
         apply: (params) => { 
-          params.goldenClickChance = 0.025; 
+          params.goldenClickChance = 0.25;
           params.goldenClickReward = 25; 
         }
       },
       5: {
         icon: '🎯',
         name: 'Золотой клик II',
-        description: '2,5% шанс получить +50 💎 за клик',
+        description: '50% шанс получить +50 💎 за клик',
         apply: (params) => { 
-          params.goldenClickChance = 0.025; 
+          params.goldenClickChance = 0.5;
           params.goldenClickReward = 50; 
         }
       },

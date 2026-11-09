@@ -13,7 +13,7 @@ test('HP and level cap stay within safe integer range',()=>{const run=setup();as
 
 test('browser and server share balance definitions, with independent presentation settings',()=>{
  const read=p=>fs.readFileSync(path.join(root,p),'utf8').replace(/\r\n/g,'\n');
- const balance=src=>src.replace(/SPIN_MS: \d+, /,'').replace(/^ *MAX_LEADERS: \d+,\n/m,'');
+ const balance=src=>src.replace(/^ *SPIN_MS: \d+,\n/m,'').replace(/^ *MAX_LEADERS: \d+,\n/m,'');
  assert.equal(balance(read('src/core/constants.js')),balance(read('supabase/functions/game-actions/constants.js')));
  assert.equal(read('src/core/config.js'),read('supabase/functions/game-actions/config.js'));
 });

@@ -7,11 +7,13 @@ test('wheel rejects forged session, payout and outcome in client payload without
 });
 test('every sector pays from the server outcome and ignores forged payload winnings',()=>{
  const run=setup();
- for(let index=0;index<37;index++){
+ const payouts=[50,2,2,3,3,2,2,5,5,2,2,3,3,2,2,5,5];
+ for(let index=0;index<payouts.length;index++){
   const sector=run('CONSTANTS.WHEEL.SECTORS['+index+']');
   for(const choice of ['red','black','zero']){
    run("var s=freshState();s.playerData.shards=1000;var next=applyAction(s,'spinWheel',{bet:50,choice:"+JSON.stringify(choice)+",wheelIndex:6,payout:999999},100000,{canSpinWheel:true,wheelIndex:"+index+"});");
-   const expected=950+(sector===choice?50*(choice==='zero'?36:2):0);
+   const expected=950+(sector===choice?50*payouts[index]:0);
+   assert.equal(run('next.wheelResult.sectorMultiplier'),payouts[index]);
    assert.equal(run('next.playerData.shards'),expected);assert.equal(run('next.wheelResult.index'),index);assert.equal(run('next.wheelResult.delta'),expected-1000);assert.equal(run('s.playerData.shards'),1000);
   }
  }
@@ -23,7 +25,7 @@ test('invalid stakes, choices, bad outcomes and rapid spins cannot change funds'
  assert.equal(run("applyAction(s,'spinWheel',{bet:1000,choice:'red'},100000,trusted).playerData.shards"),2000);
  assert.equal(run("applyAction(s,'spinWheel',{bet:1000,choice:'black'},100000,trusted).playerData.shards"),0);
  assert.throws(()=>run("applyAction(s,'spinWheel',{bet:50},100000,trusted)"),/Выберите/);
- assert.throws(()=>run("applyAction(s,'spinWheel',{bet:50,choice:'red'},100000,{canSpinWheel:true,wheelIndex:37})"),/сектор/);
+ assert.throws(()=>run("applyAction(s,'spinWheel',{bet:50,choice:'red'},100000,{canSpinWheel:true,wheelIndex:17})"),/сектор/);
  run("s=applyAction(s,'spinWheel',{bet:50,choice:'red'},100000,trusted);var before=JSON.stringify(s),nextAt=100000+CONSTANTS.WHEEL.COOLDOWN_MS");
  assert.throws(()=>run("applyAction(s,'spinWheel',{bet:50,choice:'red'},nextAt-1,trusted)"),/окончания/);assert.equal(run('JSON.stringify(s)===before'),true);
  assert.equal(run("applyAction(s,'spinWheel',{bet:50,choice:'red'},nextAt,trusted).playerData.shards"),1100);
@@ -51,11 +53,11 @@ test('every wheel sector lands at pointer after seven full revolutions even from
 });
 test('a slow result cannot start a second spin and confirmed reward stops on correct sector',async()=>{
  const s=uiSetup(),pending=s.wheel.play();await s.wheel.play();assert.equal(s.calls,1);assert.equal(s.form.elements.bet.disabled,true);
- s.resolve({index:1,sector:'red',multiplier:2,payout:100,delta:50});await pending;
+ s.resolve({index:7,sector:'red',sectorMultiplier:5,multiplier:5,payout:250,delta:200});await pending;
  const visualIndex=Math.round((360-s.wheel.angle)*17/360-.5);
- assert.equal(visualIndex%2,1);
+ assert.equal(visualIndex,7);
  assert.ok(Math.abs(s.wheel.angle-(360-(visualIndex+.5)*360/17))<1e-7);
- assert.equal(s.wheel.busy,false);assert.equal(s.form.elements.bet.disabled,false);assert.ok(s.classes.has('fortune-win'));assert.equal(s.particles.length,28);assert.ok(s.animations.every(a=>a.cancelled));assert.match(s.wheel.lastMessage[0],/50/);
+ assert.equal(s.wheel.busy,false);assert.equal(s.form.elements.bet.disabled,false);assert.ok(s.classes.has('fortune-win'));assert.equal(s.particles.length,28);assert.ok(s.animations.every(a=>a.cancelled));assert.match(s.wheel.lastMessage[0],/200/);assert.match(s.wheel.lastMessage[1],/×5/);
 });
 test('logout cancels animation and late server result cannot expose or restart wheel',async()=>{
  const s=uiSetup(),pending=s.wheel.play();s.wheel.disconnect();s.resolve({index:1,sector:'red',multiplier:2,payout:100,delta:50});await pending;
@@ -115,12 +117,12 @@ test('cached request never runs wheel payout again',async()=>{
  const s=await edgeSetup({cached:true});assert.equal(s.response.status,200);assert.equal(s.contexts.length,0);assert.equal(s.commits,1);
 });
 
-test('37 equally likely tickets give 18 red, 18 black and one zero',()=>{
- const run=setup(),counts=Array(37).fill(0);
- for(let ticket=0;ticket<37;ticket++)counts[run('getWheelSectorIndex('+ticket+')')]++;
- assert.deepEqual(counts,Array(37).fill(1));
- for(const [sector,n] of [['red',18],['black',18],['zero',1]])assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(s=>s==='"+sector+"').length"),n);
- for(const ticket of [-1,37,.5])assert.throws(()=>run('getWheelSectorIndex('+ticket+')'));
+test('17 sectors keep the color odds at 18/37 each and Moonlight at 1/37',()=>{
+ const run=setup(),counts=Array(17).fill(0);
+ for(let ticket=0;ticket<148;ticket++)counts[run('getWheelSectorIndex('+ticket+')')]++;
+ assert.deepEqual(counts,[4,...Array(16).fill(9)]);
+ for(const [sector,n] of [['red',8],['black',8],['zero',1]])assert.equal(run("CONSTANTS.WHEEL.SECTORS.filter(s=>s==='"+sector+"').length"),n);
+ for(const ticket of [-1,148,.5])assert.throws(()=>run('getWheelSectorIndex('+ticket+')'));
 });
 test('weighted wheel angle helper still stops in the center of nonuniform sectors',()=>{
  const s=uiSetup(),weights=[97,97,97,97,97,97,97,97,97,97,33,97];let start=0;

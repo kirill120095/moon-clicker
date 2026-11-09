@@ -38,15 +38,6 @@ export function randomWheelHeadline(random=Math.random()) {
 
 const MAX_BET_FRACTION=CONSTANTS.WHEEL.MAX_BET_FRACTION;
 const MAX_BET_PERCENT=MAX_BET_FRACTION*100;
-const DISPLAY_SECTORS=Object.freeze(Array.from({length:17},(_,i)=>i===0?'zero':i%2?'red':'black'));
-// Server result stays on the original 37 equally likely sectors.
-// The larger display sectors are cosmetic; 0 has one position, each color eight.
-function displayIndex(serverIndex){
- const sector=CONSTANTS.WHEEL.SECTORS[serverIndex];
- if(sector==='zero')return 0;
- const matching=[];DISPLAY_SECTORS.forEach((value,i)=>{if(value===sector)matching.push(i);});
- return matching[Math.floor(Math.random()*matching.length)];
-}
 export class FortuneWheel {
  constructor(){this.allowed=false;this.busy=false;this.generation=0;this.animations=[];this.angle=0;this.timer=null;this.nextSpinAt=0;this.cooldownTimer=null;}
  bind(spin,onReveal){this.spin=spin;this.onReveal=onReveal;}
@@ -57,8 +48,8 @@ export class FortuneWheel {
    root.innerHTML=`
    <section class="fortune-dialog" aria-labelledby="fortuneTitle"><div class="fortune-header"><div><span class="fortune-eyebrow">КАЗИНО ФОРТУНЫ · КРИСТАЛЛЫ</span><h2 id="fortuneTitle">Лунная рулетка</h2></div><button type="button" class="fortune-close" aria-label="Закрыть">×</button></div>
    <div class="fortune-stage"><div class="fortune-halo"></div><div class="fortune-pointer" aria-hidden="true"></div><div class="fortune-rotor"></div><div class="fortune-hub" aria-hidden="true">✦</div><div class="fortune-particles" aria-hidden="true"></div></div>
-   <div class="fortune-outcome" role="status" hidden></div><div class="fortune-result" role="status" aria-live="polite"><strong>Лунная рулетка</strong><span>17 крупных секторов · прежние вероятности</span></div>
-   <p class="fortune-balance"></p><form class="fortune-form"><fieldset class="fortune-choice"><legend>Выбери сектор</legend><div class="fortune-choice-grid"><label class="fortune-choice-option fortune-choice-red"><input type="radio" name="choice" value="red" checked><span class="fortune-choice-face"><b>Красное</b><small>48,65% · ×2</small></span></label><label class="fortune-choice-option fortune-choice-black"><input type="radio" name="choice" value="black"><span class="fortune-choice-face"><b>Чёрное</b><small>48,65% · ×2</small></span></label><label class="fortune-choice-option fortune-choice-zero"><input type="radio" name="choice" value="zero"><span class="fortune-choice-face"><b>Лунный свет</b><small>2,70% · ×36</small></span></label></div></fieldset><label>Ставка · 💎<input name="bet" type="number" inputmode="numeric" min="1" step="1" required value="1"></label><div class="fortune-presets"><button type="button" data-part="0.1">10%</button><button type="button" data-part="0.25">25%</button><button type="button" data-part="0.5">50%</button><button type="button" data-part="${MAX_BET_FRACTION}">${MAX_BET_PERCENT}%</button></div><button class="fortune-spin" type="submit">ВРАЩАТЬ <span>✦</span></button></form>
+   <div class="fortune-outcome" role="status" hidden></div><div class="fortune-result" role="status" aria-live="polite"><strong>Лунная рулетка</strong><span>17 секторов с множителями выигрыша</span></div>
+   <p class="fortune-balance"></p><form class="fortune-form"><fieldset class="fortune-choice"><legend>Выбери сектор</legend><div class="fortune-choice-grid"><label class="fortune-choice-option fortune-choice-red"><input type="radio" name="choice" value="red" checked><span class="fortune-choice-face"><b>Красное</b><small>48,65% · ×2, ×3, ×5</small></span></label><label class="fortune-choice-option fortune-choice-black"><input type="radio" name="choice" value="black"><span class="fortune-choice-face"><b>Чёрное</b><small>48,65% · ×2, ×3, ×5</small></span></label><label class="fortune-choice-option fortune-choice-zero"><input type="radio" name="choice" value="zero"><span class="fortune-choice-face"><b>Лунный свет</b><small>2,70% · ×50</small></span></label></div></fieldset><label>Ставка · 💎<input name="bet" type="number" inputmode="numeric" min="1" step="1" required value="1"></label><div class="fortune-presets"><button type="button" data-part="0.1">10%</button><button type="button" data-part="0.25">25%</button><button type="button" data-part="0.5">50%</button><button type="button" data-part="${MAX_BET_FRACTION}">${MAX_BET_PERCENT}%</button></div><button class="fortune-spin" type="submit">ВРАЩАТЬ <span>✦</span></button></form>
    <p class="fortune-odds">Красное: 48,65% · Чёрное: 48,65% · Лунный свет: 2,70%. Внешний размер секторов не отражает вероятность. Максимальная ставка — ${MAX_BET_PERCENT}% баланса. Выплаты включают ставку. Вероятности постоянны.</p></section>`;
    this.root=root;document.querySelector('#shopPanel .panel-content').append(root);
    this.dialog=root.querySelector('.fortune-dialog');this.rotor=root.querySelector('.fortune-rotor');this.result=root.querySelector('.fortune-result');this.form=root.querySelector('form');this.button=root.querySelector('.fortune-spin');
@@ -73,11 +64,14 @@ export class FortuneWheel {
  }
  setBetFraction(part){if(this.busy)return;const balance=Math.floor(getVisibleShards(state.playerData?.shards));this.form.elements.bet.value=Math.min(Math.floor(balance*MAX_BET_FRACTION),Math.max(1,Math.floor(balance*Math.max(0,Math.min(MAX_BET_FRACTION,part)))));}
  draw(){
-  const sectors=DISPLAY_SECTORS,count=sectors.length;
+  const {SECTORS:sectors,MULTIPLIERS:multipliers}=CONSTANTS.WHEEL;
+  const count=sectors.length;
   const point=(r,a)=>[200+r*Math.cos(a*Math.PI/180),200+r*Math.sin(a*Math.PI/180)];
-  this.rotor.innerHTML='<svg viewBox="0 0 400 400" aria-label="17 крупных декоративных секторов; вероятности указаны на кнопках">'+sectors.map((sector,i)=>{
+  this.rotor.innerHTML='<svg viewBox="0 0 400 400" aria-label="17 секторов с множителями выплаты">'+sectors.map((sector,i)=>{
    const start=-90+i*360/count,width=360/count,center=start+width/2,a=point(190,start),b=point(190,start+width),t=point(157,center);
-   return '<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(sector==='zero'?'#8098b9':sector==='red'?'#b93670':'#1d2d59')+'" stroke="#a9c7ee" stroke-opacity=".8"/>';
+   const wedge='<path d="M200 200 L'+a.join(' ')+' A190 190 0 0 1 '+b.join(' ')+' Z" fill="'+(sector==='zero'?'#8098b9':sector==='red'?'#b93670':'#1d2d59')+'" stroke="#a9c7ee" stroke-opacity=".8"/>';
+   const label='<text x="'+t[0]+'" y="'+t[1]+'" transform="rotate('+(center+90)+' '+t.join(' ')+')" text-anchor="middle" dominant-baseline="central" fill="'+(sector==='zero'?'#101b34':'#fff')+'" font-family="system-ui" font-size="20" font-weight="700">×'+multipliers[i]+'</text>';
+   return wedge+label;
   }).join('')+'<circle cx="200" cy="200" r="195" fill="none" stroke="#dcecff" stroke-width="8"/></svg>';
  }
  close(){if(!this.root)return;this.root.classList.add('hidden');this.root.classList.remove('active');}
@@ -112,14 +106,13 @@ export class FortuneWheel {
    const response=await this.spin({bet,choice});
    if(generation!==this.generation)return;
    const result=response?.state?.wheelResult;
-   if(!result||!Number.isInteger(result.index))throw Error('Нет подтверждённого результата. Баланс уточнится при обновлении.');
+   if(!result||!Number.isInteger(result.index)||!CONSTANTS.WHEEL.SECTORS[result.index])throw Error('Нет подтверждённого результата. Баланс уточнится при обновлении.');
    if(Number.isFinite(result.at))this.nextSpinAt=result.at+CONSTANTS.WHEEL.COOLDOWN_MS-(state.serverClockOffset||0);
    const from=this.angle+(moving?(performance.now()-started)/900*360:0);
    this.rotor.style.transform='rotate('+from+'deg)';
    idle?.cancel();
    // Each SVG wedge begins at -90deg; land the pointer on its midpoint, not its border.
-   const visualIndex=displayIndex(result.index);
-   const target=wheelStopAngle(visualIndex+0.5,DISPLAY_SECTORS.length,from);
+   const target=wheelStopAngle(result.index+0.5,CONSTANTS.WHEEL.SECTORS.length,from);
    if(moving)await this.track(this.rotor.animate([{transform:'rotate('+from+'deg)'},{transform:'rotate('+target+'deg)'}],{duration:CONSTANTS.WHEEL.SPIN_MS,easing:'cubic-bezier(.12,.65,.12,1)',fill:'forwards'}));
    if(generation!==this.generation)return;
    this.angle=target%360;this.rotor.style.transform='rotate('+target+'deg)';
@@ -128,12 +121,13 @@ export class FortuneWheel {
    const win=result.delta>0;
    this.root.classList.add(win?'fortune-win':'fortune-loss');
    this.root.dataset.outcome=result.sector;
-   const outcomeLabel=result.sector==='red'?'Красное':result.sector==='black'?'Чёрное':'Лунный свет';
+   const sectorMultiplier=result.sectorMultiplier??CONSTANTS.WHEEL.MULTIPLIERS[result.index];
+   const outcomeLabel=(result.sector==='red'?'Красное':result.sector==='black'?'Чёрное':'Лунный свет')+' ×'+sectorMultiplier;
    const indicator=this.root.querySelector('.fortune-outcome');
    if(indicator){indicator.textContent='ВЫПАЛО: '+outcomeLabel;indicator.hidden=false;}
    const number=n=>n.toLocaleString('ru-RU');
    this.message(win?'+'+number(result.delta)+' 💎':result.delta===0?'Без изменения баланса':'−'+number(-result.delta)+' 💎',
-    'Выпало: '+(result.sector==='red'?'💜 Красное':result.sector==='black'?'🌌 Чёрное':'✨ Лунный свет')+' · выплата: '+number(result.payout)+' 💎');
+    'Выпало: '+outcomeLabel+' · выплата: '+number(result.payout)+' 💎');
    if(win){audio.purchase();if(moving&&!document.documentElement?.classList.contains('low-power'))this.confetti();}
    else if(moving)await this.track(this.result.animate([{transform:'translateX(0)'},{transform:'translateX(-7px)'},{transform:'translateX(7px)'},{transform:'translateX(0)'}],{duration:350}));
   }catch(error){if(generation===this.generation)this.message('Вращение не подтверждено',error.message||'Проверь соединение и баланс перед новой ставкой.');}

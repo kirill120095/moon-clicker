@@ -1,13 +1,14 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const strip=s=>s.replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'');
 function setup(){const c={structuredClone,console,Date,Math:Object.create(Math)};vm.createContext(c);vm.runInContext(['constants.js','config.js','rules.js'].map(p=>strip(fs.readFileSync(path.join(__dirname,'../supabase/functions/game-actions',p),'utf8'))).join('\n'),c);return s=>vm.runInContext(s,c);}
-test('each choice pays 36/37 of the stake on average regardless of past wins',()=>{
+test('sector multipliers determine expected payout regardless of past wins',()=>{
  const run=setup();
- for(const pressure of [0,25,50])for(const [choice,multiplier] of [['red',2],['black',2],['zero',36]]){
+ for(const pressure of [0,25,50])for(const [choice,expected] of [['red',54/37],['black',54/37],['zero',50/37]]){
   const weights=JSON.parse(run('JSON.stringify(getWheelWeights({wheelEconomy:{pressure:'+pressure+'}}))'));
   const sectors=JSON.parse(run('JSON.stringify(CONSTANTS.WHEEL.SECTORS)'));
-  const winners=weights.reduce((sum,weight,index)=>sum+(sectors[index]===choice?weight:0),0);
-  assert.equal(winners*multiplier/weights.reduce((sum,n)=>sum+n,0),36/37);
+  const payouts=JSON.parse(run('JSON.stringify(CONSTANTS.WHEEL.MULTIPLIERS)'));
+  const winnings=weights.reduce((sum,weight,index)=>sum+(sectors[index]===choice?weight*payouts[index]:0),0);
+  assert.equal(winnings/weights.reduce((sum,n)=>sum+n,0),expected);
  }
 });
 test('roulette totals use server payouts and survive ascension',()=>{
