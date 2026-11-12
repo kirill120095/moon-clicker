@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="css/game.css?v=account-settings-21">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
-  <link rel="stylesheet" href="css/neon.css?v=item-affixes-1">
+  <link rel="stylesheet" href="css/neon.css?v=inventory-expansion-1">
 </head>
 <body>
   <!-- ЗВЁЗДНОЕ НЕБО -->
@@ -239,11 +239,29 @@
       <div class="panel-content panel-scrollable">
         <div id="shopTabContent" class="tab-content active">
           <p id="nextGoal" class="next-goal shop-goal">Следующее улучшение</p>
-          <div class="shop-section">
-            <h3 class="shop-section-title">🌙 Предметы для лун</h3>
-            <p>Шесть типов с равным шансом. У каждого предмета случайный баф и дебаф.</p>
-            <button id="buyMoonItem" type="button" class="btn-action" disabled>Случайный предмет · 3 пыли</button>
-          </div>
+          <section class="lunar-item-shop" aria-labelledby="lunarItemShopTitle">
+            <header class="lunar-item-shop-header">
+              <h3 id="lunarItemShopTitle">Предметы для лун</h3>
+              <span id="lunarItemShopBalance" class="lunar-item-shop-balance">✧ 0 пыли</span>
+            </header>
+            <article class="lunar-item-card lunar-item-feature">
+              <div class="lunar-item-icon" aria-hidden="true">◇</div>
+              <div><h4>Случайный предмет</h4><p>6 типов с равным шансом. Случайный баф и дебаф, 5% на звёздный баф.</p></div>
+              <button id="buyMoonItem" type="button" class="btn-action" disabled>Купить за 3 ✧</button>
+            </article>
+            <div class="lunar-item-expansions">
+              <article class="lunar-item-card">
+                <div class="lunar-item-icon" aria-hidden="true">▦</div>
+                <div><h4>Инвентарь</h4><p id="inventoryCapacityProgress">Лимит 20 слотов</p></div>
+                <button id="buyInventoryCapacity" type="button" class="btn-action" disabled>Добавить 5 слотов</button>
+              </article>
+              <article class="lunar-item-card">
+                <div class="lunar-item-icon" aria-hidden="true">★</div>
+                <div><h4>Сохранение предметов</h4><p id="inventoryKeepProgress">Лимит 3 отметки при вознесении</p></div>
+                <button id="buyInventoryKeep" type="button" class="btn-action" disabled>Добавить отметку</button>
+              </article>
+            </div>
+          </section>
           <div id="shopLockMessage" class="shop-lock-message">🔒 Доступно с 5 уровня</div>
           
           <div class="shop-section">
@@ -401,7 +419,7 @@
 {
   "imports": {
     "./src/core/config.js": "./src/core/config.js?v=online-presence-9",
-    "./src/core/constants.js": "./src/core/constants.js?v=item-affixes-1",
+    "./src/core/constants.js": "./src/core/constants.js?v=inventory-expansion-1",
     "./src/core/state.js": "./src/core/state.js?v=online-presence-9",
     "./src/index.js": "./src/index.js?v=roulette-cache-repair-5",
     "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=account-settings-21",
@@ -425,7 +443,7 @@
     "./src/utils/numbers.js": "./src/utils/numbers.js?v=online-presence-9",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=item-affixes-1",
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=inventory-expansion-1",
     "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=internet-radio-29",
     "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=hide-ufo-1"
   }

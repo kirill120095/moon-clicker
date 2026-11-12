@@ -4,7 +4,7 @@ import { gameAdmin } from '../ui/admin.js';
 import { gameEngine } from './game.js';
 import { appState, state } from '../../core/state.js';
 import { CONSTANTS,MOON_TYPES,QUESTS,ACHIEVEMENTS,getBaseDamage,getPrestigeSummary } from '../../core/constants.js';
-import { ITEM_TYPES,ITEM_SHOP_COST,ITEM_MAX_LEVEL,getItemProperties,formatItemProperty,getItemSalvageDust,getEquippedItems } from '../../core/constants.js';
+import { ITEM_TYPES,ITEM_SHOP_COST,ITEM_MAX_LEVEL,getItemProperties,formatItemProperty,getItemSalvageDust,getEquippedItems,getInventoryUpgrade } from '../../core/constants.js';
 import { db } from '../network/supabase.js';
 import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
@@ -506,22 +506,41 @@ function openInventorySalvage(item){
  modal.classList.remove('hidden');modal.addEventListener('keydown',onKey);confirmButton.focus();
 }
 
-function updateLunarLuckWidget(){
- if(!active)return;
+function updateItemShop(){
+ const inventory=state.inventory,dust=state.lunarLuck?.dust||0;
+ const setText=(el,text)=>{if(el&&el.textContent!==text)el.textContent=text;};
+ setText(document.getElementById('lunarItemShopBalance'),'✧ '+dust.toLocaleString('ru-RU')+' пыли');
  const purchase=document.getElementById('buyMoonItem');
  if(purchase){
-  const inventory=state.inventory,dust=state.lunarLuck?.dust||0;
   const full=inventory?.items?.length>=inventory?.capacity;
   purchase.disabled=dust<ITEM_SHOP_COST||full;
-  const label=full?'Инвентарь заполнен':'Случайный предмет · '+ITEM_SHOP_COST+' пыли (в запасе '+dust+')';
-  if(purchase.textContent!==label)purchase.textContent=label;
+  setText(purchase,full?'Инвентарь заполнен':'Купить за '+ITEM_SHOP_COST+' ✧');
   if(!purchase.onclick)purchase.onclick=()=>command('buyMoonItem',{},true).then(result=>{
    const item=result?.state?.inventory?.items?.at(-1);
    if(item)showToast('Получен предмет: '+ITEM_NAMES[item.type],'success',3500);
   }).catch(()=>{});
  }
+ for(const [kind,buttonId,statusId,label] of [
+  ['capacity','buyInventoryCapacity','inventoryCapacityProgress','слотов'],
+  ['keepLimit','buyInventoryKeep','inventoryKeepProgress','отметок при вознесении']
+ ]){
+  const button=document.getElementById(buttonId);
+  if(!button)continue;
+  const upgrade=getInventoryUpgrade(inventory,kind);
+  const {current,next,cost,maxed}=upgrade;
+  const progress=maxed?current:current+' → '+next;
+  setText(document.getElementById(statusId),progress+' '+label);
+  button.disabled=maxed||dust<cost;
+  setText(button,maxed?'Максимум':'+'+(next-current)+' · '+cost+' ✧');
+  if(!button.onclick)button.onclick=()=>command('buyInventoryUpgrade',{kind},true).catch(()=>{});
+ }
+}
+
+function updateLunarLuckWidget(){
+ if(!active)return;
  const shop=document.getElementById('shopPanel');
  if(!shop||shop.classList.contains('hidden'))return;
+ updateItemShop();
  const host=shop.querySelector('.panel-content');if(!host)return;
  let el=document.getElementById('lunarLuckWidget');
  if(!el){

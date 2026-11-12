@@ -1073,6 +1073,19 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
 }
 
 export const ITEM_SHOP_COST = 3;
+export const INVENTORY_UPGRADES = {
+  capacity: {start:20,max:200,step:5,price:5,priceStep:2},
+  keepLimit: {start:3,max:50,step:1,price:8,priceStep:4}
+};
+
+export function getInventoryUpgrade(inventory,kind) {
+  if(!Object.hasOwn(INVENTORY_UPGRADES,kind))return null;
+  const config=INVENTORY_UPGRADES[kind];
+  const current=Math.max(config.start,Math.min(config.max,Math.floor(Number(inventory?.[kind])||config.start)));
+  const next=Math.min(config.max,current+config.step);
+  const cost=config.price+Math.floor((current-config.start)/config.step)*config.priceStep;
+  return {current,next,cost,maxed:current>=config.max};
+}
 export const ITEM_MAX_LEVEL = 6;
 export const ITEM_TYPES = {
   moonstone: {name:"Лунный камень", icon:"🌙", base:["damage","manual",60],

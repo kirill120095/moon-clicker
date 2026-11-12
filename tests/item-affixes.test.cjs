@@ -28,6 +28,22 @@ test('shop grants a real roll for three dust and preserves funds when inventory 
  assert.equal(run("s.lunarLuck.dust"),3);
 });
 
+test('inventory expansions charge increasing prices and keep their limits through ascension',()=>{
+ const run=setup();
+ run("var s=freshState();s.lunarLuck.dust=20;s.currentLevel=20;s.inventory.items=[{id:1,type:'orbit',rarity:1,keep:true},{id:2,type:'comet',rarity:1}];");
+ run("s=applyAction(s,'buyInventoryUpgrade',{kind:'capacity',cost:0},100000);s=applyAction(s,'buyInventoryUpgrade',{kind:'capacity'},100001);s=applyAction(s,'buyInventoryUpgrade',{kind:'keepLimit'},100002);");
+ assert.equal(run('s.lunarLuck.dust'),0);
+ assert.equal(run('s.inventory.capacity'),30);
+ assert.equal(run('s.inventory.keepLimit'),4);
+ assert.throws(()=>run("applyAction(s,'buyInventoryUpgrade',{kind:'keepLimit'},100003)"),/Недостаточно/);
+ assert.throws(()=>run("applyAction(s,'buyInventoryUpgrade',{kind:'__proto__'},100003)"),/Лимит/);
+ run("s=applyAction(s,'ascend',{},100004)");
+ assert.equal(run('s.inventory.capacity'),30);
+ assert.equal(run('s.inventory.keepLimit'),4);
+ assert.equal(run('s.inventory.items.length'),1);
+ assert.equal(run('s.inventory.items[0].id'),1);
+});
+
 test('merge offer persists, transfers a donor star, and consumes only the selected donor',()=>{
  const run=setup();
  run("Math.random=()=>.5;var s=freshState();s.inventory.items=[{id:1,type:'orbit',rarity:1,mods:[{id:1,value:30}]},{id:2,type:'orbit',rarity:1,mods:[{id:5,value:100,star:true}]}];");

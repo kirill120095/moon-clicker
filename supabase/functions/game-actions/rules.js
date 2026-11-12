@@ -1,6 +1,6 @@
 import { CONSTANTS, MOON_TYPES, SYNERGY_BONUSES, QUESTS, ACHIEVEMENTS, rollCritical, getMoonPurchaseAccess, rollEchoRepeats, getProgressReward, getQuestPayout, getBaseDamage, getEffectiveMoonParams, getCombatStats, getSlotLimit, getClickCrystalCost, getPrestigeUpgradeCost, getMoonMechanicParams, getMoonLevelLimit, getMoonUpgradeCostForLevel, getCloneCopyLimit, getLunarDustGain, getUfoBonuses, getPrestigeSummary, getMoscowDay, PRESTIGE_UPGRADES } from './constants.js';
 import { getMaxHPForLevel, getSlotUpgradeCost, getClickUpgradeCost } from './config.js';
-import { ITEM_TYPES, ITEM_SHOP_COST, ITEM_MAX_LEVEL, getItemProperties, getItemSalvageDust, getEquippedItems, getActiveSynergies, getCloneTargets } from './constants.js';
+import { ITEM_TYPES, ITEM_SHOP_COST, ITEM_MAX_LEVEL, getItemProperties, getItemSalvageDust, getEquippedItems, getActiveSynergies, getCloneTargets, getInventoryUpgrade } from './constants.js';
 const showToast=()=>{},updateQuestUI=()=>{},updateAchievementUI=()=>{},updateProfileAndLeaders=()=>{};
 function rollItemProperty(pool, ids, allowStar=false){
  const id=ids[Math.floor(Math.random()*ids.length)];
@@ -75,8 +75,8 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   state.equipment[moonId]=Array.from({length:3},(_,i)=>({level:Math.max(0,Math.min(30,Math.floor(Number(slots[i]?.level)||0))),itemId:Number.isSafeInteger(slots[i]?.itemId)?slots[i].itemId:null}));
  }
  state.inventory=state.inventory||{capacity:20,keepLimit:3,nextId:1,items:[]};
- state.inventory.capacity=Math.max(20,Math.min(200,Math.floor(Number(state.inventory.capacity)||20)));
- state.inventory.keepLimit=Math.max(3,Math.min(50,Math.floor(Number(state.inventory.keepLimit)||3)));
+ state.inventory.capacity=getInventoryUpgrade(state.inventory,'capacity').current;
+ state.inventory.keepLimit=getInventoryUpgrade(state.inventory,'keepLimit').current;
  state.inventory.items=Array.isArray(state.inventory.items)?state.inventory.items.filter(i=>i&&typeof i.id==='number'&&typeof i.type==='string'&&Number.isInteger(i.rarity)&&i.rarity>=1&&i.rarity<=30).slice(0,state.inventory.capacity):[];
  const validItems=new Set(state.inventory.items.map(i=>i.id));
  const equippedIds=new Set();
@@ -659,6 +659,13 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
    if(Object.values(state.equipment).some(m=>m.some(x=>x.itemId===item.id)))throw Error('Предмет уже экипирован');
    slot.itemId=item.id;
   }
+ } else if(action==='buyInventoryUpgrade'){
+  if(typeof payload.kind!=='string')throw Error('Неизвестное расширение инвентаря');
+  const upgrade=getInventoryUpgrade(state.inventory,payload.kind);
+  if(!upgrade||upgrade.maxed)throw Error('Лимит расширения достигнут');
+  if(state.lunarLuck.dust<upgrade.cost)throw Error('Недостаточно Лунной пыли');
+  state.lunarLuck.dust-=upgrade.cost;
+  state.inventory[payload.kind]=upgrade.next;
  } else if(action==='buyMoonItem'){
   const inventory=state.inventory;
   if(inventory.items.length>=inventory.capacity)throw Error('Лунный инвентарь заполнен');
