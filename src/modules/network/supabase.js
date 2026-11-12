@@ -143,6 +143,7 @@ export const leaderboardPresence={
 export const db = {
   leaderboardPresence,
   action(action, payload = {}) {
+    const queuedAt=Date.now();
     const request_id = crypto.randomUUID();
     const session = _actionSession;
     const checkSession = () => {
@@ -157,6 +158,7 @@ export const db = {
         checkSession();
         // Keep the request ID if the server committed but its response was lost.
         let result;
+        const sentAt=Date.now();
         try{
           result=await client.functions.invoke('game-actions', { body: { action, payload, request_id, snapshot:_snapshot } });
         }catch(error){result={error};}
@@ -166,6 +168,12 @@ export const db = {
           _failures=0;
           if(result.data?.error){const error=new Error(result.data.error);error.code=result.data.code;recordDiagnostic('game',action,error.code,error);throw error;}
           if(action==='load')recordDiagnostic('game','load','OK','Сохранение загружено');
+          const finishedAt=Date.now(),effects=result.data.state?.effects;
+          if(finishedAt-queuedAt>=400||effects?.length>=12){
+            const kills=effects?.filter(event=>event.reward>0).length||0;
+            recordDiagnostic('performance',action,'TIMING',
+              'Ожидание отправки: '+(sentAt-queuedAt)+' мс; запрос: '+(finishedAt-sentAt)+' мс; попаданий: '+(effects?.length||0)+'; наград за убийство: '+kills);
+          }
           if(result.data.snapshot&&result.data.revision>=_snapshotRevision){_snapshot=result.data.snapshot;_snapshotRevision=result.data.revision;}
           return result.data;
         }

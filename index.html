@@ -201,7 +201,7 @@
  </div><details class="radio-studio-card" open><summary>Загрузка и библиотека треков</summary><label for="radioFile">Добавить аудиофайлы · до 20 МБ каждый</label><input id="radioFile" type="file" accept="audio/*" multiple><button id="radioUpload" class="btn-action">Загрузить и добавить</button>
  <label for="radioTracks">Библиотека · можно выбрать несколько треков</label><select id="radioTracks" multiple size="5"></select><button id="radioAddTracks" class="btn-action">Добавить выбранные треки</button>
  </details><p id="radioStatus" role="status" aria-live="polite"></p></section>
-          <section id="gameMonitorSettings" class="game-monitor hidden"><h3>Мониторинг игры</h3><p>Серверные ошибки всех игроков и события этого устройства. Без паролей, токенов и email.</p><button id="refreshGameMonitor" type="button" class="btn-action">Обновить журнал</button><button id="clearLocalMonitor" type="button" class="btn-action">Очистить локальный журнал</button><h4>Сервер · последние события</h4><pre id="serverGameMonitor"></pre><h4>Это устройство</h4><pre id="localGameMonitor"></pre></section>
+          <section id="gameMonitorSettings" class="game-monitor hidden"><h3>Мониторинг игры</h3><p>Серверные ошибки всех игроков и события этого устройства. Локальный журнал очищается в начале каждого часа.</p><button id="refreshGameMonitor" type="button" class="btn-action">Обновить журнал</button><button id="downloadLocalMonitor" type="button" class="btn-action">Скачать локальный журнал (.log)</button><button id="clearLocalMonitor" type="button" class="btn-action">Очистить локальный журнал</button><h4>Сервер · последние события</h4><pre id="serverGameMonitor"></pre><h4>Это устройство</h4><pre id="localGameMonitor"></pre></section>
 <section id="gameAdminSettings" class="game-admin-settings hidden">
  <h3>Управление игрой</h3><p>Полный сброс игрового прогресса у всех игроков. Аккаунты и данные входа сохраняются.</p>
  <button id="resetAllProgressBtn" type="button" class="btn-action reset-all-button">⚠ Сбросить прогресс всех аккаунтов</button>
@@ -405,12 +405,12 @@
     "./src/modules/game/game.js": "./src/modules/game/game.js?v=clone-inherit-1",
     "./src/modules/game/rewards.js": "./src/modules/game/rewards.js?v=season2-neon-1",
     "./src/modules/network/cache.js": "./src/modules/network/cache.js?v=season2-neon-1",
-    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=reconnect-bet-1",
+    "./src/modules/network/supabase.js": "./src/modules/network/supabase.js?v=hourly-log-1",
     "./src/utils/device-budget.js": "./src/utils/device-budget.js?v=online-presence-9",
     "./src/modules/ui/currency-display.js": "./src/modules/ui/currency-display.js?v=casino-reveal-24",
     "./src/modules/ui/starfield.js": "./src/modules/ui/starfield.js?v=online-presence-9",
-    "./src/utils/diagnostics.js": "./src/utils/diagnostics.js?v=online-presence-9",
-    "./src/modules/ui/monitor.js": "./src/modules/ui/monitor.js?v=online-presence-9",
+    "./src/utils/diagnostics.js": "./src/utils/diagnostics.js?v=hourly-log-1",
+    "./src/modules/ui/monitor.js": "./src/modules/ui/monitor.js?v=hourly-log-1",
     "./src/modules/ui/moon-wheel-v2.js": "./src/modules/ui/moon-wheel-v2.js?v=wheel-labels-1",
     "./src/modules/ui/wheel.js": "./src/modules/ui/wheel.js?v=syntax-repair-20261108-4",
     "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=online-presence-9",

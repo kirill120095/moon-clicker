@@ -24,6 +24,21 @@ test('diagnostics redact credentials and keep only a bounded local history',()=>
  const safe=vm.runInContext('safeDiagnosticMessage('+JSON.stringify(secret)+')',c);assert.doesNotMatch(safe,/private|abc123|test@example|aaaaaaaa/);
  vm.runInContext("for(var i=0;i<150;i++)recordDiagnostic('game','load','ERR'+i,'Unavailable');",c);assert.equal(vm.runInContext('getDiagnostics().length',c),100);
 });
+test('local diagnostics rotate at the hour boundary and stay current after sleep',()=>{
+ let now=3599900,wake;
+ const c={Date:{now:()=>now},window:{addEventListener(){}},setTimeout(fn,ms){wake={fn,ms};}};
+ vm.createContext(c);
+ vm.runInContext(strip(fs.readFileSync(path.join(__dirname,'../src/utils/diagnostics.js'),'utf8')),c);
+ const run=code=>vm.runInContext(code,c);
+ run("installDiagnostics();recordDiagnostic('game','click','TIMING','First')");
+ assert.equal(wake.ms,100);
+ assert.equal(run('getDiagnostics().length'),1);
+ now=3600000;wake.fn();
+ assert.equal(run('getDiagnostics().length'),0);
+ run("recordDiagnostic('game','click','TIMING','Second')");
+ now=10800000;
+ assert.equal(run('getDiagnostics().length'),0);
+});
 test('a temporary failure retries the same request after the pause and preserves the queue order',async()=>{
  let now=100000,id=0;
  const calls=[],delays=[];

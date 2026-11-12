@@ -6,11 +6,29 @@ class OwnerMonitor{
   this.disconnect();this.client=client;
   for(const id of ['gameMonitorSettings','authMonitorSettings'])document.getElementById(id)?.classList.remove('hidden');
   if(!this.bound){this.bound=true;for(const id of ['refreshGameMonitor','refreshAuthMonitor'])document.getElementById(id)?.addEventListener('click',()=>this.refresh(true));document.getElementById('clearLocalMonitor')?.addEventListener('click',()=>clearDiagnostics());}
-  this.unsubscribe=subscribeDiagnostics(()=>this.renderLocal());this.renderLocal();this.refresh();
-  this.timer=setInterval(()=>{const settings=document.getElementById('settingsTabContent'),auth=document.getElementById('authScreen');if(!document.hidden&&(settings?.classList.contains('active')||auth&&!auth.classList.contains('hidden')))this.refresh();},15000);
+  if(!this.downloadBound){
+   this.downloadBound=true;
+   document.getElementById('downloadLocalMonitor')?.addEventListener('click',()=>this.download());
+  }
+  this.unsubscribe=subscribeDiagnostics(()=>{if(this.visible())this.renderLocal();});this.renderLocal();this.refresh();
+  this.timer=setInterval(()=>{if(this.visible()){this.renderLocal();this.refresh();}},15000);
+ }
+ visible(){
+  const settings=document.getElementById('settingsTabContent'),auth=document.getElementById('authScreen');
+  return !document.hidden&&(settings?.classList.contains('active')||auth&&!auth.classList.contains('hidden'));
  }
  disconnect(){this.generation++;clearInterval(this.timer);this.timer=null;this.client=null;this.unsubscribe?.();this.unsubscribe=null;for(const id of ['serverGameMonitor','serverAuthMonitor','localGameMonitor','localAuthMonitor']){const el=document.getElementById(id);if(el)el.textContent='';}for(const id of ['gameMonitorSettings','authMonitorSettings'])document.getElementById(id)?.classList.add('hidden');}
  renderLocal(){const text=getDiagnostics().slice().reverse().map(e=>new Date(e.at).toLocaleTimeString('ru-RU')+' ['+e.source+'/'+e.action+'] '+e.code+' '+e.message+(e.count>1?' ×'+e.count:'')).join('\n')||'Ошибок на этом устройстве пока нет.';for(const id of ['localGameMonitor','localAuthMonitor']){const el=document.getElementById(id);if(el)el.textContent=text;}}
+ download(){
+  if(!this.client)return;
+  const now=new Date().toISOString();
+  const lines=getDiagnostics().map(entry=>JSON.stringify({...entry,at:new Date(entry.at).toISOString()}));
+  const url=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'}));
+  const link=document.createElement('a');
+  link.href=url;link.download='moon-clicker-'+now.replace(/[:.]/g,'-')+'.log';
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }
  async refresh(force=false){
   if(!this.client||this.pending||!force&&Date.now()<this.nextAt)return;
   this.pending=true;const generation=this.generation,client=this.client;
