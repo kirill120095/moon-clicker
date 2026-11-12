@@ -58,6 +58,15 @@ export class AudioEngine {
   const reduce=document.getElementById('reduceEffects');
   try{if(localStorage.getItem('moon_reduce_effects')==='true'){document.documentElement.classList.add('reduce-effects');if(reduce)reduce.checked=true;}}catch{}
   reduce?.addEventListener('change',()=>{document.documentElement.classList.toggle('reduce-effects',reduce.checked);try{localStorage.setItem('moon_reduce_effects',String(reduce.checked));}catch{}});
+  const hideUfo=document.getElementById('hideUfoVisuals');
+  if(hideUfo){
+   try{hideUfo.checked=localStorage.getItem('moon_hide_ufo_visuals')==='true';}catch{}
+   document.documentElement.classList.toggle('hide-ufo-visuals',hideUfo.checked);
+   hideUfo.addEventListener('change',()=>{
+    document.documentElement.classList.toggle('hide-ufo-visuals',hideUfo.checked);
+    try{localStorage.setItem('moon_hide_ufo_visuals',String(hideUfo.checked));}catch{}
+   });
+  }
   this.apply();
  }
 }

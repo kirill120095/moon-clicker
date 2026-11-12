@@ -73,6 +73,7 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .ufo-ship{width:60px;height:38px;overflow:visible;filter:drop-shadow(0 0 10px #67e8f980)}
 @keyframes ufo-orbit{to{transform:rotate(360deg)}}@keyframes ufo-counter-orbit{to{transform:rotate(-360deg)}}
 .ufo-laser{position:fixed;height:3px;background:#c4f9ff;box-shadow:0 0 8px #67e8f9,0 0 18px #a78bfa;transform-origin:0 50%;z-index:30;pointer-events:none;animation:laser-fade .2s ease-out forwards}
+.hide-ufo-visuals #ufoOrbit,.hide-ufo-visuals .ufo-laser{display:none!important}
 @keyframes laser-fade{from{opacity:1}to{opacity:0}}
 @media(max-width:700px){.ufo-satellite,.ufo-ship{width:48px}.ufo-satellite{margin-left:-24px}.moon-reward{font-size:13px}}
 

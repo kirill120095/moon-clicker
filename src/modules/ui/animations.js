@@ -399,6 +399,7 @@ export class AnimationManager {
 
   playUfoShot(index=0) {
     if(document.hidden||document.documentElement?.classList.contains('low-power'))return;
+    if(document.documentElement?.classList.contains('hide-ufo-visuals'))return;
     if(!this._ufoGeometry){
       const ships=[...document.querySelectorAll('.ufo-ship')],moon=document.getElementById('moonWrapper');if(!ships.length||!moon)return;
       this._ufoGeometry={ships:ships.map(ship=>ship.getBoundingClientRect()),moon:moon.getBoundingClientRect()};
