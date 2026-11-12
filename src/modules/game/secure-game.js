@@ -128,20 +128,16 @@ function apply(result,hits=[],deferNotices=false){
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  if(!rect)return;
  let index=0,visibleDamage=0,ufoShot=null;
- const autoBatch=hits.some(hit=>hit.automatic);
  for(const event of s.effects){
   const position=event.source==='manual'?hits[index++]:null;
   const x=position?.x??rect.x+rect.width/2,y=position?.y??rect.y+rect.height/2;
-  if(event.source==='manual'&&autoBatch){
-   // Ordinary auto-click hits already have a local damage popup.
-   if(event.isCrit){queueDamageVisual(x,y,event.damage,true,event.isBoss);visibleDamage++;}
-  }else if(event.source==='manual'&&hits.length>1){
+  if(event.source==='manual'&&hits.length>1){
    if(visibleDamage<8||event.isCrit){queueDamageVisual(x,y,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
   }else if(visibleDamage<12||event.isCrit){
    animations.showDamageNumber(x,y,event.damage,event.isCrit,event.isBoss);visibleDamage++;
   }
   if(event.source==='ufo')ufoShot=event.ufoIndex||0;
-  if(event.reward>0)animations.showMoonReward(event.reward,rect);
+  if(event.reward>0)animations.showMoonReward(event.reward);
  }
  if(ufoShot!==null){animations.playUfoShot(ufoShot);audio.shoot(true);}
 
@@ -225,12 +221,12 @@ gameEngine.handleClick=(e,automatic=false)=>{
  if(!active||purchasing||now-lastClick<MIN_CLICK_INTERVAL)return;lastClick=now;
  if(pendingClicks>=CONSTANTS.CLICK_BURST)return;
  const damage=previewDamage();
- pendingClicks++;previewHits.push({damage,x:e.clientX,y:e.clientY,automatic});
+ pendingClicks++;previewHits.push({damage,x:e.clientX,y:e.clientY});
  // Keep the HP bar in lockstep with each accepted hit, just like holding Space.
  // This only updates the local visual preview; the server still owns actual damage.
  refreshPreview();
  if(!automatic||!document.hidden)audio.click();
- animations.playClickVisualFeedback(e,state.finalDamage||damage,false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,automatic);
+ animations.playClickVisualFeedback(e,damage,false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,false);
  if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),automatic?AUTO_CLICK_BATCH_MS:MANUAL_CLICK_BATCH_MS);
 };
 gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks>0);if(active)await send('sync');};

@@ -88,6 +88,21 @@ test('rapid manual hits share one packet and take priority over background sync'
  assert.deepEqual(s.calls.map(call=>call.action),['load','click','sync']);
  s.engine.destroy();
 });
+test('automatic clicks show only the server-confirmed damage and critical flag',async()=>{
+ const s=setup();await s.engine.init();
+ const numbers=[];
+ s.context.animations.playClickVisualFeedback=(...args)=>assert.equal(args[4],false);
+ s.context.animations.showDamageNumber=(_x,_y,damage,crit)=>numbers.push({damage,crit});
+ s.context.document.getElementById=id=>id==='moonWrapper'?{getBoundingClientRect:()=>({x:0,y:0,width:100,height:100})}:null;
+ s.engine.handleClick({},true);
+ assert.deepEqual(numbers,[]);
+ const pending=vm.runInContext('flush()',s.context);
+ const response=s.result();
+ response.state.effects=[{source:'manual',damage:72,isCrit:true,reward:0}];
+ s.calls.at(-1).settle.resolve(response);await pending;
+ assert.deepEqual(numbers,[{damage:72,crit:true}]);
+ s.engine.destroy();
+});
 test('rapid kills show separate rewards and damage numbers for locked and advancing levels',async()=>{
  for(const locked of [true,false]){
   const s=setup();await s.engine.init();

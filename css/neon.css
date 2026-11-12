@@ -65,8 +65,9 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .shop-goal{max-width:none;margin:0 0 18px;text-align:left}
 .rollback-five{min-width:52px;width:auto;font-size:15px;white-space:nowrap}
 .damage-number.crit{font-size:clamp(38px,5vw,56px)!important;font-weight:900!important;color:#fef08a!important;text-shadow:0 0 18px #fbbf24,0 2px 5px #000!important;z-index:1200}
-.moon-reward-popup{position:fixed;pointer-events:none;z-index:1200;font:800 26px Inter,sans-serif;color:#a7f3d0;text-shadow:0 0 16px #34d39980;animation:reward-rise 1.4s ease-out forwards}
-@keyframes reward-rise{from{opacity:1;transform:translate(-50%,-20%)}to{opacity:0;transform:translate(-50%,-160%)}}
+.moon-reward-grid{position:fixed;left:50%;bottom:12%;transform:translateX(-50%);width:min(94vw,36rem);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(44vw,10.5rem),1fr));gap:4px;pointer-events:none;z-index:1200}
+.moon-reward-popup{text-align:center;overflow-wrap:anywhere;font:800 clamp(10px,3vw,16px)/1.35 Inter,sans-serif;color:#a7f3d0;text-shadow:0 1px 5px #082e25,0 0 8px #34d39980;animation:reward-fade .9s ease-out forwards}
+@keyframes reward-fade{0%,55%{opacity:1}to{opacity:0}}
 .ufo-description{font-size:12px;line-height:1.6;color:#b4c1d9;margin:0 0 12px}
 .ufo-orbit{position:absolute;inset:-24px;pointer-events:none;z-index:3;animation:ufo-orbit 14s linear infinite}
 .ufo-satellite{position:absolute;left:50%;top:-23px;margin-left:-30px;width:60px;animation:ufo-counter-orbit 14s linear infinite}

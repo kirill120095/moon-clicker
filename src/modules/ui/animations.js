@@ -389,12 +389,22 @@ export class AnimationManager {
   // ============================================================
   // НОВОЕ: ЭФФЕКТ ЗОЛОТОГО КЛИКА (от Золотой луны)
   // ============================================================
-  showMoonReward(amount,rect=document.getElementById('moonWrapper')?.getBoundingClientRect()) {
-    if(!rect)return;
+  showMoonReward(amount) {
+    if(document.hidden)return;
+    let group=this._moonRewardGroup;
+    if(!group){
+      group=document.createElement('div');
+      group.className='moon-reward-grid';
+      this._moonRewardGroup=group;
+      document.body.appendChild(group);
+    }
     const label=document.createElement('div');
     label.className='moon-reward-popup';label.textContent='+'+amount.toLocaleString('ru-RU')+' 💎';
-    label.style.left=(rect.x+rect.width/2)+'px';label.style.top=(rect.y+rect.height*.9+16)+'px';
-    document.body.appendChild(label);setTimeout(()=>label.remove(),1400);
+    group.appendChild(label);
+    setTimeout(()=>{
+      label.remove();
+      if(!group.childElementCount){group.remove();this._moonRewardGroup=null;}
+    },900);
   }
 
   playUfoShot(index=0) {
