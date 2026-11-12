@@ -2,16 +2,17 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const source=fs.readFileSync(path.join(__dirname,'../src/modules/game/secure-game.js'),'utf8').replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'');
 const {getBaseDamage,getPrestigeSummary}=vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../src/core/constants.js'),'utf8').replace(/^import\s[\s\S]*?from\s+['"][^'"]+['"];?\s*/gm,'').replace(/\bexport\s+/g,'')+'\n({getBaseDamage,getPrestigeSummary});');
 function setup(){
- let now=900000,perf=10000,calls=[],ticks=[],hpUpdates=0,buffUpdates=0;
+ let now=900000,perf=10000,calls=[],ticks=[],hpUpdates=0,buffUpdates=0,nextTimer=0;
+ const timeouts=new Map();
  const state={moonHP:100,maxHP:100,currentLevel:1,playerData:{click_damage:10,click_damage_level:0,shards:0}};
  const snapshot={...state,lastClickAt:999000,runtime:{_comboClicks:10}};
  const result=()=>({serverNow:now+100000,state:structuredClone(snapshot)});
  const engine={combat:{},destroy(){},recalcMoonBonuses(){},_comboClicks:0,
  _calculateAllBonuses:()=>({totalDamageBonus:0}),_getMechanicParamsForActiveMoon:()=>null,
  _updateBuffsDisplay(){buffUpdates++;},_getActiveBuffs(){return[{isTemporary:true,timeLeft:this._comboClicks>0?Math.max(0,Math.ceil((10000-(now-this._lastActivityTime))/1000)):null}];}};
- const context={getBaseDamage,getPrestigeSummary,fortuneWheel:{bind(){},connect(){},disconnect(){}},gameAdmin:{connect:()=>Promise.resolve(),disconnect(){}},radio:{connect:()=>Promise.resolve(),disconnect(){}},gameEngine:engine,state,appState:{setMany:s=>Object.assign(state,s),set:(k,v)=>state[k]=v},CONSTANTS:{PRESTIGE:{COIN_EVERY:20},SAFE_NUMBER_CAP:Number.MAX_SAFE_INTEGER,MAX_CLICKS_PER_SECOND:12,CLICK_BURST:12,BOSS_TIMER:30,BOSS_INTERVAL:10,UPGRADE_COSTS:{clickDamage:{base:60,multiplier:1.22}},LIMITS:{MAX_CLICK_DAMAGE_LEVEL:200}},db:{action(action,payload){calls.push({action,payload});if(action==='load')return Promise.resolve(result());return new Promise((resolve,reject)=>calls.at(-1).settle={resolve,reject});}},document:{getElementById:()=>null},animations:{playClickVisualFeedback(){}},audio:{click(){},purchase(){}},showToast(){},updateUI(){},updateHPBar(){hpUpdates++;},updateShopUI(){},updateProfileAndLeaders(){},updateQuestAndAchievementUI(){},updateTimerBar(){},updateLiveCombatProfile(){},setInterval(fn,ms){ticks.push({fn,ms});return ticks.length;},clearInterval(){},setTimeout(){return 1;},clearTimeout(){},performance:{now:()=>perf},Date:{now:()=>now},console,Math};
+ const context={getBaseDamage,getPrestigeSummary,fortuneWheel:{bind(){},connect(){},disconnect(){}},gameAdmin:{connect:()=>Promise.resolve(),disconnect(){}},radio:{connect:()=>Promise.resolve(),disconnect(){}},gameEngine:engine,state,appState:{setMany:s=>Object.assign(state,s),set:(k,v)=>state[k]=v},CONSTANTS:{PRESTIGE:{COIN_EVERY:20},SAFE_NUMBER_CAP:Number.MAX_SAFE_INTEGER,MAX_CLICKS_PER_SECOND:12,CLICK_BURST:12,BOSS_TIMER:30,BOSS_INTERVAL:10,UPGRADE_COSTS:{clickDamage:{base:60,multiplier:1.22}},LIMITS:{MAX_CLICK_DAMAGE_LEVEL:200}},db:{action(action,payload){calls.push({action,payload});if(action==='load')return Promise.resolve(result());return new Promise((resolve,reject)=>calls.at(-1).settle={resolve,reject});}},document:{getElementById:()=>null},animations:{playClickVisualFeedback(){}},audio:{click(){},purchase(){}},showToast(){},updateUI(){},updateHPBar(){hpUpdates++;},updateShopUI(){},updateProfileAndLeaders(){},updateQuestAndAchievementUI(){},updateTimerBar(){},updateLiveCombatProfile(){},setInterval(fn,ms){ticks.push({fn,ms});return ticks.length;},clearInterval(){},setTimeout(fn,ms){const id=++nextTimer;timeouts.set(id,{fn,ms});return id;},clearTimeout(id){timeouts.delete(id);},performance:{now:()=>perf},Date:{now:()=>now},console,Math};
  vm.createContext(context);vm.runInContext(source,context);
- return{context,engine,state,calls,result,ticks,get hpUpdates(){return hpUpdates;},get buffUpdates(){return buffUpdates;},advance(ms){now+=ms;perf+=ms;}};
+ return{context,engine,state,calls,result,ticks,runClickTimer(){const timer=[...timeouts.values()].find(t=>t.ms===120);assert.ok(timer);timer.fn();},get hpUpdates(){return hpUpdates;},get buffUpdates(){return buffUpdates;},advance(ms){now+=ms;perf+=ms;}};
 }
 test('inventory skips closed panels and rebuilds only when displayed data changes',async()=>{
  const s=setup();
@@ -65,16 +66,30 @@ test('combo uses server last-click time corrected for clock skew and ticks while
  s.advance(6000);tick();assert.equal(s.calls.at(-1).action,'sync');
 });
 test('HP responds immediately before network confirmation without changing authoritative state',async()=>{
- const s=setup();await s.engine.init();s.engine.handleClick({});assert.equal(s.engine._previewDamage,10);assert.equal(s.state.moonHP,100);assert.equal(s.calls.at(-1).action,'click');assert.ok(s.hpUpdates>0);
+ const s=setup();await s.engine.init();s.engine.handleClick({});assert.equal(s.engine._previewDamage,10);assert.equal(s.state.moonHP,100);assert.equal(s.calls.at(-1).action,'load');assert.ok(s.hpUpdates>0);s.runClickTimer();assert.equal(s.calls.at(-1).action,'click');
  const response=s.result();response.state.moonHP=90;s.calls.at(-1).settle.resolve(response);await new Promise(setImmediate);
  assert.equal(s.state.moonHP,90);assert.equal(s.engine._previewDamage,0);
 });
 test('rejected hits remove only their visual prediction',async()=>{
- const s=setup();await s.engine.init();s.engine.handleClick({});s.calls.at(-1).settle.reject(Error('offline'));await new Promise(setImmediate);
+ const s=setup();await s.engine.init();s.engine.handleClick({});s.runClickTimer();s.calls.at(-1).settle.reject(Error('offline'));await new Promise(setImmediate);
  assert.equal(s.engine._previewDamage,0);assert.equal(s.state.moonHP,100);
 });
+test('rapid manual hits share one packet and take priority over background sync',async()=>{
+ const s=setup();await s.engine.init();
+ const heartbeat=s.ticks.find(t=>t.ms===20000).fn;
+ s.engine.handleClick({});s.advance(100);s.engine.handleClick({});
+ heartbeat();
+ assert.deepEqual(s.calls.map(call=>call.action),['load']);
+ s.runClickTimer();heartbeat();
+ assert.deepEqual(s.calls.map(call=>call.action),['load','click']);
+ assert.equal(s.calls.at(-1).payload.count,2);
+ s.calls.at(-1).settle.resolve(s.result());await new Promise(setImmediate);
+ heartbeat();heartbeat();
+ assert.deepEqual(s.calls.map(call=>call.action),['load','click','sync']);
+ s.engine.destroy();
+});
 test('slow network keeps one click request in flight and preserves later hit previews',async()=>{
- const s=setup();await s.engine.init();s.engine.handleClick({});for(let i=0;i<5;i++){s.advance(100);s.engine.handleClick({});}
+ const s=setup();await s.engine.init();s.engine.handleClick({});s.runClickTimer();for(let i=0;i<5;i++){s.advance(100);s.engine.handleClick({});}
  assert.equal(s.calls.filter(c=>c.action==='click').length,1);assert.equal(s.engine._previewDamage,60);
  const response=s.result();response.state.moonHP=90;s.calls.at(-1).settle.resolve(response);await new Promise(setImmediate);
  assert.equal(s.engine._previewDamage,50);assert.equal(s.state.moonHP,90);
@@ -84,11 +99,11 @@ test('slow network keeps one click request in flight and preserves later hit pre
 test('temporary stack resets cannot make predicted HP rebound on confirmation',async()=>{
  const s=setup();await s.engine.init();s.engine._calculateAllBonuses=()=>({totalDamageBonus:0.1});s.engine._comboClicks=100;s.engine._fireStacks=500;
  s.engine._getMechanicParamsForActiveMoon=()=>({clicksPerStack:1,maxStacks:100,bonusPerStack:1});s.engine.handleClick({});
- const predicted=s.state.moonHP-s.engine._previewDamage;assert.equal(predicted,89);
+ const predicted=s.state.moonHP-s.engine._previewDamage;assert.equal(predicted,89);s.runClickTimer();
  const response=s.result();response.state.moonHP=89;s.calls.at(-1).settle.resolve(response);await new Promise(setImmediate);assert.equal(s.state.moonHP,89);assert.equal(s.engine._previewDamage,0);
 });
 test('purchases wait until every earlier click packet is acknowledged',async()=>{
- const s=setup();await s.engine.init();s.engine.handleClick({});s.advance(100);s.engine.handleClick({});s.advance(100);s.engine.handleClick({});
+ const s=setup();await s.engine.init();s.engine.handleClick({});s.runClickTimer();s.advance(100);s.engine.handleClick({});s.advance(100);s.engine.handleClick({});
  const purchase=s.engine.buyClickDamage();s.calls.at(-1).settle.resolve(s.result());await new Promise(setImmediate);
  assert.equal(s.calls.at(-1).action,'click');assert.equal(s.calls.at(-1).payload.count,2);assert.equal(s.calls.some(c=>c.action==='buyDamage'),false);
  s.calls.at(-1).settle.resolve(s.result());await new Promise(setImmediate);assert.equal(s.calls.at(-1).action,'buyDamage');s.calls.at(-1).settle.resolve(s.result());await purchase;
@@ -134,7 +149,7 @@ test('fortune never initializes when the authoritative game load fails',async()=
 });
 
 test('a late click response from the previous session cannot overwrite the new session',async()=>{
- const s=setup();await s.engine.init();s.engine.handleClick({});const previous=s.calls.at(-1);s.engine.destroy();await s.engine.init();
+ const s=setup();await s.engine.init();s.engine.handleClick({});s.runClickTimer();const previous=s.calls.at(-1);s.engine.destroy();await s.engine.init();
  const response=s.result();response.state.moonHP=1;response.revision=99;previous.settle.resolve(response);await new Promise(setImmediate);assert.equal(s.state.moonHP,100);
 });
 

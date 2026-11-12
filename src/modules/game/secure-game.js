@@ -54,7 +54,9 @@ function queueDamageVisual(x,y,damage,isCrit,isBoss){
  },135);
 }
 function clearDamageVisuals(){damageVisualQueue.length=0;if(damageVisualTimer!==null)clearInterval(damageVisualTimer);damageVisualTimer=null;}
-const AUTO_CLICK_BATCH_MS=300; // Server requests stay batched; the same click handler runs immediately for each hit.
+const AUTO_CLICK_BATCH_MS=300;
+const MANUAL_CLICK_BATCH_MS=120;
+const BACKGROUND_SYNC_INTERVAL_MS=500;
 const MIN_CLICK_INTERVAL=1000/CONSTANTS.MAX_CLICKS_PER_SECOND+1;
 function autoClickDuration(){return 15000+15000*Math.max(0,Math.floor(state.prestige?.upgrades?.autoclick||0));}
 function renderAutoClick(){
@@ -108,6 +110,7 @@ function apply(result,hits=[],deferNotices=false){
  Object.assign(gameEngine,s.runtime||{});
  gameEngine._lastActivityTime=Math.max(s.lastClickAt||0,s.lastAutoClickAt||0)?Math.max(s.lastClickAt||0,s.lastAutoClickAt||0)-offset:Date.now();
  gameEngine._lastComboTime=Math.max(s.lastClickAt||0,s.lastAutoClickAt||0,s.lastComboAt||0)-offset;
+ if(!ready)updateHPBar(true);
  gameEngine.recalcMoonBonuses(false);refreshBuffs();updateUI();updateShopUI();updateQuestAndAchievementUI();renderAutoClick();
  const status=document.getElementById('saveStatus');if(status)status.textContent='Сохранено на сервере';
  updateLiveCombatProfile();
@@ -156,11 +159,13 @@ async function flush(){
  if(clickFlight)return clickFlight;
  if(!active||pendingClicks===0)return;
  const count=Math.min(CONSTANTS.CLICK_BURST,pendingClicks);pendingClicks-=count;
- clickFlight=send('click',{count}).finally(()=>{
+ const flight=send('click',{count}).finally(()=>{
+  if(clickFlight!==flight)return;
   clickFlight=null;
-  if(active&&pendingClicks&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),autoClickUntil>Date.now()?AUTO_CLICK_BATCH_MS:0);
+  if(active&&pendingClicks&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),autoClickUntil>Date.now()?AUTO_CLICK_BATCH_MS:MANUAL_CLICK_BATCH_MS);
  });
- return clickFlight;
+ clickFlight=flight;
+ return flight;
 }
 async function command(action,payload={},purchase=false){
  if(!active||purchasing)return;
@@ -170,12 +175,19 @@ async function command(action,payload={},purchase=false){
  finally{purchasing=false;}
 }
 let initializing=null,initGeneration=0;
+function syncInBackground(){
+ if(!active||document.hidden||syncing||purchasing||clickFlight||pendingClicks)return false;
+ const generation=initGeneration;
+ syncing=true;
+ send('sync').catch(()=>{}).finally(()=>{if(generation===initGeneration)syncing=false;});
+ return true;
+}
 const oldDestroy=gameEngine.destroy.bind(gameEngine);
 gameEngine.init=()=>{
  if(initializing)return initializing;
  const generation=++initGeneration;
  const pending=(async()=>{
- active=true;ready=false;pendingWheelNotices=[];lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
+ active=true;ready=false;syncing=false;clickFlight=null;nextUfoSync=0;nextBuffSync=0;pendingWheelNotices=[];lastRevision=0;lastBuffKey='';gameEngine._isRunning=true;
  db.leaderboardPresence?.start(state.user?.id).catch(()=>{});
  try{const loaded=await db.action('load');if(generation!==initGeneration||!active)throw Object.assign(Error('Загрузка отменена'),{code:'LOAD_CANCELLED'});apply(loaded);}catch(error){if(generation===initGeneration){active=false;gameEngine._isRunning=false;}throw error;}
  radio.connect(state.user).catch(()=>{});
@@ -184,23 +196,22 @@ gameEngine.init=()=>{
  if(ticker)clearInterval(ticker);if(ping)clearInterval(ping);
  let lastPrestigeDay=Math.floor((Date.now()+offset+10800000)/86400000);
  ticker=setInterval(()=>{
-  if(!active)return;
+  if(!active||document.hidden)return;
   const prestigeDay=Math.floor((Date.now()+offset+10800000)/86400000);
   if(prestigeDay!==lastPrestigeDay){lastPrestigeDay=prestigeDay;updateShopUI();updateProfileAndLeaders();}
   const activeBuffs=refreshBuffs();updateLiveCombatProfile();
-  if(((state.ufoLevel&&state.ufoNextShotAt<=Date.now()+offset)||state.pendingEchoes>0)&&!document.hidden&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextUfoSync){
-   nextUfoSync=Date.now()+250;syncing=true;
-   send('sync').catch(()=>{}).finally(()=>{syncing=false;});
+  const now=Date.now();
+  if(((state.ufoLevel&&state.ufoNextShotAt<=now+offset)||state.pendingEchoes>0)&&now>=nextUfoSync&&syncInBackground()){
+   nextUfoSync=now+BACKGROUND_SYNC_INTERVAL_MS;
   }
   const expired=activeBuffs.some(buff=>buff.isTemporary&&buff.timeLeft===0);
-  if(expired&&!syncing&&!clickFlight&&!pendingClicks&&Date.now()>=nextBuffSync){
-   nextBuffSync=Date.now()+2000;syncing=true;
-   send('sync').catch(()=>{}).finally(()=>{syncing=false;});
+  if(expired&&now>=nextBuffSync&&syncInBackground()){
+   nextBuffSync=now+2000;
   }
   if(deadline){appState.set('bossTimer',Math.max(0,(deadline-Date.now()-offset)/1000));updateTimerBar();
-   if(deadline<=Date.now()+offset&&!syncing&&!clickFlight&&!pendingClicks){syncing=true;send('sync').catch(()=>{}).finally(()=>{syncing=false;});}}
+   if(deadline<=now+offset)syncInBackground();}
  },250);
- ping=setInterval(()=>{if(active&&!document.hidden&&!clickFlight&&!pendingClicks&&!syncing)send('sync').catch(()=>{});},20000);
+ ping=setInterval(syncInBackground,20000);
  updateProfileAndLeaders();
  })();
  const tracked=pending.finally(()=>{if(initializing===tracked)initializing=null;});initializing=tracked;return tracked;
@@ -217,8 +228,7 @@ gameEngine.handleClick=(e,automatic=false)=>{
  refreshPreview();
  if(!automatic||!document.hidden)audio.click();
  animations.playClickVisualFeedback(e,state.finalDamage||damage,false,state.currentLevel%CONSTANTS.BOSS_INTERVAL===0,automatic);
- if(automatic){if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),AUTO_CLICK_BATCH_MS);}
- else if(!clickFlight)flush().catch(()=>{});
+ if(!clickFlight&&!flushTimer)flushTimer=setTimeout(()=>flush().catch(()=>{}),automatic?AUTO_CLICK_BATCH_MS:MANUAL_CLICK_BATCH_MS);
 };
 gameEngine._saveProgress=async()=>{do{await flush();}while(active&&pendingClicks>0);if(active)await send('sync');};
 gameEngine.buyClickCrystal=(max=false)=>command('buyClickCrystal',{max},true).catch(()=>{});

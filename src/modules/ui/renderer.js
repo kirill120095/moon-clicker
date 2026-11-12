@@ -148,29 +148,45 @@ function _updateLevelControls() {
 
 function gameEnginePreviewDamage() { return Math.max(0, Number(window.gameEngine?._previewDamage) || 0); }
 
-export function updateHPBar() {
+let displayedMoonSerial, displayedMoonKills, hpDrain;
+
+export function updateHPBar(reset = false) {
   // Pending hits affect rendering only; rewards and game state remain server-owned.
   const displayHP = Math.max(1, state.moonHP - (gameEnginePreviewDamage()));
   const hpBar = document.getElementById('hpBar');
   const hpPercent = document.getElementById('hpPercent');
-  const moonInner = document.getElementById('moonInner');
   const reward=document.getElementById('moonReward');
-  if(reward)reward.textContent='За луну: +'+formatMoney(state.moonReward||0)+' 💎'+(state.ufoMoonReward>state.moonReward?' · тарелка +'+formatMoney(state.ufoMoonReward)+' 💎':'');
+  if(reward){
+    const label='За луну: +'+formatMoney(state.moonReward||0)+' 💎'+(state.ufoMoonReward>state.moonReward?' · тарелка +'+formatMoney(state.ufoMoonReward)+' 💎':'');
+    if(reward.textContent!==label)reward.textContent=label;
+  }
 
   if (hpBar) {
-    const percent = Math.max(0, (displayHP / state.maxHP) * 100);
-    hpBar.style.transform = 'scaleX('+Math.min(1,percent/100)+')';
+    const newMoon = reset || displayedMoonSerial !== state.moonSerial;
+    const defeated = newMoon && !reset && state.moonKills > displayedMoonKills;
+    if (newMoon) {
+      const animate = defeated && hpBar.animate &&
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+        !document.querySelector('.reduce-effects');
+      const from = animate ? getComputedStyle(hpBar).transform : null;
+      hpDrain?.cancel();
+      hpDrain = animate ? hpBar.animate([{transform:from},{transform:'scaleX(0)'}],
+        {duration:160,easing:'ease-out'}) : null;
+      displayedMoonSerial = state.moonSerial;
+      displayedMoonKills = state.moonKills;
+    }
+    const target = 'scaleX('+Math.max(0,Math.min(1,displayHP/state.maxHP))+')';
+    if (hpBar.style.transform !== target || newMoon) {
+      hpBar.style.transitionDuration = newMoon || hpDrain?.playState === 'running' ? '0s' : '';
+      hpBar.style.transform = target;
+    }
   }
 
   if (hpPercent) {
-    hpPercent.textContent = `${formatNumber(displayHP)}/${formatNumber(state.maxHP)}`;
+    const label = `${formatNumber(displayHP)}/${formatNumber(state.maxHP)}`;
+    if(hpPercent.textContent!==label)hpPercent.textContent=label;
   }
 
-  if (moonInner) {
-    const ratio = Math.max(0, Math.min(1, displayHP / state.maxHP));
-    const scale = Math.pow(ratio, 0.4) * 0.95 + 0.05;
-    moonInner.style.scale = String(scale);
-  }
 }
 
 // ============================================================
