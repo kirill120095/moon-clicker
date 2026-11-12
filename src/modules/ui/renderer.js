@@ -163,9 +163,9 @@ export function updateHPBar(reset = false) {
 
   if (hpBar) {
     const newMoon = reset || displayedMoonSerial !== state.moonSerial;
-    const defeated = newMoon && !reset && state.moonKills > displayedMoonKills;
+    const defeated = newMoon && !reset && state.moonKills === displayedMoonKills + 1;
     if (newMoon) {
-      const animate = defeated && hpBar.animate &&
+      const animate = defeated && hpDrain?.playState !== 'running' && hpBar.animate &&
         !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
         !document.querySelector('.reduce-effects');
       const from = animate ? getComputedStyle(hpBar).transform : null;

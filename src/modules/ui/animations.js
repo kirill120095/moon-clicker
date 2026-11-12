@@ -389,9 +389,9 @@ export class AnimationManager {
   // ============================================================
   // НОВОЕ: ЭФФЕКТ ЗОЛОТОГО КЛИКА (от Золотой луны)
   // ============================================================
-  showMoonReward(amount) {
-    const moon=document.getElementById('moonWrapper');if(!moon)return;
-    const rect=moon.getBoundingClientRect(),label=document.createElement('div');
+  showMoonReward(amount,rect=document.getElementById('moonWrapper')?.getBoundingClientRect()) {
+    if(!rect)return;
+    const label=document.createElement('div');
     label.className='moon-reward-popup';label.textContent='+'+amount.toLocaleString('ru-RU')+' 💎';
     label.style.left=(rect.x+rect.width/2)+'px';label.style.top=(rect.y+rect.height*.9+16)+'px';
     document.body.appendChild(label);setTimeout(()=>label.remove(),1400);

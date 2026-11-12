@@ -88,6 +88,36 @@ test('rapid manual hits share one packet and take priority over background sync'
  assert.deepEqual(s.calls.map(call=>call.action),['load','click','sync']);
  s.engine.destroy();
 });
+test('rapid kills show one total reward and limit combat effects for locked and advancing levels',async()=>{
+ for(const locked of [true,false]){
+  const s=setup();await s.engine.init();
+  const rewards=[],numbers=[],shots=[];
+  let geometryReads=0;
+  s.context.document.getElementById=id=>id==='moonWrapper'?{
+   getBoundingClientRect(){geometryReads++;return {x:0,y:0,width:100,height:100};}
+  }:null;
+  Object.assign(s.context.animations,{
+   showMoonReward:amount=>rewards.push(amount),
+   showDamageNumber:(_x,_y,damage,crit)=>numbers.push({damage,crit}),
+   playUfoShot:index=>shots.push(index)
+  });
+  s.context.audio.shoot=()=>{};
+  s.engine.handleClick({});s.runClickTimer();
+  const response=s.result();
+  Object.assign(response.state,{levelLocked:locked,currentLevel:locked?1:19,moonKills:18,moonSerial:19,
+   effects:Array.from({length:18},(_,i)=>({source:'ufo',damage:i+1,isCrit:i%2===1,reward:10,ufoIndex:i%2}))});
+  s.calls.at(-1).settle.resolve(response);await new Promise(setImmediate);
+  const visualTick=s.ticks.find(t=>t.ms===135).fn;
+  visualTick();visualTick();visualTick();
+  assert.deepEqual(rewards,[180]);
+  assert.deepEqual(shots,[1]);
+  assert.deepEqual(numbers,[{damage:18,crit:true},{damage:17,crit:false}]);
+  assert.equal(geometryReads,1);
+  assert.equal(s.state.currentLevel,locked?1:19);
+  assert.equal(s.state.moonKills,18);
+  s.engine.destroy();
+ }
+});
 test('slow network keeps one click request in flight and preserves later hit previews',async()=>{
  const s=setup();await s.engine.init();s.engine.handleClick({});s.runClickTimer();for(let i=0;i<5;i++){s.advance(100);s.engine.handleClick({});}
  assert.equal(s.calls.filter(c=>c.action==='click').length,1);assert.equal(s.engine._previewDamage,60);

@@ -127,20 +127,28 @@ function apply(result,hits=[],deferNotices=false){
  if(document.hidden||!s.effects?.length)return;
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  if(!rect)return;
- let index=0,visibleDamage=0;
+ let index=0,reward=0,ufoShot=null;
+ let ordinaryHit=null,criticalHit=null;
  const autoBatch=hits.some(hit=>hit.automatic);
- for(const event of s.effects||[]){
+ for(const event of s.effects){
   const position=event.source==='manual'?hits[index++]:null;
-  // Avoid hundreds of animated DOM nodes per batch, but always retain critical hits.
-  if(event.source==='manual'&&autoBatch){
-    // The optimistic auto-click animation has no crit information. Show confirmed critical hits.
-    if(event.isCrit){queueDamageVisual(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,true,event.isBoss);visibleDamage++;}
-   }else if(event.source==='manual'&&hits.length>1){
-   if(visibleDamage<8||event.isCrit){queueDamageVisual(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
-  }else if(visibleDamage<12||event.isCrit){animations.showDamageNumber(position?.x??rect.x+rect.width/2,position?.y??rect.y+rect.height/2,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
-  if(event.source==='ufo'){animations.playUfoShot(event.ufoIndex||0);audio.shoot(true);}
-  if(event.reward>0)animations.showMoonReward(event.reward);
+  if(event.reward>0)reward+=event.reward;
+  if(event.source==='ufo')ufoShot=event.ufoIndex||0;
+  if(event.isCrit){
+   if(!criticalHit||event.damage>=criticalHit.event.damage)criticalHit={event,position};
+  }else if(event.source!=='manual'||!autoBatch){
+   ordinaryHit={event,position};
+  }
  }
+ for(const hit of [criticalHit,ordinaryHit]){
+  if(!hit)continue;
+  const {event,position}=hit;
+  const x=position?.x??rect.x+rect.width/2,y=position?.y??rect.y+rect.height/2;
+  if(s.effects.length===1&&!autoBatch)animations.showDamageNumber(x,y,event.damage,event.isCrit,event.isBoss);
+  else queueDamageVisual(x,y,event.damage,event.isCrit,event.isBoss);
+ }
+ if(ufoShot!==null){animations.playUfoShot(ufoShot);audio.shoot(true);}
+ if(reward>0)animations.showMoonReward(reward,rect);
 
 }
 async function send(action,payload={}){
