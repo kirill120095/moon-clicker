@@ -1436,5 +1436,6 @@ function _updateCloneControls(){
   for(const id of ['',...(state.activeMoons||[]).filter(id=>id!=='clone')]){const option=document.createElement('option');option.value=id;option.textContent=id?MOON_TYPES[id].emoji+' '+MOON_TYPES[id].name+' · Ур. '+(state.moonLevels[id]||1):'Не выбран';select.appendChild(option);}
   select.value=targets[i]||'';label.appendChild(select);fields.appendChild(label);
  }
- const summary=document.getElementById('cloneSummary');if(summary)summary.textContent='Оригинал и отражение: по '+Math.round(p.pairScale*100)+'% силы · отражений '+count;
+ const strength=getMoonMechanicParams('clone',state.moonLevels?.clone||1).pairScale;
+ const summary=document.getElementById('cloneSummary');if(summary)summary.textContent='Оригинал и отражение: по '+Math.round(strength*100)+'% силы · отражений '+count;
 }

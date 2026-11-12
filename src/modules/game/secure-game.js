@@ -39,19 +39,21 @@ let autoClickUntil=0,autoClickTicker=null;
 let damageVisualTimer=null;
 const damageVisualQueue=[];
 const MAX_DAMAGE_VISUAL_QUEUE=12;
-function queueDamageVisual(x,y,damage,isCrit,isBoss){
+function queueDamageVisual(x,y,damage,isCrit,isBoss,fromClick){
  if(document.hidden)return;
  if(damageVisualQueue.length>=MAX_DAMAGE_VISUAL_QUEUE){
-  const ordinary=damageVisualQueue.findIndex(hit=>!hit.isCrit);
-  damageVisualQueue.splice(ordinary>=0?ordinary:0,1);
+  const ordinary=damageVisualQueue.findIndex(hit=>!hit.fromClick&&!hit.isCrit);
+  const secondary=ordinary>=0?ordinary:damageVisualQueue.findIndex(hit=>!hit.fromClick);
+  if(secondary>=0)damageVisualQueue.splice(secondary,1);
+  else if(!fromClick)return;
  }
- damageVisualQueue.push({x,y,damage,isCrit,isBoss});
+ damageVisualQueue.push({x,y,damage,isCrit,isBoss,fromClick});
  if(damageVisualTimer===null)damageVisualTimer=setInterval(()=>{
   if(document.hidden){clearDamageVisuals();return;}
   const hit=damageVisualQueue.shift();
   if(hit)animations.showDamageNumber(hit.x,hit.y,hit.damage,hit.isCrit,hit.isBoss);
   if(!damageVisualQueue.length)clearDamageVisuals();
- },135);
+ },40);
 }
 function clearDamageVisuals(){damageVisualQueue.length=0;if(damageVisualTimer!==null)clearInterval(damageVisualTimer);damageVisualTimer=null;}
 const AUTO_CLICK_BATCH_MS=300;
@@ -131,7 +133,7 @@ function apply(result,hits=[],deferNotices=false){
  for(const event of s.effects){
   const position=event.source==='manual'?hits[index++]:null;
   const x=position?.x??rect.x+rect.width/2,y=position?.y??rect.y+rect.height/2;
-  queueDamageVisual(x,y,event.damage,event.isCrit,event.isBoss);
+  queueDamageVisual(x,y,event.damage,event.isCrit,event.isBoss,event.source==='manual');
   if(event.source==='ufo')ufoShot=event.ufoIndex||0;
   if(event.reward>0)lastReward=event.reward;
  }

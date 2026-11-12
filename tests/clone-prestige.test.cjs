@@ -81,6 +81,17 @@ test('each prestige purchase unlocks five Clone levels without granting them dir
  assert.equal(run('s.moonLevels.clone'),undefined);
  assert.equal(run("getMoonLevelLimit('clone',s.prestige.upgrades.cloneCopies)"),20);
 });
+test('new Clone links inherit the first active original and preserve existing choices',()=>{
+ const run=setup();
+ run("var s=freshState();s.maxSlots=3;s.activeMoons=['gold','cosmic','clone'];s.ownedMoons=[...s.activeMoons];s.cloneTargets=['gold'];s.moonLevels={gold:1,cosmic:1,clone:9};s.playerData.shards=1e12;s.prestige.upgrades.cloneCopies=2;");
+ run("s=applyAction(s,'upgradeMoon',{id:'clone'},100000)");
+ assert.equal(run("s.cloneTargets.join(',')"),'gold,gold');
+ assert.equal(run("getMoonPower(s,'gold')"),4.5);
+ run("s=applyAction(s,'setCloneTargets',{targets:['gold','cosmic']},100001);s=applyAction(s,'upgradeMoon',{id:'clone',max:true},100002)");
+ assert.equal(run('s.moonLevels.clone'),20);
+ assert.equal(run("s.cloneTargets.join(',')"),'gold,cosmic,gold,gold');
+ assert.equal(run("applyAction(s,'load',{},100003).cloneTargets.join(',')"),'gold,cosmic,gold,gold');
+});
 test('prestige can unlock Clone levels before the Clone is bought',()=>{
  const run=setup();
  assert.equal(run("var s=freshState();s.prestige.coins=200;applyAction(s,'buyPrestige',{id:'cloneCopies',max:true},100000).prestige.upgrades.cloneCopies"),2);

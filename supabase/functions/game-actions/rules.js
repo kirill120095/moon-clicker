@@ -623,8 +623,17 @@ export function applyAction(raw, action, payload={}, now=Date.now(), trusted={})
   }else{
    const level=state.moonLevels[moon.id],cloneUpgrades=state.prestige?.upgrades?.cloneCopies||0,limit=getMoonLevelLimit(moon.id,cloneUpgrades);
    if(!state.ownedMoons.includes(moon.id)||!level||level>=limit)throw Error('Улучшение недоступно');
+   const previousCopies=moon.id==='clone'?getCloneCopyLimit(state):0;
    const price=()=>getMoonUpgradeCostForLevel(moon.id,state.moonLevels[moon.id],cloneUpgrades);
    buyLevels(payload.max===true,()=>state.moonLevels[moon.id]<limit&&state.playerData.shards>=price(),()=>{spend(price());state.moonLevels[moon.id]++;rules.updateQuestProgress('moonUpgrade');});
+   if(moon.id==='clone'){
+    const copies=getCloneCopyLimit(state);
+    const original=state.cloneTargets.find(id=>state.activeMoons.includes(id));
+    if(original&&copies>previousCopies){
+     const unlocked=copies-previousCopies;
+     state.cloneTargets=state.cloneTargets.slice(0,previousCopies).concat(Array(unlocked).fill(original));
+    }
+   }
   }
  } else if(action==='toggleMoon'){
   if(!state.ownedMoons.includes(payload.id))throw Error('Луна не куплена');

@@ -100,9 +100,17 @@ test('automatic clicks show only the server-confirmed damage and critical flag',
  const response=s.result();
  response.state.effects=[{source:'manual',damage:72,isCrit:true,reward:0}];
  s.calls.at(-1).settle.resolve(response);await pending;
- s.ticks.find(t=>t.ms===135).fn();
+ s.ticks.find(t=>t.ms===40).fn();
  assert.deepEqual(numbers,[{damage:72,crit:true}]);
  s.engine.destroy();
+});
+test('every confirmed click survives a burst that also contains UFO hits',()=>{
+ const s=setup(),numbers=[];
+ s.context.animations.showDamageNumber=(_x,_y,damage,crit)=>numbers.push({damage,crit});
+ vm.runInContext('for(let i=1;i<=18;i++){queueDamageVisual(0,0,i,i%2===0,false,true);queueDamageVisual(0,0,100+i,false,false,false);}',s.context);
+ const tick=s.ticks.find(t=>t.ms===40).fn;
+ for(let i=0;i<18;i++)tick();
+ assert.deepEqual(numbers,Array.from({length:18},(_,i)=>({damage:i+1,crit:i%2===1})));
 });
 test('rapid kills show one latest reward and pace damage numbers in both level modes',async()=>{
  for(const locked of [true,false]){
@@ -126,7 +134,7 @@ test('rapid kills show one latest reward and pace damage numbers in both level m
   assert.deepEqual(rewards,[27]);
   assert.deepEqual(shots,[1]);
   assert.deepEqual(numbers,[]);
-  const tick=s.ticks.find(t=>t.ms===135).fn;
+  const tick=s.ticks.find(t=>t.ms===40).fn;
   tick();
   assert.deepEqual(numbers,[{damage:2,crit:true}]);
   for(let i=0;i<11;i++)tick();

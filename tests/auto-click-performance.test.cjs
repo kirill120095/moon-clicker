@@ -6,7 +6,7 @@ test('damage popup positions spread across multiple lanes and stay inside viewpo
 test('moon reward replaces the previous label below the moon and expires',()=>{
  const source=read('src/modules/ui/animations.js'),css=read('css/neon.css');
  assert.match(source,/this\._moonRewardPopup\?\.remove\(\)/);
- assert.match(source,/label\.style\.top=\(rect\.bottom\+8\)/);
+ assert.match(source,/label\.style\.top=\(rect\.bottom-6\)/);
  assert.match(source,/this\._moonRewardTimer=setTimeout/);
  assert.match(css,/\.moon-reward-popup\{[^}]*position:fixed/);
 });

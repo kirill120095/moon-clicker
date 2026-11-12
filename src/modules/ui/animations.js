@@ -8,7 +8,7 @@ export class AnimationManager {
     this._animations = new Map();
     this._rafId = null;
     this._isRunning = false;
-    this._baseDamage = 10;this._particleCount=0;this._lastLightEffect=0;this._damageNodes=[];this._lastLowDamage=0;this._ufoGeometry=null;this._damageSequence=0;
+    this._baseDamage = 10;this._particleCount=0;this._lastLightEffect=0;this._damageNodes=[];this._ufoGeometry=null;this._damageSequence=0;
   }
 
   setBaseDamage(damage) {
@@ -68,8 +68,6 @@ export class AnimationManager {
   // ============================================================
   showDamageNumber(x, y, damage, isCrit = false, isBoss = false) {
     if(document.hidden)return;
-    const low=document.documentElement?.classList.contains('low-power');
-    if(low){const now=performance.now();if(!isCrit&&now-this._lastLowDamage<75)return;this._lastLowDamage=now;}
 
     this._damageNodes.shift()?.remove();
     const damageEl = document.createElement('div');this._damageNodes.push(damageEl);
@@ -396,7 +394,7 @@ export class AnimationManager {
     const label=document.createElement('div');
     label.className='moon-reward-popup';label.textContent='+'+amount.toLocaleString('ru-RU')+' 💎';
     label.style.left=(rect.left+rect.width/2)+'px';
-    label.style.top=(rect.bottom+8)+'px';
+    label.style.top=(rect.bottom-6)+'px';
     this._moonRewardPopup=label;
     document.body.appendChild(label);
     this._moonRewardTimer=setTimeout(()=>{

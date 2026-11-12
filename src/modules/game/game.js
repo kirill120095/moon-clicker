@@ -650,9 +650,10 @@ export class GameEngine {
     }
     
     const buffIds={normal:'combo',blood:'blood',ice:'freeze',shadow:'shadow',electric:'electric',fire:'fire',gold:'gold',cosmic:'cosmic'};
-    for(const target of targets){
+    for(const [index,target] of targets.entries()){
       const original=buffs.find(buff=>buff.id===buffIds[target]);if(!original)continue;
-      buffs.push({...original,id:'clone-'+target,icon:'🪞',name:'Клон · '+original.name,isReflection:true,cloneOf:target});
+      const id='clone-'+target+(targets.indexOf(target)===index?'':'-'+index);
+      buffs.push({...original,id,icon:'🪞',name:'Клон · '+original.name,isReflection:true,cloneOf:target});
     }
     return buffs.slice(0, 6);
   }
