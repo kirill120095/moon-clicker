@@ -180,17 +180,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes damageFloat {
-  0% { transform: translateY(0) scale(0.5); opacity: 0; }
-  10% { opacity: 1; transform: translateY(-10px) scale(1.2); }
-  20% { transform: translateY(-20px) scale(1); }
-  100% { transform: translateY(-100px) scale(0.8); opacity: 0; }
+  0% { transform: translateY(2px) scale(.94); opacity: .75; }
+  12% { transform: translateY(-5px) scale(1.04); opacity: 1; }
+  42% { transform: translateY(-17px) scale(1); opacity: 1; }
+  100% { transform: translateY(-46px) scale(.96); opacity: 0; }
 }
 
 @keyframes damageFloatCrit {
-  0% { transform: translateY(0) scale(0.5) rotate(-10deg); opacity: 0; }
-  15% { opacity: 1; transform: translateY(-15px) scale(1.5) rotate(5deg); }
-  30% { transform: translateY(-30px) scale(1.2) rotate(-3deg); }
-  100% { transform: translateY(-120px) scale(0.9) rotate(0deg); opacity: 0; }
+  0% { transform: translateY(2px) scale(.9); opacity: .8; }
+  12% { transform: translateY(-7px) scale(1.1); opacity: 1; }
+  42% { transform: translateY(-21px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(-54px) scale(.96); opacity: 0; }
 }
 
 /* УДАРНАЯ ВОЛНА */
