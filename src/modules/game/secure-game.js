@@ -127,18 +127,15 @@ function apply(result,hits=[],deferNotices=false){
  if(document.hidden||!s.effects?.length)return;
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  if(!rect)return;
- let index=0,visibleDamage=0,ufoShot=null;
+ let index=0,ufoShot=null,lastReward=0;
  for(const event of s.effects){
   const position=event.source==='manual'?hits[index++]:null;
   const x=position?.x??rect.x+rect.width/2,y=position?.y??rect.y+rect.height/2;
-  if(event.source==='manual'&&hits.length>1){
-   if(visibleDamage<8||event.isCrit){queueDamageVisual(x,y,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
-  }else if(visibleDamage<12||event.isCrit){
-   animations.showDamageNumber(x,y,event.damage,event.isCrit,event.isBoss);visibleDamage++;
-  }
+  queueDamageVisual(x,y,event.damage,event.isCrit,event.isBoss);
   if(event.source==='ufo')ufoShot=event.ufoIndex||0;
-  if(event.reward>0)animations.showMoonReward(event.reward);
+  if(event.reward>0)lastReward=event.reward;
  }
+ if(lastReward>0)animations.showMoonReward(lastReward,rect);
  if(ufoShot!==null){animations.playUfoShot(ufoShot);audio.shoot(true);}
 
 }

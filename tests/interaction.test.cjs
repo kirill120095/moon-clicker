@@ -100,10 +100,11 @@ test('automatic clicks show only the server-confirmed damage and critical flag',
  const response=s.result();
  response.state.effects=[{source:'manual',damage:72,isCrit:true,reward:0}];
  s.calls.at(-1).settle.resolve(response);await pending;
+ s.ticks.find(t=>t.ms===135).fn();
  assert.deepEqual(numbers,[{damage:72,crit:true}]);
  s.engine.destroy();
 });
-test('rapid kills show separate rewards and damage numbers for locked and advancing levels',async()=>{
+test('rapid kills show one latest reward and pace damage numbers in both level modes',async()=>{
  for(const locked of [true,false]){
   const s=setup();await s.engine.init();
   const rewards=[],numbers=[],shots=[];
@@ -122,9 +123,14 @@ test('rapid kills show separate rewards and damage numbers for locked and advanc
   Object.assign(response.state,{levelLocked:locked,currentLevel:locked?1:19,moonKills:18,moonSerial:19,
    effects:Array.from({length:18},(_,i)=>({source:'ufo',damage:i+1,isCrit:i%2===1,reward:10+i,ufoIndex:i%2}))});
   s.calls.at(-1).settle.resolve(response);await new Promise(setImmediate);
-  assert.deepEqual(rewards,Array.from({length:18},(_,i)=>10+i));
+  assert.deepEqual(rewards,[27]);
   assert.deepEqual(shots,[1]);
-  assert.deepEqual(numbers,[1,2,3,4,5,6,7,8,9,10,11,12,14,16,18].map(damage=>({damage,crit:damage%2===0})));
+  assert.deepEqual(numbers,[]);
+  const tick=s.ticks.find(t=>t.ms===135).fn;
+  tick();
+  assert.deepEqual(numbers,[{damage:2,crit:true}]);
+  for(let i=0;i<11;i++)tick();
+  assert.deepEqual(numbers,[2,4,6,8,10,12,13,14,15,16,17,18].map(damage=>({damage,crit:damage%2===0})));
   assert.equal(geometryReads,1);
   assert.equal(s.state.currentLevel,locked?1:19);
   assert.equal(s.state.moonKills,18);

@@ -71,7 +71,7 @@ export class AnimationManager {
     const low=document.documentElement?.classList.contains('low-power');
     if(low){const now=performance.now();if(!isCrit&&now-this._lastLowDamage<75)return;this._lastLowDamage=now;}
 
-    while(this._damageNodes.length>=(low?8:24))this._damageNodes.shift()?.remove();
+    this._damageNodes.shift()?.remove();
     const damageEl = document.createElement('div');this._damageNodes.push(damageEl);
     damageEl.className = 'damage-number';
     
@@ -389,21 +389,19 @@ export class AnimationManager {
   // ============================================================
   // НОВОЕ: ЭФФЕКТ ЗОЛОТОГО КЛИКА (от Золотой луны)
   // ============================================================
-  showMoonReward(amount) {
-    if(document.hidden)return;
-    let group=this._moonRewardGroup;
-    if(!group){
-      group=document.createElement('div');
-      group.className='moon-reward-grid';
-      this._moonRewardGroup=group;
-      document.body.appendChild(group);
-    }
+  showMoonReward(amount,rect) {
+    if(document.hidden||!rect)return;
+    this._moonRewardPopup?.remove();
+    clearTimeout(this._moonRewardTimer);
     const label=document.createElement('div');
     label.className='moon-reward-popup';label.textContent='+'+amount.toLocaleString('ru-RU')+' 💎';
-    group.appendChild(label);
-    setTimeout(()=>{
+    label.style.left=(rect.left+rect.width/2)+'px';
+    label.style.top=(rect.bottom+8)+'px';
+    this._moonRewardPopup=label;
+    document.body.appendChild(label);
+    this._moonRewardTimer=setTimeout(()=>{
       label.remove();
-      if(!group.childElementCount){group.remove();this._moonRewardGroup=null;}
+      this._moonRewardPopup=null;
     },900);
   }
 
