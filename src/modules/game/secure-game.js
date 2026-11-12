@@ -127,28 +127,23 @@ function apply(result,hits=[],deferNotices=false){
  if(document.hidden||!s.effects?.length)return;
  const rect=document.getElementById('moonWrapper')?.getBoundingClientRect();
  if(!rect)return;
- let index=0,reward=0,ufoShot=null;
- let ordinaryHit=null,criticalHit=null;
+ let index=0,visibleDamage=0,ufoShot=null;
  const autoBatch=hits.some(hit=>hit.automatic);
  for(const event of s.effects){
   const position=event.source==='manual'?hits[index++]:null;
-  if(event.reward>0)reward+=event.reward;
-  if(event.source==='ufo')ufoShot=event.ufoIndex||0;
-  if(event.isCrit){
-   if(!criticalHit||event.damage>=criticalHit.event.damage)criticalHit={event,position};
-  }else if(event.source!=='manual'||!autoBatch){
-   ordinaryHit={event,position};
-  }
- }
- for(const hit of [criticalHit,ordinaryHit]){
-  if(!hit)continue;
-  const {event,position}=hit;
   const x=position?.x??rect.x+rect.width/2,y=position?.y??rect.y+rect.height/2;
-  if(s.effects.length===1&&!autoBatch)animations.showDamageNumber(x,y,event.damage,event.isCrit,event.isBoss);
-  else queueDamageVisual(x,y,event.damage,event.isCrit,event.isBoss);
+  if(event.source==='manual'&&autoBatch){
+   // Ordinary auto-click hits already have a local damage popup.
+   if(event.isCrit){queueDamageVisual(x,y,event.damage,true,event.isBoss);visibleDamage++;}
+  }else if(event.source==='manual'&&hits.length>1){
+   if(visibleDamage<8||event.isCrit){queueDamageVisual(x,y,event.damage,event.isCrit,event.isBoss);visibleDamage++;}
+  }else if(visibleDamage<12||event.isCrit){
+   animations.showDamageNumber(x,y,event.damage,event.isCrit,event.isBoss);visibleDamage++;
+  }
+  if(event.source==='ufo')ufoShot=event.ufoIndex||0;
+  if(event.reward>0)animations.showMoonReward(event.reward,rect);
  }
  if(ufoShot!==null){animations.playUfoShot(ufoShot);audio.shoot(true);}
- if(reward>0)animations.showMoonReward(reward,rect);
 
 }
 async function send(action,payload={}){

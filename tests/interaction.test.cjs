@@ -88,7 +88,7 @@ test('rapid manual hits share one packet and take priority over background sync'
  assert.deepEqual(s.calls.map(call=>call.action),['load','click','sync']);
  s.engine.destroy();
 });
-test('rapid kills show one total reward and limit combat effects for locked and advancing levels',async()=>{
+test('rapid kills show separate rewards and damage numbers for locked and advancing levels',async()=>{
  for(const locked of [true,false]){
   const s=setup();await s.engine.init();
   const rewards=[],numbers=[],shots=[];
@@ -105,13 +105,11 @@ test('rapid kills show one total reward and limit combat effects for locked and 
   s.engine.handleClick({});s.runClickTimer();
   const response=s.result();
   Object.assign(response.state,{levelLocked:locked,currentLevel:locked?1:19,moonKills:18,moonSerial:19,
-   effects:Array.from({length:18},(_,i)=>({source:'ufo',damage:i+1,isCrit:i%2===1,reward:10,ufoIndex:i%2}))});
+   effects:Array.from({length:18},(_,i)=>({source:'ufo',damage:i+1,isCrit:i%2===1,reward:10+i,ufoIndex:i%2}))});
   s.calls.at(-1).settle.resolve(response);await new Promise(setImmediate);
-  const visualTick=s.ticks.find(t=>t.ms===135).fn;
-  visualTick();visualTick();visualTick();
-  assert.deepEqual(rewards,[180]);
+  assert.deepEqual(rewards,Array.from({length:18},(_,i)=>10+i));
   assert.deepEqual(shots,[1]);
-  assert.deepEqual(numbers,[{damage:18,crit:true},{damage:17,crit:false}]);
+  assert.deepEqual(numbers,[1,2,3,4,5,6,7,8,9,10,11,12,14,16,18].map(damage=>({damage,crit:damage%2===0})));
   assert.equal(geometryReads,1);
   assert.equal(s.state.currentLevel,locked?1:19);
   assert.equal(s.state.moonKills,18);
