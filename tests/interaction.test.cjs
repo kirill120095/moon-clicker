@@ -11,7 +11,10 @@ function setup(){
  _calculateAllBonuses:()=>({totalDamageBonus:0}),_getMechanicParamsForActiveMoon:()=>null,
  _updateBuffsDisplay(){buffUpdates++;},_getActiveBuffs(){return[{isTemporary:true,timeLeft:this._comboClicks>0?Math.max(0,Math.ceil((10000-(now-this._lastActivityTime))/1000)):null}];}};
  const context={getBaseDamage,getPrestigeSummary,fortuneWheel:{bind(){},connect(){},disconnect(){}},gameAdmin:{connect:()=>Promise.resolve(),disconnect(){}},radio:{connect:()=>Promise.resolve(),disconnect(){}},gameEngine:engine,state,appState:{setMany:s=>Object.assign(state,s),set:(k,v)=>state[k]=v},CONSTANTS:{PRESTIGE:{COIN_EVERY:20},SAFE_NUMBER_CAP:Number.MAX_SAFE_INTEGER,MAX_CLICKS_PER_SECOND:12,CLICK_BURST:12,BOSS_TIMER:30,BOSS_INTERVAL:10,UPGRADE_COSTS:{clickDamage:{base:60,multiplier:1.22}},LIMITS:{MAX_CLICK_DAMAGE_LEVEL:200}},db:{action(action,payload){calls.push({action,payload});if(action==='load')return Promise.resolve(result());return new Promise((resolve,reject)=>calls.at(-1).settle={resolve,reject});}},document:{getElementById:()=>null},animations:{playClickVisualFeedback(){}},audio:{click(){},purchase(){}},showToast(){},updateUI(){},updateHPBar(){hpUpdates++;},updateShopUI(){},updateProfileAndLeaders(){},updateQuestAndAchievementUI(){},updateTimerBar(){},updateLiveCombatProfile(){},setInterval(fn,ms){ticks.push({fn,ms});return ticks.length;},clearInterval(){},setTimeout(fn,ms){const id=++nextTimer;timeouts.set(id,{fn,ms});return id;},clearTimeout(id){timeouts.delete(id);},performance:{now:()=>perf},Date:{now:()=>now},console,Math};
- vm.createContext(context);vm.runInContext(source,context);
+ vm.createContext(context);
+ const constants=fs.readFileSync(path.join(__dirname,'../src/core/constants.js'),'utf8');
+ vm.runInContext(constants.slice(constants.indexOf('export const ITEM_SHOP_COST'),constants.indexOf('export const MOON_ORDER')).replace(/\bexport\s+/g,''),context);
+ vm.runInContext(source,context);
  return{context,engine,state,calls,result,ticks,runClickTimer(){const timer=[...timeouts.values()].find(t=>t.ms===120);assert.ok(timer);timer.fn();},get hpUpdates(){return hpUpdates;},get buffUpdates(){return buffUpdates;},advance(ms){now+=ms;perf+=ms;}};
 }
 test('inventory skips closed panels and rebuilds only when displayed data changes',async()=>{

@@ -1072,6 +1072,252 @@ export function getCombatStats(state,now=Date.now()+(state.serverClockOffset||0)
  moonReward:Math.min(CONSTANTS.SAFE_NUMBER_CAP,reward),ufoDamage:state.ufoLevel?Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(steadyDamage*CONSTANTS.UFO.DAMAGE_MULTIPLIER*(1+ufo.damage)))):0,ufoInterval:interval,ufoCount:state.ufoCount||0,goldMultiplier,fullCombo,ufoCritChance:ufo.critChance,ufoCritMultiplier:ufo.critMultiplier,ufoChainEvery:ufo.chainEvery,ufoDamageBonus:ufo.damage,ufoHaste:ufo.haste,ufoRewardMultiplier:ufo.rewardMultiplier,superconductorHits:runtime._superconductorClicksLeft||0};
 }
 
+export const ITEM_SHOP_COST = 3;
+export const ITEM_MAX_LEVEL = 6;
+export const ITEM_TYPES = {
+  moonstone: {name:"Лунный камень", icon:"🌙", base:["damage","manual",60],
+    good: [
+      ["Полное комбо","damage","manual full",35,65],
+      ["Длинная серия","comboTime","always",1.5,4],
+      ["Критическое комбо","crit","manual full",15,30],
+      ["Входной удар","damage","manual firstManual",50,90],
+      ["Добивание","damage","manual low25",45,80],
+      ["Двойной шаг","comboStep","manual",20,35],
+      ["Разгон","damage","manual ramp",30,60],
+      ["Точный ритм","damage","manual fifthManual",65,110],
+      ["Удар по целой луне","damage","manual high",30,55],
+      ["Пробитие середины","crossDamage","manual",30,55],
+      ["Сильный обычный удар","damage","manual noncrit",40,75],
+      ["Продление серии","comboExtend","manual full",0.5,1.5],
+      ["После победы","damage","manual afterBoss",90,150],
+      ["Ответный выстрел","damage","manual afterUfo",25,55],
+      ["Ровный темп","damage","manual fourth",40,75],
+      ["Длинный бой","damage","manual longFight",35,70],
+      ["Закреплённый фарм","damage","manual locked",25,50],
+    ],
+    bad: [
+      ["Меньше добычи","reward","always",-40,-25],
+      ["Слабые тарелки","damage","ufo",-50,-30],
+      ["Короткая серия","comboTime","always",-2.5,-1],
+      ["Слабое Эхо","damage","echo",-35,-20],
+      ["Неполное комбо","crit","manual incomplete",-35,-20],
+      ["Осторожный старт","damage","manual boss firstManual",-50,-30],
+      ["Слабое добивание","damage","manual low25",-45,-25],
+    ],
+  },
+  orbit: {name:"Кольцо орбиты", icon:"🛸", base:["damage","ufo",85],
+    good: [
+      ["Ускорение орбиты","ufoSpeed","always",15,28],
+      ["Критический лазер","crit","ufo",25,45],
+      ["Перегрев лазера","damage","ufo crit",45,80],
+      ["Орбитальная добыча","reward","ufo",35,65],
+      ["Захват цели","damage","ufo firstUfo",55,100],
+      ["Импульс","damage","ufo fifthUfo",85,140],
+      ["Поддержка серии","comboStep","ufo",20,35],
+      ["Орбитальное добивание","damage","ufo low20",50,90],
+      ["Огонь по крупной цели","damage","ufo boss",55,95],
+      ["Поддержка клика","damage","ufo afterManual",30,60],
+      ["Согласованный залп","damage","ufo fleet",25,50],
+      ["Флагман","damage","ufo solo",55,100],
+      ["Быстрая пристрелка","damage","ufo firstTwoUfo high",30,60],
+      ["Критический импульс","damage","ufo afterUfoCrit noncrit",45,85],
+      ["Орбита комбо","damage","ufo full",30,60],
+      ["Электрический усилитель","damage","ufo chain electric",40,75],
+      ["Автономный режим","damage","ufo idleManual",35,65],
+    ],
+    bad: [
+      ["Слабые клики","damage","manual",-50,-30],
+      ["Неточный клик","crit","manual",-35,-20],
+      ["Слабое Эхо","damage","echo",-50,-30],
+      ["Снижение добычи тарелки","reward","ufo",-40,-20],
+      ["Медленный обстрел босса","ufoSpeed","boss",-30,-15],
+      ["Плохой захват","damage","ufo firstUfo",-55,-30],
+      ["Неполная орбита","damage","ufo incomplete",-45,-25],
+    ],
+  },
+  comet: {name:"Осколок кометы", icon:"☄️", base:["damage","boss",100],
+    good: [
+      ["Запас времени","bossTime","always",8,16],
+      ["Штурм","damage","boss first",65,120],
+      ["Трофей охотника","reward","boss",40,75],
+      ["Уязвимая точка","crit","boss",25,45],
+      ["Последний рывок","damage","boss last5",55,100],
+      ["Осадная орбита","damage","ufo boss earlyBoss",45,85],
+      ["Финишер босса","damage","boss low20",55,95],
+      ["Затяжной штурм","damage","boss longBoss",40,75],
+      ["Удар по броне","damage","echo boss high",35,65],
+      ["Крит охотника","damage","boss crit",45,85],
+      ["Босс без паузы","damage","boss earlyBoss",30,60],
+      ["Пыль босса","dust","boss",35,70],
+      ["Комбо охотника","damage","boss full",40,75],
+      ["Резерв времени","crossTime","boss",3,7],
+      ["Разведка","damage","boss first retriedBoss",70,130],
+      ["Быстрая победа","reward","boss quickBoss",35,70],
+      ["Закреплённый босс","reward","boss locked",30,65],
+    ],
+    bad: [
+      ["Слабость вне босса","damage","normal",-50,-30],
+      ["Меньше обычной добычи","reward","normal",-45,-25],
+      ["Меньше времени","bossTime","always",-10,-5],
+      ["Слабый трофей","reward","boss",-45,-25],
+      ["Меньше пыли босса","dust","boss",-45,-25],
+      ["Слабая осада","damage","boss ufo",-50,-30],
+      ["Медленная пристрелка","crit","boss quickBoss",-35,-20],
+    ],
+  },
+  starlight: {name:"Звёздный амулет", icon:"✨", base:["reward","always",55],
+    good: [
+      ["Сборщик","reward","normal",35,70],
+      ["Пыль обычной луны","dust","normal",25,55],
+      ["Кристальный клик","clickReward","manual",25,60],
+      ["Критическая добыча","reward","crit",40,75],
+      ["Награда за серию","reward","full",30,60],
+      ["Добыча Эха","reward","echo",35,70],
+      ["Ручная добыча","reward","manual",35,65],
+      ["Премия за ваншот","reward","first",35,70],
+      ["Премия за стойкость","reward","longFight",45,85],
+      ["Фарм под замочком","reward","locked",30,60],
+      ["Разведка рубежей","reward","newRecord",40,80],
+      ["Охота без замочка","dust","unlocked",25,50],
+      ["Золотая добыча","reward","gold",30,60],
+      ["Последняя секунда","reward","boss last3",60,110],
+      ["Редкий урожай","rareReward","normal",75,125],
+      ["Чистый фарм","reward","onlyUfo",30,60],
+      ["Пыль за добивание","dust","manual noncrit",30,60],
+    ],
+    bad: [
+      ["Слабые клики","damage","manual",-50,-30],
+      ["Слабые тарелки","damage","ufo",-50,-30],
+      ["Пониженная награда босса","reward","boss",-45,-25],
+      ["Рассеянная пыль","dust","always",-50,-30],
+      ["Снижение выплаты за клик","clickReward","manual",-45,-25],
+      ["Меньше за ваншот","reward","first",-45,-25],
+      ["Меньше под замочком","reward","locked",-45,-25],
+    ],
+  },
+  eclipse: {name:"Призма затмения", icon:"🔮", base:["crit","manual",40],
+    good: [
+      ["Чистый крит","damage","manual crit",45,85],
+      ["Эхо крита","echoChance","manual crit",30,60],
+      ["Сильное Эхо","damage","echo",40,75],
+      ["Крит по свежей цели","crit","manual high",25,45],
+      ["Критическое добивание","damage","manual crit low25",40,80],
+      ["Компенсация","crit","manual afterNoncrit",20,40],
+      ["Высшая ступень","damage","manual highCrit",35,65],
+      ["Критический темп","damage","manual critStreak",30,55],
+      ["Длинное Эхо","damage","echo lateEcho",35,70],
+      ["Лунный пробой","damage","manual crit firstManual",55,100],
+      ["Критическая пыль","dust","crit",25,55],
+      ["Разогрев Эха","echoChance","manual full",20,40],
+      ["Крит под давлением","crit","manual boss last5",20,35],
+      ["Некритическое Эхо","echoChance","manual noncrit",25,50],
+      ["Эхо добивания","damage","echo low20",50,95],
+      ["Критический отголосок","damage","echo crit firstEcho",45,85],
+    ],
+    bad: [
+      ["Слабое обычное попадание","damage","manual noncrit",-55,-35],
+      ["Меньше добычи без крита","reward","noncrit",-45,-25],
+      ["Слабые тарелки","damage","ufo",-50,-30],
+      ["Слабое Эхо","damage","echo",-55,-30],
+      ["Слабые криты босса","damage","boss crit",-35,-20],
+      ["Слабое некритическое Эхо","echoChance","manual noncrit",-45,-25],
+    ],
+  },
+  resonance: {name:"Ядро резонанса", icon:"💠", base:["synergy","synergy",65],
+    good: [
+      ["Резонанс добычи","reward","synergy",35,65],
+      ["Резонанс орбиты","damage","synergy ufo",40,75],
+      ["Резонанс охоты","damage","synergy boss",45,85],
+      ["Резонанс крита","crit","synergy",20,40],
+      ["Резонанс Эха","damage","synergy echo",35,70],
+      ["Резонанс пыли","dust","synergy",25,50],
+      ["Зеркальный резонанс","damage","manual reflected",35,70],
+      ["Двойная связь","reward","doubleReflection",30,60],
+      ["Созвездие трёх","damage","manual trio",40,75],
+      ["Созвездие четырёх","reward","quartet",55,100],
+      ["Холодная связь","ufoSpeed","iceSynergy",12,22],
+      ["Огненная связь","damage","manual fireSynergy heat30",35,65],
+      ["Золотая связь","reward","ufo goldSynergy",35,65],
+      ["Теневая связь","damage","first shadowSynergy",40,80],
+      ["Космическая связь","killBase","cosmicSynergy",25,50],
+      ["Кровавая связь","damage","normal bloodSynergy",45,85],
+    ],
+    bad: [
+      ["Слабость без синергии","damage","noSynergy",-50,-30],
+      ["Меньше добычи без синергии","reward","noSynergy",-45,-25],
+      ["Медленные тарелки без синергии","ufoSpeed","noSynergy",-35,-20],
+      ["Босс без отражения","damage","boss noReflection",-45,-25],
+      ["Потеря пыли под замочком","dust","locked",-45,-25],
+      ["Неточность без комбо","crit","incomplete",-35,-20],
+    ],
+  },
+};
+
+export function getItemSalvageDust(level) {
+  return [1,2,4,5,6,7][Math.min(ITEM_MAX_LEVEL,Math.max(1,level))-1];
+}
+
+export function getItemProperties(item) {
+  const type=ITEM_TYPES[item?.type];
+  if(!type)return [];
+  const level=Math.min(ITEM_MAX_LEVEL,item.rarity||1);
+  const [stat,condition,value]=type.base;
+  const properties=[{name:type.name,stat,condition,value:value*(1+(level-1)*.2)}];
+  for(const [roll,pool] of [...(item.mods||[]).map(mod=>[mod,type.good]),[item.penalty,type.bad]]){
+    const definition=pool[roll?.id];
+    if(!definition)continue;
+    const [name,stat,condition]=definition;
+    const scale=pool===type.bad?1+(level-1)*.05:1;
+    const improved=pool===type.good&&item.masterwork===roll.id?1.25:1;
+    properties.push({name,stat,condition,value:roll.value*scale*(roll.star?1.5:1)*improved,star:roll.star});
+  }
+  return properties;
+}
+
+export function getEquippedItems(state) {
+  const items=state.inventory?.items;
+  if(!items?.length)return [];
+  const equipped=new Map();
+  const byId=new Map(items.map(item=>[item.id,item]));
+  for(const moon of (state.activeMoons||[]).slice(0,state.maxSlots||1)){
+    if(!state.ownedMoons?.includes(moon))continue;
+    for(const slot of state.equipment?.[moon]||[]){
+      const item=byId.get(slot.itemId);
+      if(item&&item.rarity<=slot.level&&ITEM_TYPES[item.type]&&
+         (!equipped.has(item.type)||equipped.get(item.type).rarity<item.rarity)){
+        equipped.set(item.type,item);
+      }
+    }
+  }
+  return [...equipped.values()];
+}
+
+export function formatItemProperty(property) {
+  const units={crit:' п. п.',echoChance:' п. п.',bossTime:' с',comboTime:' с',crossTime:' с',comboExtend:' с'};
+  const value=Number(property.value.toFixed(2));
+  const stats={damage:'урон',reward:'кристаллы за убийство',crit:'шанс крита',dust:'прогресс Лунной пыли',
+    ufoSpeed:'скорость стрельбы',bossTime:'время на босса',comboTime:'время комбо',crossTime:'время на босса при переходе ниже 25% HP',
+    comboExtend:'продление комбо при убийстве',comboStep:'шанс дополнительного шага комбо',crossDamage:'дополнительный урон при переходе ниже 50% HP',
+    clickReward:'кристаллы за клик',echoChance:'шанс Эха',rareReward:'кристаллы за убийство с шансом 15%',synergy:'сила синергии',killBase:'базовый урон Космической за убийства'};
+  const conditions={manual:'клик',ufo:'тарелка',echo:'Эхо',boss:'босс',normal:'обычная луна',full:'полное комбо',incomplete:'неполное комбо',
+    crit:'крит',noncrit:'без крита',highCrit:'крит ×3 или выше',chain:'цепной выстрел',high:'выше 75% HP',low25:'ниже 25% HP',low20:'ниже 20% HP',
+    first:'первое попадание',firstManual:'первый клик',firstUfo:'первый выстрел',firstTwoUfo:'первые два выстрела',firstEcho:'первое Эхо',lateEcho:'со второго Эха',
+    fifthManual:'каждый пятый клик',fifthUfo:'каждый пятый выстрел',ramp:'первые три шага комбо',fourth:'четвёртый клик по цели',
+    afterBoss:'после убийства босса',afterUfo:'после тарелки',afterManual:'после клика',afterUfoCrit:'после крита тарелки',
+    afterNoncrit:'после некритического клика',critStreak:'после трёх критов подряд',longFight:'через 5 с после первого попадания',
+    last5:'последние 5 с',last3:'последние 3 с',earlyBoss:'первая половина таймера',quickBoss:'первые 5 с',longBoss:'после 10 с',
+    retriedBoss:'повторная попытка',locked:'уровень закреплён',unlocked:'уровень не закреплён',newRecord:'впервые на рекордном уровне',
+    onlyUfo:'по цели стреляли только тарелки',idleManual:'3 с без кликов',solo:'одна тарелка',fleet:'от трёх тарелок',
+    electric:'активна Электрическая',gold:'активна Золотая',synergy:'синергия',noSynergy:'без синергии',
+    reflected:'Клон отражает участника',noReflection:'Клон не отражает участника',doubleReflection:'два разных отражения участников',
+    trio:'три участника синергии',quartet:'четыре участника синергии',iceSynergy:'Морозная в синергии',fireSynergy:'Огненная в синергии',
+    heat30:'от 30 стаков жара',goldSynergy:'Золотая в синергии',shadowSynergy:'Теневая в синергии',
+    cosmicSynergy:'Космическая в синергии',bloodSynergy:'Кровавая в синергии'};
+  const details=property.condition.split(' ').map(key=>conditions[key]).filter(Boolean);
+  return (property.star?'★ ':'')+property.name+' · '+(value>0?'+':'')+value.toLocaleString('ru-RU')+(units[property.stat]||'%')+
+    ' · '+stats[property.stat]+(details.length?' ('+details.join(', ')+')':'');
+}
+
 export const MOON_ORDER=Object.freeze(['normal','blood','ice','shadow','electric','fire','gold','cosmic','clone']);
 export function getMoonPurchaseAccess(state,id){
  const moon=MOON_TYPES[id],index=MOON_ORDER.indexOf(id),record=Math.max(state.runMaxLevel??state.currentLevel??1,state.currentLevel||1);

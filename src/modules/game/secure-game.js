@@ -4,6 +4,7 @@ import { gameAdmin } from '../ui/admin.js';
 import { gameEngine } from './game.js';
 import { appState, state } from '../../core/state.js';
 import { CONSTANTS,MOON_TYPES,QUESTS,ACHIEVEMENTS,getBaseDamage,getPrestigeSummary } from '../../core/constants.js';
+import { ITEM_TYPES,ITEM_SHOP_COST,ITEM_MAX_LEVEL,getItemProperties,formatItemProperty,getItemSalvageDust,getEquippedItems } from '../../core/constants.js';
 import { db } from '../network/supabase.js';
 import { animations } from '../ui/animations.js';
 import { audio } from '../ui/audio.js';
@@ -11,11 +12,13 @@ import { radio } from '../ui/radio.js';
 import { showToast, updateUI,updateShopUI,updateProfileAndLeaders,updateQuestAndAchievementUI,updateTimerBar,updateHPBar,updateLiveCombatProfile } from '../ui/renderer.js';
 let previewHits=[];
 function refreshPreview(){gameEngine._previewDamage=previewHits.reduce((sum,hit)=>sum+hit.damage,0);updateHPBar();}
+let equipmentPreviewFactor=1;
 function previewDamage(){
  // Only guaranteed passive damage is predicted. Random crits, heat resets and
  // temporary stacks are applied on confirmation, so same-moon HP cannot rebound.
  const bonus=gameEngine._calculateAllBonuses().totalDamageBonus;
- return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(getBaseDamage(state)*(1+bonus))));
+ const damage=Math.round(getBaseDamage(state)*(1+bonus));
+ return Math.min(CONSTANTS.SAFE_NUMBER_CAP,Math.max(1,Math.round(damage*equipmentPreviewFactor)));
 }
 let lastRevision=0,lastBuffKey='',ready=false,pendingWheelNotices=[];
 function refreshBuffs(){
@@ -109,6 +112,9 @@ function apply(result,hits=[],deferNotices=false){
  maxSlots:s.maxSlots,moonKills:s.moonKills||0,bossKills:s.bossKills,quests:s.quests,achievements:s.achievements,
  levelLocked:s.levelLocked,testMode:false,bossTimerRunning:!!deadline,
  bossTimer:deadline?Math.max(0,(deadline-result.serverNow)/1000):30});
+ const penalties=getEquippedItems(state).flatMap(getItemProperties)
+  .filter(property=>property.stat==='damage'&&property.value<0&&!/\b(ufo|echo)\b/.test(property.condition));
+ equipmentPreviewFactor=Math.max(.1,1+penalties.reduce((sum,property)=>sum+property.value,0)/100);
  Object.assign(gameEngine,s.runtime||{});
  gameEngine._lastActivityTime=Math.max(s.lastClickAt||0,s.lastAutoClickAt||0)?Math.max(s.lastClickAt||0,s.lastAutoClickAt||0)-offset:Date.now();
  gameEngine._lastComboTime=Math.max(s.lastClickAt||0,s.lastAutoClickAt||0,s.lastComboAt||0)-offset;
@@ -271,7 +277,7 @@ gameEngine.claimQuestReward=id=>command('claimQuest',{id},true).catch(()=>{});
 gameEngine.claimAchievementReward=(id,tier)=>command('claimAchievement',{id,tier},true).catch(()=>{});
 gameEngine.resetProgress=()=>command('reset');
 
-const ITEM_NAMES={moonstone:'Лунный камень',orbit:'Кольцо орбиты',comet:'Осколок кометы',starlight:'Звёздный амулет'};
+const ITEM_NAMES=Object.fromEntries(Object.entries(ITEM_TYPES).map(([id,item])=>[id,item.name]));
 let selectedInventoryItemId=null;
 let chosenEquipSlot=null;
 let inventoryKey=null;
@@ -379,7 +385,7 @@ function renderMoonEquipment(){
  }
 
 }
-const ITEM_ICONS={moonstone:'🌙',orbit:'🪐',comet:'☄️',starlight:'✨'};
+const ITEM_ICONS=Object.fromEntries(Object.entries(ITEM_TYPES).map(([id,item])=>[id,item.icon]));
 function renderItemInventory(){
  const tab=document.getElementById('inventoryMount');if(!tab)return;
  let host=document.getElementById('moonInventory');
@@ -395,10 +401,12 @@ function renderItemInventory(){
  if(selected){
   const itemName=(ITEM_NAMES[selected.type]||selected.type);
   const heading=document.createElement('h4');heading.textContent=(ITEM_ICONS[selected.type]||'💠')+' '+itemName+' · редкость '+selected.rarity;info.append(heading);
-  const descriptions={moonstone:'Кристалл, впитавший свет древних лун.',orbit:'Артефакт, удерживающий энергию лунной орбиты.',comet:'Осколок странствующей кометы с космической энергией.',starlight:'Амулет, наполненный сиянием далёких звёзд.'};
-  const description=document.createElement('p');description.textContent=descriptions[selected.type]||'Загадочный лунный артефакт.';info.append(description);
-  const effect=document.createElement('p');effect.className='moon-inventory-effect';effect.textContent='Эффект: пока не активен. Бонусы предметов появятся вместе с экипировкой на луны.';info.append(effect);
-  const flags=document.createElement('p');flags.textContent='Лунная пыль при разборе: '+(2**(selected.rarity-1))+' · '+(selected.locked?'🔒 Защищён':'Без защиты')+' · '+(selected.keep?'★ Сохранится при перерождении':'Не выбран для сохранения');info.append(flags);
+  for(const property of getItemProperties(selected)){
+   const effect=document.createElement('p');effect.className='moon-inventory-effect';
+   effect.classList.toggle('item-penalty',property.value<0);
+   effect.textContent=formatItemProperty(property);info.append(effect);
+  }
+  const flags=document.createElement('p');flags.textContent='Лунная пыль при разборе: '+getItemSalvageDust(selected.rarity)+' · '+(selected.locked?'🔒 Защищён':'Без защиты')+' · '+(selected.keep?'★ Сохранится при перерождении':'Не выбран для сохранения');info.append(flags);
  }else{
   const heading=document.createElement('h4');heading.textContent='✧ Выбери предмет';info.append(heading);
   const description=document.createElement('p');description.textContent='Нажми на занятый слот, чтобы увидеть описание, редкость и доступные действия.';info.append(description);
@@ -408,7 +416,7 @@ function renderItemInventory(){
   const item=items[index];
   const slot=document.createElement('button');slot.type='button';slot.className='moon-inventory-slot'+(item?' occupied':' empty')+(item?.id===selectedInventoryItemId?' selected':'');
   if(item){
-   const icon=document.createElement('span');icon.className='moon-slot-icon';icon.textContent=ITEM_ICONS[item.type]||'💠';slot.append(icon);
+   const icon=document.createElement('span');icon.className='moon-slot-icon';icon.textContent=(ITEM_ICONS[item.type]||'💠')+(item.mods?.some(mod=>mod.star)?' ★':'');slot.append(icon);
    const level=document.createElement('span');level.className='moon-slot-rarity';level.textContent='+'+item.rarity;slot.append(level);
    if(item.locked){const lock=document.createElement('span');lock.className='moon-slot-lock';lock.textContent='🔒';slot.append(lock);}
    if(item.keep){const keep=document.createElement('span');keep.className='moon-slot-keep';keep.textContent='★';slot.append(keep);}
@@ -427,15 +435,68 @@ function renderItemInventory(){
  function add(label,action,payload,disabled=false){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=disabled;b.onclick=()=>act(action,payload);buttons.append(b);}
  add(selected.locked?'🔒 Снять защиту':'🔓 Защитить','lockItem',{id:selected.id});
  add(selected.keep?'★ Не сохранять':'☆ Сохранить','keepItem',{id:selected.id},!selected.keep&&kept>=inv.keepLimit);
- const partner=items.find(i=>i.id!==selected.id&&i.type===selected.type&&i.rarity===selected.rarity&&!i.locked);
- add('✦ Объединить','mergeItems',{id:selected.id,otherId:partner?.id},selected.locked||!partner);
- const salvage=document.createElement('button');salvage.type='button';salvage.textContent='Разобрать · +'+(2**(selected.rarity-1))+' пыли';salvage.disabled=!!selected.locked;salvage.onclick=()=>openInventorySalvage(selected);buttons.append(salvage);
+ renderItemUpgrades(details,selected,items,act);
+ const salvage=document.createElement('button');salvage.type='button';salvage.textContent='Разобрать · +'+getItemSalvageDust(selected.rarity)+' пыли';salvage.disabled=!!selected.locked;salvage.onclick=()=>openInventorySalvage(selected);buttons.append(salvage);
+}
+
+function renderItemUpgrades(host,item,items,act){
+ const upgrades=document.createElement('div');
+ upgrades.className='moon-item-upgrades';
+ host.append(upgrades);
+ if(item.rarity>=ITEM_MAX_LEVEL){
+  if(item.rarity!==ITEM_MAX_LEVEL||item.masterwork!=null)return;
+  for(const roll of item.mods||[]){
+   if(roll.star)continue;
+   const property=getItemProperties({...item,mods:[roll],penalty:null})[1];
+   const button=document.createElement('button');button.type='button';button.className='btn-action';
+   button.textContent='Усилить на 25% · '+property.name;
+   button.onclick=()=>{if(window.confirm('Усилить «'+property.name+'»? Выбор делается один раз.'))act('masterworkItem',{id:item.id,mod:roll.id});};
+   upgrades.append(button);
+  }
+  return;
+ }
+ const equipped=new Set(Object.values(state.equipment||{}).flat().map(slot=>slot.itemId));
+ const donorLevel=item.rarity<3?item.rarity:1;
+ const donors=items.filter(candidate=>candidate.id!==item.id&&candidate.type===item.type&&candidate.rarity===donorLevel&&!candidate.locked&&!equipped.has(candidate.id));
+ const label=document.createElement('p');
+ label.textContent='Уровень '+(item.rarity+1)+' · нужен свободный дубликат уровня '+donorLevel;
+ upgrades.append(label);
+ if(!donors.length||item.locked||equipped.has(item.id))return;
+ const select=document.createElement('select');select.setAttribute('aria-label','Предмет-донор');
+ for(const donor of donors){
+  const option=document.createElement('option');option.value=String(donor.id);
+  option.textContent='#'+donor.id+' · '+getItemProperties(donor).slice(1).map(formatItemProperty).join(' / ');
+  select.append(option);
+ }
+ const milestone=(item.rarity+1)%2===0;
+ const offer=item.mergeOffer;
+ if(donors.some(donor=>donor.id===offer?.donorId))select.value=String(offer.donorId);
+ upgrades.append(select);
+ const prepare=document.createElement('button');prepare.type='button';prepare.className='btn-action';
+ prepare.textContent=milestone?'Показать варианты бафа':'Объединить';
+ prepare.onclick=()=>{
+  const payload={id:item.id,otherId:Number(select.value)};
+  if(milestone)act('prepareItemMerge',payload);
+  else if(window.confirm('Предмет #'+payload.otherId+' будет израсходован. Продолжить?'))act('mergeItems',payload);
+ };
+ upgrades.append(prepare);
+ if(offer&&donors.some(donor=>donor.id===offer.donorId)){
+  const choices=document.createElement('div');choices.className='moon-item-upgrades';upgrades.append(choices);
+  select.onchange=()=>{choices.hidden=Number(select.value)!==offer.donorId;};
+  offer.choices.forEach((roll,choice)=>{
+   const property=getItemProperties({...item,mods:[roll],penalty:null})[1];
+   const button=document.createElement('button');button.type='button';button.className='btn-action';
+   button.textContent='Выбрать '+formatItemProperty(property);
+   button.onclick=()=>{if(window.confirm('Предмет #'+offer.donorId+' будет израсходован. Продолжить?'))act('mergeItems',{id:item.id,otherId:offer.donorId,choice});};
+   choices.append(button);
+  });
+ }
 }
 
 function openInventorySalvage(item){
  const modal=document.getElementById('inventorySalvageModal');if(!modal)return;
  const name=ITEM_NAMES[item.type]||item.type;
- modal.querySelector('#inventorySalvageMessage').textContent='«'+name+'» (редкость '+item.rarity+') исчезнет навсегда. Ты получишь '+(2**(item.rarity-1))+' Лунной пыли. Отменить разбор нельзя.';
+ modal.querySelector('#inventorySalvageMessage').textContent='«'+name+'» (редкость '+item.rarity+') исчезнет навсегда. Ты получишь '+getItemSalvageDust(item.rarity)+' Лунной пыли. Отменить разбор нельзя.';
  const confirmButton=modal.querySelector('#inventorySalvageConfirm');
  const cancel=()=>{modal.classList.add('hidden');modal.removeEventListener('keydown',onKey);};
  const onKey=e=>{if(e.key==='Escape'){e.preventDefault();cancel();}};
@@ -447,6 +508,18 @@ function openInventorySalvage(item){
 
 function updateLunarLuckWidget(){
  if(!active)return;
+ const purchase=document.getElementById('buyMoonItem');
+ if(purchase){
+  const inventory=state.inventory,dust=state.lunarLuck?.dust||0;
+  const full=inventory?.items?.length>=inventory?.capacity;
+  purchase.disabled=dust<ITEM_SHOP_COST||full;
+  const label=full?'Инвентарь заполнен':'Случайный предмет · '+ITEM_SHOP_COST+' пыли (в запасе '+dust+')';
+  if(purchase.textContent!==label)purchase.textContent=label;
+  if(!purchase.onclick)purchase.onclick=()=>command('buyMoonItem',{},true).then(result=>{
+   const item=result?.state?.inventory?.items?.at(-1);
+   if(item)showToast('Получен предмет: '+ITEM_NAMES[item.type],'success',3500);
+  }).catch(()=>{});
+ }
  const shop=document.getElementById('shopPanel');
  if(!shop||shop.classList.contains('hidden'))return;
  const host=shop.querySelector('.panel-content');if(!host)return;

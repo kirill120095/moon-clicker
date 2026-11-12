@@ -6,7 +6,8 @@ export { formatNumber };
 // РЕНДЕРИНГ UI - ОБНОВЛЁННАЯ СИСТЕМА ЛУН И ПРОКАЧКИ
 // ============================================================
 import { state, appState } from '../../core/state.js';
-import { 
+import { getEquippedItems, getItemProperties, formatItemProperty } from '../../core/constants.js';
+import {
   CONSTANTS, MOON_TYPES, ACHIEVEMENTS, QUESTS, 
   QUEST_CATEGORIES, ACHIEVEMENT_CATEGORIES, 
   SYNERGY_BONUSES, RARITY_CONFIG,
@@ -974,11 +975,20 @@ export function updateLiveCombatProfile(){
  const panel=document.getElementById('profilePanel'),tab=document.getElementById('profileTabContent');
  if(!panel||panel.classList.contains('hidden')||tab&&!tab.classList.contains('active'))return;
  const s=getCombatStats(state),pct=n=>(n*100).toLocaleString('ru-RU',{maximumFractionDigits:2})+'%';
+ const equipment=getEquippedItems(state);
+ if(equipment.length){
+  s.finalDamage=state.finalDamage??s.finalDamage;
+  s.critChance=state.finalCritChance??s.critChance;
+  s.moonReward=state.moonReward??s.moonReward;
+  s.ufoDamage=state.ufoDamage??s.ufoDamage;
+  s.ufoInterval=state.ufoInterval??s.ufoInterval;
+ }
  const values={bossKills:String(state.bossKills||0),slots:(state.maxSlots||1)+'/'+getSlotLimit(state),shards:formatMoney(getVisibleShards(state.playerData?.shards)),playTime:formatTime(state.totalSecondsPlayed||0),casinoLost:formatMoney(getVisibleCasinoTotals(state.wheelEconomy).totalLost),casinoWon:formatMoney(getVisibleCasinoTotals(state.wheelEconomy).totalWon),lifetimeClicks:formatNumber(state.clickCount||0),runClicks:formatNumber(state.runClickCount??state.clickCount??0),moonKills:formatNumber(state.moonKills||0),baseDamage:formatBaseDamage(s.baseDamage),finalDamage:formatNumber(s.finalDamage),critChance:pct(s.critChance),
  critDamage:formatNumber(s.critDamage)+' · '+(s.critMultiplier*s.critTier/2*(s.firstStrikeMultiplier||1)).toLocaleString('ru-RU',{maximumFractionDigits:2})+'×'+(s.extraCritChance?' · '+pct(s.extraCritChance)+' → '+formatNumber(s.nextCritDamage):''),
  damageBonus:'+'+pct(s.damageBonus),shardBonus:'+'+pct(s.shardBonus),critChanceBonus:'+'+pct(s.critChanceBonus),critDamageBonus:'+'+pct(s.critDamageBonus)};
  for(const [key,text]of Object.entries(values)){const el=document.querySelector('[data-live-stat="'+key+'"]');if(el&&el.textContent!==text)el.textContent=text;}
  const rows=s.sources.filter(b=>b.damage||b.shards||b.crit||b.critDamage).map(b=>b.name+': '+[['урон',b.damage],['добыча',b.shards],['шанс крита',b.crit],['крит. урон',b.critDamage]].filter(([,v])=>v).map(([label,v])=>label+' +'+pct(v)).join(' · '));
+ for(const item of equipment)rows.push('💠 '+getItemProperties(item).map(formatItemProperty).join(' | '));
  if(s.echoChance){const full=Math.floor(s.echoChance),extra=s.echoChance-full;rows.push('🔊 Эхо выстрела: '+full+' гарант. повторов'+(extra?' · '+pct(extra)+' шанс ещё одного':'')+' · '+pct(s.echoDamage)+' урона');}
  if(state.pendingEchoes)rows.push('🔊 Ожидают эха: '+formatNumber(state.pendingEchoes)+' повторов');
  if(s.crystalsPerClick)rows.push('💠 Кристалл за клик: +'+formatMoney(s.crystalsPerClick)+' 💎 за клик или выстрел тарелки');

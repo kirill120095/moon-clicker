@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="css/game.css?v=account-settings-21">
   <link rel="stylesheet" href="css/responsive.css?v=9">
   <link rel="stylesheet" href="css/toast.css?v=9">
-  <link rel="stylesheet" href="css/neon.css?v=damage-fade-1">
+  <link rel="stylesheet" href="css/neon.css?v=item-affixes-1">
 </head>
 <body>
   <!-- ЗВЁЗДНОЕ НЕБО -->
@@ -239,6 +239,11 @@
       <div class="panel-content panel-scrollable">
         <div id="shopTabContent" class="tab-content active">
           <p id="nextGoal" class="next-goal shop-goal">Следующее улучшение</p>
+          <div class="shop-section">
+            <h3 class="shop-section-title">🌙 Предметы для лун</h3>
+            <p>Шесть типов с равным шансом. У каждого предмета случайный баф и дебаф.</p>
+            <button id="buyMoonItem" type="button" class="btn-action" disabled>Случайный предмет · 3 пыли</button>
+          </div>
           <div id="shopLockMessage" class="shop-lock-message">🔒 Доступно с 5 уровня</div>
           
           <div class="shop-section">
@@ -396,7 +401,7 @@
 {
   "imports": {
     "./src/core/config.js": "./src/core/config.js?v=online-presence-9",
-    "./src/core/constants.js": "./src/core/constants.js?v=dust-rate-20",
+    "./src/core/constants.js": "./src/core/constants.js?v=item-affixes-1",
     "./src/core/state.js": "./src/core/state.js?v=online-presence-9",
     "./src/index.js": "./src/index.js?v=roulette-cache-repair-5",
     "./src/modules/auth/auth.js": "./src/modules/auth/auth.js?v=account-settings-21",
@@ -416,11 +421,11 @@
     "./src/modules/ui/admin.js": "./src/modules/ui/admin.js?v=online-presence-9",
     "./src/modules/ui/animations.js": "./src/modules/ui/animations.js?v=damage-fade-1",
     "./src/modules/ui/events.js": "./src/modules/ui/events.js?v=inventory-performance-1",
-    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=clone-inherit-1",
+    "./src/modules/ui/renderer.js": "./src/modules/ui/renderer.js?v=item-affixes-1",
     "./src/utils/numbers.js": "./src/utils/numbers.js?v=online-presence-9",
     "./src/utils/performance.js": "./src/utils/performance.js?v=season2-neon-1",
     "./src/utils/security.js": "./src/utils/security.js?v=season2-neon-1",
-    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=every-click-1",
+    "./src/modules/game/secure-game.js": "./src/modules/game/secure-game.js?v=item-affixes-1",
     "./src/modules/ui/radio.js": "./src/modules/ui/radio.js?v=internet-radio-29",
     "./src/modules/ui/audio.js": "./src/modules/ui/audio.js?v=hide-ufo-1"
   }

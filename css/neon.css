@@ -373,6 +373,11 @@ button:disabled{opacity:.55;cursor:default}button:focus-visible,summary:focus-vi
 .moon-slot-rarity{right:5px;bottom:5px;color:#e4d2ff}
 .moon-slot-lock{left:4px;top:4px}.moon-slot-keep{right:5px;top:4px;color:#ffe3a2}
 .moon-inventory-details{display:grid;gap:12px;margin-top:14px;padding:13px;border:1px solid #6e619e;border-radius:12px;background:#161b34}
+.moon-item-upgrades{display:grid;gap:6px;min-width:0}
+.moon-item-upgrades:empty,.moon-item-upgrades[hidden]{display:none}
+.moon-item-upgrades select{width:100%;min-width:0;padding:6px;color:#eae6ff;background:#292c50;border:1px solid #7472aa;border-radius:8px}
+.moon-item-upgrades .btn-action{white-space:normal;text-align:left}
+.moon-inventory-effect.item-penalty{color:#fda4af}
 .moon-inventory-hint{margin:12px 0 0}
 @media(max-width:380px){.moon-inventory .moon-inventory-grid{gap:5px}.moon-inventory-slot{border-radius:7px}.moon-slot-icon{font-size:21px}}
 
